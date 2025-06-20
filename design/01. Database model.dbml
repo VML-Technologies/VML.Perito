@@ -1,0 +1,216 @@
+Table departments {
+  id bigint [pk, not null]
+  name varchar(100) [not null, unique]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table cities {
+  id bigint [pk, not null]
+  name varchar(100) [not null]
+  department_id bigint [not null, ref: > departments.id]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table companies {
+  id bigint [pk, not null]
+  name varchar(150) [not null]
+  nit varchar(20) [not null, unique]
+  city_id bigint [not null, ref: > cities.id]
+  address varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sedes {
+  id bigint [pk, not null]
+  company_id bigint [not null, ref: > companies.id]
+  name varchar(150) [not null]
+  email varchar(150)
+  phone varchar(50)
+  city_id bigint [not null, ref: > cities.id]
+  address varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table users {
+  id bigint [pk, not null]
+  sede_id bigint [not null, ref: > sedes.id]
+  name varchar(150) [not null]
+  email varchar(150) [not null, unique]
+  phone varchar(50)
+  password varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  notification_channel_in_app_enabled boolean [default: true]
+  notification_channel_sms_enabled boolean [default: true]
+  notification_channel_email_enabled boolean [default: true]
+  notification_channel_whatsapp_enabled boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table inspection_orders_statuses {
+  id bigint [pk, not null]
+  name nvarchar
+  description nvarchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table inspection_orders {
+  id bigint [pk, not null]
+  user_id bigint [not null, ref: > users.id]
+  product_id bigint [not null, ref: > products.id]
+  vehicle_id bigint [not null, ref: > vehicles.id]
+  client_owner_id bigint [not null, ref: > clients.id]
+  client_taker_id bigint [not null, ref: > clients.id]
+  inspection_result nvarchar
+  inspection_result_details nvarchar
+  status  bigint [not null, ref: > inspection_orders_statuses.id]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table inspection_orders_appeals_statuses {
+  id bigint [pk, not null]
+  name nvarchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table inspection_orders_appeals {
+  id bigint [pk, not null]
+  user_requestor_id  bigint [not null, ref: > users.id]
+  user_gestor_id  bigint [not null, ref: > users.id]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  status bigint [not null, ref: > inspection_orders_appeals_statuses.id]
+  details nvarchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table products {
+  id bigint [pk, not null]
+  city_id bigint [ref: > cities.id]
+  quote_number varchar [unique]
+  quote_value decimal(12,2)
+  quote_file varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vehicles {
+  id bigint [pk, not null]
+  plate varchar [not null, unique]
+  brand varchar
+  line varchar
+  model int
+  vehicle_classification varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table clients {
+  id bigint [pk, not null]
+  name varchar
+  identification_type varchar
+  cell_phone varchar
+  email varchar
+  notification_channel_sms_enabled boolean [default: true]
+  notification_channel_email_enabled boolean [default: true]
+  notification_channel_whatsapp_enabled boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notification_channels {
+  id bigint [pk, not null]
+  name varchar(50) [not null, unique]
+  description text
+  active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notification_types {
+  id bigint [pk, not null]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notification_config {
+  id bigint [pk, not null]
+  notification_type_id bigint [not null, ref: > notification_types.id]
+  notification_channel_id bigint [not null, ref: > notification_channels.id]
+  template_title nvarchar [not null]
+  template_content nvarchar [not null]
+  for_clients boolean [default: false]
+  for_users boolean [default: false]
+  active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notifications {  
+  id bigint [pk, not null]
+  notification_config_id bigint [not null, ref: > notification_config.id]
+  appointment_id bigint [ref: > appointments.id]
+  inspection_order_id bigint [ref: > inspection_orders.id]
+  recipient_type varchar(20) [not null]
+  recipient_client_id bigint [not null, ref: > clients.id]
+  recipient_user_id bigint [not null, ref: > users.id]
+  recipient_email varchar(150)
+  recipient_phone varchar(50)
+  recipient_name varchar(150)
+  title nvarchar [not null]
+  content nvarchar [not null]
+  status varchar(50) [not null, default: 'pending'] // pending, sent, delivered, failed, read
+  sent_at timestamp
+  delivered_at timestamp
+  read_at timestamp
+  external_id varchar(100) // ID de la notificación en el servicio externo (SMS, WhatsApp)
+  error_message text
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table call_statuses {
+  id bigint [pk, not null]
+  name varchar [not null, unique]
+  creates_schedule boolean
+}
+
+Table call_logs {
+  id bigint [pk, not null]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  call_time datetime
+  status_id bigint [not null, ref: > call_statuses.id]
+  comments nvarchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table inspection_types {
+  id bigint [pk, not null]
+  name varchar [not null, unique]
+  description text
+  active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table appointments {
+  id bigint [pk, not null]
+  sede_id bigint [ref: > sedes.id]
+  call_log_id bigint [not null, ref: > call_logs.id]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  inspection_type_id bigint [not null, ref: > inspection_types.id]
+  scheduled_date date
+  scheduled_time time
+  created_at timestamp
+  updated_at timestamp
+}
