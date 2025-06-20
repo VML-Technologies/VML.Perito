@@ -1,1 +1,210 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Colores base */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Colores de componentes (tarjetas, popovers) */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Colores principales y secundarios para UI */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Colores para texto y elementos sutiles */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Colores de estado (destructivo, bordes, inputs, anillos de foco) */
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Colores para gráficos (manteniendo la diversidad) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Colores específicos para la barra lateral (sidebar) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* --- Modo Claro --- */
+:root {
+  --radius: 0.625rem;
+  /* Radio de borde por defecto */
+
+  /* Colores principales:
+     Se busca un azul profesional para el primario y blanco/gris claro para el fondo.
+     oklch(Luminancia Croma Tono)
+  */
+  --background: oklch(1 0 0);
+  /* Blanco puro */
+  --foreground: oklch(0.12 0.01 260);
+  /* Azul muy oscuro, casi negro */
+  --card: oklch(1 0 0);
+  /* Blanco */
+  --card-foreground: oklch(0.12 0.01 260);
+  /* Azul muy oscuro */
+  --popover: oklch(1 0 0);
+  /* Blanco */
+  --popover-foreground: oklch(0.12 0.01 260);
+  /* Azul muy oscuro */
+
+  --primary: oklch(0.45 0.1 260);
+  /* Azul medio/oscuro, el color principal de la marca */
+  --primary-foreground: oklch(0.985 0 0);
+  /* Blanco casi puro para texto sobre primario */
+  --secondary: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+  --secondary-foreground: oklch(0.25 0.02 260);
+  /* Azul oscuro para texto sobre secundario */
+
+  --muted: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+  --muted-foreground: oklch(0.5 0.02 260);
+  /* Gris medio azulado */
+  --accent: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+  --accent-foreground: oklch(0.25 0.02 260);
+  /* Azul oscuro */
+
+  --destructive: oklch(0.6 0.15 20);
+  /* Rojo para errores */
+  --border: oklch(0.9 0.01 260);
+  /* Gris azulado claro para bordes */
+  --input: oklch(0.9 0.01 260);
+  /* Gris azulado claro para inputs */
+  --ring: oklch(0.6 0.05 260);
+  /* Azul medio para anillos de foco */
+
+  /* Colores de gráficos (mantenidos con un ligero ajuste tonal si es necesario) */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Colores de la barra lateral (sidebar) - se alinea con la paleta principal */
+  --sidebar: oklch(0.985 0 0);
+  /* Blanco casi puro */
+  --sidebar-foreground: oklch(0.12 0.01 260);
+  /* Azul muy oscuro */
+  --sidebar-primary: oklch(0.45 0.1 260);
+  /* Azul principal */
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* Blanco */
+  --sidebar-accent: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+  --sidebar-accent-foreground: oklch(0.25 0.02 260);
+  /* Azul oscuro */
+  --sidebar-border: oklch(0.9 0.01 260);
+  /* Gris azulado claro para bordes */
+  --sidebar-ring: oklch(0.6 0.05 260);
+  /* Azul medio para anillos de foco */
+}
+
+/* --- Modo Oscuro --- */
+.dark {
+  /* Fondo oscuro, texto claro, con un toque de azul profundo */
+  --background: oklch(0.15 0.02 260);
+  /* Azul muy oscuro para el fondo */
+  --foreground: oklch(0.985 0 0);
+  /* Blanco casi puro */
+  --card: oklch(0.2 0.02 260);
+  /* Azul oscuro ligeramente más claro que el fondo */
+  --card-foreground: oklch(0.985 0 0);
+  /* Blanco */
+  --popover: oklch(0.2 0.02 260);
+  /* Azul oscuro */
+  --popover-foreground: oklch(0.985 0 0);
+  /* Blanco */
+
+  --primary: oklch(0.85 0.05 260);
+  /* Azul claro/medio para el primario en oscuro */
+  --primary-foreground: oklch(0.15 0.02 260);
+  /* Azul muy oscuro para texto sobre primario */
+  --secondary: oklch(0.3 0.03 260);
+  /* Gris azulado oscuro */
+  --secondary-foreground: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+
+  --muted: oklch(0.3 0.03 260);
+  /* Gris azulado oscuro */
+  --muted-foreground: oklch(0.7 0.02 260);
+  /* Gris medio azulado */
+  --accent: oklch(0.3 0.03 260);
+  /* Gris azulado oscuro */
+  --accent-foreground: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+
+  --destructive: oklch(0.7 0.15 20);
+  /* Rojo para errores */
+  --border: oklch(0.25 0.02 260 / 50%);
+  /* Borde oscuro con transparencia */
+  --input: oklch(0.25 0.02 260 / 60%);
+  /* Input oscuro con transparencia */
+  --ring: oklch(0.5 0.05 260);
+  /* Azul medio para anillos de foco */
+
+  /* Colores de gráficos (mantenidos para asegurar consistencia con el modo claro si es posible) */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  /* Colores de la barra lateral (sidebar) - se alinea con la paleta principal oscura */
+  --sidebar: oklch(0.2 0.02 260);
+  /* Azul oscuro */
+  --sidebar-foreground: oklch(0.985 0 0);
+  /* Blanco */
+  --sidebar-primary: oklch(0.85 0.05 260);
+  /* Azul claro/medio */
+  --sidebar-primary-foreground: oklch(0.15 0.02 260);
+  /* Azul muy oscuro */
+  --sidebar-accent: oklch(0.3 0.03 260);
+  /* Gris azulado oscuro */
+  --sidebar-accent-foreground: oklch(0.95 0.01 260);
+  /* Gris azulado muy claro */
+  --sidebar-border: oklch(0.25 0.02 260 / 50%);
+  /* Borde oscuro con transparencia */
+  --sidebar-ring: oklch(0.5 0.05 260);
+  /* Azul medio */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
