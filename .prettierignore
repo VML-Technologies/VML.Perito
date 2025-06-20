@@ -1,0 +1,25 @@
+# Directorios de Node
+node_modules/
+
+# Archivos de build
+dist/
+build/
+.turbo/ # Caché de Turborepo
+
+# Archivos de logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Archivos de entorno
+.env
+.env.*.local
+.env.local
+
+# Archivos de VS Code
+.vscode/
+
+# Otros
+coverage/
