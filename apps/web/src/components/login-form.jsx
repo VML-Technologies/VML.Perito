@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { AppName } from "@/components/ui/app-name"
 
 export function LoginForm({
   className,
@@ -18,7 +19,12 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Iniciar sesión</CardTitle>
+          <CardTitle>
+            <div className="flex justify-center w-full mb-5">
+              <AppName />
+            </div>
+            Iniciar sesión
+          </CardTitle>
           <CardDescription>
             Ingresa tu correo electrónico para iniciar sesión
           </CardDescription>
