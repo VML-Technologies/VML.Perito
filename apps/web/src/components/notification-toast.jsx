@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconCheck, IconX, IconInfo, IconAlertTriangle } from "@tabler/icons-react";
+import { IconCheck, IconX, IconAlertTriangle, IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
 const TOAST_TYPES = {
@@ -14,7 +14,7 @@ const TOAST_TYPES = {
         iconClassName: 'text-red-600'
     },
     info: {
-        icon: IconInfo,
+        icon: IconInfoCircle,
         className: 'bg-blue-50 border-blue-200 text-blue-800',
         iconClassName: 'text-blue-600'
     },
