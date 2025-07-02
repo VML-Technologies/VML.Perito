@@ -51,11 +51,21 @@ class UserController extends BaseController {
         }
     }
 
-    // Sobrescribir el método index para excluir contraseñas
+    // Sobrescribir el método index para excluir contraseñas e incluir sede
     async index(req, res) {
         try {
             const users = await this.model.findAll({
-                attributes: { exclude: ['password'] }
+                attributes: { exclude: ['password'] },
+                include: [{
+                    model: User.sequelize.models.Sede,
+                    as: 'sede',
+                    attributes: ['id', 'name'],
+                    include: [{
+                        model: User.sequelize.models.Company,
+                        as: 'company',
+                        attributes: ['id', 'name']
+                    }]
+                }]
             });
             res.json(users);
         } catch (error) {
@@ -63,11 +73,21 @@ class UserController extends BaseController {
         }
     }
 
-    // Sobrescribir el método show para excluir contraseña
+    // Sobrescribir el método show para excluir contraseña e incluir sede
     async show(req, res) {
         try {
             const user = await this.model.findByPk(req.params.id, {
-                attributes: { exclude: ['password'] }
+                attributes: { exclude: ['password'] },
+                include: [{
+                    model: User.sequelize.models.Sede,
+                    as: 'sede',
+                    attributes: ['id', 'name'],
+                    include: [{
+                        model: User.sequelize.models.Company,
+                        as: 'company',
+                        attributes: ['id', 'name']
+                    }]
+                }]
             });
 
             if (!user) {
