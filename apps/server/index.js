@@ -8,6 +8,9 @@ import departmentController from './controllers/departmentController.js';
 import cityController from './controllers/cityController.js';
 import companyController from './controllers/companyController.js';
 import sedeController from './controllers/sedeController.js';
+import { requirePermission } from './middleware/rbac.js';
+import permissionController from './controllers/permissionController.js';
+import roleController from './controllers/roleController.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -26,6 +29,11 @@ app.use(express.json());
 app.post('/api/auth/login', login);
 app.get('/api/auth/verify', verify);
 app.post('/api/auth/logout', logout);
+
+// Rutas RBAC
+app.get('/api/permissions', requirePermission('permissions.read'), permissionController.index);
+app.get('/api/permissions/registered', requirePermission('permissions.read'), permissionController.registered);
+app.get('/api/roles', requirePermission('roles.read'), roleController.index);
 
 // Rutas de departamentos
 app.get('/api/departments', departmentController.index);
@@ -75,6 +83,11 @@ app.delete('/api/users/:id/force', userController.forceDestroy);
 app.post('/api/users/:id/restore', userController.restore);
 app.get('/api/users/trashed/all', userController.indexWithTrashed);
 app.get('/api/users/trashed/only', userController.onlyTrashed);
+
+// Ejemplo de endpoint protegido
+app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
+    res.json({ message: 'Tienes permiso para ver usuarios', user: req.user });
+});
 
 // Ruta de prueba
 app.get('/api', (req, res) => {

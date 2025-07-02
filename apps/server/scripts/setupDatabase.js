@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import sequelize from '../config/database.js';
-import { Department, City, Company, Sede, User } from '../models/index.js';
+import { Department, City, Company, Sede, User, Role, Permission, RolePermission, UserRole } from '../models/index.js';
 
 dotenv.config();
 
@@ -28,6 +28,8 @@ const setupDatabase = async () => {
         const companyCount = await Company.count();
         const cityCount = await City.count();
         const departmentCount = await Department.count();
+        const roleCount = await Role.count();
+        const permissionCount = await Permission.count();
 
         console.log('\n📊 Estado actual de la base de datos:');
         console.log(`   Departamentos: ${departmentCount}`);
@@ -35,12 +37,18 @@ const setupDatabase = async () => {
         console.log(`   Empresas: ${companyCount}`);
         console.log(`   Sedes: ${sedeCount}`);
         console.log(`   Usuarios: ${userCount}`);
+        console.log(`   Roles: ${roleCount}`);
+        console.log(`   Permisos: ${permissionCount}`);
 
-        if (userCount === 0 && sedeCount === 0) {
+        if (userCount === 0 && sedeCount === 0 && roleCount === 0) {
             console.log('\n💡 La base de datos está vacía. Ejecuta "npm run seed:all" para crear datos de prueba.');
+            console.log('💡 Luego ejecuta "npm run seed:rbac" para configurar el sistema de permisos.');
         } else if (userCount > 0 && sedeCount === 0) {
             console.log('\n⚠️  Hay usuarios pero no hay sedes. Esto puede causar problemas de foreign key.');
             console.log('💡 Considera ejecutar "npm run seed:all" para crear la estructura completa.');
+        } else if (userCount > 0 && roleCount === 0) {
+            console.log('\n⚠️  Hay usuarios pero no hay roles configurados.');
+            console.log('💡 Ejecuta "npm run seed:rbac" para configurar el sistema de permisos.');
         } else {
             console.log('\n✅ La base de datos tiene datos. El sistema está listo.');
         }
@@ -52,6 +60,7 @@ const setupDatabase = async () => {
             console.log('\n💡 Solución:');
             console.log('   1. Ejecuta: FORCE_DB=true npm run setup:db');
             console.log('   2. Luego ejecuta: npm run seed:all');
+            console.log('   3. Finalmente ejecuta: npm run seed:rbac');
             console.log('   ⚠️  Esto eliminará todos los datos existentes.');
         }
     } finally {

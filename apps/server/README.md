@@ -335,3 +335,129 @@ tests/
 ## 📄 Licencia
 
 Este proyecto está bajo la licencia ISC.
+
+## 🛡️ Sistema RBAC (Control de Acceso Basado en Roles)
+
+### ¿Cómo funciona el RBAC en este sistema?
+
+- Los usuarios pueden tener uno o varios **roles**.
+- Los roles agrupan uno o varios **permisos**.
+- Los **permisos** definen acciones específicas sobre recursos (por ejemplo: `users.create`, `departments.read`).
+- El backend valida los permisos en cada endpoint protegido.
+
+### Estructura de Modelos RBAC
+
+- `Role`: Rol del sistema (admin, user, etc.)
+- `Permission`: Permiso granular (ej: users.create, users.read)
+- `RolePermission`: Relación muchos a muchos entre roles y permisos
+- `UserRole`: Relación muchos a muchos entre usuarios y roles
+
+### Registro Dinámico de Permisos
+
+Para que el sistema sea dinámico y los permisos estén disponibles para administración y asignación, cada controlador puede **registrar** los permisos que expone.
+
+#### Ejemplo de registro de permisos en un controlador
+
+```js
+import { registerPermission } from '../middleware/permissionRegistry.js';
+
+registerPermission({
+  name: 'users.create',
+  resource: 'users',
+  action: 'create',
+  endpoint: '/api/users',
+  method: 'POST',
+  description: 'Crear usuarios',
+});
+```
+
+Puedes registrar tantos permisos como necesite tu controlador. Esto permite que el sistema los detecte automáticamente para administración y para el seed dinámico.
+
+#### Consultar permisos registrados dinámicamente
+
+- **GET** `/api/permissions/registered` (requiere permiso `permissions.read`)
+
+### Middleware de Autorización: requirePermission
+
+Para proteger un endpoint, usa el middleware `requirePermission`:
+
+```js
+import { requirePermission } from '../middleware/rbac.js';
+
+app.post('/api/users', requirePermission('users.create'), userController.store);
+```
+
+Esto asegura que solo los usuarios con el permiso adecuado puedan acceder al endpoint.
+
+### Ejemplo de endpoint protegido
+
+```js
+app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
+  res.json({ message: 'Tienes permiso para ver usuarios', user: req.user });
+});
+```
+
+### Endpoints RBAC disponibles
+
+| Método | Endpoint                      | Descripción                              | Permiso necesario  |
+| ------ | ----------------------------- | ---------------------------------------- | ------------------ |
+| GET    | `/api/permissions`            | Lista todos los permisos                 | `permissions.read` |
+| GET    | `/api/permissions/registered` | Lista permisos registrados dinámicamente | `permissions.read` |
+| GET    | `/api/roles`                  | Lista todos los roles y sus permisos     | `roles.read`       |
+
+### Consideraciones de seguridad
+
+- **Nunca confíes solo en el frontend**: El backend siempre valida los permisos.
+- **JWT**: El token debe ser enviado en el header `Authorization: Bearer <token>`.
+- **Auditoría**: Se recomienda loguear acciones sensibles.
+
+### ¿Cómo agregar un nuevo permiso?
+
+1. Regístralo en el controlador usando `registerPermission`.
+2. Agrégalo al seed si quieres que esté disponible por defecto.
+3. Usa `requirePermission('nuevo.permiso')` en el endpoint correspondiente.
+
+## 🖥️ Integración Frontend: Uso de RBAC en React
+
+### Contexto de Permisos (RBACContext)
+
+En el frontend, se provee un contexto `RBACContext` que almacena los permisos y roles del usuario autenticado. Debes envolver tu aplicación con el provider:
+
+```jsx
+import { RBACProvider } from '@/contexts/rbac-context';
+
+<RBACProvider>{/* tu app aquí */}</RBACProvider>;
+```
+
+### Hooks de utilidad
+
+- `usePermissions()`: Acceso a permisos y método `hasPermission()`
+- `useRoles()`: Acceso a roles y método `hasRole()`
+
+### Proteger componentes o botones
+
+```jsx
+import { PermissionGate } from '@/components/PermissionGate';
+
+<PermissionGate permission="users.create">
+  <button>Crear usuario</button>
+</PermissionGate>;
+```
+
+### Proteger rutas por rol
+
+```jsx
+import { RoleBasedRoute } from '@/components/RoleBasedRoute';
+
+<RoleBasedRoute requiredRoles={['admin', 'super_admin']}>
+  <AdminPanel />
+</RoleBasedRoute>;
+```
+
+### Consideraciones
+
+- El backend siempre valida los permisos, el frontend solo oculta la UI.
+- Si el usuario no tiene el permiso/rol, el componente o ruta no se muestra.
+- Puedes combinar ambos componentes para máxima granularidad.
+
+---
