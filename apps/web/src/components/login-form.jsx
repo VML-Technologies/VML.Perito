@@ -1,3 +1,5 @@
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,11 +12,36 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AppName } from "@/components/ui/app-name"
+import { useAuth } from "@/contexts/auth-context"
+import { useNotificationContext } from "@/contexts/notification-context"
 
 export function LoginForm({
   className,
   ...props
 }) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const { login } = useAuth()
+  const { showToast } = useNotificationContext()
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const result = await login({ email, password })
+
+    if (result.success) {
+      showToast("Inicio de sesión exitoso", "success")
+      navigate("/dashboard")
+    } else {
+      showToast(result.error || "Error al iniciar sesión", "error")
+    }
+
+    setLoading(false)
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -30,11 +57,18 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="email">Correo electrónico</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
               </div>
               <div className="grid gap-3">
                 <div className="flex items-center">
@@ -45,11 +79,17 @@ export function LoginForm({
                     Olvidaste tu contraseña?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
-                  Iniciar sesión
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Iniciando sesión..." : "Iniciar sesión"}
                 </Button>
               </div>
             </div>

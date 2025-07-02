@@ -1,0 +1,84 @@
+import { BaseController } from './baseController.js';
+import User from '../models/user.js';
+import bcrypt from 'bcryptjs';
+
+class UserController extends BaseController {
+    constructor() {
+        super(User);
+    }
+
+    // Sobrescribir el método store para hashear la contraseña
+    async store(req, res) {
+        try {
+            const { password, ...userData } = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const user = await this.model.create({
+                ...userData,
+                password: hashedPassword,
+            });
+
+            // No devolver la contraseña en la respuesta
+            const { password: _, ...userResponse } = user.toJSON();
+            res.status(201).json(userResponse);
+        } catch (error) {
+            res.status(400).json({ message: 'Error al crear usuario', error: error.message });
+        }
+    }
+
+    // Sobrescribir el método update para manejar contraseñas
+    async update(req, res) {
+        try {
+            const { password, ...userData } = req.body;
+            const user = await this.model.findByPk(req.params.id);
+
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            // Si se está actualizando la contraseña, hashearla
+            if (password) {
+                userData.password = await bcrypt.hash(password, 10);
+            }
+
+            await user.update(userData);
+
+            // No devolver la contraseña en la respuesta
+            const { password: _, ...userResponse } = user.toJSON();
+            res.json(userResponse);
+        } catch (error) {
+            res.status(400).json({ message: 'Error al actualizar usuario', error: error.message });
+        }
+    }
+
+    // Sobrescribir el método index para excluir contraseñas
+    async index(req, res) {
+        try {
+            const users = await this.model.findAll({
+                attributes: { exclude: ['password'] }
+            });
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ message: 'Error al obtener usuarios', error: error.message });
+        }
+    }
+
+    // Sobrescribir el método show para excluir contraseña
+    async show(req, res) {
+        try {
+            const user = await this.model.findByPk(req.params.id, {
+                attributes: { exclude: ['password'] }
+            });
+
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            res.json(user);
+        } catch (error) {
+            res.status(500).json({ message: 'Error al obtener usuario', error: error.message });
+        }
+    }
+}
+
+export default new UserController(); 
