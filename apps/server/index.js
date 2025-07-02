@@ -4,6 +4,13 @@ import dotenv from 'dotenv';
 import sequelize from './config/database.js';
 import { login, verify, logout } from './controllers/authController.js';
 import userController from './controllers/userController.js';
+import departmentController from './controllers/departmentController.js';
+import cityController from './controllers/cityController.js';
+import companyController from './controllers/companyController.js';
+import sedeController from './controllers/sedeController.js';
+
+// Importar modelos para establecer relaciones
+import './models/index.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -19,6 +26,44 @@ app.use(express.json());
 app.post('/api/auth/login', login);
 app.get('/api/auth/verify', verify);
 app.post('/api/auth/logout', logout);
+
+// Rutas de departamentos
+app.get('/api/departments', departmentController.index);
+app.get('/api/departments/:id', departmentController.show);
+app.post('/api/departments', departmentController.store);
+app.put('/api/departments/:id', departmentController.update);
+app.delete('/api/departments/:id', departmentController.destroy);
+app.delete('/api/departments/:id/force', departmentController.forceDestroy);
+app.post('/api/departments/:id/restore', departmentController.restore);
+
+// Rutas de ciudades
+app.get('/api/cities', cityController.index);
+app.get('/api/cities/:id', cityController.show);
+app.get('/api/departments/:departmentId/cities', cityController.getByDepartment);
+app.post('/api/cities', cityController.store);
+app.put('/api/cities/:id', cityController.update);
+app.delete('/api/cities/:id', cityController.destroy);
+app.delete('/api/cities/:id/force', cityController.forceDestroy);
+app.post('/api/cities/:id/restore', cityController.restore);
+
+// Rutas de empresas
+app.get('/api/companies', companyController.index);
+app.get('/api/companies/:id', companyController.show);
+app.post('/api/companies', companyController.store);
+app.put('/api/companies/:id', companyController.update);
+app.delete('/api/companies/:id', companyController.destroy);
+app.delete('/api/companies/:id/force', companyController.forceDestroy);
+app.post('/api/companies/:id/restore', companyController.restore);
+
+// Rutas de sedes
+app.get('/api/sedes', sedeController.index);
+app.get('/api/sedes/:id', sedeController.show);
+app.get('/api/companies/:companyId/sedes', sedeController.getByCompany);
+app.post('/api/sedes', sedeController.store);
+app.put('/api/sedes/:id', sedeController.update);
+app.delete('/api/sedes/:id', sedeController.destroy);
+app.delete('/api/sedes/:id/force', sedeController.forceDestroy);
+app.post('/api/sedes/:id/restore', sedeController.restore);
 
 // Rutas de usuarios
 app.get('/api/users', userController.index);
@@ -43,7 +88,7 @@ const startServer = async () => {
         console.log('✅ Conexión a la base de datos establecida correctamente.');
 
         // Sincronizar modelos (crear tablas si no existen)
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({ force: false });
         console.log('✅ Modelos sincronizados con la base de datos.');
 
         app.listen(port, () => {

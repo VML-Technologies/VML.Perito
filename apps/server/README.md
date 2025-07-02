@@ -57,13 +57,27 @@ JWT_SECRET=tu_secreto_super_seguro
 PORT=3001
 ```
 
-### 3. Crear usuario de prueba (opcional)
+### 3. Configurar base de datos
 
 ```bash
-npm run seed
+# Configuración segura (recomendada)
+npm run setup:db
+
+# Si hay problemas de foreign keys, forzar recreación
+FORCE_DB=true npm run setup:db
 ```
 
-### 4. Ejecutar el servidor
+### 4. Crear datos de prueba (opcional)
+
+```bash
+# Solo usuario de prueba
+npm run seed
+
+# Todos los datos (departamentos, ciudades, empresas, sedes, usuarios)
+npm run seed:all
+```
+
+### 5. Ejecutar el servidor
 
 ```bash
 # Desarrollo

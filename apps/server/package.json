@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "seed": "node scripts/seedUser.js"
+    "setup:db": "node scripts/setupDatabase.js",
+    "seed": "node scripts/seedUser.js",
+    "seed:all": "node scripts/seedData.js"
   },
   "author": "",
   "license": "ISC",
