@@ -19,6 +19,7 @@ export function RBACProvider({ children }) {
                 setLoading(false);
                 return;
             }
+            console.log(user)
             try {
                 const token = localStorage.getItem('authToken');
                 const res = await fetch(API_ROUTES.USERS.PROFILE, {
@@ -40,6 +41,7 @@ export function RBACProvider({ children }) {
             } finally {
                 setLoading(false);
             }
+            console.log("ROLES", roles)
         }
         fetchPermissions();
     }, [isAuthenticated, user]);
@@ -50,6 +52,18 @@ export function RBACProvider({ children }) {
 
     return (
         <RBACContext.Provider value={{ permissions, roles, hasPermission, hasRole, loading }}>
+            Permissions
+
+            {
+                JSON.stringify(permissions)
+            }
+
+            Roles
+
+            {
+                JSON.stringify(roles)
+            }
+
             {children}
         </RBACContext.Provider>
     );

@@ -21,15 +21,9 @@
 - [ ] Componente: `UserRoleAssignment.jsx` (asignar roles a usuarios)
 - [ ] Integrar feedback visual y validaciones
 - [ ] Proteger el acceso al panel solo para roles autorizados
+- [x] Gestión de permisos (CRUD) en el panel de administración
+- [x] Gestión de asignaciones (roles-permisos, usuarios-roles) en el panel de administración
 
 ## Documentación
 
-- [ ] Actualizar `README.md` con endpoints y ejemplos de uso del panel
-- [ ] Agregar capturas o diagramas si es necesario
-
----
-
-**Leyenda:**
-
-- [ ] Pendiente
-- [x] Completado
+- [ ] Actualizar `

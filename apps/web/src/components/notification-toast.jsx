@@ -1,25 +1,25 @@
 import { useEffect, useState } from 'react';
-import { IconCheck, IconX, IconAlertTriangle, IconInfoCircle } from "@tabler/icons-react";
+import { Check, X, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const TOAST_TYPES = {
     success: {
-        icon: IconCheck,
+        icon: Check,
         className: 'bg-green-50 border-green-200 text-green-800',
         iconClassName: 'text-green-600'
     },
     error: {
-        icon: IconX,
+        icon: X,
         className: 'bg-red-50 border-red-200 text-red-800',
         iconClassName: 'text-red-600'
     },
     info: {
-        icon: IconInfoCircle,
+        icon: Info,
         className: 'bg-blue-50 border-blue-200 text-blue-800',
         iconClassName: 'text-blue-600'
     },
     warning: {
-        icon: IconAlertTriangle,
+        icon: AlertTriangle,
         className: 'bg-yellow-50 border-yellow-200 text-yellow-800',
         iconClassName: 'text-yellow-600'
     }
@@ -70,7 +70,7 @@ export function NotificationToast({
                         setTimeout(onClose, 300);
                     }}
                 >
-                    <IconX size={14} />
+                    <X size={14} />
                 </Button>
             </div>
         </div>

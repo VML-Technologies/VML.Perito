@@ -10,7 +10,7 @@ function AuthenticatedLayout({ children }) {
     return (
         <ProtectedRoute>
             <SidebarProvider>
-                {/* <AppSidebar /> */}
+                <AppSidebar />
                 <SidebarInset>
                     <SiteHeader />
                     <div className="m-4">

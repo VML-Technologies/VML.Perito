@@ -1,4 +1,4 @@
-import { IconBell, IconCheck, IconX } from "@tabler/icons-react";
+import { Bell, Check, X } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -38,7 +38,7 @@ export function NotificationMenu() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <div className="relative cursor-pointer">
-                    <IconBell size={24} />
+                    <Bell size={24} />
                     {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                             {unreadCount}
@@ -70,9 +70,8 @@ export function NotificationMenu() {
                         notifications.map((notification) => (
                             <DropdownMenuItem
                                 key={notification.id}
-                                className={`p-3 cursor-pointer hover:bg-muted/50 ${
-                                    !notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : ''
-                                }`}
+                                className={`p-3 cursor-pointer hover:bg-muted/50 ${!notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                                    }`}
                                 onClick={() => handleNotificationItemClick(notification)}
                             >
                                 <div className="flex flex-col gap-1 w-full">
@@ -90,7 +89,7 @@ export function NotificationMenu() {
                                                 className="h-4 w-4 p-0 hover:bg-red-100 hover:text-red-600"
                                                 onClick={(e) => handleRemoveNotification(e, notification.id)}
                                             >
-                                                <IconX size={12} />
+                                                <X size={12} />
                                             </Button>
                                         </div>
                                     </div>
@@ -99,7 +98,7 @@ export function NotificationMenu() {
                                     </p>
                                     {!notification.read && (
                                         <div className="flex items-center gap-1 text-xs text-blue-600">
-                                            <IconCheck size={12} />
+                                            <Check size={12} />
                                             <span>Nueva</span>
                                         </div>
                                     )}
