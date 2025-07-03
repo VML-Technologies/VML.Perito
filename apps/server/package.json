@@ -6,9 +6,10 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "setup:db": "node scripts/setupDatabase.js",
-    "seed": "node scripts/seedUser.js",
-    "seed:all": "node scripts/seedData.js",
-    "seed:rbac": "node scripts/seedRBAC.js"
+    "seed": "node scripts/seedAll.js",
+    "seed:user": "node scripts/seedUser.js",
+    "seed:rbac": "node scripts/seedRBAC.js",
+    "seed:data": "node scripts/seedData.js"
   },
   "author": "",
   "license": "ISC",

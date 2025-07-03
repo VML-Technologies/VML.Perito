@@ -364,17 +364,8 @@ const seedRBAC = async () => {
             console.log(`✅ Permisos de usuario asignados a ${userRole.name}`);
         }
 
-        // Asignar rol super_admin al primer usuario existente (si existe)
-        const firstUser = await User.findOne();
-        if (firstUser && superAdminRole) {
-            await UserRole.findOrCreate({
-                where: {
-                    user_id: firstUser.id,
-                    role_id: superAdminRole.id
-                }
-            });
-            console.log(`✅ Rol ${superAdminRole.name} asignado al usuario ${firstUser.email}`);
-        }
+        // Nota: La asignación de roles a usuarios se hace en el seeder de usuario
+        console.log('ℹ️  Los roles están listos para ser asignados a usuarios.');
 
         console.log('🎉 Seed de RBAC completado exitosamente!');
         console.log(`📊 Resumen:`);

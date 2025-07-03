@@ -1,5 +1,9 @@
 import { BaseController } from './baseController.js';
 import User from '../models/user.js';
+import Sede from '../models/sede.js';
+import Company from '../models/company.js';
+import Role from '../models/role.js';
+import Permission from '../models/permission.js';
 import bcrypt from 'bcryptjs';
 
 class UserController extends BaseController {
@@ -97,6 +101,64 @@ class UserController extends BaseController {
             res.json(user);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener usuario', error: error.message });
+        }
+    }
+
+    // Método para obtener el perfil del usuario autenticado con roles y permisos
+    async profile(req, res) {
+        try {
+            const userId = req.user.id;
+            const user = await this.model.findByPk(userId, {
+                attributes: { exclude: ['password'] },
+                include: [
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['id', 'name'],
+                        include: [{
+                            model: Company,
+                            as: 'company',
+                            attributes: ['id', 'name']
+                        }]
+                    },
+                    {
+                        model: Role,
+                        as: 'roles',
+                        through: { attributes: [] },
+                        include: [{
+                            model: Permission,
+                            as: 'permissions',
+                            through: { attributes: [] }
+                        }]
+                    }
+                ]
+            });
+
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            // Extraer roles y permisos únicos
+            const roles = Array.isArray(user.roles) ? user.roles.map(role => role.name) : [];
+            const permissions = Array.isArray(user.roles)
+                ? [...new Set(
+                    user.roles.flatMap(role =>
+                        Array.isArray(role.permissions)
+                            ? role.permissions.map(permission => permission.name)
+                            : []
+                    )
+                )]
+                : [];
+
+            const userResponse = {
+                ...user.toJSON(),
+                roles,
+                permissions
+            };
+
+            res.json(userResponse);
+        } catch (error) {
+            res.status(500).json({ message: 'Error al obtener perfil', error: error.message });
         }
     }
 }

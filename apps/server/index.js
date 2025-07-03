@@ -34,6 +34,17 @@ app.post('/api/auth/logout', logout);
 app.get('/api/permissions', requirePermission('permissions.read'), permissionController.index);
 app.get('/api/permissions/registered', requirePermission('permissions.read'), permissionController.registered);
 app.get('/api/roles', requirePermission('roles.read'), roleController.index);
+app.post('/api/roles', requirePermission('roles.create'), roleController.store);
+app.put('/api/roles/:id', requirePermission('roles.update'), roleController.update);
+app.delete('/api/roles/:id', requirePermission('roles.delete'), roleController.destroy);
+app.post('/api/permissions', requirePermission('permissions.create'), permissionController.store);
+app.put('/api/permissions/:id', requirePermission('permissions.update'), permissionController.update);
+app.delete('/api/permissions/:id', requirePermission('permissions.delete'), permissionController.destroy);
+app.post('/api/roles/:id/permissions', requirePermission('roles.update'), roleController.assignPermissions);
+app.get('/api/roles/:id/permissions', requirePermission('roles.read'), roleController.getPermissions);
+app.post('/api/users/:userId/roles', requirePermission('users.update'), roleController.assignUserRoles);
+app.get('/api/users/:userId/roles', requirePermission('users.read'), roleController.getUserRoles);
+app.get('/api/users/with-roles', requirePermission('users.read'), roleController.getUsersWithRoles);
 
 // Rutas de departamentos
 app.get('/api/departments', departmentController.index);
@@ -83,6 +94,7 @@ app.delete('/api/users/:id/force', userController.forceDestroy);
 app.post('/api/users/:id/restore', userController.restore);
 app.get('/api/users/trashed/all', userController.indexWithTrashed);
 app.get('/api/users/trashed/only', userController.onlyTrashed);
+app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
 
 // Ejemplo de endpoint protegido
 app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {

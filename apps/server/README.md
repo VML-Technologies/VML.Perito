@@ -169,6 +169,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 | POST   | `/api/users/:id/restore`  | Restaurar usuario                    |
 | GET    | `/api/users/trashed/all`  | Listar todos (incluyendo eliminados) |
 | GET    | `/api/users/trashed/only` | Solo usuarios eliminados             |
+| GET    | `/api/users/profile`      | Perfil del usuario autenticado       |
 
 ### Ejemplo de Crear Usuario
 
@@ -182,6 +183,25 @@ curl -X POST http://localhost:3001/api/users \
     "phone": "123456789",
     "password": "123456"
   }'
+```
+
+### Ejemplo de Obtener Perfil del Usuario Autenticado
+
+```bash
+curl -X GET http://localhost:3001/api/users/profile \
+  -H "Authorization: Bearer <token>"
+```
+
+La respuesta incluirá los roles y permisos del usuario:
+
+```json
+{
+  "id": 1,
+  "name": "Administrador",
+  "email": "admin@vmlperito.com",
+  "roles": ["super_admin"],
+  "permissions": ["users.read", "users.create", ...]
+}
 ```
 
 ## 🗑️ Soft Deletes
@@ -399,23 +419,88 @@ app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
 
 ### Endpoints RBAC disponibles
 
-| Método | Endpoint                      | Descripción                              | Permiso necesario  |
-| ------ | ----------------------------- | ---------------------------------------- | ------------------ |
-| GET    | `/api/permissions`            | Lista todos los permisos                 | `permissions.read` |
-| GET    | `/api/permissions/registered` | Lista permisos registrados dinámicamente | `permissions.read` |
-| GET    | `/api/roles`                  | Lista todos los roles y sus permisos     | `roles.read`       |
+| Método | Endpoint                      | Descripción                              | Permiso necesario    |
+| ------ | ----------------------------- | ---------------------------------------- | -------------------- |
+| GET    | `/api/permissions`            | Lista todos los permisos                 | `permissions.read`   |
+| GET    | `/api/permissions/registered` | Lista permisos registrados dinámicamente | `permissions.read`   |
+| GET    | `/api/roles`                  | Lista todos los roles y sus permisos     | `roles.read`         |
+| POST   | `/api/roles`                  | Crear un nuevo rol                       | `roles.create`       |
+| PUT    | `/api/roles/:id`              | Editar un rol existente                  | `roles.update`       |
+| DELETE | `/api/roles/:id`              | Eliminar un rol                          | `roles.delete`       |
+| POST   | `/api/permissions`            | Crear un nuevo permiso                   | `permissions.create` |
+| PUT    | `/api/permissions/:id`        | Editar un permiso existente              | `permissions.update` |
+| DELETE | `/api/permissions/:id`        | Eliminar un permiso                      | `permissions.delete` |
+| POST   | `/api/roles/:id/permissions`  | Asignar permisos a un rol                | `roles.update`       |
+| GET    | `/api/roles/:id/permissions`  | Obtener permisos de un rol               | `roles.read`         |
+| POST   | `/api/users/:userId/roles`    | Asignar roles a un usuario               | `users.update`       |
+| GET    | `/api/users/:userId/roles`    | Obtener roles de un usuario              | `users.read`         |
+| GET    | `/api/users/with-roles`       | Listar usuarios con sus roles            | `users.read`         |
 
-### Consideraciones de seguridad
+#### Ejemplo: Crear un permiso
 
-- **Nunca confíes solo en el frontend**: El backend siempre valida los permisos.
-- **JWT**: El token debe ser enviado en el header `Authorization: Bearer <token>`.
-- **Auditoría**: Se recomienda loguear acciones sensibles.
+```bash
+curl -X POST http://localhost:3001/api/permissions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "users.export", "description": "Exportar usuarios", "resource": "users", "action": "export", "endpoint": "/api/users/export", "method": "GET" }'
+```
 
-### ¿Cómo agregar un nuevo permiso?
+#### Ejemplo: Editar un permiso
 
-1. Regístralo en el controlador usando `registerPermission`.
-2. Agrégalo al seed si quieres que esté disponible por defecto.
-3. Usa `requirePermission('nuevo.permiso')` en el endpoint correspondiente.
+```bash
+curl -X PUT http://localhost:3001/api/permissions/10 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "users.export", "description": "Permite exportar usuarios", "resource": "users", "action": "export", "endpoint": "/api/users/export", "method": "GET" }'
+```
+
+#### Ejemplo: Eliminar un permiso
+
+```bash
+curl -X DELETE http://localhost:3001/api/permissions/10 \
+  -H "Authorization: Bearer <token>"
+```
+
+#### Ejemplo: Asignar permisos a un rol
+
+```bash
+curl -X POST http://localhost:3001/api/roles/1/permissions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "permissions": [1, 2, 3, 4] }'
+```
+
+#### Ejemplo: Obtener permisos de un rol
+
+```bash
+curl -X GET http://localhost:3001/api/roles/1/permissions \
+  -H "Authorization: Bearer <token>"
+```
+
+#### Ejemplo: Asignar roles a un usuario
+
+```bash
+curl -X POST http://localhost:3001/api/users/1/roles \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ "roles": [1, 2] }'
+```
+
+#### Ejemplo: Obtener roles de un usuario
+
+```bash
+curl -X GET http://localhost:3001/api/users/1/roles \
+  -H "Authorization: Bearer <token>"
+```
+
+#### Ejemplo: Listar usuarios con sus roles
+
+```bash
+curl -X GET http://localhost:3001/api/users/with-roles \
+  -H "Authorization: Bearer <token>"
+```
+
+---
 
 ## 🖥️ Integración Frontend: Uso de RBAC en React
 
@@ -459,5 +544,91 @@ import { RoleBasedRoute } from '@/components/RoleBasedRoute';
 - El backend siempre valida los permisos, el frontend solo oculta la UI.
 - Si el usuario no tiene el permiso/rol, el componente o ruta no se muestra.
 - Puedes combinar ambos componentes para máxima granularidad.
+
+## 🛠️ Panel de Administración RBAC (Frontend)
+
+- La página de administración se encuentra en `src/pages/Admin.jsx`.
+- Utiliza el layout autenticado (`AuthenticatedLayout`) para proteger el acceso.
+- Incluye pestañas para:
+  - **Roles**: gestión y listado de roles.
+  - **Permisos**: gestión y listado de permisos.
+  - **Asignaciones**: asignar permisos a roles y roles a usuarios.
+- Solo los usuarios con los roles adecuados deben poder acceder a esta página (proteger con `RoleBasedRoute` si es necesario).
+
+**En este proyecto, el acceso está protegido así:**
+
+```jsx
+import { RoleBasedRoute } from '@/components/RoleBasedRoute';
+
+export default function Admin() {
+  return (
+    <RoleBasedRoute requiredRoles={['admin', 'super_admin']}>
+      <AuthenticatedLayout>{/* ...contenido del panel... */}</AuthenticatedLayout>
+    </RoleBasedRoute>
+  );
+}
+```
+
+---
+
+## 🗂️ Gestión de Roles en el Frontend
+
+- La pestaña "Roles" del panel de administración utiliza el componente `RolesTable`.
+- Permite listar, crear, editar y eliminar roles de forma visual.
+- Todas las acciones requieren los permisos correspondientes (`roles.read`, `roles.create`, `roles.update`, `roles.delete`).
+- El componente se encuentra en `src/components/rbac/RolesTable.jsx` y se integra así:
+
+```jsx
+import { RolesTable } from '@/components/rbac/RolesTable';
+
+<TabsContent value="roles">
+  <RolesTable />
+</TabsContent>;
+```
+
+---
+
+## Scripts de Seed
+
+### Comando Principal (Recomendado)
+
+```bash
+npm run seed
+```
+
+Este comando ejecuta todos los seeders en el orden correcto:
+
+1. Configuración de RBAC (roles y permisos)
+2. Creación del usuario administrador
+3. Carga de datos básicos (si existe)
+
+### Comandos Individuales
+
+```bash
+# Solo RBAC (roles y permisos)
+npm run seed:rbac
+
+# Solo usuario administrador
+npm run seed:user
+
+# Solo datos básicos
+npm run seed:data
+```
+
+### Orden de Ejecución Recomendado
+
+Si necesitas ejecutar los seeders manualmente, sigue este orden:
+
+1. **Primero:** `npm run seed:rbac` - Crea roles y permisos
+2. **Segundo:** `npm run seed:user` - Crea usuario administrador con rol super_admin
+3. **Tercero:** `npm run seed:data` - Carga datos básicos (opcional)
+
+### Credenciales del Usuario Administrador
+
+Después de ejecutar el seed, tendrás acceso con:
+
+- **Email:** `admin@vmlperito.com`
+- **Contraseña:** `123456`
+- **Rol:** `super_admin` (todos los permisos)
 
 ---
