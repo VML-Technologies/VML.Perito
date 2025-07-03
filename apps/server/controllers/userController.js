@@ -9,6 +9,18 @@ import bcrypt from 'bcryptjs';
 class UserController extends BaseController {
     constructor() {
         super(User);
+
+        // Bind methods to preserve context
+        this.store = this.store.bind(this);
+        this.update = this.update.bind(this);
+        this.index = this.index.bind(this);
+        this.show = this.show.bind(this);
+        this.destroy = this.destroy.bind(this);
+        this.forceDestroy = this.forceDestroy.bind(this);
+        this.restore = this.restore.bind(this);
+        this.indexWithTrashed = this.indexWithTrashed.bind(this);
+        this.onlyTrashed = this.onlyTrashed.bind(this);
+        this.profile = this.profile.bind(this);
     }
 
     // Sobrescribir el método store para hashear la contraseña
@@ -107,33 +119,7 @@ class UserController extends BaseController {
     // Método para obtener el perfil del usuario autenticado con roles y permisos
     async profile(req, res) {
         try {
-            const userId = req.user.id;
-            const user = await this.model.findByPk(userId, {
-                attributes: { exclude: ['password'] },
-                include: [
-                    {
-                        model: Sede,
-                        as: 'sede',
-                        attributes: ['id', 'name'],
-                        include: [{
-                            model: Company,
-                            as: 'company',
-                            attributes: ['id', 'name']
-                        }]
-                    },
-                    {
-                        model: Role,
-                        as: 'roles',
-                        through: { attributes: [] },
-                        include: [{
-                            model: Permission,
-                            as: 'permissions',
-                            through: { attributes: [] }
-                        }]
-                    }
-                ]
-            });
-
+            const user = req.user;
             if (!user) {
                 return res.status(404).json({ message: 'Usuario no encontrado' });
             }

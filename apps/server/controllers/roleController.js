@@ -4,7 +4,20 @@ import User from '../models/user.js';
 import RolePermission from '../models/rolePermission.js';
 import UserRole from '../models/userRole.js';
 
-const roleController = {
+class RoleController {
+    constructor() {
+        // Bind methods to preserve context
+        this.index = this.index.bind(this);
+        this.store = this.store.bind(this);
+        this.update = this.update.bind(this);
+        this.destroy = this.destroy.bind(this);
+        this.assignPermissions = this.assignPermissions.bind(this);
+        this.getPermissions = this.getPermissions.bind(this);
+        this.assignUserRoles = this.assignUserRoles.bind(this);
+        this.getUserRoles = this.getUserRoles.bind(this);
+        this.getUsersWithRoles = this.getUsersWithRoles.bind(this);
+    }
+
     // Listar roles con sus permisos
     async index(req, res) {
         try {
@@ -12,6 +25,7 @@ const roleController = {
                 include: [
                     {
                         model: Permission,
+                        as: 'permissions',
                         through: { attributes: [] }
                     }
                 ]
@@ -20,7 +34,8 @@ const roleController = {
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener roles', error: error.message });
         }
-    },
+    }
+
     // Crear rol
     async store(req, res) {
         try {
@@ -37,7 +52,8 @@ const roleController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al crear rol', error: error.message });
         }
-    },
+    }
+
     // Editar rol
     async update(req, res) {
         try {
@@ -60,7 +76,8 @@ const roleController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al actualizar rol', error: error.message });
         }
-    },
+    }
+
     // Eliminar rol
     async destroy(req, res) {
         try {
@@ -73,7 +90,8 @@ const roleController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al eliminar rol', error: error.message });
         }
-    },
+    }
+
     // Asignar permisos a un rol
     async assignPermissions(req, res) {
         try {
@@ -90,7 +108,8 @@ const roleController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al asignar permisos', error: error.message });
         }
-    },
+    }
+
     // Obtener permisos de un rol
     async getPermissions(req, res) {
         try {
@@ -99,6 +118,7 @@ const roleController = {
                 include: [
                     {
                         model: Permission,
+                        as: 'permissions',
                         through: { attributes: [] }
                     }
                 ]
@@ -106,11 +126,12 @@ const roleController = {
 
             if (!role) return res.status(404).json({ message: 'Rol no encontrado' });
 
-            res.json(role.Permissions);
+            res.json(role.permissions);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener permisos del rol', error: error.message });
         }
-    },
+    }
+
     // Asignar roles a un usuario
     async assignUserRoles(req, res) {
         try {
@@ -127,7 +148,8 @@ const roleController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al asignar roles', error: error.message });
         }
-    },
+    }
+
     // Obtener roles de un usuario
     async getUserRoles(req, res) {
         try {
@@ -136,6 +158,7 @@ const roleController = {
                 include: [
                     {
                         model: Role,
+                        as: 'roles',
                         through: { attributes: [] }
                     }
                 ]
@@ -143,18 +166,21 @@ const roleController = {
 
             if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-            res.json(user.Roles);
+            res.json(user.roles);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener roles del usuario', error: error.message });
         }
-    },
+    }
+
     // Listar usuarios con sus roles
     async getUsersWithRoles(req, res) {
         try {
             const users = await User.findAll({
+                attributes: { exclude: ['password'] },
                 include: [
                     {
                         model: Role,
+                        as: 'roles',
                         through: { attributes: [] }
                     }
                 ]
@@ -164,6 +190,6 @@ const roleController = {
             res.status(500).json({ message: 'Error al obtener usuarios con roles', error: error.message });
         }
     }
-};
+}
 
-export default roleController; 
+export default new RoleController(); 

@@ -19,7 +19,7 @@ import './models/index.js';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
@@ -84,7 +84,10 @@ app.delete('/api/sedes/:id', sedeController.destroy);
 app.delete('/api/sedes/:id/force', sedeController.forceDestroy);
 app.post('/api/sedes/:id/restore', sedeController.restore);
 
-// Rutas de usuarios
+// Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
+app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
+app.get('/api/users/trashed/all', userController.indexWithTrashed);
+app.get('/api/users/trashed/only', userController.onlyTrashed);
 app.get('/api/users', userController.index);
 app.get('/api/users/:id', userController.show);
 app.post('/api/users', userController.store);
@@ -92,9 +95,6 @@ app.put('/api/users/:id', userController.update);
 app.delete('/api/users/:id', userController.destroy);
 app.delete('/api/users/:id/force', userController.forceDestroy);
 app.post('/api/users/:id/restore', userController.restore);
-app.get('/api/users/trashed/all', userController.indexWithTrashed);
-app.get('/api/users/trashed/only', userController.onlyTrashed);
-app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
 
 // Ejemplo de endpoint protegido
 app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {

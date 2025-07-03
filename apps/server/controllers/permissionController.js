@@ -1,7 +1,16 @@
 import Permission from '../models/permission.js';
 import { getRegisteredPermissions } from '../middleware/permissionRegistry.js';
 
-const permissionController = {
+class PermissionController {
+    constructor() {
+        // Bind methods to preserve context
+        this.index = this.index.bind(this);
+        this.registered = this.registered.bind(this);
+        this.store = this.store.bind(this);
+        this.update = this.update.bind(this);
+        this.destroy = this.destroy.bind(this);
+    }
+
     // Listar permisos desde la base de datos
     async index(req, res) {
         try {
@@ -10,7 +19,8 @@ const permissionController = {
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener permisos', error: error.message });
         }
-    },
+    }
+
     // Listar permisos registrados dinámicamente
     registered(req, res) {
         try {
@@ -19,7 +29,8 @@ const permissionController = {
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener permisos registrados', error: error.message });
         }
-    },
+    }
+
     // Crear permiso
     async store(req, res) {
         try {
@@ -29,7 +40,8 @@ const permissionController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al crear permiso', error: error.message });
         }
-    },
+    }
+
     // Editar permiso
     async update(req, res) {
         try {
@@ -43,7 +55,8 @@ const permissionController = {
         } catch (error) {
             res.status(400).json({ message: 'Error al actualizar permiso', error: error.message });
         }
-    },
+    }
+
     // Eliminar permiso
     async destroy(req, res) {
         try {
@@ -56,6 +69,6 @@ const permissionController = {
             res.status(400).json({ message: 'Error al eliminar permiso', error: error.message });
         }
     }
-};
+}
 
-export default permissionController; 
+export default new PermissionController(); 

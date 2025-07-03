@@ -4,6 +4,13 @@ import Company from '../models/company.js';
 class CompanyController extends BaseController {
     constructor() {
         super(Company);
+        this.index = this.index.bind(this);
+        this.show = this.show.bind(this);
+        this.store = this.store.bind(this);
+        this.update = this.update.bind(this);
+        this.destroy = this.destroy.bind(this);
+        this.forceDestroy = this.forceDestroy.bind(this);
+        this.restore = this.restore.bind(this);
     }
 
     // Sobrescribir index para incluir ciudad
