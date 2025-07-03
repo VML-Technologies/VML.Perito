@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { RBACProvider } from "@/contexts/rbac-context"
 import { Dashboard } from "@/pages/Dashboard"
 import Admin from "@/pages/Admin"
+import Profile from "@/pages/Profile"
 import GuestLayout from "@/Layouts/GuestLayout"
 
 function App() {
@@ -34,6 +35,16 @@ function App() {
               <Route
                 path="/admin"
                 element={<Admin />}
+              />
+
+              {/* Ruta de perfil de usuario */}
+              <Route
+                path="/profile"
+                element={
+                  <AuthenticatedLayout>
+                    <Profile />
+                  </AuthenticatedLayout>
+                }
               />
 
               {/* Redirigir la ruta raíz */}
