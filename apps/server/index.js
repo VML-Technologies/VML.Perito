@@ -13,6 +13,8 @@ import { requirePermission } from './middleware/rbac.js';
 import permissionController from './controllers/permissionController.js';
 import roleController from './controllers/roleController.js';
 import webSocketSystem from './websocket/index.js';
+import inspectionOrderController from './controllers/inspectionOrderController.js';
+import contactAgentController from './controllers/contactAgentController.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -88,6 +90,36 @@ app.delete('/api/sedes/:id', sedeController.destroy);
 app.delete('/api/sedes/:id/force', sedeController.forceDestroy);
 app.post('/api/sedes/:id/restore', sedeController.restore);
 
+// ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN =====
+
+// Rutas para Comercial Mundial (crear/gestionar órdenes)
+app.get('/api/inspection-orders', requirePermission('inspection_orders.read'), inspectionOrderController.index);
+app.get('/api/inspection-orders/stats', requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
+app.get('/api/inspection-orders/search', requirePermission('inspection_orders.read'), inspectionOrderController.search);
+app.get('/api/inspection-orders/:id', requirePermission('inspection_orders.read'), inspectionOrderController.show);
+app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
+app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
+app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.delete'), inspectionOrderController.destroy);
+
+// ===== NUEVAS RUTAS - Agente de Contact =====
+
+// Rutas para Agente de Contact
+app.get('/api/contact-agent/orders', requirePermission('contact_agent.read'), contactAgentController.getOrders);
+app.get('/api/contact-agent/orders/:id', requirePermission('contact_agent.read'), contactAgentController.getOrderDetails);
+
+// Gestión de llamadas
+app.post('/api/contact-agent/call-logs', requirePermission('contact_agent.create_call'), contactAgentController.createCallLog);
+app.get('/api/contact-agent/call-statuses', requirePermission('contact_agent.read'), contactAgentController.getCallStatuses);
+
+// Gestión de agendamientos
+app.post('/api/contact-agent/appointments', requirePermission('contact_agent.create_appointment'), contactAgentController.createAppointment);
+app.get('/api/contact-agent/inspection-types', requirePermission('contact_agent.read'), contactAgentController.getInspectionTypes);
+
+// Rutas geográficas para agendamientos
+app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'), contactAgentController.getDepartments);
+app.get('/api/contact-agent/cities/:departmentId', requirePermission('contact_agent.read'), contactAgentController.getCities);
+app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.read'), contactAgentController.getSedes);
+
 // Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
 app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
 app.get('/api/users/trashed/all', userController.indexWithTrashed);
@@ -125,6 +157,37 @@ app.get('/api/websocket/connected-users', requirePermission('users.read'), (req,
 // Ruta de prueba
 app.get('/api', (req, res) => {
     res.json({ message: '¡Hola desde el servidor Express!' });
+});
+
+// Agregar endpoint de prueba simple
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
+});
+
+// Verificar que la tabla de inspection_orders existe
+app.get('/api/inspection-orders-test', async (req, res) => {
+    try {
+        const { InspectionOrder } = await import('./models/index.js');
+        const count = await InspectionOrder.count();
+        res.json({ message: 'Tabla accessible', count });
+    } catch (error) {
+        res.status(500).json({ error: error.message, stack: error.stack });
+    }
+});
+
+// Endpoint de prueba para inspection orders sin autenticación
+app.get('/api/inspection-orders-simple', async (req, res) => {
+    try {
+        const { InspectionOrder } = await import('./models/index.js');
+        const orders = await InspectionOrder.findAll({
+            limit: 5,
+            order: [['created_at', 'DESC']]
+        });
+        res.json({ message: 'Consulta exitosa', count: orders.length, orders });
+    } catch (error) {
+        console.error('Error en consulta simple:', error);
+        res.status(500).json({ error: error.message, stack: error.stack });
+    }
 });
 
 // Sincronizar base de datos y arrancar servidor

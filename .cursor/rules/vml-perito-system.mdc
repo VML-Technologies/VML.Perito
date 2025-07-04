@@ -1,0 +1,119 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# VML.Perito System Architecture Guide
+
+## Project Overview
+VML.Perito is a monorepo application for managing vehicle inspection orders with role-based access control (RBAC). The system includes backend Express.js API and frontend React application.
+
+## Project Structure
+
+### Backend (`apps/server/`)
+- **Entry Point**: [apps/server/index.js](mdc:apps/server/index.js) - Main server configuration with routes and WebSocket setup
+- **Database Config**: [apps/server/config/database.js](mdc:apps/server/config/database.js) - Sequelize configuration for MySQL/SQLite/MSSQL
+- **Models**: [apps/server/models/index.js](mdc:apps/server/models/index.js) - Central model registry with relationships
+
+#### Core Models
+- **Users & RBAC**: [apps/server/models/user.js](mdc:apps/server/models/user.js), [apps/server/models/role.js](mdc:apps/server/models/role.js), [apps/server/models/permission.js](mdc:apps/server/models/permission.js)
+- **Inspection System**: [apps/server/models/inspectionOrder.js](mdc:apps/server/models/inspectionOrder.js), [apps/server/models/callLog.js](mdc:apps/server/models/callLog.js), [apps/server/models/appointment.js](mdc:apps/server/models/appointment.js)
+- **Geographic**: [apps/server/models/department.js](mdc:apps/server/models/department.js), [apps/server/models/city.js](mdc:apps/server/models/city.js), [apps/server/models/sede.js](mdc:apps/server/models/sede.js)
+
+#### Controllers
+- **Inspection Orders**: [apps/server/controllers/inspectionOrderController.js](mdc:apps/server/controllers/inspectionOrderController.js) - CRUD, stats, search
+- **Contact Agent**: [apps/server/controllers/contactAgentController.js](mdc:apps/server/controllers/contactAgentController.js) - Call logs, appointments, geographic data
+- **RBAC**: [apps/server/controllers/roleController.js](mdc:apps/server/controllers/roleController.js), [apps/server/controllers/userController.js](mdc:apps/server/controllers/userController.js)
+
+#### Middleware
+- **RBAC**: [apps/server/middleware/rbac.js](mdc:apps/server/middleware/rbac.js) - Permission checking middleware
+- **Registry**: [apps/server/middleware/permissionRegistry.js](mdc:apps/server/middleware/permissionRegistry.js) - Permission definitions
+
+#### WebSockets
+- **Main**: [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Socket.IO setup with JWT auth
+- **Notifications**: [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js) - Real-time notifications
+- **Real-time**: [apps/server/websocket/realtimeHandler.js](mdc:apps/server/websocket/realtimeHandler.js) - Live data updates
+
+### Frontend (`apps/web/`)
+- **Entry Point**: [apps/web/src/main.jsx](mdc:apps/web/src/main.jsx) - React app initialization
+- **Router**: [apps/web/src/App.jsx](mdc:apps/web/src/App.jsx) - Main routing with role-based route protection
+- **API Config**: [apps/web/src/config/api.js](mdc:apps/web/src/config/api.js) - Centralized API endpoint definitions
+
+#### Core Pages
+- **Comercial Mundial**: [apps/web/src/pages/ComercialMundial.jsx](mdc:apps/web/src/pages/ComercialMundial.jsx) - Order creation and management
+- **Agente Contacto**: [apps/web/src/pages/AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx) - Call management and scheduling
+- **Admin RBAC**: [apps/web/src/pages/Admin.jsx](mdc:apps/web/src/pages/Admin.jsx) - Role and permission management
+
+#### Key Components
+- **Create Order Modal**: [apps/web/src/components/CreateOrderModal.jsx](mdc:apps/web/src/components/CreateOrderModal.jsx) - Order creation form with validation
+- **Navigation**: [apps/web/src/components/app-sidebar.jsx](mdc:apps/web/src/components/app-sidebar.jsx) - Role-based navigation
+- **Route Protection**: [apps/web/src/components/RoleBasedRoute.jsx](mdc:apps/web/src/components/RoleBasedRoute.jsx) - Route access control
+
+#### Contexts
+- **Auth**: [apps/web/src/contexts/auth-context.jsx](mdc:apps/web/src/contexts/auth-context.jsx) - Authentication state
+- **RBAC**: [apps/web/src/contexts/rbac-context.jsx](mdc:apps/web/src/contexts/rbac-context.jsx) - Role and permission state
+- **Notifications**: [apps/web/src/contexts/notification-context.jsx](mdc:apps/web/src/contexts/notification-context.jsx) - Toast notifications
+
+## Database Seeding
+
+### Seeders Location: `apps/server/scripts/`
+- **Main Seeder**: [apps/server/scripts/seedAll.js](mdc:apps/server/scripts/seedAll.js) - Orchestrates all seeding
+- **RBAC Setup**: [apps/server/scripts/seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js) - Roles and permissions
+- **Inspection Data**: [apps/server/scripts/seedInspectionData.js](mdc:apps/server/scripts/seedInspectionData.js) - Status, types, notifications
+- **Users**: [apps/server/scripts/seedUsers.js](mdc:apps/server/scripts/seedUsers.js) - Test users with roles
+
+## Role System
+
+### Defined Roles
+- **super_admin**: Full system access
+- **comercial_mundial**: Create and manage inspection orders
+- **agente_contacto**: Manage calls and schedule appointments
+
+### Permission Patterns
+- **Resource-based**: `{resource}.{action}` (e.g., `inspection_orders.create`)
+- **Specific permissions**: `contact_agent.create_call`, `contact_agent.create_appointment`
+
+## Development Guidelines
+
+### Adding New Features
+1. **Backend**: Create model → controller → routes → add to [apps/server/index.js](mdc:apps/server/index.js)
+2. **Frontend**: Create page/component → add route to [apps/web/src/App.jsx](mdc:apps/web/src/App.jsx) → update [apps/web/src/components/app-sidebar.jsx](mdc:apps/web/src/components/app-sidebar.jsx)
+3. **API Integration**: Add endpoints to [apps/web/src/config/api.js](mdc:apps/web/src/config/api.js)
+
+### RBAC Integration
+- Use `requirePermission()` middleware in routes
+- Check permissions in frontend with `useRoles()` hook
+- Add new permissions to [apps/server/scripts/seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)
+
+### Notifications
+- Use `useNotificationContext()` hook for toast messages
+- Prefer toast notifications over browser alerts
+- WebSocket notifications handled in [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js)
+
+## Key Credentials
+```
+Admin: admin@vmlperito.com / 123456
+Comercial: comercial@vmlperito.com / 123456
+Agente: agente@vmlperito.com / 123456
+Supervisora: supervisora@vmlperito.com / 123456
+```
+
+## Common Patterns
+
+### API Calls
+```javascript
+const token = localStorage.getItem('token');
+const response = await fetch(API_ROUTES.ENDPOINT, {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+```
+
+### Form Validation
+- Use state for errors object
+- Clear errors on input change
+- Show validation messages with AlertCircle icon
+
+### Component Structure
+- Use shadcn/ui components (Card, Button, Input, etc.)
+- Implement loading states with spinners
+- Use lucide-react icons consistently

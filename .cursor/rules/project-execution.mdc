@@ -1,0 +1,43 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Configuración de Ejecución del Proyecto VML.Perito
+
+## Servidores en Ejecución
+
+### Backend (Server)
+- **Puerto**: 3000
+- **Ruta**: `apps/server`
+- **Estado**: Ejecutándose con hot reload
+- **Comando**: `node index.js` o `npm run dev`
+
+### Frontend (Web)
+- **Puerto**: 5173
+- **Ruta**: `apps/web`
+- **Estado**: Ejecutándose con hot reload
+- **Comando**: `npm run dev`
+
+## Reglas Importantes
+
+1. **NO ejecutar comandos de inicio de servidores** - Los procesos ya están corriendo
+2. **NO terminar procesos de Node.js** - El usuario maneja esto manualmente
+3. **Para validaciones de terminal**: Solicitar al usuario que comparta la salida
+4. **Hot reload activo**: Los cambios se reflejan automáticamente
+5. **Endpoints disponibles**:
+   - Backend: `http://localhost:3000`
+   - Frontend: `http://localhost:5173`
+
+## Diagnóstico de Problemas
+
+Si hay errores, solicitar al usuario que comparta:
+- Logs del servidor backend
+- Logs del frontend
+- Salida de comandos específicos cuando sea necesario
+
+## Archivos Principales
+
+- Backend: [apps/server/index.js](mdc:apps/server/index.js)
+- Frontend: [apps/web/src/main.jsx](mdc:apps/web/src/main.jsx)
+- Configuración API: [apps/web/src/config/api.js](mdc:apps/web/src/config/api.js)

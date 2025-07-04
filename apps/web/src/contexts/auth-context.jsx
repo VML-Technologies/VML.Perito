@@ -24,14 +24,14 @@ export const AuthProvider = ({ children }) => {
     const checkAuthStatus = async () => {
         try {
             const token = localStorage.getItem('authToken');
-            
+
             if (token) {
                 const response = await fetch(API_ROUTES.AUTH.VERIFY, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                
+
                 if (response.ok) {
                     const userData = await response.json();
                     setUser(userData);

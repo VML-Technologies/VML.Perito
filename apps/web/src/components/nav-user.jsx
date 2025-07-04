@@ -6,7 +6,7 @@ import {
   Lock,
   User,
 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import {
   Avatar,
@@ -30,11 +30,40 @@ import {
 } from "@/components/ui/sidebar"
 import { UserIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/auth-context"
+import { useNotificationContext } from "@/contexts/notification-context"
 
-export function NavUser({
-  user
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar()
+  const { user, logout } = useAuth()
+  const { showToast } = useNotificationContext()
+  const navigate = useNavigate()
+
+  // Función para manejar el cierre de sesión
+  const handleLogout = async () => {
+    try {
+      await logout()
+      showToast('Sesión cerrada exitosamente', 'success')
+      navigate('/login')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      showToast('Error al cerrar sesión', 'error')
+    }
+  }
+
+  // Función para obtener las iniciales del usuario
+  const getUserInitials = (name) => {
+    if (!name) return 'U'
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  // Si no hay usuario autenticado, no mostrar nada
+  if (!user) return null
 
   return (
     <SidebarMenu>
@@ -44,17 +73,16 @@ export function NavUser({
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">
-                  <UserIcon />
+                  {getUserInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate font-medium">{user.name || 'Usuario'}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {/* badge de estado */}
-                  <Badge variant="outline" className={"bg-green-300"}>
+                  <Badge variant="outline" className="bg-green-100 border-green-300 text-green-700">
                     <span className="text-xs">
                       Conectado
                     </span>
@@ -65,7 +93,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side="bottom"
             align="end"
             sideOffset={4}>
@@ -74,13 +102,13 @@ export function NavUser({
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="rounded-lg">
-                    <UserIcon />
+                    {getUserInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{user.name || 'Usuario'}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
+                    {user.email || 'Sin email'}
                   </span>
                 </div>
               </div>
@@ -97,17 +125,9 @@ export function NavUser({
                 <Lock />
                 Cambiar contraseña
               </DropdownMenuItem>
-              {/* <DropdownMenuItem>
-                  <CreditCard />
-                  Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Bell />
-                  Notifications
-                </DropdownMenuItem> */}
             </DropdownMenuGroup>
-            {/* <DropdownMenuSeparator /> */}
-            <DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Cerrar sesión
             </DropdownMenuItem>

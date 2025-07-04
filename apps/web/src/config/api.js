@@ -34,6 +34,37 @@ export const API_ROUTES = {
     RBAC: {
         BULK_ASSIGNMENTS: `${API_BASE_URL}/api/rbac/bulk-assignments`,
     },
+    // ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN =====
+    INSPECTION_ORDERS: {
+        LIST: `${API_BASE_URL}/api/inspection-orders`,
+        STATS: `${API_BASE_URL}/api/inspection-orders/stats`,
+        SEARCH: `${API_BASE_URL}/api/inspection-orders/search`,
+        GET: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        CREATE: `${API_BASE_URL}/api/inspection-orders`,
+        UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+    },
+    // ===== RUTAS DE SEDES =====
+    SEDES: {
+        LIST: `${API_BASE_URL}/api/sedes`,
+        GET: (id) => `${API_BASE_URL}/api/sedes/${id}`,
+        CREATE: `${API_BASE_URL}/api/sedes`,
+        UPDATE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
+        BY_COMPANY: (companyId) => `${API_BASE_URL}/api/companies/${companyId}/sedes`,
+    },
+    // ===== NUEVAS RUTAS - Agente de Contact =====
+    CONTACT_AGENT: {
+        ORDERS: `${API_BASE_URL}/api/contact-agent/orders`,
+        ORDER_DETAILS: (id) => `${API_BASE_URL}/api/contact-agent/orders/${id}`,
+        CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
+        CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
+        APPOINTMENTS: `${API_BASE_URL}/api/contact-agent/appointments`,
+        INSPECTION_TYPES: `${API_BASE_URL}/api/contact-agent/inspection-types`,
+        DEPARTMENTS: `${API_BASE_URL}/api/contact-agent/departments`,
+        CITIES: (departmentId) => `${API_BASE_URL}/api/contact-agent/cities/${departmentId}`,
+        SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,
+    },
 };
 
 export const API_CONFIG = {

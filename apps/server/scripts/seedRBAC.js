@@ -243,6 +243,64 @@ const seedRBAC = async () => {
                 action: 'delete',
                 endpoint: '/api/permissions/:id',
                 method: 'DELETE'
+            },
+            // ===== NUEVOS PERMISOS - ÓRDENES DE INSPECCIÓN =====
+            {
+                name: 'inspection_orders.read',
+                description: 'Ver órdenes de inspección',
+                resource: 'inspection_orders',
+                action: 'read',
+                endpoint: '/api/inspection-orders',
+                method: 'GET'
+            },
+            {
+                name: 'inspection_orders.create',
+                description: 'Crear órdenes de inspección',
+                resource: 'inspection_orders',
+                action: 'create',
+                endpoint: '/api/inspection-orders',
+                method: 'POST'
+            },
+            {
+                name: 'inspection_orders.update',
+                description: 'Actualizar órdenes de inspección',
+                resource: 'inspection_orders',
+                action: 'update',
+                endpoint: '/api/inspection-orders/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'inspection_orders.delete',
+                description: 'Eliminar órdenes de inspección',
+                resource: 'inspection_orders',
+                action: 'delete',
+                endpoint: '/api/inspection-orders/:id',
+                method: 'DELETE'
+            },
+            // ===== NUEVOS PERMISOS - Agente de Contact =====
+            {
+                name: 'contact_agent.read',
+                description: 'Ver órdenes como Agente de Contact',
+                resource: 'contact_agent',
+                action: 'read',
+                endpoint: '/api/contact-agent',
+                method: 'GET'
+            },
+            {
+                name: 'contact_agent.create_call',
+                description: 'Registrar llamadas',
+                resource: 'contact_agent',
+                action: 'create_call',
+                endpoint: '/api/contact-agent/call-logs',
+                method: 'POST'
+            },
+            {
+                name: 'contact_agent.create_appointment',
+                description: 'Crear agendamientos',
+                resource: 'contact_agent',
+                action: 'create_appointment',
+                endpoint: '/api/contact-agent/appointments',
+                method: 'POST'
             }
         ];
 
@@ -262,7 +320,7 @@ const seedRBAC = async () => {
             }
         }
 
-        // Crear roles básicos
+        // Crear roles básicos (incluyendo nuevos roles)
         const roles = [
             {
                 name: 'super_admin',
@@ -279,6 +337,15 @@ const seedRBAC = async () => {
             {
                 name: 'user',
                 description: 'Usuario básico con permisos de lectura'
+            },
+            // ===== NUEVOS ROLES =====
+            {
+                name: 'comercial_mundial',
+                description: 'Comercial Mundial - Puede crear y gestionar órdenes de inspección'
+            },
+            {
+                name: 'agente_contacto',
+                description: 'Agente de Contact - Gestiona llamadas y agendamientos'
             }
         ];
 
@@ -364,8 +431,48 @@ const seedRBAC = async () => {
             console.log(`✅ Permisos de usuario asignados a ${userRole.name}`);
         }
 
-        // Nota: La asignación de roles a usuarios se hace en el seeder de usuario
-        console.log('ℹ️  Los roles están listos para ser asignados a usuarios.');
+        // ===== NUEVOS ROLES =====
+
+        // Comercial Mundial: Permisos para órdenes de inspección
+        const comercialRole = createdRoles.find(r => r.name === 'comercial_mundial');
+        if (comercialRole) {
+            const comercialPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspection_orders.') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read')
+            );
+            for (const permission of comercialPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: comercialRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de comercial asignados a ${comercialRole.name}`);
+        }
+
+        // Agente de Contact: Permisos para gestión de llamadas y agendamientos
+        const agenteRole = createdRoles.find(r => r.name === 'agente_contacto');
+        if (agenteRole) {
+            const agentePermissions = createdPermissions.filter(p =>
+                p.name.startsWith('contact_agent.') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
+                p.name === 'inspection_orders.read'
+            );
+            for (const permission of agentePermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: agenteRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Agente de Contact asignados a ${agenteRole.name}`);
+        }
 
         console.log('🎉 Seed de RBAC completado exitosamente!');
         console.log(`📊 Resumen:`);
@@ -379,15 +486,16 @@ const seedRBAC = async () => {
 };
 
 // Ejecutar si se llama directamente
-seedRBAC()
-    .then(() => {
-        console.log('✅ Seed de RBAC completado');
-        process.exit(0);
-    })
-    .catch((error) => {
-        console.error('❌ Error:', error);
-        process.exit(1);
-    });
-
+if (import.meta.url === `file://${process.argv[1]}`) {
+    seedRBAC()
+        .then(() => {
+            console.log('✅ Seed de RBAC completado');
+            process.exit(0);
+        })
+        .catch((error) => {
+            console.error('❌ Error:', error);
+            process.exit(1);
+        });
+}
 
 export default seedRBAC; 

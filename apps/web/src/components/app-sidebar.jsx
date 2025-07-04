@@ -15,6 +15,9 @@ import {
   Users,
   Shield,
   ShieldAlert,
+  Building,
+  Phone,
+  ClipboardList,
 } from "lucide-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -30,14 +33,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -71,6 +72,8 @@ export function AppSidebar({
 }) {
   const { hasRole } = useRoles();
   const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
+  const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin');
+  const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -80,7 +83,7 @@ export function AppSidebar({
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/dashboard">
                 <ShieldAlert className="!size-5" />
-                <span className="text-base font-semibold">Menu Super Admin</span>
+                <span className="text-base font-semibold">VML Perito</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -88,23 +91,63 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        {canAccessAdmin && (
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Administración RBAC">
-                <Link to="/admin">
-                  <Shield />
-                  <span>Administración</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+
+        {/* Sistema de Inspecciones */}
+        {(canAccessComercial || canAccessAgente) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Sistema de Inspecciones</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {canAccessComercial && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Comercial Mundial">
+                      <Link to="/comercial-mundial">
+                        <Building />
+                        <span>Comercial Mundial</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {canAccessAgente && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Agente de Contacto">
+                      <Link to="/agente-contacto">
+                        <Phone />
+                        <span>Agente de Contacto</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         )}
+
+        <NavDocuments items={data.documents} />
+
+        {/* Administración */}
+        {canAccessAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Administración RBAC">
+                    <Link to="/admin">
+                      <Shield />
+                      <span>RBAC</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

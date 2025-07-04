@@ -3,9 +3,12 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { RBACProvider } from "@/contexts/rbac-context"
+import { RoleBasedRoute } from "@/components/RoleBasedRoute"
 import { Dashboard } from "@/pages/Dashboard"
 import Admin from "@/pages/Admin"
 import Profile from "@/pages/Profile"
+import ComercialMundial from "@/pages/ComercialMundial"
+import AgenteContacto from "@/pages/AgenteContacto"
 import GuestLayout from "@/Layouts/GuestLayout"
 
 function App() {
@@ -44,6 +47,32 @@ function App() {
                   <AuthenticatedLayout>
                     <Profile />
                   </AuthenticatedLayout>
+                }
+              />
+
+              {/* ===== NUEVAS RUTAS - SISTEMA DE INSPECCIONES ===== */}
+
+              {/* Ruta de Comercial Mundial */}
+              <Route
+                path="/comercial-mundial"
+                element={
+                  <RoleBasedRoute requiredRoles={['comercial_mundial', 'super_admin']}>
+                    <AuthenticatedLayout>
+                      <ComercialMundial />
+                    </AuthenticatedLayout>
+                  </RoleBasedRoute>
+                }
+              />
+
+              {/* Ruta de Agente de Contact */}
+              <Route
+                path="/agente-contacto"
+                element={
+                  <RoleBasedRoute requiredRoles={['agente_contacto', 'super_admin']}>
+                    <AuthenticatedLayout>
+                      <AgenteContacto />
+                    </AuthenticatedLayout>
+                  </RoleBasedRoute>
                 }
               />
 
