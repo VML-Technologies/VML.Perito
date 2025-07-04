@@ -1,0 +1,30 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# UI de Administración RBAC Moderna
+
+La interfaz principal de administración de roles y permisos (RBAC) se encuentra en [Admin.jsx](mdc:apps/web/src/pages/Admin.jsx).
+
+## Flujo de Cambios y Feedback
+
+- **Cambios en roles/permisos de usuarios**: Se realizan localmente en el estado de React, reflejándose de inmediato en la UI (checkboxes, badges, contadores, etc).
+- **No hay notificaciones toast** al marcar/desmarcar checkboxes ni al seleccionar usuario/rol. El feedback es solo visual.
+- **Notificaciones toast** solo aparecen al guardar cambios (éxito o error) usando el botón "Guardar Cambios".
+- El usuario puede ver en todo momento los cambios pendientes gracias a los indicadores visuales y el badge de "Cambios pendientes".
+
+## Política de Notificaciones
+
+- **No mostrar notificaciones** por cambios locales (solo feedback visual inmediato).
+- **Mostrar notificaciones** únicamente cuando los cambios se guardan en el servidor (éxito/error).
+- El sistema de notificaciones usa el NotificationProvider global.
+
+## Experiencia de Usuario
+
+- El usuario siempre ve el estado real de los roles y permisos antes de guardar.
+- El feedback visual es inmediato y claro, pero la confirmación final solo ocurre al guardar.
+
+---
+
+**Referencia:** [apps/web/src/pages/Admin.jsx](mdc:apps/web/src/pages/Admin.jsx)
