@@ -31,6 +31,9 @@ export const API_ROUTES = {
         ASSIGN_PERMISSIONS: (id) => `${API_BASE_URL}/api/roles/${id}/permissions`,
         GET_PERMISSIONS: (id) => `${API_BASE_URL}/api/roles/${id}/permissions`,
     },
+    RBAC: {
+        BULK_ASSIGNMENTS: `${API_BASE_URL}/api/rbac/bulk-assignments`,
+    },
 };
 
 export const API_CONFIG = {

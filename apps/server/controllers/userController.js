@@ -5,6 +5,7 @@ import Company from '../models/company.js';
 import Role from '../models/role.js';
 import Permission from '../models/permission.js';
 import bcrypt from 'bcryptjs';
+import webSocketSystem from '../websocket/index.js';
 
 class UserController extends BaseController {
     constructor() {
@@ -36,6 +37,19 @@ class UserController extends BaseController {
 
             // No devolver la contraseña en la respuesta
             const { password: _, ...userResponse } = user.toJSON();
+
+            // Enviar notificación de nuevo usuario a administradores
+            if (webSocketSystem.isInitialized()) {
+                await webSocketSystem.sendNotificationToRole('super_admin', {
+                    type: 'user',
+                    title: 'Nuevo usuario creado',
+                    message: `Se ha creado el usuario: ${userResponse.name}`,
+                    priority: 'normal',
+                    category: 'user_management',
+                    data: { userId: userResponse.id, userName: userResponse.name }
+                });
+            }
+
             res.status(201).json(userResponse);
         } catch (error) {
             res.status(400).json({ message: 'Error al crear usuario', error: error.message });
@@ -61,6 +75,18 @@ class UserController extends BaseController {
 
             // No devolver la contraseña en la respuesta
             const { password: _, ...userResponse } = user.toJSON();
+
+            // Enviar notificación de actualización al usuario
+            if (webSocketSystem.isInitialized()) {
+                await webSocketSystem.sendNotification(user.id, {
+                    type: 'user',
+                    title: 'Perfil actualizado',
+                    message: 'Tu perfil ha sido actualizado exitosamente.',
+                    priority: 'normal',
+                    category: 'profile_update'
+                });
+            }
+
             res.json(userResponse);
         } catch (error) {
             res.status(400).json({ message: 'Error al actualizar usuario', error: error.message });

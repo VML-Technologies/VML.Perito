@@ -16,6 +16,7 @@ class RoleController {
         this.assignUserRoles = this.assignUserRoles.bind(this);
         this.getUserRoles = this.getUserRoles.bind(this);
         this.getUsersWithRoles = this.getUsersWithRoles.bind(this);
+        this.updateBulkAssignments = this.updateBulkAssignments.bind(this);
     }
 
     // Listar roles con sus permisos
@@ -188,6 +189,49 @@ class RoleController {
             res.json(users);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener usuarios con roles', error: error.message });
+        }
+    }
+
+    // Actualizar asignaciones en lote
+    async updateBulkAssignments(req, res) {
+        try {
+            const { assignments } = req.body;
+            
+            if (!Array.isArray(assignments)) {
+                return res.status(400).json({ message: 'Las asignaciones deben ser un array' });
+            }
+
+            const results = [];
+
+            for (const assignment of assignments) {
+                const { type, id, permissions, roles } = assignment;
+
+                if (type === 'role' && permissions) {
+                    // Actualizar permisos de un rol
+                    const role = await Role.findByPk(id);
+                    if (role) {
+                        const permissionIds = permissions.map(p => typeof p === 'object' ? p.id : p);
+                        await role.setPermissions(permissionIds);
+                        results.push({ type: 'role', id, action: 'permissions_updated', count: permissionIds.length });
+                    }
+                } else if (type === 'user' && roles) {
+                    // Actualizar roles de un usuario
+                    const user = await User.findByPk(id);
+                    if (user) {
+                        const roleIds = roles.map(r => typeof r === 'object' ? r.id : r);
+                        await user.setRoles(roleIds);
+                        results.push({ type: 'user', id, action: 'roles_updated', count: roleIds.length });
+                    }
+                }
+            }
+
+            res.json({ 
+                message: 'Asignaciones actualizadas exitosamente', 
+                results,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            res.status(400).json({ message: 'Error al actualizar asignaciones', error: error.message });
         }
     }
 }

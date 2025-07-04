@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import sequelize from './config/database.js';
 import { login, verify, logout } from './controllers/authController.js';
 import userController from './controllers/userController.js';
@@ -11,6 +12,7 @@ import sedeController from './controllers/sedeController.js';
 import { requirePermission } from './middleware/rbac.js';
 import permissionController from './controllers/permissionController.js';
 import roleController from './controllers/roleController.js';
+import webSocketSystem from './websocket/index.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -19,6 +21,7 @@ import './models/index.js';
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -45,6 +48,7 @@ app.get('/api/roles/:id/permissions', requirePermission('roles.read'), roleContr
 app.post('/api/users/:userId/roles', requirePermission('users.update'), roleController.assignUserRoles);
 app.get('/api/users/:userId/roles', requirePermission('users.read'), roleController.getUserRoles);
 app.get('/api/users/with-roles', requirePermission('users.read'), roleController.getUsersWithRoles);
+app.post('/api/rbac/bulk-assignments', requirePermission('roles.update'), roleController.updateBulkAssignments);
 
 // Rutas de departamentos
 app.get('/api/departments', departmentController.index);
@@ -101,6 +105,23 @@ app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
     res.json({ message: 'Tienes permiso para ver usuarios', user: req.user });
 });
 
+// Rutas WebSocket para pruebas y administración
+app.get('/api/websocket/stats', requirePermission('system.read'), (req, res) => {
+    if (webSocketSystem.isInitialized()) {
+        res.json(webSocketSystem.getFullStats());
+    } else {
+        res.status(503).json({ message: 'Sistema de WebSockets no inicializado' });
+    }
+});
+
+app.get('/api/websocket/connected-users', requirePermission('users.read'), (req, res) => {
+    if (webSocketSystem.isInitialized()) {
+        res.json(webSocketSystem.getConnectedUsers());
+    } else {
+        res.status(503).json({ message: 'Sistema de WebSockets no inicializado' });
+    }
+});
+
 // Ruta de prueba
 app.get('/api', (req, res) => {
     res.json({ message: '¡Hola desde el servidor Express!' });
@@ -116,9 +137,13 @@ const startServer = async () => {
         await sequelize.sync({ force: false });
         console.log('✅ Modelos sincronizados con la base de datos.');
 
-        app.listen(port, () => {
+        // Inicializar sistema de WebSockets
+        await webSocketSystem.initialize(server);
+
+        server.listen(port, () => {
             console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);
             console.log(`📊 Base de datos: ${process.env.DATABASE_DRIVER || 'mysql'}`);
+            console.log(`🔌 WebSockets disponibles en ws://localhost:${port}`);
         });
     } catch (error) {
         console.error('❌ Error al conectar con la base de datos:', error);
