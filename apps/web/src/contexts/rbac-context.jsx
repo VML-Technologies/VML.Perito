@@ -52,18 +52,6 @@ export function RBACProvider({ children }) {
 
     return (
         <RBACContext.Provider value={{ permissions, roles, hasPermission, hasRole, loading }}>
-            Permissions
-
-            {
-                JSON.stringify(permissions)
-            }
-
-            Roles
-
-            {
-                JSON.stringify(roles)
-            }
-
             {children}
         </RBACContext.Provider>
     );
