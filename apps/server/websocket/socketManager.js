@@ -34,7 +34,10 @@ class SocketManager {
         // Middleware de autenticación
         this.io.use(async (socket, next) => {
             try {
-                const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+                // Obtener token de múltiples fuentes posibles
+                const token = socket.handshake.auth.token ||
+                    socket.handshake.headers.authorization?.split(' ')[1] ||
+                    socket.handshake.query.token;
 
                 if (!token) {
                     return next(new Error('Token de autenticación requerido'));
@@ -94,10 +97,20 @@ class SocketManager {
 
         console.log(`🔌 Usuario conectado: ${userName} (ID: ${userId})`);
 
+        // Asegurar que userId sea un número
+        const numericUserId = parseInt(userId);
+
+        // Verificar si el usuario ya está conectado y limpiar conexión anterior
+        const existingSocketId = this.connectedUsers.get(numericUserId);
+        if (existingSocketId && existingSocketId !== socket.id) {
+            console.log(`🔄 Usuario ${userName} reconectado`);
+            this.userSockets.delete(existingSocketId);
+        }
+
         // Registrar usuario conectado
-        this.connectedUsers.set(userId, socket.id);
+        this.connectedUsers.set(numericUserId, socket.id);
         this.userSockets.set(socket.id, {
-            userId,
+            userId: numericUserId,
             user: socket.user,
             roles: socket.userRoles,
             permissions: socket.userPermissions,
@@ -105,7 +118,7 @@ class SocketManager {
         });
 
         // Unirse a sala personal del usuario
-        socket.join(`user_${userId}`);
+        socket.join(`user_${numericUserId}`);
 
         // Unirse a salas basadas en roles
         socket.userRoles.forEach(role => {
@@ -115,8 +128,10 @@ class SocketManager {
         // Notificar conexión exitosa
         socket.emit('connected', {
             message: 'Conectado exitosamente',
-            userId,
-            timestamp: new Date().toISOString()
+            userId: numericUserId,
+            userName,
+            timestamp: new Date().toISOString(),
+            rooms: [`user_${numericUserId}`, ...socket.userRoles.map(role => `role_${role}`)]
         });
 
         // Manejar eventos personalizados
@@ -133,12 +148,13 @@ class SocketManager {
      */
     handleDisconnection(socket) {
         const userId = socket.userId;
+        const numericUserId = parseInt(userId);
         const userName = socket.user?.name || 'Usuario desconocido';
 
         console.log(`🔌 Usuario desconectado: ${userName} (ID: ${userId})`);
 
         // Limpiar registros
-        this.connectedUsers.delete(userId);
+        this.connectedUsers.delete(numericUserId);
         this.userSockets.delete(socket.id);
 
         // Limpiar salas
@@ -192,15 +208,27 @@ class SocketManager {
     }
 
     /**
-     * Enviar mensaje a un usuario específico
-     */
+ * Enviar mensaje a un usuario específico
+ */
     sendToUser(userId, event, data) {
-        const socketId = this.connectedUsers.get(userId);
+        // Asegurar que userId sea un número
+        const numericUserId = parseInt(userId);
+        const socketId = this.connectedUsers.get(numericUserId);
+
         if (socketId) {
+            console.log(`📤 Enviando evento '${event}' a usuario ${numericUserId}`);
             this.io.to(socketId).emit(event, data);
+
+            // También enviar a la sala del usuario como respaldo
+            this.io.to(`user_${numericUserId}`).emit(event, data);
+
             return true;
+        } else {
+            console.log(`❌ Usuario ${numericUserId} no encontrado, enviando a sala como respaldo`);
+            // Como respaldo, intentar enviar solo a la sala del usuario
+            this.io.to(`user_${numericUserId}`).emit(event, data);
+            return false;
         }
-        return false;
     }
 
     /**

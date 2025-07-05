@@ -15,6 +15,7 @@ import roleController from './controllers/roleController.js';
 import webSocketSystem from './websocket/index.js';
 import inspectionOrderController from './controllers/inspectionOrderController.js';
 import contactAgentController from './controllers/contactAgentController.js';
+import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -120,8 +121,62 @@ app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'
 app.get('/api/contact-agent/cities/:departmentId', requirePermission('contact_agent.read'), contactAgentController.getCities);
 app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.read'), contactAgentController.getSedes);
 
+// ===== NUEVAS RUTAS - Coordinador de Contacto =====
+
+// Rutas para Coordinador de Contacto
+app.get('/api/coordinador-contacto/orders', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrders);
+app.get('/api/coordinador-contacto/orders/:id', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrderDetails);
+app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getStats);
+app.get('/api/coordinador-contacto/agents', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getAgents);
+app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_contacto.assign'), coordinadorContactoController.assignAgent);
+
 // Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
-app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
+// Endpoint de perfil sin restricciones de permisos (solo requiere autenticación)
+app.get('/api/users/profile', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) return res.status(401).json({ message: 'Token requerido' });
+
+        const token = authHeader.split(' ')[1];
+        const jwt = (await import('jsonwebtoken')).default;
+        const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto';
+
+        jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+            if (err) return res.status(401).json({ message: 'Token inválido' });
+
+            try {
+                const { User, Role } = await import('./models/index.js');
+                const user = await User.findByPk(decoded.id, {
+                    include: [
+                        {
+                            model: Role,
+                            as: 'roles',
+                            through: { attributes: [] },
+                            attributes: ['id', 'name', 'description']
+                        }
+                    ]
+                });
+
+                if (!user || !user.is_active) {
+                    return res.status(401).json({ message: 'Usuario no válido' });
+                }
+
+                res.json({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    sede_id: user.sede_id,
+                    phone: user.phone,
+                    roles: user.roles || []
+                });
+            } catch (err) {
+                res.status(500).json({ message: 'Error en el servidor', error: err.message });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+    }
+});
 app.get('/api/users/trashed/all', userController.indexWithTrashed);
 app.get('/api/users/trashed/only', userController.onlyTrashed);
 app.get('/api/users', userController.index);
@@ -164,6 +219,24 @@ app.get('/api/test', (req, res) => {
     res.json({ message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
 });
 
+// Endpoint para verificar usuarios conectados (sin autenticación para debugging)
+app.get('/api/websocket/debug', (req, res) => {
+    if (webSocketSystem.isInitialized()) {
+        const stats = webSocketSystem.getFullStats();
+        res.json({
+            connectedUsers: webSocketSystem.getConnectedUsers(),
+            totalConnections: stats.websocket.totalConnections,
+            socketManagerStats: stats.websocket
+        });
+    } else {
+        res.status(503).json({ message: 'Sistema de WebSockets no inicializado' });
+    }
+});
+
+
+
+
+
 // Verificar que la tabla de inspection_orders existe
 app.get('/api/inspection-orders-test', async (req, res) => {
     try {
@@ -190,6 +263,8 @@ app.get('/api/inspection-orders-simple', async (req, res) => {
     }
 });
 
+
+
 // Sincronizar base de datos y arrancar servidor
 const startServer = async () => {
     try {
@@ -202,6 +277,9 @@ const startServer = async () => {
 
         // Inicializar sistema de WebSockets
         await webSocketSystem.initialize(server);
+
+        // Hacer disponible el sistema WebSocket en la app
+        app.set('webSocketSystem', webSocketSystem);
 
         server.listen(port, () => {
             console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);

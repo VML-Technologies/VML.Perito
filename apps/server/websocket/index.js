@@ -184,6 +184,11 @@ class WebSocketSystem {
         return notificationHandler.sendToUser(userId, notification);
     }
 
+    // Enviar mensaje directo a usuario
+    sendToUser(userId, event, data) {
+        return socketManager.sendToUser(userId, event, data);
+    }
+
     // Enviar notificación a rol
     async sendNotificationToRole(roleName, notification) {
         return notificationHandler.sendToRole(roleName, notification);

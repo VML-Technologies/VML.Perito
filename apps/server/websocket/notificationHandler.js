@@ -179,6 +179,22 @@ class NotificationHandler {
             sound: false,
             description: 'Notificaciones de roles y permisos'
         });
+
+        // Notificaciones de órdenes de inspección
+        this.registerNotificationType('inspection_order', {
+            icon: 'clipboard-list',
+            color: '#8b5cf6',
+            sound: true,
+            description: 'Notificaciones de órdenes de inspección'
+        });
+
+        // Notificaciones de asignación de agentes
+        this.registerNotificationType('agent_assignment', {
+            icon: 'user-check',
+            color: '#06b6d4',
+            sound: true,
+            description: 'Notificaciones de asignación de agentes'
+        });
     }
 
     /**
@@ -240,6 +256,76 @@ class NotificationHandler {
             priority: 'urgent',
             category: 'security',
             persistent: true
+        });
+    }
+
+    // Notificación de asignación de orden
+    async sendOrderAssignmentNotification(agentId, orderData, coordinatorName) {
+        return this.sendToUser(agentId, {
+            type: 'agent_assignment',
+            title: 'Nueva orden asignada',
+            message: `Se te ha asignado la orden #${orderData.numero} - ${orderData.nombre_cliente}`,
+            data: {
+                orderId: orderData.id,
+                orderNumber: orderData.numero,
+                clientName: orderData.nombre_cliente,
+                clientPhone: orderData.celular_cliente,
+                vehiclePlate: orderData.placa,
+                coordinatorName: coordinatorName
+            },
+            priority: 'high',
+            category: 'order_assignment',
+            actions: [
+                {
+                    label: 'Ver orden',
+                    action: 'view_order',
+                    data: { orderId: orderData.id }
+                }
+            ]
+        });
+    }
+
+    // Notificación de reasignación de orden
+    async sendOrderReassignmentNotification(agentId, orderData, coordinatorName, previousAgent) {
+        return this.sendToUser(agentId, {
+            type: 'agent_assignment',
+            title: 'Orden reasignada',
+            message: `Se te ha reasignado la orden #${orderData.numero} - ${orderData.nombre_cliente}`,
+            data: {
+                orderId: orderData.id,
+                orderNumber: orderData.numero,
+                clientName: orderData.nombre_cliente,
+                clientPhone: orderData.celular_cliente,
+                vehiclePlate: orderData.placa,
+                coordinatorName: coordinatorName,
+                previousAgent: previousAgent
+            },
+            priority: 'high',
+            category: 'order_reassignment',
+            actions: [
+                {
+                    label: 'Ver orden',
+                    action: 'view_order',
+                    data: { orderId: orderData.id }
+                }
+            ]
+        });
+    }
+
+    // Notificación de orden desasignada
+    async sendOrderUnassignmentNotification(agentId, orderData, coordinatorName) {
+        return this.sendToUser(agentId, {
+            type: 'agent_assignment',
+            title: 'Orden desasignada',
+            message: `La orden #${orderData.numero} - ${orderData.nombre_cliente} ha sido desasignada`,
+            data: {
+                orderId: orderData.id,
+                orderNumber: orderData.numero,
+                clientName: orderData.nombre_cliente,
+                coordinatorName: coordinatorName
+            },
+            priority: 'normal',
+            category: 'order_unassignment'
         });
     }
 }
