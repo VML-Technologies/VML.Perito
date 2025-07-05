@@ -1,0 +1,136 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# WebSocket Notification System
+
+## Architecture Overview
+
+The application uses Socket.IO for real-time notifications with a centralized WebSocket system:
+
+- **Server**: [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Main WebSocket system
+- **Client Hook**: [apps/web/src/hooks/use-websocket.js](mdc:apps/web/src/hooks/use-websocket.js) - React hook for WebSocket connection
+- **Notification Context**: [apps/web/src/contexts/notification-context.jsx](mdc:apps/web/src/contexts/notification-context.jsx) - Toast notifications
+
+## WebSocket Event Patterns
+
+### Server-Side Event Emission
+```javascript
+// Send to specific user
+webSocketSystem.sendToUser(userId, 'event_name', data);
+
+// Always include structured data
+const notificationData = {
+    type: 'event_type',
+    order_id: orderId,
+    order_number: orderNumber,
+    order: { id, numero, cliente, placa, estado },
+    message: 'User-friendly message',
+    timestamp: new Date().toISOString()
+};
+```
+
+### Client-Side Event Handling
+```javascript
+// In useWebSocket hook
+socketRef.current.on('event_name', handleEventName);
+
+// Event handlers should:
+// 1. Log the event for debugging
+// 2. Show toast notification
+// 3. Emit custom DOM event for components
+// 4. Update relevant state/data
+```
+
+## Notification Types
+
+### Order Assignment Events
+- `order_assigned` - New order assigned to agent
+- `order_removed` - Order removed from agent
+- `order_updated` - Order status/details updated
+
+### Event Data Structure
+```javascript
+{
+    type: 'asignacion_orden' | 'reasignacion_orden' | 'orden_removida',
+    order_id: number,
+    order_number: string,
+    order: {
+        id: number,
+        numero: string,
+        cliente: string,
+        placa: string,
+        estado: string
+    },
+    message: string, // Spanish user message
+    timestamp: string // ISO format
+}
+```
+
+## Implementation Patterns
+
+### Backend Controller Pattern
+```javascript
+// Always check for WebSocket system availability
+const webSocketSystem = req.app.get('webSocketSystem');
+if (webSocketSystem && webSocketSystem.isInitialized()) {
+    // Send notification
+    webSocketSystem.sendToUser(userId, 'event_name', data);
+    console.log(`📡 Notification sent to user ${userId}:`, data);
+}
+```
+
+### Frontend Component Pattern
+```javascript
+// Listen for custom DOM events
+useEffect(() => {
+    const handleEvent = (event) => {
+        const { order, message, type } = event.detail;
+        // Handle event, show notification, update state
+        loadData(); // Refresh relevant data
+    };
+    
+    window.addEventListener('customEventName', handleEvent);
+    return () => window.removeEventListener('customEventName', handleEvent);
+}, []);
+```
+
+## Toast Notification Guidelines
+
+- **Success**: Green toast for positive actions (new assignments)
+- **Warning**: Yellow toast for removals/changes
+- **Info**: Blue toast for status updates
+- **Error**: Red toast for failures
+- **Duration**: 5 seconds for important notifications, 3 seconds for info
+
+## Debugging and Logging
+
+### Server Logs
+```javascript
+console.log(`📡 Notification sent to user ${userId}:`, data);
+console.log(`🔌 User connected: ${userName} (ID: ${userId})`);
+```
+
+### Client Logs
+```javascript
+console.log('🎯 Event received:', eventName, data);
+console.log('📢 Custom event emitted:', eventName, data);
+```
+
+## Connection Management
+
+- **Auto-reconnect**: Enabled with exponential backoff
+- **Authentication**: JWT token in auth header
+- **Status indicator**: Visual connection status in UI
+- **Graceful degradation**: App works without WebSocket connection
+
+## Testing WebSocket Events
+
+Use browser console to test events:
+```javascript
+// Trigger custom events for testing
+window.dispatchEvent(new CustomEvent('orderAssigned', {
+    detail: { order: {}, message: 'Test', type: 'test' }
+}));
+```

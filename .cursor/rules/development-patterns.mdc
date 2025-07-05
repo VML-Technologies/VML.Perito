@@ -45,6 +45,25 @@ const JWT_SECRET = process.env.JWT_SECRET;
 - **Contextos**: `kebab-case-context.jsx` (ej: `auth-context.jsx`)
 - **Páginas**: `PascalCase.jsx` (ej: `Dashboard.jsx`)
 
+## Patrones de Configuración
+
+### 1. Variables de Entorno en Scripts
+**CRÍTICO**: Todos los scripts de seeding deben cargar variables de entorno con ruta explícita:
+
+```javascript
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// IMPORTANTE: Ruta explícita al archivo .env
+dotenv.config({ path: path.join(__dirname, '../.env') });
+```
+
+**Problema común**: Si usas solo `dotenv.config()` en scripts, puede fallar la conexión a base de datos.
+
 ## Patrones de Controladores
 
 ### 1. BaseController Pattern

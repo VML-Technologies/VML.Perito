@@ -5,17 +5,36 @@ alwaysApply: false
 ---
 # Manejo de Errores y Diagnóstico
 
-## Error Actual: Columna `sede_id` Faltante
+## Errores Comunes de Base de Datos
 
-### Problema Identificado
-- **Error**: `Unknown column 'sede_id' in 'field list'`
-- **Causa**: La tabla `inspection_orders` no tiene la columna `sede_id`
-- **Ubicación**: Modelo [apps/server/models/inspectionOrder.js](mdc:apps/server/models/inspectionOrder.js)
+### 1. Errores de Conexión en Scripts de Seeding
+- **Error**: `ConnectionRefusedError` en scripts pero el servidor funciona
+- **Causa**: Variables de entorno no se cargan correctamente en scripts
+- **Solución**: Usar ruta explícita en dotenv.config()
 
-### Solución Requerida
-1. **Ejecutar migración**: El script [apps/server/scripts/addSedeColumn.js](mdc:apps/server/scripts/addSedeColumn.js) está listo
-2. **Comando necesario**: `node scripts/addSedeColumn.js` desde `apps/server`
-3. **Verificación**: Confirmar que la columna se agregó correctamente
+```javascript
+// ❌ Incorrecto
+dotenv.config();
+
+// ✅ Correcto
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
+```
+
+### 2. Errores de Llaves Foráneas
+- **Error**: `ER_NO_REFERENCED_ROW_2` al crear registros
+- **Causa**: Intentar crear registros que referencian IDs inexistentes
+- **Solución**: Verificar orden de seeding - crear tablas referenciadas primero
+
+Orden correcto para [apps/server/scripts/seedAll.js](mdc:apps/server/scripts/seedAll.js):
+1. RBAC (roles y permisos)
+2. Datos básicos (departamentos, ciudades, empresas, sedes)
+3. Usuarios (requieren sede_id válido)
+4. Datos de inspección
+5. Usuarios con roles específicos
 
 ## Proceso de Diagnóstico
 

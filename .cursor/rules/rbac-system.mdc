@@ -111,6 +111,20 @@ import ProtectedRoute from './components/protected-route.jsx';
 - Gestión de usuarios y contenido
 - Acceso limitado a configuración del sistema
 
+### comercial_mundial
+- Crear y gestionar órdenes de inspección
+- Permisos: `inspection_orders.*`
+
+### coordinador_contacto
+- Asignar agentes a órdenes de inspección
+- Ver estadísticas del centro de contacto
+- Permisos: `coordinador_contacto.*`
+
+### agente_contacto
+- Gestionar llamadas y agendamientos
+- Manejar órdenes asignadas
+- Permisos: `contact_agent.*`
+
 ### user
 - Acceso básico a funcionalidades principales
 - Sin permisos administrativos

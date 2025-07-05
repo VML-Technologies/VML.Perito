@@ -91,11 +91,14 @@ VML.Perito is a monorepo application for managing vehicle inspection orders with
 - WebSocket notifications handled in [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js)
 
 ## Key Credentials
+Creadas por [apps/server/scripts/seedAll.js](mdc:apps/server/scripts/seedAll.js):
+
 ```
 Admin: admin@vmlperito.com / 123456
-Comercial: comercial@vmlperito.com / 123456
-Agente: agente@vmlperito.com / 123456
-Supervisora: supervisora@vmlperito.com / 123456
+Comercial Mundial: comercial@vmlperito.com / 123456
+Coordinadora Contacto: coordinadora@vmlperito.com / 123456
+Agente Contacto: agente1@vmlperito.com / 123456
+Supervisora (Multi-rol): supervisora@vmlperito.com / 123456
 ```
 
 ## Common Patterns

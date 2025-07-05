@@ -1,0 +1,53 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Database Seeding Commands for VML.Perito
+
+## Quick Commands
+
+### Complete Database Setup
+```bash
+# From project root
+cd apps/server
+npm run seed
+```
+
+### Individual Seeds (if needed)
+```bash
+# From apps/server directory
+node scripts/seedRBAC.js          # 1. Roles and permissions
+node scripts/seedData.js          # 2. Departments, cities, companies, sedes
+node scripts/seedUser.js          # 3. Admin user
+node scripts/seedInspectionData.js # 4. Inspection statuses and types
+node scripts/seedUsers.js         # 5. Role-specific users
+```
+
+## Critical Seeding Order
+**NEVER change this order** - foreign key constraints require:
+
+1. **RBAC** → Creates roles/permissions tables
+2. **Basic Data** → Creates sedes table (referenced by users)
+3. **Admin User** → Requires sede_id from step 2
+4. **Inspection Data** → Creates inspection-related lookup tables
+5. **Role-specific Users** → Requires both sedes and roles
+
+## What Gets Created
+- **5 Departments** (Antioquia, Cundinamarca, Valle, Atlántico, Santander)
+- **10 Cities** across departments
+- **3 Companies** with **4 Sedes**
+- **7 Roles** (super_admin, admin, comercial_mundial, etc.)
+- **38 Permissions** (users.*, inspection_orders.*, contact_agent.*, etc.)
+- **Test Users** with proper role assignments
+
+## Default Credentials
+All users have password: `123456`
+
+| Role | Email | Purpose |
+|------|-------|---------|
+| super_admin | admin@vmlperito.com | Full access |
+| comercial_mundial | comercial@vmlperito.com | Create orders |
+| coordinador_contacto | coordinadora@vmlperito.com | Assign agents |
+| agente_contacto | agente1@vmlperito.com | Handle calls |
+| Multi-role | supervisora@vmlperito.com | All permissions |
