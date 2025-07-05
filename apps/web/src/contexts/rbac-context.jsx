@@ -30,7 +30,12 @@ export function RBACProvider({ children }) {
                 if (res.ok) {
                     const data = await res.json();
                     setPermissions(data.permissions || []);
-                    setRoles(data.roles || []);
+                    // Extraer solo los nombres de los roles
+                    const roleNames = (data.roles || []).map(role =>
+                        typeof role === 'string' ? role : role.name
+                    );
+                    setRoles(roleNames);
+                    console.log("ROLES CARGADOS:", roleNames);
                 } else {
                     setPermissions([]);
                     setRoles([]);
@@ -41,7 +46,6 @@ export function RBACProvider({ children }) {
             } finally {
                 setLoading(false);
             }
-            console.log("ROLES", roles)
         }
         fetchPermissions();
     }, [isAuthenticated, user]);

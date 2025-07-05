@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { API_ROUTES } from '@/config/api';
+import { getDefaultRouteForUser } from '@/lib/role-utils';
 
 const AuthContext = createContext();
 
@@ -63,7 +64,11 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('authToken', data.token);
                 setUser(data.user);
                 setIsAuthenticated(true);
-                return { success: true };
+                
+                // Determinar la ruta por defecto según el rol
+                const defaultRoute = getDefaultRouteForUser(data.user?.roles);
+                
+                return { success: true, defaultRoute };
             } else {
                 const error = await response.json();
                 return { success: false, error: error.message };

@@ -4,9 +4,12 @@ import { NotificationToast } from "@/components/notification-toast"
 import { useNotificationContext } from "@/contexts/notification-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { useWebSocket } from "@/hooks/use-websocket"
 
 function AuthenticatedLayout({ children }) {
     const { toast, hideToast } = useNotificationContext();
+    // Inicializar WebSocket para toda la aplicación autenticada
+    useWebSocket();
     return (
         <ProtectedRoute>
             <SidebarProvider>

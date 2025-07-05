@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
+import { useWebSocket } from '@/hooks/use-websocket';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function AgenteContacto() {
     const [orders, setOrders] = useState([]);
@@ -37,6 +39,8 @@ export default function AgenteContacto() {
     const [selectedCity, setSelectedCity] = useState('');
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const { showToast } = useNotificationContext();
+    const { isConnected } = useWebSocket();
+    const { user } = useAuth();
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -57,6 +61,55 @@ export default function AgenteContacto() {
     // Cargar datos iniciales
     useEffect(() => {
         loadInitialData();
+    }, []);
+
+    // Escuchar eventos de asignación de órdenes
+    useEffect(() => {
+        const handleOrderAssigned = (event) => {
+            console.log('🎯 Orden asignada recibida en AgenteContacto:', event.detail);
+
+            const { order, message, type, data } = event.detail;
+
+            // Mostrar notificación específica según el tipo
+            let notificationMessage = '¡Nueva orden asignada! Actualizando lista...';
+            let notificationType = 'info';
+
+            if (type === 'reasignacion_orden') {
+                notificationMessage = `¡Orden reasignada! ${order?.numero || ''} - Actualizando lista...`;
+                notificationType = 'info';
+            } else if (type === 'asignacion_orden') {
+                notificationMessage = `¡Nueva orden asignada! ${order?.numero || ''} - Actualizando lista...`;
+                notificationType = 'success';
+            }
+
+            showToast(notificationMessage, notificationType, 4000);
+
+            // Recargar las órdenes para mostrar la nueva asignación
+            loadOrders();
+        };
+
+        const handleOrderRemoved = (event) => {
+            console.log('🗑️ Orden removida recibida en AgenteContacto:', event.detail);
+
+            const { order, message, type, data } = event.detail;
+
+            // Mostrar notificación de advertencia
+            const notificationMessage = `⚠️ Orden ${order?.numero || ''} removida de tu asignación - Actualizando lista...`;
+            showToast(notificationMessage, 'warning', 4000);
+
+            // Recargar las órdenes para reflejar la remoción
+            loadOrders();
+        };
+
+        console.log('👂 Listeners de orderAssigned y orderRemoved registrados en AgenteContacto');
+        window.addEventListener('orderAssigned', handleOrderAssigned);
+        window.addEventListener('orderRemoved', handleOrderRemoved);
+
+        return () => {
+            console.log('🗑️ Removiendo listeners de orderAssigned y orderRemoved en AgenteContacto');
+            window.removeEventListener('orderAssigned', handleOrderAssigned);
+            window.removeEventListener('orderRemoved', handleOrderRemoved);
+        };
     }, []);
 
     useEffect(() => {
@@ -339,10 +392,24 @@ export default function AgenteContacto() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Agente de Contact</h1>
-                <p className="text-muted-foreground">
-                    Gestiona llamadas a clientes y programa agendamientos de inspección
-                </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold">Agente de Contact</h1>
+                        <p className="text-muted-foreground">
+                            Gestiona llamadas a clientes y programa agendamientos de inspección
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${isConnected
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                            }`}>
+                            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'
+                                }`}></div>
+                            <span>{isConnected ? 'Conectado' : 'Desconectado'}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Search */}

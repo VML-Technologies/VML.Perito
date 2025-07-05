@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
-import { Shield } from 'lucide-react';
+import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react';
 
 export const Dashboard = () => {
     const { user, logout } = useAuth();
     const { hasRole } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
+    const isCoordinador = hasRole('coordinador_contacto');
+    const isComercial = hasRole('comercial_mundial');
+    const isAgente = hasRole('agente_contacto');
 
     return (
         <div className="p-6">
@@ -20,32 +23,66 @@ export const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Documentos
-                    </h3>
-                    <p className="text-gray-600">
-                        Gestiona tus documentos y archivos
-                    </p>
-                </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Reportes
-                    </h3>
-                    <p className="text-gray-600">
-                        Visualiza reportes y estadísticas
-                    </p>
-                </div>
+                {isCoordinador && (
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 rounded-lg shadow-md text-white">
+                        <div className="flex items-center mb-2">
+                            <Users className="mr-2" />
+                            <h3 className="text-lg font-semibold">
+                                Coordinador de Contacto
+                            </h3>
+                        </div>
+                        <p className="text-purple-100 mb-4">
+                            Supervisa y asigna agentes a las órdenes de inspección
+                        </p>
+                        <Link
+                            to="/coordinador-contacto"
+                            className="inline-block bg-white text-purple-600 font-medium py-2 px-4 rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                            Ir a Coordinación
+                        </Link>
+                    </div>
+                )}
 
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Configuración
-                    </h3>
-                    <p className="text-gray-600">
-                        Ajusta las preferencias del sistema
-                    </p>
-                </div>
+                {isComercial && (
+                    <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 rounded-lg shadow-md text-white">
+                        <div className="flex items-center mb-2">
+                            <Building className="mr-2" />
+                            <h3 className="text-lg font-semibold">
+                                Comercial Mundial
+                            </h3>
+                        </div>
+                        <p className="text-green-100 mb-4">
+                            Crea y gestiona órdenes de inspección vehicular
+                        </p>
+                        <Link
+                            to="/comercial-mundial"
+                            className="inline-block bg-white text-green-600 font-medium py-2 px-4 rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                            Ir a Comercial
+                        </Link>
+                    </div>
+                )}
+
+                {isAgente && (
+                    <div className="bg-gradient-to-r from-orange-500 to-red-600 p-6 rounded-lg shadow-md text-white">
+                        <div className="flex items-center mb-2">
+                            <Phone className="mr-2" />
+                            <h3 className="text-lg font-semibold">
+                                Agente de Contacto
+                            </h3>
+                        </div>
+                        <p className="text-orange-100 mb-4">
+                            Gestiona llamadas y agendamientos de inspecciones
+                        </p>
+                        <Link
+                            to="/agente-contacto"
+                            className="inline-block bg-white text-orange-600 font-medium py-2 px-4 rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                            Ir a Contact Center
+                        </Link>
+                    </div>
+                )}
 
                 {canAccessAdmin && (
                     <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-lg shadow-md text-white">

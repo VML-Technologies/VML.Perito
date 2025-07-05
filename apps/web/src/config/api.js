@@ -65,6 +65,14 @@ export const API_ROUTES = {
         CITIES: (departmentId) => `${API_BASE_URL}/api/contact-agent/cities/${departmentId}`,
         SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,
     },
+    // ===== NUEVAS RUTAS - Coordinador de Contacto =====
+    COORDINADOR_CONTACTO: {
+        ORDERS: `${API_BASE_URL}/api/coordinador-contacto/orders`,
+        ORDER_DETAILS: (id) => `${API_BASE_URL}/api/coordinador-contacto/orders/${id}`,
+        STATS: `${API_BASE_URL}/api/coordinador-contacto/stats`,
+        AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
+        ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
+    },
 };
 
 export const API_CONFIG = {

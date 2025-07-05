@@ -18,6 +18,7 @@ import {
   Building,
   Phone,
   ClipboardList,
+  UserCog,
 } from "lucide-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -74,6 +75,7 @@ export function AppSidebar({
   const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
   const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin');
   const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
+  const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin');
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -93,7 +95,7 @@ export function AppSidebar({
         <NavMain items={data.navMain} />
 
         {/* Sistema de Inspecciones */}
-        {(canAccessComercial || canAccessAgente) && (
+        {(canAccessComercial || canAccessAgente || canAccessCoordinador) && (
           <SidebarGroup>
             <SidebarGroupLabel>Sistema de Inspecciones</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -104,6 +106,16 @@ export function AppSidebar({
                       <Link to="/comercial-mundial">
                         <Building />
                         <span>Comercial Mundial</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {canAccessCoordinador && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Coordinador de Contacto">
+                      <Link to="/coordinador-contacto">
+                        <UserCog />
+                        <span>Coordinador de Contacto</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

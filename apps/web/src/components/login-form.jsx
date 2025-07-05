@@ -34,7 +34,8 @@ export function LoginForm({
 
     if (result.success) {
       showToast("Inicio de sesión exitoso", "success")
-      navigate("/dashboard")
+      // Usar la ruta por defecto según el rol del usuario
+      navigate(result.defaultRoute || "/dashboard")
     } else {
       showToast(result.error || "Error al iniciar sesión", "error")
     }
@@ -61,13 +62,13 @@ export function LoginForm({
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="email">Correo electrónico</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="m@example.com" 
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required 
+                  required
                 />
               </div>
               <div className="grid gap-3">
@@ -79,12 +80,12 @@ export function LoginForm({
                     Olvidaste tu contraseña?
                   </a>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
+                <Input
+                  id="password"
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required 
+                  required
                 />
               </div>
               <div className="flex flex-col gap-3">
