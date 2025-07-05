@@ -32,6 +32,15 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
             key: 'id'
         }
     },
+    assigned_agent_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        },
+        comment: 'ID del agente de contacto asignado a esta orden'
+    },
     producto: {
         type: DataTypes.STRING(50),
         allowNull: false,

@@ -151,6 +151,22 @@ InspectionOrder.belongsTo(User, {
     as: 'user'
 });
 
+// User -> InspectionOrders como agente asignado (1:N)
+User.hasMany(InspectionOrder, {
+    foreignKey: 'assigned_agent_id',
+    as: 'assignedOrders'
+});
+InspectionOrder.belongsTo(User, {
+    foreignKey: 'assigned_agent_id',
+    as: 'AssignedAgent'
+});
+
+// Relación para el creador de la orden
+InspectionOrder.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'Creator'
+});
+
 // InspectionOrderStatus -> InspectionOrders (1:N)
 InspectionOrderStatus.hasMany(InspectionOrder, {
     foreignKey: 'status',
@@ -158,7 +174,7 @@ InspectionOrderStatus.hasMany(InspectionOrder, {
 });
 InspectionOrder.belongsTo(InspectionOrderStatus, {
     foreignKey: 'status',
-    as: 'statusInfo'
+    as: 'InspectionOrderStatus'
 });
 
 // Sede -> InspectionOrders (1:N)
@@ -168,7 +184,7 @@ Sede.hasMany(InspectionOrder, {
 });
 InspectionOrder.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'Sede'
 });
 
 // InspectionOrder -> CallLogs (1:N)
@@ -189,6 +205,16 @@ CallStatus.hasMany(CallLog, {
 CallLog.belongsTo(CallStatus, {
     foreignKey: 'status_id',
     as: 'status'
+});
+
+// User -> CallLogs como agente que realiza la llamada (1:N)
+User.hasMany(CallLog, {
+    foreignKey: 'agent_id',
+    as: 'callLogs'
+});
+CallLog.belongsTo(User, {
+    foreignKey: 'agent_id',
+    as: 'Agent'
 });
 
 // CallLog -> Appointments (1:N)

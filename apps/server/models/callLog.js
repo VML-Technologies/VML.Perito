@@ -10,6 +10,15 @@ const CallLog = createModelWithSoftDeletes('CallLog', {
             key: 'id'
         }
     },
+    agent_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        },
+        comment: 'ID del agente que realizó la llamada'
+    },
     call_time: {
         type: DataTypes.DATE,
         allowNull: false,
