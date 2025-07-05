@@ -1,14 +1,21 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import UserRole from '../models/userRole.js';
 import bcrypt from 'bcryptjs';
 
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar .env desde el directorio padre (apps/server/)
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
 // Importar modelos para establecer relaciones
 import '../models/index.js';
-
-dotenv.config();
 
 const createAdminUser = async () => {
     try {

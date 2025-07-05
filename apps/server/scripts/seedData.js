@@ -1,9 +1,16 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import { Department, City, Company, Sede, User } from '../models/index.js';
 import bcrypt from 'bcryptjs';
 
-dotenv.config();
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar .env desde el directorio padre (apps/server/)
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedData = async () => {
     try {
@@ -152,9 +159,21 @@ const seedData = async () => {
 
     } catch (error) {
         console.error('❌ Error al crear datos de prueba:', error);
-    } finally {
-        await sequelize.close();
+        throw error;
     }
 };
 
-seedData(); 
+// Ejecutar si se llama directamente
+if (import.meta.url === `file://${process.argv[1]}`) {
+    seedData()
+        .then(() => {
+            console.log('✅ Seed de datos básicos completado');
+            process.exit(0);
+        })
+        .catch((error) => {
+            console.error('❌ Error:', error);
+            process.exit(1);
+        });
+}
+
+export default seedData; 

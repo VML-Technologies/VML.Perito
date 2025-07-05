@@ -1,14 +1,21 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import UserRole from '../models/userRole.js';
 import bcrypt from 'bcryptjs';
 
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar .env desde el directorio padre (apps/server/)
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
 // Importar modelos para establecer relaciones
 import '../models/index.js';
-
-dotenv.config();
 
 const seedUsers = async () => {
     try {
@@ -17,10 +24,11 @@ const seedUsers = async () => {
         // Verificar que los roles existan
         const comercialRole = await Role.findOne({ where: { name: 'comercial_mundial' } });
         const agenteRole = await Role.findOne({ where: { name: 'agente_contacto' } });
+        const coordinadorRole = await Role.findOne({ where: { name: 'coordinador_contacto' } });
         const adminRole = await Role.findOne({ where: { name: 'super_admin' } });
 
-        if (!comercialRole || !agenteRole) {
-            console.log('⚠️  Los roles comercial_mundial o agente_contacto no existen. Ejecuta primero el seed de RBAC.');
+        if (!comercialRole || !agenteRole || !coordinadorRole) {
+            console.log('⚠️  Los roles comercial_mundial, agente_contacto o coordinador_contacto no existen. Ejecuta primero el seed de RBAC.');
             return;
         }
 
@@ -28,6 +36,7 @@ const seedUsers = async () => {
 
         // Crear usuarios con los nuevos roles
         const users = [
+            // Comercial Mundial
             {
                 userData: {
                     sede_id: 1,
@@ -43,11 +52,30 @@ const seedUsers = async () => {
                 },
                 roles: ['comercial_mundial']
             },
+
+            // Coordinador de Contacto
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Ana Coordinadora',
+                    email: 'coordinadora@vmlperito.com',
+                    phone: '300-1111111',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['coordinador_contacto']
+            },
+
+            // 5 Agentes de Contacto
             {
                 userData: {
                     sede_id: 1,
                     name: 'Carlos Agente',
-                    email: 'agente@vmlperito.com',
+                    email: 'agente1@vmlperito.com',
                     phone: '300-1357924',
                     password: hashedPassword,
                     is_active: true,
@@ -61,7 +89,69 @@ const seedUsers = async () => {
             {
                 userData: {
                     sede_id: 1,
-                    name: 'Ana Supervisora',
+                    name: 'Laura Agente',
+                    email: 'agente2@vmlperito.com',
+                    phone: '300-2222222',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Diego Agente',
+                    email: 'agente3@vmlperito.com',
+                    phone: '300-3333333',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Sofia Agente',
+                    email: 'agente4@vmlperito.com',
+                    phone: '300-4444444',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Roberto Agente',
+                    email: 'agente5@vmlperito.com',
+                    phone: '300-5555555',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+
+            // Usuario Supervisora con múltiples roles
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Patricia Supervisora',
                     email: 'supervisora@vmlperito.com',
                     phone: '300-2468135',
                     password: hashedPassword,
@@ -71,7 +161,7 @@ const seedUsers = async () => {
                     notification_channel_email_enabled: true,
                     notification_channel_whatsapp_enabled: true,
                 },
-                roles: ['comercial_mundial', 'agente_contacto'] // Usuario con múltiples roles
+                roles: ['comercial_mundial', 'coordinador_contacto', 'agente_contacto'] // Usuario con múltiples roles
             }
         ];
 
@@ -113,10 +203,16 @@ const seedUsers = async () => {
         console.log('\n👩‍💼 COMERCIAL MUNDIAL:');
         console.log('   Email: comercial@vmlperito.com');
         console.log('   Contraseña: 123456');
-        console.log('\n👨‍💼 Agente de Contact:');
-        console.log('   Email: agente@vmlperito.com');
+        console.log('\n👩‍💼 COORDINADORA DE CONTACTO:');
+        console.log('   Email: coordinadora@vmlperito.com');
         console.log('   Contraseña: 123456');
-        console.log('\n👩‍💼 SUPERVISORA (AMBOS ROLES):');
+        console.log('\n👨‍💼 AGENTES DE CONTACTO:');
+        console.log('   Email: agente1@vmlperito.com - Contraseña: 123456');
+        console.log('   Email: agente2@vmlperito.com - Contraseña: 123456');
+        console.log('   Email: agente3@vmlperito.com - Contraseña: 123456');
+        console.log('   Email: agente4@vmlperito.com - Contraseña: 123456');
+        console.log('   Email: agente5@vmlperito.com - Contraseña: 123456');
+        console.log('\n👩‍💼 SUPERVISORA (TODOS LOS ROLES):');
         console.log('   Email: supervisora@vmlperito.com');
         console.log('   Contraseña: 123456');
 

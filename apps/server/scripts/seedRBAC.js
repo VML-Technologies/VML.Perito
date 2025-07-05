@@ -1,9 +1,19 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import Role from '../models/role.js';
 import Permission from '../models/permission.js';
 import RolePermission from '../models/rolePermission.js';
 import UserRole from '../models/userRole.js';
 import User from '../models/user.js';
+
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar .env desde el directorio padre (apps/server/)
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Importar modelos para establecer relaciones
 import '../models/index.js';
@@ -301,6 +311,31 @@ const seedRBAC = async () => {
                 action: 'create_appointment',
                 endpoint: '/api/contact-agent/appointments',
                 method: 'POST'
+            },
+            // ===== NUEVOS PERMISOS - Coordinador de Contacto =====
+            {
+                name: 'coordinador_contacto.read',
+                description: 'Ver órdenes como Coordinador de Contacto',
+                resource: 'coordinador_contacto',
+                action: 'read',
+                endpoint: '/api/coordinador-contacto',
+                method: 'GET'
+            },
+            {
+                name: 'coordinador_contacto.assign',
+                description: 'Asignar agentes a órdenes',
+                resource: 'coordinador_contacto',
+                action: 'assign',
+                endpoint: '/api/coordinador-contacto/assign',
+                method: 'POST'
+            },
+            {
+                name: 'coordinador_contacto.stats',
+                description: 'Ver estadísticas de órdenes',
+                resource: 'coordinador_contacto',
+                action: 'stats',
+                endpoint: '/api/coordinador-contacto/stats',
+                method: 'GET'
             }
         ];
 
@@ -346,6 +381,10 @@ const seedRBAC = async () => {
             {
                 name: 'agente_contacto',
                 description: 'Agente de Contact - Gestiona llamadas y agendamientos'
+            },
+            {
+                name: 'coordinador_contacto',
+                description: 'Coordinador de Contacto - Supervisa y asigna agentes'
             }
         ];
 
@@ -472,6 +511,28 @@ const seedRBAC = async () => {
                 });
             }
             console.log(`✅ Permisos de Agente de Contact asignados a ${agenteRole.name}`);
+        }
+
+        // Coordinador de Contacto: Permisos para supervisión y asignación
+        const coordinadorRole = createdRoles.find(r => r.name === 'coordinador_contacto');
+        if (coordinadorRole) {
+            const coordinadorPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('coordinador_contacto.') ||
+                p.name.startsWith('contact_agent.read') ||
+                p.name.startsWith('contact_agent.assign') ||
+                p.name.startsWith('contact_agent.stats') ||
+                p.name === 'inspection_orders.read' ||
+                p.name === 'users.read' // Necesario para acceder al perfil
+            );
+            for (const permission of coordinadorPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: coordinadorRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Coordinador de Contacto asignados a ${coordinadorRole.name}`);
         }
 
         console.log('🎉 Seed de RBAC completado exitosamente!');

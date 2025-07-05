@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import CallStatus from '../models/callStatus.js';
@@ -5,6 +8,13 @@ import InspectionType from '../models/inspectionType.js';
 import NotificationChannel from '../models/notificationChannel.js';
 import NotificationType from '../models/notificationType.js';
 import NotificationConfig from '../models/notificationConfig.js';
+
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar .env desde el directorio padre (apps/server/)
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Importar modelos para establecer relaciones
 import '../models/index.js';
@@ -152,6 +162,11 @@ const seedInspectionData = async () => {
         // ===== CANALES DE NOTIFICACIÓN =====
         const notificationChannels = [
             {
+                name: 'sistema',
+                description: 'Notificaciones del sistema interno',
+                active: true
+            },
+            {
                 name: 'in_app',
                 description: 'Notificaciones dentro de la aplicación',
                 active: true
@@ -209,6 +224,10 @@ const seedInspectionData = async () => {
             {
                 name: 'status_updated',
                 description: 'Estado de orden actualizado'
+            },
+            {
+                name: 'asignacion_orden',
+                description: 'Asignación de orden a agente'
             }
         ];
 
@@ -244,6 +263,15 @@ const seedInspectionData = async () => {
                 notification_channel: 'in_app',
                 template_title: 'Agendamiento realizado',
                 template_content: 'Se ha agendado una inspección para la orden #{numero}',
+                for_clients: false,
+                for_users: true,
+                active: true
+            },
+            {
+                notification_type: 'asignacion_orden',
+                notification_channel: 'sistema',
+                template_title: 'Orden Asignada',
+                template_content: 'Te han asignado una nueva orden de inspección #{numero}',
                 for_clients: false,
                 for_users: true,
                 active: true
