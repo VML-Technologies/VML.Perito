@@ -1,4 +1,5 @@
 import InspectionOrder from '../models/inspectionOrder.js';
+import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import CallLog from '../models/callLog.js';
 import CallStatus from '../models/callStatus.js';
 import Appointment from '../models/appointment.js';
@@ -63,7 +64,10 @@ class ContactAgentController {
 
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
-            const whereConditions = {};
+            const whereConditions = {
+                // Solo mostrar órdenes asignadas a este agente
+                assigned_agent_id: req.user.id
+            };
 
             if (search) {
                 whereConditions[Op.or] = [
@@ -80,6 +84,11 @@ class ContactAgentController {
                 where: whereConditions,
                 include: [
                     {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    },
+                    {
                         model: CallLog,
                         as: 'callLogs',
                         include: [
@@ -95,8 +104,22 @@ class ContactAgentController {
                 order: [['created_at', 'DESC']],
             });
 
+            // Transformar datos para que coincidan con el frontend
+            const transformedOrders = rows.map(order => ({
+                id: order.id,
+                numero: order.numero,
+                cliente_nombre: order.nombre_cliente,
+                cliente_telefono: order.celular_cliente,
+                cliente_email: order.correo_cliente,
+                vehiculo_placa: order.placa,
+                vehiculo_marca: order.marca,
+                vehiculo_modelo: order.modelo,
+                InspectionOrderStatus: order.InspectionOrderStatus,
+                callLogs: order.callLogs
+            }));
+
             res.json({
-                data: rows,
+                orders: transformedOrders,
                 pagination: {
                     total: count,
                     page: parseInt(page),

@@ -1,4 +1,5 @@
 import User from '../models/user.js';
+import Role from '../models/role.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -7,7 +8,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto';
 export const login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findOne({ where: { email, is_active: true } });
+        const user = await User.findOne({
+            where: { email, is_active: true },
+            include: [
+                {
+                    model: Role,
+                    as: 'roles',
+                    through: { attributes: [] },
+                    attributes: ['id', 'name', 'description']
+                }
+            ]
+        });
         if (!user) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
@@ -24,6 +35,7 @@ export const login = async (req, res) => {
                 email: user.email,
                 sede_id: user.sede_id,
                 phone: user.phone,
+                roles: user.roles || []
             },
         });
     } catch (err) {
@@ -38,7 +50,16 @@ export const verify = async (req, res) => {
     jwt.verify(token, JWT_SECRET, async (err, decoded) => {
         if (err) return res.status(401).json({ message: 'Token inválido' });
         try {
-            const user = await User.findByPk(decoded.id);
+            const user = await User.findByPk(decoded.id, {
+                include: [
+                    {
+                        model: Role,
+                        as: 'roles',
+                        through: { attributes: [] },
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
             if (!user || !user.is_active) return res.status(401).json({ message: 'Usuario no válido' });
             res.json({
                 id: user.id,
@@ -46,6 +67,7 @@ export const verify = async (req, res) => {
                 email: user.email,
                 sede_id: user.sede_id,
                 phone: user.phone,
+                roles: user.roles || []
             });
         } catch (err) {
             res.status(500).json({ message: 'Error en el servidor', error: err.message });
