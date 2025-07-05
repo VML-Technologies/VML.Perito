@@ -192,18 +192,59 @@ class ContactAgentController {
     // Crear registro de llamada
     async createCallLog(req, res) {
         try {
-            const callLog = await CallLog.create(req.body);
+            const {
+                inspection_order_id,
+                call_status_id,
+                observaciones,
+                fecha_seguimiento
+            } = req.body;
+
+            // Validar campos requeridos
+            if (!inspection_order_id || !call_status_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'inspection_order_id y call_status_id son requeridos'
+                });
+            }
+
+            // Verificar que la orden existe y está asignada al agente
+            const order = await InspectionOrder.findOne({
+                where: {
+                    id: inspection_order_id,
+                    assigned_agent_id: req.user.id
+                }
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden no encontrada o no asignada a este agente'
+                });
+            }
+
+            // Mapear los datos del frontend al formato del modelo
+            const callLogData = {
+                inspection_order_id: inspection_order_id,
+                agent_id: req.user.id, // ID del agente autenticado
+                status_id: call_status_id, // Mapear call_status_id a status_id
+                comments: observaciones || null, // Mapear observaciones a comments
+                call_time: new Date() // Establecer el tiempo de la llamada
+            };
+
+            const callLog = await CallLog.create(callLogData);
 
             // Cargar el call log completo con relaciones
             const fullCallLog = await CallLog.findByPk(callLog.id, {
                 include: [
                     {
                         model: CallStatus,
-                        as: 'status'
+                        as: 'status',
+                        attributes: ['id', 'name', 'creates_schedule']
                     },
                     {
                         model: InspectionOrder,
-                        as: 'inspectionOrder'
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'nombre_cliente', 'placa']
                     }
                 ]
             });
@@ -211,9 +252,18 @@ class ContactAgentController {
             // TODO: Emitir evento WebSocket
             // TODO: Crear notificación
 
-            res.status(201).json(fullCallLog);
+            res.status(201).json({
+                success: true,
+                message: 'Llamada registrada exitosamente',
+                data: fullCallLog
+            });
         } catch (error) {
-            res.status(400).json({ message: 'Error al crear registro de llamada', error: error.message });
+            console.error('Error al crear registro de llamada:', error);
+            res.status(400).json({
+                success: false,
+                message: 'Error al crear registro de llamada',
+                error: error.message
+            });
         }
     }
 

@@ -1,0 +1,159 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Terminología Contact Center
+
+## Roles y Terminología Correcta
+
+### Roles del Sistema
+- **Agente de Contact Center**: Gestiona llamadas y agendamientos
+- **Coordinador de Contact Center**: Supervisa y asigna agentes
+
+### ❌ Terminología Incorrecta (NO USAR)
+- "Agente de Contacto"
+- "Coordinador de Contacto"
+- "Centro de Contacto"
+- "Agente Contacto"
+
+### ✅ Terminología Correcta (USAR SIEMPRE)
+- "Agente de Contact Center"
+- "Coordinador de Contact Center"
+- "Contact Center"
+
+## Implementación en Código
+
+### Base de Datos
+```javascript
+// En seedRBAC.js
+{
+    name: 'agente_contacto',
+    description: 'Agente de Contact Center - Gestiona llamadas y agendamientos'
+},
+{
+    name: 'coordinador_contacto', 
+    description: 'Coordinador de Contact Center - Supervisa y asigna agentes'
+}
+```
+
+### Frontend - Títulos de Página
+```javascript
+// En AgenteContacto.jsx
+<h1>Agente de Contact Center</h1>
+
+// En CoordinadorContacto.jsx  
+<h1>Coordinador de Contact Center</h1>
+```
+
+### Sidebar y Navegación
+```javascript
+// En app-sidebar.jsx
+{
+    title: "Contact Center",
+    items: [
+        {
+            title: "Agente de Contact Center",
+            url: "/agente-contacto"
+        },
+        {
+            title: "Coordinador de Contact Center", 
+            url: "/coordinador-contacto"
+        }
+    ]
+}
+```
+
+### Mapeo de Roles
+```javascript
+// En role-utils.js
+export const ROLE_DISPLAY_NAMES = {
+    'agente_contacto': 'Agente de Contact Center',
+    'coordinador_contacto': 'Coordinador de Contact Center',
+    'comercial_mundial': 'Comercial Mundial',
+    'admin': 'Administrador'
+};
+```
+
+## Archivos Afectados
+
+### Frontend
+- **[AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx)**: Título de página
+- **[CoordinadorContacto.jsx](mdc:apps/web/src/pages/CoordinadorContacto.jsx)**: Título de página
+- **[app-sidebar.jsx](mdc:apps/web/src/components/app-sidebar.jsx)**: Navegación y tooltips
+- **[Dashboard.jsx](mdc:apps/web/src/pages/Dashboard.jsx)**: Tarjetas de roles
+- **[role-utils.js](mdc:apps/web/src/lib/role-utils.js)**: Mapeo de nombres
+
+### Backend
+- **[seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)**: Descripciones de roles
+- **[coordinadorContactoController.js](mdc:apps/server/controllers/coordinadorContactoController.js)**: Mensajes de error
+- **[inspectionOrder.js](mdc:apps/server/models/inspectionOrder.js)**: Comentarios de campos
+
+## Reglas de Estilo
+
+### Títulos y Headers
+```javascript
+// ✅ Correcto
+<h1>Coordinador de Contact Center</h1>
+<h2>Panel de Agente de Contact Center</h2>
+
+// ❌ Incorrecto
+<h1>Coordinador de Contacto</h1>
+<h2>Panel de Agente Contacto</h2>
+```
+
+### Mensajes y Notificaciones
+```javascript
+// ✅ Correcto
+"Orden asignada al agente de contact center"
+"Notificación para coordinador de contact center"
+
+// ❌ Incorrecto  
+"Orden asignada al agente de contacto"
+"Notificación para coordinador de contacto"
+```
+
+### Logs y Comentarios
+```javascript
+// ✅ Correcto
+console.log('Agente de Contact Center conectado');
+// Endpoint para coordinadores de contact center
+
+// ❌ Incorrecto
+console.log('Agente de Contacto conectado');
+// Endpoint para coordinadores de contacto
+```
+
+## Consistencia en UI
+
+### Botones y Labels
+- "Asignar a Agente de Contact Center"
+- "Filtrar por Coordinador de Contact Center"
+- "Configuración de Contact Center"
+
+### Tooltips y Ayuda
+- "Los agentes de contact center gestionan las llamadas"
+- "Los coordinadores de contact center supervisan las asignaciones"
+
+### Breadcrumbs
+- Dashboard > Contact Center > Agente de Contact Center
+- Dashboard > Contact Center > Coordinador de Contact Center
+
+## Validación
+
+### Antes de Commit
+1. Buscar cualquier referencia a "Agente de Contacto" o "Coordinador de Contacto"
+2. Verificar que todos los títulos usen la terminología correcta
+3. Revisar mensajes de error y notificaciones
+4. Confirmar consistencia en logs y comentarios
+
+### Herramientas de Búsqueda
+```bash
+# Buscar terminología incorrecta
+grep -r "Agente de Contacto" apps/
+grep -r "Coordinador de Contacto" apps/
+grep -r "Centro de Contacto" apps/
+
+# Verificar terminología correcta
+grep -r "Contact Center" apps/
+```

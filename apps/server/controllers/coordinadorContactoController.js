@@ -329,7 +329,7 @@ class CoordinadorContactoController {
                             {
                                 model: CallStatus,
                                 as: 'status',
-                                attributes: ['id', 'name', 'description']
+                                attributes: ['id', 'name', 'creates_schedule']
                             },
                             {
                                 model: User,
