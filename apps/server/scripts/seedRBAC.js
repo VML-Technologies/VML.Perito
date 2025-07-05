@@ -20,7 +20,11 @@ import '../models/index.js';
 
 const seedRBAC = async () => {
     try {
-        console.log('🌱 Iniciando seed de RBAC...');
+        console.log('🌱 Iniciando seed de RBAC con terminología actualizada...');
+
+        // Conectar a la base de datos
+        await sequelize.authenticate();
+        console.log('✅ Conexión a la base de datos establecida');
 
         // Crear permisos básicos del sistema
         const permissions = [
@@ -287,10 +291,10 @@ const seedRBAC = async () => {
                 endpoint: '/api/inspection-orders/:id',
                 method: 'DELETE'
             },
-            // ===== NUEVOS PERMISOS - Agente de Contact =====
+            // ===== NUEVOS PERMISOS - Agente de Contact Center =====
             {
                 name: 'contact_agent.read',
-                description: 'Ver órdenes como Agente de Contact',
+                description: 'Ver órdenes como Agente de Contact Center',
                 resource: 'contact_agent',
                 action: 'read',
                 endpoint: '/api/contact-agent',
@@ -312,10 +316,10 @@ const seedRBAC = async () => {
                 endpoint: '/api/contact-agent/appointments',
                 method: 'POST'
             },
-            // ===== NUEVOS PERMISOS - Coordinador de Contacto =====
+            // ===== NUEVOS PERMISOS - Coordinador de Contact Center =====
             {
                 name: 'coordinador_contacto.read',
-                description: 'Ver órdenes como Coordinador de Contacto',
+                description: 'Ver órdenes como Coordinador de Contact Center',
                 resource: 'coordinador_contacto',
                 action: 'read',
                 endpoint: '/api/coordinador-contacto',
@@ -380,11 +384,11 @@ const seedRBAC = async () => {
             },
             {
                 name: 'agente_contacto',
-                description: 'Agente de Contact - Gestiona llamadas y agendamientos'
+                description: 'Agente de Contact Center - Gestiona llamadas y agendamientos'
             },
             {
                 name: 'coordinador_contacto',
-                description: 'Coordinador de Contacto - Supervisa y asigna agentes'
+                description: 'Coordinador de Contact Center - Supervisa y asigna agentes'
             }
         ];
 
@@ -492,7 +496,7 @@ const seedRBAC = async () => {
             console.log(`✅ Permisos de comercial asignados a ${comercialRole.name}`);
         }
 
-        // Agente de Contact: Permisos para gestión de llamadas y agendamientos
+        // Agente de Contact Center: Permisos para gestión de llamadas y agendamientos
         const agenteRole = createdRoles.find(r => r.name === 'agente_contacto');
         if (agenteRole) {
             const agentePermissions = createdPermissions.filter(p =>
@@ -510,10 +514,10 @@ const seedRBAC = async () => {
                     }
                 });
             }
-            console.log(`✅ Permisos de Agente de Contact asignados a ${agenteRole.name}`);
+            console.log(`✅ Permisos de Agente de Contact Center asignados a ${agenteRole.name}`);
         }
 
-        // Coordinador de Contacto: Permisos para supervisión y asignación
+        // Coordinador de Contact Center: Permisos para supervisión y asignación
         const coordinadorRole = createdRoles.find(r => r.name === 'coordinador_contacto');
         if (coordinadorRole) {
             const coordinadorPermissions = createdPermissions.filter(p =>
@@ -532,7 +536,7 @@ const seedRBAC = async () => {
                     }
                 });
             }
-            console.log(`✅ Permisos de Coordinador de Contacto asignados a ${coordinadorRole.name}`);
+            console.log(`✅ Permisos de Coordinador de Contact Center asignados a ${coordinadorRole.name}`);
         }
 
         console.log('🎉 Seed de RBAC completado exitosamente!');

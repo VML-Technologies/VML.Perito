@@ -9,7 +9,7 @@ export const getDefaultRouteForUser = (userRoles) => {
     }
 
     // Extraer nombres de roles
-    const roleNames = userRoles.map(role => 
+    const roleNames = userRoles.map(role =>
         typeof role === 'string' ? role : role.name
     );
 
@@ -17,19 +17,19 @@ export const getDefaultRouteForUser = (userRoles) => {
     if (roleNames.includes('super_admin')) {
         return '/admin';
     }
-    
+
     if (roleNames.includes('coordinador_contacto')) {
         return '/coordinador-contacto';
     }
-    
+
     if (roleNames.includes('comercial_mundial')) {
         return '/comercial-mundial';
     }
-    
+
     if (roleNames.includes('agente_contacto')) {
         return '/agente-contacto';
     }
-    
+
     if (roleNames.includes('admin')) {
         return '/admin';
     }
@@ -48,15 +48,15 @@ export const getPrimaryRoleName = (userRoles) => {
         return 'Usuario';
     }
 
-    const roleNames = userRoles.map(role => 
+    const roleNames = userRoles.map(role =>
         typeof role === 'string' ? role : role.name
     );
 
     const roleDisplayNames = {
         'super_admin': 'Súper Administrador',
-        'coordinador_contacto': 'Coordinador de Contacto',
+        'coordinador_contacto': 'Coordinador de Contact Center',
         'comercial_mundial': 'Comercial Mundial',
-        'agente_contacto': 'Agente de Contacto',
+        'agente_contacto': 'Agente de Contact Center',
         'admin': 'Administrador',
         'manager': 'Gerente',
         'user': 'Usuario'
@@ -65,7 +65,7 @@ export const getPrimaryRoleName = (userRoles) => {
     // Prioridad de roles para mostrar
     const priorityOrder = [
         'super_admin',
-        'coordinador_contacto', 
+        'coordinador_contacto',
         'comercial_mundial',
         'agente_contacto',
         'admin',

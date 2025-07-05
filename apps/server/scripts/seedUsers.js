@@ -53,7 +53,7 @@ const seedUsers = async () => {
                 roles: ['comercial_mundial']
             },
 
-            // Coordinador de Contacto
+            // Coordinador de Contact Center
             {
                 userData: {
                     sede_id: 1,

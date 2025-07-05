@@ -308,9 +308,9 @@ export default function CoordinadorContacto() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Coordinador de Contacto</h1>
+                <h1 className="text-3xl font-bold">Coordinador de Contact Center</h1>
                 <p className="text-muted-foreground">
-                    Supervisa y asigna agentes a las órdenes de inspección
+                    Supervisa y asigna agentes de contact center a las órdenes de inspección
                 </p>
             </div>
 

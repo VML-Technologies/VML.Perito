@@ -29,7 +29,7 @@ export const Dashboard = () => {
                         <div className="flex items-center mb-2">
                             <Users className="mr-2" />
                             <h3 className="text-lg font-semibold">
-                                Coordinador de Contacto
+                                Coordinador de Contact Center
                             </h3>
                         </div>
                         <p className="text-purple-100 mb-4">
@@ -69,7 +69,7 @@ export const Dashboard = () => {
                         <div className="flex items-center mb-2">
                             <Phone className="mr-2" />
                             <h3 className="text-lg font-semibold">
-                                Agente de Contacto
+                                Agente de Contact Center
                             </h3>
                         </div>
                         <p className="text-orange-100 mb-4">

@@ -3,11 +3,11 @@ description:
 globs:
 alwaysApply: false
 ---
-# Contact Agent Patterns
+# Contact Center Agent Patterns
 
 ## Agent Role Architecture
 
-Contact agents (`agente_contacto`) handle assigned inspection orders through:
+Contact center agents (`agente_contacto`) handle assigned inspection orders through:
 
 - **Call Management**: Log call attempts and outcomes
 - **Appointment Scheduling**: Schedule inspections when contact is successful
@@ -319,6 +319,6 @@ useEffect(() => {
 
 ## Permission Requirements
 
-- **agente_contacto.read**: View assigned orders
+- **agente_contacto.read**: View assigned orders for contact center agents
 - **agente_contacto.call**: Create call logs
 - **agente_contacto.appointment**: Schedule appointments

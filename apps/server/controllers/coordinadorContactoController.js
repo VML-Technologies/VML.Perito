@@ -23,7 +23,7 @@ registerPermission({
     action: 'read',
     endpoint: '/api/coordinador-contacto',
     method: 'GET',
-    description: 'Ver órdenes como Coordinador de Contacto',
+    description: 'Ver órdenes como Coordinador de Contact Center',
 });
 
 registerPermission({
@@ -443,7 +443,7 @@ class CoordinadorContactoController {
                 if (!agent) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Agente no encontrado o no tiene el rol de agente de contacto'
+                        message: 'Agente no encontrado o no tiene el rol de agente de contact center'
                     });
                 }
             }

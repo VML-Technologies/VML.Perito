@@ -85,7 +85,7 @@ function AppContent() {
           }
         />
 
-        {/* Ruta de Coordinador de Contacto */}
+        {/* Ruta de Coordinador de Contact Center */}
         <Route
           path="/coordinador-contacto"
           element={
@@ -97,7 +97,7 @@ function AppContent() {
           }
         />
 
-        {/* Ruta de Agente de Contact */}
+        {/* Ruta de Agente de Contact Center */}
         <Route
           path="/agente-contacto"
           element={

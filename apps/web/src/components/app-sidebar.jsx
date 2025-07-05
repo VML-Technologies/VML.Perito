@@ -112,20 +112,20 @@ export function AppSidebar({
                 )}
                 {canAccessCoordinador && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Coordinador de Contacto">
+                    <SidebarMenuButton asChild tooltip="Coordinador de Contact Center">
                       <Link to="/coordinador-contacto">
                         <UserCog />
-                        <span>Coordinador de Contacto</span>
+                        <span>Coordinador de Contact Center</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
                 {canAccessAgente && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Agente de Contacto">
+                    <SidebarMenuButton asChild tooltip="Agente de Contact Center">
                       <Link to="/agente-contacto">
                         <Phone />
-                        <span>Agente de Contacto</span>
+                        <span>Agente de Contact Center</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

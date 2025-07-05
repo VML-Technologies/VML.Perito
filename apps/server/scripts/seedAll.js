@@ -81,7 +81,7 @@ const seedAll = async () => {
         console.log('\n👩‍💼 COORDINADORA DE CONTACTO (Asignar agentes):');
         console.log('   Email: coordinadora@vmlperito.com');
         console.log('   Contraseña: 123456');
-        console.log('\n👨‍💼 AGENTE DE CONTACTO (Gestionar llamadas):');
+        console.log('\n👨‍💼 AGENTE DE CONTACT CENTER (Gestionar llamadas):');
         console.log('   Email: agente1@vmlperito.com');
         console.log('   Contraseña: 123456');
         console.log('\n👩‍💼 SUPERVISORA (Todos los roles):');

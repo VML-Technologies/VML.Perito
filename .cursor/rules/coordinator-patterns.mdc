@@ -9,8 +9,8 @@ alwaysApply: false
 
 The coordinator system follows RBAC patterns with specific roles:
 
-- **coordinador_contacto**: Main coordinator role
-- **agente_contacto**: Contact agents who handle orders
+- **coordinador_contacto**: Main coordinator role for contact center
+- **agente_contacto**: Contact center agents who handle orders
 - **comercial_mundial**: Creates inspection orders
 
 ## Controller Pattern - CoordinadorContactoController
@@ -148,7 +148,7 @@ status INT NOT NULL           -- Order status
 
 ### Agent Query Pattern
 ```javascript
-// Get active contact agents
+// Get active contact center agents
 const agents = await User.findAll({
     include: [{
         model: Role,
@@ -178,7 +178,7 @@ COORDINATOR: {
 
 ### RBAC Permissions
 - `coordinador_contacto.read` - View orders and dashboard
-- `coordinador_contacto.assign` - Assign agents to orders
+- `coordinador_contacto.assign` - Assign contact center agents to orders
 - `coordinador_contacto.stats` - View statistics
 
 ### Route Protection

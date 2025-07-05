@@ -121,9 +121,9 @@ app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'
 app.get('/api/contact-agent/cities/:departmentId', requirePermission('contact_agent.read'), contactAgentController.getCities);
 app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.read'), contactAgentController.getSedes);
 
-// ===== NUEVAS RUTAS - Coordinador de Contacto =====
+// ===== NUEVAS RUTAS - Coordinador de Contact Center =====
 
-// Rutas para Coordinador de Contacto
+// Rutas para Coordinador de Contact Center
 app.get('/api/coordinador-contacto/orders', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrders);
 app.get('/api/coordinador-contacto/orders/:id', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrderDetails);
 app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getStats);

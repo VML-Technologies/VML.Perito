@@ -394,7 +394,7 @@ export default function AgenteContacto() {
             <div>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Agente de Contact</h1>
+                        <h1 className="text-3xl font-bold">Agente de Contact Center</h1>
                         <p className="text-muted-foreground">
                             Gestiona llamadas a clientes y programa agendamientos de inspección
                         </p>
