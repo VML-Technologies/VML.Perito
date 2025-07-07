@@ -7,6 +7,8 @@ import InspectionType from '../models/inspectionType.js';
 import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Department from '../models/department.js';
+import User from '../models/user.js';
+import { InspectionModality, SedeModalityAvailability } from '../models/index.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
 
@@ -50,6 +52,8 @@ class ContactAgentController {
         this.getDepartments = this.getDepartments.bind(this);
         this.getCities = this.getCities.bind(this);
         this.getSedes = this.getSedes.bind(this);
+        this.getAvailableModalities = this.getAvailableModalities.bind(this);
+        this.getAvailableSedes = this.getAvailableSedes.bind(this);
     }
 
     // Obtener órdenes para Agente de Contact
@@ -94,9 +98,17 @@ class ContactAgentController {
                         include: [
                             {
                                 model: CallStatus,
-                                as: 'status'
+                                as: 'status',
+                                attributes: ['id', 'name', 'creates_schedule']
+                            },
+                            {
+                                model: User,
+                                as: 'Agent',
+                                attributes: ['id', 'name', 'email'],
+                                required: false
                             }
-                        ]
+                        ],
+                        order: [['call_time', 'DESC']]
                     }
                 ],
                 limit: parseInt(limit),
@@ -115,7 +127,8 @@ class ContactAgentController {
                 vehiculo_marca: order.marca,
                 vehiculo_modelo: order.modelo,
                 InspectionOrderStatus: order.InspectionOrderStatus,
-                callLogs: order.callLogs
+                callLogs: order.callLogs,
+                callLogsCount: order.callLogs ? order.callLogs.length : 0 // Agregar conteo de intentos
             }));
 
             res.json({
@@ -145,7 +158,14 @@ class ContactAgentController {
                         include: [
                             {
                                 model: CallStatus,
-                                as: 'status'
+                                as: 'status',
+                                attributes: ['id', 'name', 'creates_schedule']
+                            },
+                            {
+                                model: User,
+                                as: 'Agent',
+                                attributes: ['id', 'name', 'email'],
+                                required: false
                             }
                         ],
                         order: [['call_time', 'DESC']]
@@ -377,6 +397,138 @@ class ContactAgentController {
             res.json(sedes);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener sedes', error: error.message });
+        }
+    }
+
+    // Obtener modalidades disponibles por departamento y ciudad
+    async getAvailableModalities(req, res) {
+        try {
+            const { departmentId, cityId } = req.query;
+
+            if (!departmentId || !cityId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Departamento y ciudad son requeridos'
+                });
+            }
+
+            const availableModalities = await InspectionModality.findAll({
+                include: [{
+                    model: SedeModalityAvailability,
+                    as: 'sedeAvailabilities',
+                    required: true,
+                    where: { active: true },
+                    include: [{
+                        model: Sede,
+                        as: 'sede',
+                        required: true,
+                        where: {
+                            city_id: cityId,
+                            active: true
+                        },
+                        include: [{
+                            model: City,
+                            as: 'city',
+                            required: true,
+                            where: { department_id: departmentId }
+                        }]
+                    }]
+                }],
+                where: { active: true }
+            });
+
+            const modalitiesWithCount = availableModalities.map(modality => ({
+                id: modality.id,
+                name: modality.name,
+                code: modality.code,
+                description: modality.description,
+                sedesCount: modality.sedeAvailabilities.length
+            }));
+
+            res.json({
+                success: true,
+                data: modalitiesWithCount
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo modalidades:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor'
+            });
+        }
+    }
+
+    // Obtener sedes disponibles por modalidad y tipo de inspección
+    async getAvailableSedes(req, res) {
+        try {
+            const { modalityId, inspectionTypeId, cityId } = req.query;
+
+            if (!modalityId || !inspectionTypeId || !cityId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Modalidad, tipo de inspección y ciudad son requeridos'
+                });
+            }
+
+            const sedes = await Sede.findAll({
+                include: [
+                    {
+                        model: SedeModalityAvailability,
+                        as: 'modalityAvailabilities',
+                        required: true,
+                        where: {
+                            inspection_modality_id: modalityId,
+                            inspection_type_id: inspectionTypeId,
+                            active: true
+                        },
+                        include: [{
+                            model: InspectionModality,
+                            as: 'inspectionModality'
+                        }]
+                    },
+                    {
+                        model: City,
+                        as: 'city',
+                        include: [{
+                            model: Department,
+                            as: 'department'
+                        }]
+                    }
+                ],
+                where: {
+                    city_id: cityId,
+                    active: true
+                }
+            });
+
+            const sedesWithAvailability = sedes.map(sede => ({
+                id: sede.id,
+                name: sede.name,
+                address: sede.address,
+                phone: sede.phone,
+                email: sede.email,
+                city: sede.city.name,
+                department: sede.city.department.name,
+                availability: sede.modalityAvailabilities[0] ? {
+                    maxDailyCapacity: sede.modalityAvailabilities[0].max_daily_capacity,
+                    workingHoursStart: sede.modalityAvailabilities[0].working_hours_start,
+                    workingHoursEnd: sede.modalityAvailabilities[0].working_hours_end,
+                    workingDays: sede.modalityAvailabilities[0].working_days
+                } : null
+            }));
+
+            res.json({
+                success: true,
+                data: sedesWithAvailability
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo sedes:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor'
+            });
         }
     }
 }

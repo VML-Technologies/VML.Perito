@@ -6,6 +6,14 @@ const Sede = createModelWithSoftDeletes('Sede', {
         type: DataTypes.BIGINT,
         allowNull: false,
     },
+    sede_type_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+            model: 'sede_types',
+            key: 'id'
+        }
+    },
     name: {
         type: DataTypes.STRING(150),
         allowNull: false,
@@ -25,6 +33,21 @@ const Sede = createModelWithSoftDeletes('Sede', {
     address: {
         type: DataTypes.STRING(255),
         allowNull: true,
+    },
+    latitude: {
+        type: DataTypes.DECIMAL(10, 8),
+        allowNull: true,
+        comment: 'Latitud para ubicación GPS'
+    },
+    longitude: {
+        type: DataTypes.DECIMAL(11, 8),
+        allowNull: true,
+        comment: 'Longitud para ubicación GPS'
+    },
+    active: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
     },
 }, {
     tableName: 'sedes',

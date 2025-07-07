@@ -38,20 +38,32 @@ const seedAll = async () => {
             console.log('⚠️  No se pudieron cargar datos básicos:', error.message);
         }
 
-        // 4. Crear usuario administrador
-        console.log('\n👤 Paso 3: Creando usuario administrador...');
+        // 4. Configurar sistema de modalidades avanzado (tipos de sede, modalidades, vehículos)
+        console.log('\n🎯 Paso 3: Configurando sistema de modalidades avanzado...');
+        const { default: seedModalitySystem } = await import('./seedModalitySystem.js');
+        await seedModalitySystem();
+        console.log('✅ Sistema de modalidades avanzado configurado correctamente.');
+
+        // 5. Crear usuario administrador
+        console.log('\n👤 Paso 4: Creando usuario administrador...');
         const { default: createAdminUser } = await import('./seedUser.js');
         await createAdminUser();
         console.log('✅ Usuario administrador creado correctamente.');
 
-        // 5. Ejecutar seed de datos de inspección
-        console.log('\n🏭 Paso 4: Cargando datos de inspección...');
+        // 6. Ejecutar seed de datos de inspección
+        console.log('\n🏭 Paso 5: Cargando datos de inspección...');
         const { default: seedInspectionData } = await import('./seedInspectionData.js');
         await seedInspectionData();
         console.log('✅ Datos de inspección cargados correctamente.');
 
-        // 6. Crear usuarios con nuevos roles
-        console.log('\n👥 Paso 5: Creando usuarios con roles específicos...');
+        // 7. Crear sedes reales con configuración completa
+        console.log('\n🏢 Paso 6: Creando sedes reales...');
+        const { default: seedRealSedes } = await import('./seedRealSedes.js');
+        await seedRealSedes();
+        console.log('✅ Sedes reales creadas correctamente.');
+
+        // 8. Crear usuarios con nuevos roles
+        console.log('\n👥 Paso 7: Creando usuarios con roles específicos...');
         const { default: seedUsers } = await import('./seedUsers.js');
         await seedUsers();
         console.log('✅ Usuarios con roles específicos creados correctamente.');
@@ -64,6 +76,14 @@ const seedAll = async () => {
         console.log('   - Estados de órdenes de inspección');
         console.log('   - Estados de llamadas');
         console.log('   - Tipos de inspección (En sede, A domicilio, Remoto)');
+        console.log('   - Sistema de modalidades: Tipos de sede (CDA, Comercial, Soporte)');
+        console.log('   - Modalidades de inspección: En Sede, A Domicilio, Virtual');
+        console.log('   - Tipos de vehículos: Livianos, Pesados, Motos');
+        console.log('   - Sedes reales: CDA 197, CDA Distrital, CDA PREVITAX (Bogotá)');
+        console.log('   - Sedes reales: CDA Cali Norte, CDA Cali Sur (Cali)');
+        console.log('   - Sedes administrativas: Comercial y Soporte (Bogotá)');
+        console.log('   - Horarios flexibles con intervalos de 1 hora y capacidad de 5 cupos');
+        console.log('   - Configuración de tipos de vehículos por sede');
         console.log('   - Sistema de notificaciones configurado');
         console.log('   - Usuario administrador: admin@vmlperito.com (contraseña: 123456)');
         console.log('   - Usuario comercial: comercial@vmlperito.com (contraseña: 123456)');

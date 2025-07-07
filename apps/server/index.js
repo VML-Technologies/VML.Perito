@@ -16,6 +16,7 @@ import webSocketSystem from './websocket/index.js';
 import inspectionOrderController from './controllers/inspectionOrderController.js';
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
+import scheduleController from './controllers/scheduleController.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -120,6 +121,17 @@ app.get('/api/contact-agent/inspection-types', requirePermission('contact_agent.
 app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'), contactAgentController.getDepartments);
 app.get('/api/contact-agent/cities/:departmentId', requirePermission('contact_agent.read'), contactAgentController.getCities);
 app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.read'), contactAgentController.getSedes);
+
+// Nuevas rutas para modalidades de agendamiento
+app.get('/api/contact-agent/modalities', requirePermission('contact_agent.read'), contactAgentController.getAvailableModalities);
+app.get('/api/contact-agent/available-sedes', requirePermission('contact_agent.read'), contactAgentController.getAvailableSedes);
+
+// ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
+
+// Rutas para gestión de horarios y disponibilidad
+app.get('/api/schedules/available', requirePermission('contact_agent.read'), scheduleController.getAvailableSchedules);
+app.get('/api/sedes/:sedeId/vehicle-types', requirePermission('contact_agent.read'), scheduleController.getSedeVehicleTypes);
+app.post('/api/schedules/appointments', requirePermission('contact_agent.create_appointment'), scheduleController.createScheduledAppointment);
 
 // ===== NUEVAS RUTAS - Coordinador de Contact Center =====
 
@@ -233,10 +245,6 @@ app.get('/api/websocket/debug', (req, res) => {
     }
 });
 
-
-
-
-
 // Verificar que la tabla de inspection_orders existe
 app.get('/api/inspection-orders-test', async (req, res) => {
     try {
@@ -262,8 +270,6 @@ app.get('/api/inspection-orders-simple', async (req, res) => {
         res.status(500).json({ error: error.message, stack: error.stack });
     }
 });
-
-
 
 // Sincronizar base de datos y arrancar servidor
 const startServer = async () => {

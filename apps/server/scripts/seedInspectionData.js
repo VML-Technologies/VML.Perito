@@ -250,6 +250,7 @@ const seedInspectionData = async () => {
         const notificationConfigs = [
             // Notificaciones para usuarios
             {
+                name: 'Llamada realizada - Notificación interna',
                 notification_type: 'call_made',
                 notification_channel: 'in_app',
                 template_title: 'Llamada realizada',
@@ -259,6 +260,7 @@ const seedInspectionData = async () => {
                 active: true
             },
             {
+                name: 'Agendamiento realizado - Notificación interna',
                 notification_type: 'appointment_scheduled',
                 notification_channel: 'in_app',
                 template_title: 'Agendamiento realizado',
@@ -268,6 +270,7 @@ const seedInspectionData = async () => {
                 active: true
             },
             {
+                name: 'Asignación de orden - Sistema',
                 notification_type: 'asignacion_orden',
                 notification_channel: 'sistema',
                 template_title: 'Orden Asignada',
@@ -278,6 +281,7 @@ const seedInspectionData = async () => {
             },
             // Notificaciones para clientes
             {
+                name: 'Inspección agendada - SMS cliente',
                 notification_type: 'appointment_scheduled',
                 notification_channel: 'sms',
                 template_title: 'Inspección Agendada',
@@ -300,6 +304,7 @@ const seedInspectionData = async () => {
                         notification_channel_id: notificationChannel.id
                     },
                     defaults: {
+                        name: configData.name,
                         notification_type_id: notificationType.id,
                         notification_channel_id: notificationChannel.id,
                         template_title: configData.template_title,

@@ -19,6 +19,14 @@ import NotificationChannel from './notificationChannel.js';
 import NotificationType from './notificationType.js';
 import NotificationConfig from './notificationConfig.js';
 import Notification from './notification.js';
+import SedeType from './sedeType.js';
+import InspectionModality from './inspectionModality.js';
+import SedeModalityAvailability from './sedeModalityAvailability.js';
+
+// Nuevos modelos para sistema avanzado
+import VehicleType from './vehicleType.js';
+import SedeVehicleType from './sedeVehicleType.js';
+import ScheduleTemplate from './scheduleTemplate.js';
 
 // Definir relaciones existentes
 
@@ -257,6 +265,139 @@ Appointment.belongsTo(Sede, {
     as: 'sede'
 });
 
+// ===== NUEVAS RELACIONES MODALIDADES =====
+
+// SedeType -> Sedes (1:N)
+SedeType.hasMany(Sede, {
+    foreignKey: 'sede_type_id',
+    as: 'sedes'
+});
+Sede.belongsTo(SedeType, {
+    foreignKey: 'sede_type_id',
+    as: 'sedeType'
+});
+
+// InspectionModality -> Appointments (1:N)
+InspectionModality.hasMany(Appointment, {
+    foreignKey: 'inspection_modality_id',
+    as: 'appointments'
+});
+Appointment.belongsTo(InspectionModality, {
+    foreignKey: 'inspection_modality_id',
+    as: 'inspectionModality'
+});
+
+// SedeModalityAvailability relaciones
+Sede.hasMany(SedeModalityAvailability, {
+    foreignKey: 'sede_id',
+    as: 'modalityAvailabilities'
+});
+SedeModalityAvailability.belongsTo(Sede, {
+    foreignKey: 'sede_id',
+    as: 'sede'
+});
+
+InspectionModality.hasMany(SedeModalityAvailability, {
+    foreignKey: 'inspection_modality_id',
+    as: 'sedeAvailabilities'
+});
+SedeModalityAvailability.belongsTo(InspectionModality, {
+    foreignKey: 'inspection_modality_id',
+    as: 'inspectionModality'
+});
+
+InspectionType.hasMany(SedeModalityAvailability, {
+    foreignKey: 'inspection_type_id',
+    as: 'sedeAvailabilities'
+});
+SedeModalityAvailability.belongsTo(InspectionType, {
+    foreignKey: 'inspection_type_id',
+    as: 'inspectionType'
+});
+
+// ===== NUEVAS RELACIONES SISTEMA AVANZADO =====
+
+// VehicleType relaciones
+VehicleType.hasMany(Appointment, {
+    foreignKey: 'vehicle_type_id',
+    as: 'appointments'
+});
+Appointment.belongsTo(VehicleType, {
+    foreignKey: 'vehicle_type_id',
+    as: 'vehicleType'
+});
+
+// SedeVehicleType relaciones (N:N entre Sede y VehicleType)
+Sede.belongsToMany(VehicleType, {
+    through: SedeVehicleType,
+    foreignKey: 'sede_id',
+    otherKey: 'vehicle_type_id',
+    as: 'vehicleTypes'
+});
+VehicleType.belongsToMany(Sede, {
+    through: SedeVehicleType,
+    foreignKey: 'vehicle_type_id',
+    otherKey: 'sede_id',
+    as: 'sedes'
+});
+
+// Relaciones directas para SedeVehicleType
+Sede.hasMany(SedeVehicleType, {
+    foreignKey: 'sede_id',
+    as: 'sedeVehicleTypes'
+});
+SedeVehicleType.belongsTo(Sede, {
+    foreignKey: 'sede_id',
+    as: 'sede'
+});
+
+VehicleType.hasMany(SedeVehicleType, {
+    foreignKey: 'vehicle_type_id',
+    as: 'sedeVehicleTypes'
+});
+SedeVehicleType.belongsTo(VehicleType, {
+    foreignKey: 'vehicle_type_id',
+    as: 'vehicleType'
+});
+
+// ScheduleTemplate relaciones
+Sede.hasMany(ScheduleTemplate, {
+    foreignKey: 'sede_id',
+    as: 'scheduleTemplates'
+});
+ScheduleTemplate.belongsTo(Sede, {
+    foreignKey: 'sede_id',
+    as: 'sede'
+});
+
+InspectionModality.hasMany(ScheduleTemplate, {
+    foreignKey: 'inspection_modality_id',
+    as: 'scheduleTemplates'
+});
+ScheduleTemplate.belongsTo(InspectionModality, {
+    foreignKey: 'inspection_modality_id',
+    as: 'inspectionModality'
+});
+
+InspectionType.hasMany(ScheduleTemplate, {
+    foreignKey: 'inspection_type_id',
+    as: 'scheduleTemplates'
+});
+ScheduleTemplate.belongsTo(InspectionType, {
+    foreignKey: 'inspection_type_id',
+    as: 'inspectionType'
+});
+
+// Appointment -> ScheduleTemplate
+ScheduleTemplate.hasMany(Appointment, {
+    foreignKey: 'schedule_template_id',
+    as: 'appointments'
+});
+Appointment.belongsTo(ScheduleTemplate, {
+    foreignKey: 'schedule_template_id',
+    as: 'scheduleTemplate'
+});
+
 // ===== RELACIONES NOTIFICACIONES =====
 
 // NotificationType -> NotificationConfig (1:N)
@@ -339,5 +480,12 @@ export {
     NotificationChannel,
     NotificationType,
     NotificationConfig,
-    Notification
+    Notification,
+    SedeType,
+    InspectionModality,
+    SedeModalityAvailability,
+    // Sistema avanzado
+    VehicleType,
+    SedeVehicleType,
+    ScheduleTemplate
 }; 

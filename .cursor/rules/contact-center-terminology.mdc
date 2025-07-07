@@ -3,157 +3,75 @@ description:
 globs:
 alwaysApply: false
 ---
-# Terminología Contact Center
+# Terminología de Contact Center
 
-## Roles y Terminología Correcta
+## Roles Actualizados
 
-### Roles del Sistema
-- **Agente de Contact Center**: Gestiona llamadas y agendamientos
-- **Coordinador de Contact Center**: Supervisa y asigna agentes
+### Tipos de Sede
+- **CDA**: Centro de Diagnóstico Automotor - Para inspecciones vehiculares
+- **COMERCIAL**: Sede comercial y ventas - Para usuarios comerciales
+- **SOPORTE**: Sede de soporte y contact center - Para agentes y coordinadores
 
-### ❌ Terminología Incorrecta (NO USAR)
-- "Agente de Contacto"
-- "Coordinador de Contacto"
-- "Centro de Contacto"
-- "Agente Contacto"
+### Roles de Usuario
+- **Comercial Mundial**: Crea y gestiona órdenes de inspección
+- **Agente de Contact Center**: Gestiona llamadas y agendamientos (antes "Agente de Contacto")
+- **Coordinador de Contact Center**: Supervisa y asigna agentes (antes "Coordinador de Contacto")
 
-### ✅ Terminología Correcta (USAR SIEMPRE)
-- "Agente de Contact Center"
-- "Coordinador de Contact Center"
-- "Contact Center"
+## Sistema de Modalidades
 
-## Implementación en Código
+### Modalidades de Inspección
+- **En Sede**: Inspección realizada en las instalaciones de la sede
+- **A Domicilio**: Inspección realizada en el domicilio del cliente
+- **Virtual**: Inspección realizada de forma virtual/remota
 
-### Base de Datos
-```javascript
-// En seedRBAC.js
-{
-    name: 'agente_contacto',
-    description: 'Agente de Contact Center - Gestiona llamadas y agendamientos'
-},
-{
-    name: 'coordinador_contacto', 
-    description: 'Coordinador de Contact Center - Supervisa y asigna agentes'
-}
-```
+### Tipos de Vehículos
+- **Livianos**: Automóviles, camionetas pequeñas
+- **Pesados**: Camiones, buses, tractomulas
+- **Motos**: Motocicletas y ciclomotores
 
-### Frontend - Títulos de Página
-```javascript
-// En AgenteContacto.jsx
-<h1>Agente de Contact Center</h1>
-
-// En CoordinadorContacto.jsx  
-<h1>Coordinador de Contact Center</h1>
-```
-
-### Sidebar y Navegación
-```javascript
-// En app-sidebar.jsx
-{
-    title: "Contact Center",
-    items: [
-        {
-            title: "Agente de Contact Center",
-            url: "/agente-contacto"
-        },
-        {
-            title: "Coordinador de Contact Center", 
-            url: "/coordinador-contacto"
-        }
-    ]
-}
-```
-
-### Mapeo de Roles
-```javascript
-// En role-utils.js
-export const ROLE_DISPLAY_NAMES = {
-    'agente_contacto': 'Agente de Contact Center',
-    'coordinador_contacto': 'Coordinador de Contact Center',
-    'comercial_mundial': 'Comercial Mundial',
-    'admin': 'Administrador'
-};
-```
-
-## Archivos Afectados
-
-### Frontend
-- **[AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx)**: Título de página
-- **[CoordinadorContacto.jsx](mdc:apps/web/src/pages/CoordinadorContacto.jsx)**: Título de página
-- **[app-sidebar.jsx](mdc:apps/web/src/components/app-sidebar.jsx)**: Navegación y tooltips
-- **[Dashboard.jsx](mdc:apps/web/src/pages/Dashboard.jsx)**: Tarjetas de roles
-- **[role-utils.js](mdc:apps/web/src/lib/role-utils.js)**: Mapeo de nombres
+## Archivos Principales
 
 ### Backend
-- **[seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)**: Descripciones de roles
-- **[coordinadorContactoController.js](mdc:apps/server/controllers/coordinadorContactoController.js)**: Mensajes de error
-- **[inspectionOrder.js](mdc:apps/server/models/inspectionOrder.js)**: Comentarios de campos
+- **Modelos**: [index.js](mdc:apps/server/models/index.js) - Todas las relaciones del sistema
+- **Controladores**: 
+  - [contactAgentController.js](mdc:apps/server/controllers/contactAgentController.js) - Agente de Contact Center
+  - [coordinadorContactoController.js](mdc:apps/server/controllers/coordinadorContactoController.js) - Coordinador
+  - [scheduleController.js](mdc:apps/server/controllers/scheduleController.js) - Sistema de horarios
 
-## Reglas de Estilo
+### Frontend
+- **Páginas**:
+  - [AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx) - Panel del agente
+  - [CoordinadorContacto.jsx](mdc:apps/web/src/pages/CoordinadorContacto.jsx) - Panel del coordinador
+- **Componentes**: [app-sidebar.jsx](mdc:apps/web/src/components/app-sidebar.jsx) - Navegación
 
-### Títulos y Headers
-```javascript
-// ✅ Correcto
-<h1>Coordinador de Contact Center</h1>
-<h2>Panel de Agente de Contact Center</h2>
+### Seeding
+- **Script principal**: [seedAll.js](mdc:apps/server/scripts/seedAll.js) - Proceso completo
+- **Sedes reales**: [seedRealSedes.js](mdc:apps/server/scripts/seedRealSedes.js) - CDAs configurados
+- **Modalidades**: [seedModalitySystem.js](mdc:apps/server/scripts/seedModalitySystem.js) - Sistema avanzado
 
-// ❌ Incorrecto
-<h1>Coordinador de Contacto</h1>
-<h2>Panel de Agente Contacto</h2>
+## Flujo de Agendamiento
+
+### Orden del Formulario
+1. **Departamento** → Carga ciudades
+2. **Ciudad** → Carga modalidades disponibles
+3. **Modalidad** → Filtra tipos de inspección
+4. **Tipo de Inspección** → Filtra sedes compatibles
+5. **Sede** → Muestra horarios y tipos de vehículos
+6. **Fecha y Hora** → Intervalos disponibles
+7. **Tipo de Vehículo** → Validación final
+
+### Validaciones
+- Modalidad disponible en la sede
+- Tipo de vehículo admitido
+- Capacidad disponible en el horario
+- Dirección obligatoria para modalidad "A Domicilio"
+
+## Credenciales de Prueba
+
 ```
-
-### Mensajes y Notificaciones
-```javascript
-// ✅ Correcto
-"Orden asignada al agente de contact center"
-"Notificación para coordinador de contact center"
-
-// ❌ Incorrecto  
-"Orden asignada al agente de contacto"
-"Notificación para coordinador de contacto"
-```
-
-### Logs y Comentarios
-```javascript
-// ✅ Correcto
-console.log('Agente de Contact Center conectado');
-// Endpoint para coordinadores de contact center
-
-// ❌ Incorrecto
-console.log('Agente de Contacto conectado');
-// Endpoint para coordinadores de contacto
-```
-
-## Consistencia en UI
-
-### Botones y Labels
-- "Asignar a Agente de Contact Center"
-- "Filtrar por Coordinador de Contact Center"
-- "Configuración de Contact Center"
-
-### Tooltips y Ayuda
-- "Los agentes de contact center gestionan las llamadas"
-- "Los coordinadores de contact center supervisan las asignaciones"
-
-### Breadcrumbs
-- Dashboard > Contact Center > Agente de Contact Center
-- Dashboard > Contact Center > Coordinador de Contact Center
-
-## Validación
-
-### Antes de Commit
-1. Buscar cualquier referencia a "Agente de Contacto" o "Coordinador de Contacto"
-2. Verificar que todos los títulos usen la terminología correcta
-3. Revisar mensajes de error y notificaciones
-4. Confirmar consistencia en logs y comentarios
-
-### Herramientas de Búsqueda
-```bash
-# Buscar terminología incorrecta
-grep -r "Agente de Contacto" apps/
-grep -r "Coordinador de Contacto" apps/
-grep -r "Centro de Contacto" apps/
-
-# Verificar terminología correcta
-grep -r "Contact Center" apps/
+Coordinador: coordinadora@vmlperito.com / 123456
+Agente 1: agente1@vmlperito.com / 123456
+Agente 2: agente2@vmlperito.com / 123456
+Comercial: comercial@vmlperito.com / 123456
+Admin: admin@vmlperito.com / 123456
 ```

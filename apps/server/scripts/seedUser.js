@@ -32,11 +32,66 @@ const createAdminUser = async () => {
             return existingUser;
         }
 
+        // Buscar una sede existente o crear una temporal
+        const { Sede } = await import('../models/index.js');
+        let sedeId = null;
+
+        // Intentar encontrar una sede existente
+        const existingSede = await Sede.findOne();
+        if (existingSede) {
+            sedeId = existingSede.id;
+            console.log(`✅ Usando sede existente: ${existingSede.name} (ID: ${sedeId})`);
+        } else {
+            // Si no hay sedes, crear una temporal para el administrador
+            console.log('⚠️  No se encontraron sedes. Creando sede temporal para administrador...');
+            const { City, Company, SedeType } = await import('../models/index.js');
+
+            // Buscar ciudad de Bogotá
+            const bogota = await City.findOne({ where: { name: 'Bogotá' } });
+            if (!bogota) {
+                throw new Error('No se encontró la ciudad de Bogotá. Ejecuta primero el seed de datos básicos.');
+            }
+
+            // Buscar empresa Previcar
+            const previcar = await Company.findOne({ where: { name: 'Previcar' } });
+            if (!previcar) {
+                throw new Error('No se encontró la empresa Previcar. Ejecuta primero el seed de datos básicos.');
+            }
+
+            // Buscar tipo de sede Comercial (o crear si no existe)
+            let sedeType = await SedeType.findOne({ where: { code: 'COMERCIAL' } });
+            if (!sedeType) {
+                // Si no existe, crear el tipo de sede Comercial
+                sedeType = await SedeType.create({
+                    name: 'Comercial',
+                    code: 'COMERCIAL',
+                    description: 'Sede comercial y administrativa',
+                    active: true
+                });
+                console.log('✅ Tipo de sede Comercial creado para sede temporal');
+            }
+
+            // Crear sede temporal
+            const tempSede = await Sede.create({
+                name: 'Sede Administrativa Temporal',
+                address: 'Sede temporal para administrador',
+                phone: '601-000-0000',
+                email: 'admin@vmlperito.com',
+                city_id: bogota.id,
+                company_id: previcar.id,
+                sede_type_id: sedeType.id,
+                active: true
+            });
+
+            sedeId = tempSede.id;
+            console.log(`✅ Sede temporal creada: ${tempSede.name} (ID: ${sedeId})`);
+        }
+
         // Crear usuario administrador
         const hashedPassword = await bcrypt.hash('123456', 10);
 
         const adminUser = await User.create({
-            sede_id: 1,
+            sede_id: sedeId,
             name: 'Administrador del Sistema',
             email: 'admin@vmlperito.com',
             phone: '123456789',

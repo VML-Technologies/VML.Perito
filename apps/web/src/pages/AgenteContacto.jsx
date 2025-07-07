@@ -35,9 +35,13 @@ export default function AgenteContacto() {
     const [departments, setDepartments] = useState([]);
     const [cities, setCities] = useState([]);
     const [sedes, setSedes] = useState([]);
+    const [modalities, setModalities] = useState([]);
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
+    const [selectedModality, setSelectedModality] = useState('');
     const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('call');
+    const [showAppointmentForm, setShowAppointmentForm] = useState(false);
     const { showToast } = useNotificationContext();
     const { isConnected } = useWebSocket();
     const { user } = useAuth();
@@ -264,9 +268,49 @@ export default function AgenteContacto() {
         }
     };
 
+    const loadModalities = async (departmentId, cityId) => {
+        if (!departmentId || !cityId) return;
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_ROUTES.CONTACT_AGENT.MODALITIES}?departmentId=${departmentId}&cityId=${cityId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setModalities(data.data || []);
+            }
+        } catch (error) {
+            console.error('Error loading modalities:', error);
+        }
+    };
+
+    const loadAvailableSedes = async (modalityId, inspectionTypeId, cityId) => {
+        if (!modalityId || !inspectionTypeId || !cityId) return;
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_ROUTES.CONTACT_AGENT.AVAILABLE_SEDES}?modalityId=${modalityId}&inspectionTypeId=${inspectionTypeId}&cityId=${cityId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setSedes(data.data || []);
+            }
+        } catch (error) {
+            console.error('Error loading available sedes:', error);
+        }
+    };
+
     const handleOrderSelect = (order) => {
         setSelectedOrder(order);
         setIsPanelOpen(true);
+        setActiveTab('call'); // Siempre empezar en la pestaña de llamada
+        setShowAppointmentForm(false); // Ocultar formulario de agendamiento
 
         // Reset forms
         setCallForm({
@@ -279,6 +323,7 @@ export default function AgenteContacto() {
             hora_inspeccion: '',
             direccion_inspeccion: '',
             inspection_type_id: '',
+            inspection_modality_id: '',
             sede_id: '',
             observaciones: ''
         });
@@ -293,6 +338,13 @@ export default function AgenteContacto() {
 
         try {
             const token = localStorage.getItem('authToken');
+
+            // Agregar fecha de seguimiento automática (momento actual)
+            const callDataWithTimestamp = {
+                ...callForm,
+                fecha_seguimiento: new Date().toISOString()
+            };
+
             const response = await fetch(API_ROUTES.CONTACT_AGENT.CALL_LOGS, {
                 method: 'POST',
                 headers: {
@@ -301,14 +353,54 @@ export default function AgenteContacto() {
                 },
                 body: JSON.stringify({
                     inspection_order_id: selectedOrder.id,
-                    ...callForm
+                    ...callDataWithTimestamp
                 })
             });
 
             if (response.ok) {
                 showToast('Llamada registrada exitosamente', 'success');
+
+                // Verificar si el estado seleccionado requiere agendamiento
+                const selectedStatus = callStatuses.find(status => status.id.toString() === callForm.call_status_id);
+                const needsScheduling = selectedStatus?.creates_schedule;
+
+                if (needsScheduling) {
+                    // Si requiere agendamiento, verificar que los datos estén completos
+                    if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
+                        showToast('Completa la fecha y hora del agendamiento', 'warning');
+                        return;
+                    }
+
+                    // Crear el agendamiento
+                    try {
+                        const appointmentResponse = await fetch(API_ROUTES.CONTACT_AGENT.APPOINTMENTS, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                inspection_order_id: selectedOrder.id,
+                                ...appointmentForm
+                            })
+                        });
+
+                        if (appointmentResponse.ok) {
+                            showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
+                            setIsPanelOpen(false);
+                        } else {
+                            throw new Error('Error al crear el agendamiento');
+                        }
+                    } catch (appointmentError) {
+                        console.error('Error creating appointment:', appointmentError);
+                        showToast('Llamada registrada, pero error al crear agendamiento', 'warning');
+                    }
+                } else {
+                    // Si no requiere agendamiento, cerrar el panel
+                    setIsPanelOpen(false);
+                }
+
                 await loadOrders(); // Refresh orders
-                setIsPanelOpen(false);
             } else {
                 throw new Error('Error al registrar la llamada');
             }
@@ -375,6 +467,32 @@ export default function AgenteContacto() {
             month: 'short',
             day: 'numeric'
         });
+    };
+
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    // Función para detectar si el estado seleccionado requiere agendamiento
+    const handleCallStatusChange = (statusId) => {
+        setCallForm(prev => ({
+            ...prev,
+            call_status_id: statusId
+        }));
+
+        // Verificar si el estado requiere agendamiento
+        const selectedStatus = callStatuses.find(status => status.id.toString() === statusId);
+        const needsScheduling = selectedStatus?.creates_schedule;
+
+        setShowAppointmentForm(needsScheduling);
+
     };
 
     if (loading) {
@@ -453,6 +571,7 @@ export default function AgenteContacto() {
                                     <th className="text-left p-2">Cliente</th>
                                     <th className="text-left p-2">Teléfono</th>
                                     <th className="text-left p-2">Placa</th>
+                                    <th className="text-left p-2">Intentos</th>
                                     <th className="text-left p-2">Estado</th>
                                     <th className="text-left p-2">Acciones</th>
                                 </tr>
@@ -460,7 +579,7 @@ export default function AgenteContacto() {
                             <tbody>
                                 {orders.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" className="text-center p-8">
+                                        <td colSpan="7" className="text-center p-8">
                                             <div className="text-muted-foreground">
                                                 <Phone className="h-12 w-12 mx-auto mb-2 opacity-50" />
                                                 <p>No se encontraron órdenes</p>
@@ -475,6 +594,21 @@ export default function AgenteContacto() {
                                             <td className="p-2">{order.cliente_nombre}</td>
                                             <td className="p-2 font-mono">{order.cliente_telefono}</td>
                                             <td className="p-2 font-mono">{order.vehiculo_placa}</td>
+                                            <td className="p-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    <span className={`font-medium text-sm px-2 py-1 rounded-full ${(order.callLogsCount || 0) === 0
+                                                        ? 'bg-gray-100 text-gray-600'
+                                                        : (order.callLogsCount || 0) <= 2
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : (order.callLogsCount || 0) <= 4
+                                                                ? 'bg-yellow-100 text-yellow-700'
+                                                                : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {order.callLogsCount || order.callLogs?.length || 0}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td className="p-2">
                                                 <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name)}>
                                                     {order.InspectionOrderStatus?.name || 'Sin estado'}
@@ -530,11 +664,79 @@ export default function AgenteContacto() {
                                             <span>{selectedOrder.vehiculo_marca}</span>
                                             <span className="font-medium">Modelo:</span>
                                             <span>{selectedOrder.vehiculo_modelo}</span>
+                                            <span className="font-medium">Intentos de contacto:</span>
+                                            <span className="flex items-center gap-2">
+                                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                                <span className={`font-medium text-sm px-2 py-1 rounded-full ${(selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) === 0
+                                                    ? 'bg-gray-100 text-gray-600'
+                                                    : (selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) <= 2
+                                                        ? 'bg-blue-100 text-blue-700'
+                                                        : (selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) <= 4
+                                                            ? 'bg-yellow-100 text-yellow-700'
+                                                            : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                    {selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0} intentos
+                                                </span>
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <Tabs defaultValue="call" className="space-y-4">
+                                {/* Call History */}
+                                {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base flex items-center gap-2">
+                                                <Phone className="h-4 w-4" />
+                                                Historial de Llamadas
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3 max-h-40 overflow-y-auto">
+                                                {selectedOrder.callLogs.slice(0, 5).map((callLog, index) => (
+                                                    <div key={index} className="p-3 bg-muted/50 rounded-lg border-l-4 border-blue-500">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                                <span className="font-medium text-sm">
+                                                                    {callLog.status?.name || 'Estado desconocido'}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-muted-foreground text-xs">
+                                                                {formatDateTime(callLog.call_time)}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="space-y-1 text-xs text-muted-foreground">
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="h-3 w-3" />
+                                                                <span>
+                                                                    Agente: {callLog.Agent?.name || 'No especificado'}
+                                                                </span>
+                                                            </div>
+
+                                                            {callLog.comments && (
+                                                                <div className="flex items-start gap-2 mt-2">
+                                                                    <FileText className="h-3 w-3 mt-0.5" />
+                                                                    <span className="text-xs italic">
+                                                                        "{callLog.comments}"
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {selectedOrder.callLogs.length > 5 && (
+                                                    <div className="text-center text-xs text-muted-foreground py-2">
+                                                        y {selectedOrder.callLogs.length - 5} llamadas más...
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                                     <TabsList className="grid w-full grid-cols-2">
                                         <TabsTrigger value="call">Registrar Llamada</TabsTrigger>
                                         <TabsTrigger value="appointment">Agendar Inspección</TabsTrigger>
@@ -554,10 +756,7 @@ export default function AgenteContacto() {
                                                         <Label htmlFor="call_status">Estado de la Llamada *</Label>
                                                         <Select
                                                             value={callForm.call_status_id}
-                                                            onValueChange={(value) => setCallForm(prev => ({
-                                                                ...prev,
-                                                                call_status_id: value
-                                                            }))}
+                                                            onValueChange={handleCallStatusChange}
                                                         >
                                                             <SelectTrigger>
                                                                 <SelectValue placeholder="Selecciona el estado" />
@@ -565,7 +764,15 @@ export default function AgenteContacto() {
                                                             <SelectContent>
                                                                 {callStatuses.map((status) => (
                                                                     <SelectItem key={status.id} value={status.id.toString()}>
-                                                                        {status.name}
+                                                                        <div className="flex items-center justify-between w-full">
+                                                                            <span>{status.name}</span>
+                                                                            {status.creates_schedule && (
+                                                                                <div className="flex items-center gap-1 text-xs text-blue-600">
+                                                                                    <Calendar className="h-3 w-3" />
+                                                                                    <span>Requiere agenda</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </SelectItem>
                                                                 ))}
                                                             </SelectContent>
@@ -585,22 +792,97 @@ export default function AgenteContacto() {
                                                         />
                                                     </div>
 
-                                                    <div>
-                                                        <Label htmlFor="fecha_seguimiento">Fecha de Seguimiento</Label>
-                                                        <Input
-                                                            id="fecha_seguimiento"
-                                                            type="datetime-local"
-                                                            value={callForm.fecha_seguimiento}
-                                                            onChange={(e) => setCallForm(prev => ({
-                                                                ...prev,
-                                                                fecha_seguimiento: e.target.value
-                                                            }))}
-                                                        />
+                                                    <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock className="h-3 w-3" />
+                                                            <span>La fecha de seguimiento se registrará automáticamente</span>
+                                                        </div>
                                                     </div>
+
+                                                    {/* Formulario de agendamiento condicional */}
+                                                    {showAppointmentForm && (
+                                                        <div className="border-t pt-4 mt-4">
+                                                            <div className="mb-4">
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <Calendar className="h-4 w-4 text-blue-600" />
+                                                                    <span className="font-medium text-sm text-blue-600">
+                                                                        Datos del Agendamiento
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    El estado seleccionado requiere agendar una cita. Completa los datos a continuación.
+                                                                </p>
+                                                            </div>
+
+                                                            <div className="space-y-4">
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <div>
+                                                                        <Label htmlFor="fecha_inspeccion_inline">Fecha *</Label>
+                                                                        <Input
+                                                                            id="fecha_inspeccion_inline"
+                                                                            type="date"
+                                                                            value={appointmentForm.fecha_inspeccion}
+                                                                            onChange={(e) => setAppointmentForm(prev => ({
+                                                                                ...prev,
+                                                                                fecha_inspeccion: e.target.value
+                                                                            }))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label htmlFor="hora_inspeccion_inline">Hora *</Label>
+                                                                        <Input
+                                                                            id="hora_inspeccion_inline"
+                                                                            type="time"
+                                                                            value={appointmentForm.hora_inspeccion}
+                                                                            onChange={(e) => setAppointmentForm(prev => ({
+                                                                                ...prev,
+                                                                                hora_inspeccion: e.target.value
+                                                                            }))}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <Label htmlFor="direccion_inspeccion_inline">Dirección de Inspección</Label>
+                                                                    <Input
+                                                                        id="direccion_inspeccion_inline"
+                                                                        placeholder="Dirección donde se realizará la inspección"
+                                                                        value={appointmentForm.direccion_inspeccion}
+                                                                        onChange={(e) => setAppointmentForm(prev => ({
+                                                                            ...prev,
+                                                                            direccion_inspeccion: e.target.value
+                                                                        }))}
+                                                                    />
+                                                                </div>
+
+                                                                <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded border border-blue-200">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <AlertCircle className="h-3 w-3 text-blue-600" />
+                                                                        <span>
+                                                                            Los detalles adicionales (tipo de inspección, sede) se pueden completar en la pestaña "Agendar Inspección" si es necesario.
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <Label htmlFor="observaciones_appointment_inline">Observaciones del Agendamiento</Label>
+                                                                    <Input
+                                                                        id="observaciones_appointment_inline"
+                                                                        placeholder="Notas adicionales del agendamiento"
+                                                                        value={appointmentForm.observaciones}
+                                                                        onChange={(e) => setAppointmentForm(prev => ({
+                                                                            ...prev,
+                                                                            observaciones: e.target.value
+                                                                        }))}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
                                                     <Button type="submit" className="w-full">
                                                         <Phone className="h-4 w-4 mr-2" />
-                                                        Registrar Llamada
+                                                        Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
                                                     </Button>
                                                 </form>
                                             </CardContent>
@@ -617,6 +899,161 @@ export default function AgenteContacto() {
                                             </CardHeader>
                                             <CardContent>
                                                 <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                                                    {/* Departamento */}
+                                                    <div>
+                                                        <Label htmlFor="department">Departamento *</Label>
+                                                        <Select
+                                                            value={selectedDepartment}
+                                                            onValueChange={(value) => {
+                                                                setSelectedDepartment(value);
+                                                                setSelectedCity('');
+                                                                setSelectedModality('');
+                                                                setSedes([]);
+                                                                setModalities([]);
+                                                                if (value) {
+                                                                    loadCities(value);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecciona departamento" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {departments.map((dept) => (
+                                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                                        {dept.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Ciudad */}
+                                                    <div>
+                                                        <Label htmlFor="city">Ciudad *</Label>
+                                                        <Select
+                                                            value={selectedCity}
+                                                            onValueChange={(value) => {
+                                                                setSelectedCity(value);
+                                                                setSelectedModality('');
+                                                                setSedes([]);
+                                                                if (value && selectedDepartment) {
+                                                                    loadModalities(selectedDepartment, value);
+                                                                }
+                                                            }}
+                                                            disabled={!selectedDepartment}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecciona ciudad" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {cities.map((city) => (
+                                                                    <SelectItem key={city.id} value={city.id.toString()}>
+                                                                        {city.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Modalidad */}
+                                                    <div>
+                                                        <Label htmlFor="modality">Modalidad de Inspección *</Label>
+                                                        <Select
+                                                            value={selectedModality}
+                                                            onValueChange={(value) => {
+                                                                setSelectedModality(value);
+                                                                setSedes([]);
+                                                                setAppointmentForm(prev => ({
+                                                                    ...prev,
+                                                                    inspection_modality_id: value
+                                                                }));
+                                                            }}
+                                                            disabled={!selectedCity}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecciona modalidad" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {modalities.map((modality) => (
+                                                                    <SelectItem key={modality.id} value={modality.id.toString()}>
+                                                                        <div className="flex items-center justify-between w-full">
+                                                                            <span>{modality.name}</span>
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {modality.sedesCount} sedes
+                                                                            </span>
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Tipo de Inspección */}
+                                                    <div>
+                                                        <Label htmlFor="inspection_type">Tipo de Inspección *</Label>
+                                                        <Select
+                                                            value={appointmentForm.inspection_type_id}
+                                                            onValueChange={(value) => {
+                                                                setAppointmentForm(prev => ({
+                                                                    ...prev,
+                                                                    inspection_type_id: value
+                                                                }));
+                                                                // Cargar sedes disponibles para esta modalidad y tipo
+                                                                if (selectedModality && selectedCity) {
+                                                                    loadAvailableSedes(selectedModality, value, selectedCity);
+                                                                }
+                                                            }}
+                                                            disabled={!selectedModality}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecciona el tipo" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {inspectionTypes.map((type) => (
+                                                                    <SelectItem key={type.id} value={type.id.toString()}>
+                                                                        {type.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Sede */}
+                                                    <div>
+                                                        <Label htmlFor="sede">Sede *</Label>
+                                                        <Select
+                                                            value={appointmentForm.sede_id}
+                                                            onValueChange={(value) => setAppointmentForm(prev => ({
+                                                                ...prev,
+                                                                sede_id: value
+                                                            }))}
+                                                            disabled={!appointmentForm.inspection_type_id}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecciona sede" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {sedes.map((sede) => (
+                                                                    <SelectItem key={sede.id} value={sede.id.toString()}>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-medium">{sede.name}</span>
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {sede.address}
+                                                                            </span>
+                                                                            {sede.availability && (
+                                                                                <span className="text-xs text-blue-600">
+                                                                                    Horario: {sede.availability.workingHoursStart} - {sede.availability.workingHoursEnd}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Fecha y Hora */}
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <div>
                                                             <Label htmlFor="fecha_inspeccion">Fecha *</Label>
@@ -644,103 +1081,23 @@ export default function AgenteContacto() {
                                                         </div>
                                                     </div>
 
-                                                    <div>
-                                                        <Label htmlFor="inspection_type">Tipo de Inspección</Label>
-                                                        <Select
-                                                            value={appointmentForm.inspection_type_id}
-                                                            onValueChange={(value) => setAppointmentForm(prev => ({
-                                                                ...prev,
-                                                                inspection_type_id: value
-                                                            }))}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona el tipo" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {inspectionTypes.map((type) => (
-                                                                    <SelectItem key={type.id} value={type.id.toString()}>
-                                                                        {type.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
+                                                    {/* Dirección (solo si es modalidad domicilio) */}
+                                                    {selectedModality && modalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
+                                                        <div>
+                                                            <Label htmlFor="direccion_inspeccion">Dirección de Inspección *</Label>
+                                                            <Input
+                                                                id="direccion_inspeccion"
+                                                                placeholder="Dirección donde se realizará la inspección"
+                                                                value={appointmentForm.direccion_inspeccion}
+                                                                onChange={(e) => setAppointmentForm(prev => ({
+                                                                    ...prev,
+                                                                    direccion_inspeccion: e.target.value
+                                                                }))}
+                                                            />
+                                                        </div>
+                                                    )}
 
-                                                    <div>
-                                                        <Label htmlFor="direccion_inspeccion">Dirección de Inspección</Label>
-                                                        <Input
-                                                            id="direccion_inspeccion"
-                                                            placeholder="Dirección donde se realizará la inspección"
-                                                            value={appointmentForm.direccion_inspeccion}
-                                                            onChange={(e) => setAppointmentForm(prev => ({
-                                                                ...prev,
-                                                                direccion_inspeccion: e.target.value
-                                                            }))}
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <Label htmlFor="department">Departamento</Label>
-                                                        <Select
-                                                            value={selectedDepartment}
-                                                            onValueChange={setSelectedDepartment}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona departamento" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {departments.map((dept) => (
-                                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                                        {dept.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    <div>
-                                                        <Label htmlFor="city">Ciudad</Label>
-                                                        <Select
-                                                            value={selectedCity}
-                                                            onValueChange={setSelectedCity}
-                                                            disabled={!selectedDepartment}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona ciudad" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {cities.map((city) => (
-                                                                    <SelectItem key={city.id} value={city.id.toString()}>
-                                                                        {city.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    <div>
-                                                        <Label htmlFor="sede">Sede</Label>
-                                                        <Select
-                                                            value={appointmentForm.sede_id}
-                                                            onValueChange={(value) => setAppointmentForm(prev => ({
-                                                                ...prev,
-                                                                sede_id: value
-                                                            }))}
-                                                            disabled={!selectedCity}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona sede" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {sedes.map((sede) => (
-                                                                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                                                                        {sede.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
+                                                    {/* Observaciones */}
                                                     <div>
                                                         <Label htmlFor="observaciones_appointment">Observaciones</Label>
                                                         <Input
