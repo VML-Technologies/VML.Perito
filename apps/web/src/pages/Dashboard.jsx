@@ -1,15 +1,30 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
 import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react';
 
 export const Dashboard = () => {
     const { user, logout } = useAuth();
-    const { hasRole } = useRoles();
+    const { hasRole, loading } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
     const isCoordinador = hasRole('coordinador_contacto');
     const isComercial = hasRole('comercial_mundial');
     const isAgente = hasRole('agente_contacto');
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Solo redirigir cuando los roles ya se han cargado
+        if (!loading) {
+            if (isCoordinador) {
+                navigate('/coordinador-contacto');
+            } else if (isComercial) {
+                navigate('/comercial-mundial');
+            } else if (isAgente) {
+                navigate('/agente-contacto');
+            }
+        }
+    }, [loading, isCoordinador, isComercial, isAgente, navigate]);
 
     return (
         <div className="p-6">
@@ -17,9 +32,13 @@ export const Dashboard = () => {
                 <h1 className="text-3xl font-bold text-gray-900">
                     Bienvenido, {user?.name || 'Usuario'}
                 </h1>
-                <p className="text-gray-600 mt-2">
-                    Panel de control del sistema
-                </p>
+                {
+                    canAccessAdmin && (
+                        <p className="text-gray-600 mt-2">
+                            Panel de control del sistema
+                        </p>
+                    )
+                }
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

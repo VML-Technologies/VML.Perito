@@ -46,25 +46,6 @@ const data = {
       url: "/dashboard",
       icon: LayoutDashboard,
     },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: List,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: Database,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings,
-    },
   ],
 }
 
@@ -76,6 +57,7 @@ export function AppSidebar({
   const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin');
   const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
   const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin');
+  const appName = import.meta.env.VITE_APP_NAME
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -85,7 +67,7 @@ export function AppSidebar({
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/dashboard">
                 <ShieldAlert className="!size-5" />
-                <span className="text-base font-semibold">VML Perito</span>
+                <span className="text-base font-semibold">{appName}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -135,8 +117,6 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        <NavDocuments items={data.documents} />
-
         {/* Administración */}
         {canAccessAdmin && (
           <SidebarGroup>
@@ -147,7 +127,7 @@ export function AppSidebar({
                   <SidebarMenuButton asChild tooltip="Administración RBAC">
                     <Link to="/admin">
                       <Shield />
-                      <span>RBAC</span>
+                      <span>Gestion de acceso</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -156,7 +136,6 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

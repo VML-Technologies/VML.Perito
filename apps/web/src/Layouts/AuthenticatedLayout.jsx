@@ -5,15 +5,24 @@ import { useNotificationContext } from "@/contexts/notification-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWebSocket } from "@/hooks/use-websocket"
+import { useAuth } from '@/contexts/auth-context';
+import { useRoles } from '@/hooks/use-roles';
 
 function AuthenticatedLayout({ children }) {
+    const { user, logout } = useAuth();
+    const { hasRole, loading } = useRoles();
+    const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
     const { toast, hideToast } = useNotificationContext();
     // Inicializar WebSocket para toda la aplicación autenticada
     useWebSocket();
     return (
         <ProtectedRoute>
             <SidebarProvider>
-                <AppSidebar />
+                {
+                    canAccessAdmin && (
+                        <AppSidebar />
+                    )
+                }
                 <SidebarInset>
                     <SiteHeader />
                     <div className="m-4">
