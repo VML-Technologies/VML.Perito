@@ -1,0 +1,55 @@
+# Componentes React - Patrones y Convenciones
+
+## Estructura de Componentes
+
+- Usar componentes funcionales con hooks
+- Implementar PropTypes o TypeScript para validación de props
+- Separar lógica de negocio en hooks personalizados
+- Usar contextos para estado global (auth, notificaciones, RBAC)
+
+## Componentes UI
+
+- Usar componentes de [ui/](mdc:apps/web/src/components/ui/) basados en shadcn/ui
+- Mantener consistencia visual con el sistema de diseño
+- Implementar responsive design para móviles
+- Usar iconos y colores del tema establecido
+
+## Manejo de Estado
+
+- Usar `useState` para estado local
+- Usar `useContext` para estado global compartido
+- Implementar `useEffect` para efectos secundarios
+- Usar `useCallback` y `useMemo` para optimización
+
+## Formularios y Validación
+
+- Usar librerías de formularios (React Hook Form)
+- Implementar validación en tiempo real
+- Mostrar errores de forma clara y accesible
+- Usar componentes de formulario reutilizables
+
+## Notificaciones
+
+- Usar `NotificationProvider` de [notification-context.jsx](mdc:apps/web/src/contexts/notification-context.jsx)
+- Mostrar notificaciones toast para feedback inmediato
+- Implementar notificaciones persistentes para eventos importantes
+- Usar colores y iconos apropiados para cada tipo de notificación
+
+## Navegación y Rutas
+
+- Usar `RoleBasedRoute` para protección de rutas
+- Implementar breadcrumbs para navegación
+- Usar `PermissionGate` para control de acceso granular
+- Mantener URLs descriptivas y SEO-friendly
+
+## Internacionalización
+
+- Usar español como idioma principal
+- Implementar sistema de traducciones para futuras expansiones
+- Usar variables para textos dinámicos
+- Mantener consistencia en terminología
+  description:
+  globs:
+  alwaysApply: false
+
+---

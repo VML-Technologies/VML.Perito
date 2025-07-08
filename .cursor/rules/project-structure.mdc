@@ -1,0 +1,35 @@
+# Estructura del Proyecto VML.Perito
+
+## Organización General
+
+- **Backend**: `apps/server/` - API REST con Express y Sequelize
+- **Frontend**: `apps/web/` - Aplicación React con Vite
+- **Base de datos**: MySQL con estructura definida en `apps/server/curr_db.sql`
+
+## Estructura del Backend (`apps/server/`)
+
+- **Controladores**: `controllers/` - Lógica de negocio y endpoints API
+- **Modelos**: `models/` - Definiciones de Sequelize para entidades de BD
+- **Configuración**: `config/` - Configuración de BD y otros servicios
+- **Scripts**: `scripts/` - Scripts de seed y migración
+- **Servicios**: `services/` - Lógica de servicios (notificaciones, WebSocket)
+
+## Estructura del Frontend (`apps/web/src/`)
+
+- **Componentes**: `components/` - Componentes reutilizables
+- **Páginas**: `pages/` - Páginas principales de la aplicación
+- **Contextos**: `contexts/` - Contextos de React (auth, notificaciones, RBAC)
+- **Hooks**: `hooks/` - Hooks personalizados
+- **Configuración**: `config/` - Configuración de API y rutas
+
+## Convenciones Importantes
+
+- Usar español para labels y mensajes al usuario
+- Implementar notificaciones usando `NotificationProvider` en lugar de alerts
+- Seguir el patrón RBAC para permisos y roles
+- Usar WebSocket para notificaciones en tiempo real
+  description:
+  globs:
+  alwaysApply: false
+
+---
