@@ -1,0 +1,44 @@
+---
+title: Optimización de Rendimiento en React
+---
+
+# Optimización de Rendimiento en React
+
+## Reglas para evitar re-renders innecesarios
+
+### 1. useEffect y Dependencias
+
+- **SIEMPRE** usar `useCallback` para funciones que se pasan como props
+- **SIEMPRE** usar `useMemo` para cálculos costosos
+- **NUNCA** incluir funciones en el array de dependencias de useEffect
+- **SIEMPRE** implementar debounce para llamadas API frecuentes
+
+### 2. Keys en Listas
+
+- **NUNCA** usar `index` como key en `.map()`
+- **SIEMPRE** usar valores únicos y estables como keys
+- **SIEMPRE** usar `React.memo()` para componentes que reciben las mismas props
+
+### 3. Estado y Props
+
+- **SIEMPRE** evitar mutaciones directas del estado
+- **SIEMPRE** usar spread operator para actualizar objetos/arrays
+- **SIEMPRE** memoizar objetos y arrays que se pasan como props
+
+### 4. Llamadas API
+
+- **SIEMPRE** implementar cache para datos que no cambian frecuentemente
+- **SIEMPRE** usar debounce para inputs que disparan llamadas API
+- **SIEMPRE** manejar estados de loading y error
+
+### 5. Debugging
+
+- **NUNCA** dejar `debugger` en código de producción
+- **SIEMPRE** remover `console.log` antes de hacer commit
+- **SIEMPRE** usar herramientas de profiling para identificar bottlenecks
+
+## Archivos de referencia
+
+- [CalendarioAgendamiento.jsx](mdc:apps/web/src/components/CalendarioAgendamiento.jsx)
+- [TimeSlotSelector.jsx](mdc:apps/web/src/components/TimeSlotSelector.jsx)
+- [AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx)

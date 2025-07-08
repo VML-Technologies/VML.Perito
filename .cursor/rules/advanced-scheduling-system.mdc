@@ -3,6 +3,7 @@ description:
 globs:
 alwaysApply: false
 ---
+
 # Sistema de Agendamiento Avanzado
 
 ## Arquitectura del Sistema
@@ -10,10 +11,12 @@ alwaysApply: false
 ### Modelos Principales
 
 #### Tipos de Vehículos
+
 - **VehicleType**: [vehicleType.js](mdc:apps/server/models/vehicleType.js) - Define tipos: Livianos, Pesados, Motos
 - **SedeVehicleType**: [sedeVehicleType.js](mdc:apps/server/models/sedeVehicleType.js) - Relación N:N entre sedes y tipos de vehículos
 
 #### Sistema de Horarios Flexibles
+
 - **ScheduleTemplate**: [scheduleTemplate.js](mdc:apps/server/models/scheduleTemplate.js) - Plantillas de horarios con:
   - Patrones de días flexibles (ej: "1,2,3,4,5" = Lun-Vie, "1,3,5" = Lun-Mie-Vie)
   - Intervalos personalizables (30, 60, 90 minutos)
@@ -21,7 +24,9 @@ alwaysApply: false
   - Horarios de inicio/fin
 
 #### Modelos Actualizados
+
 - **Appointment**: [appointment.js](mdc:apps/server/models/appointment.js) - Agregados campos:
+
   - `vehicle_type_id` - Tipo de vehículo
   - `schedule_template_id` - Plantilla de horario utilizada
   - `scheduled_time_end` - Hora de fin del intervalo
@@ -35,6 +40,7 @@ alwaysApply: false
 ### Controladores
 
 #### ScheduleController
+
 - **Archivo**: [scheduleController.js](mdc:apps/server/controllers/scheduleController.js)
 - **Funciones principales**:
   - `getAvailableSchedules()` - Obtiene horarios disponibles para una fecha
@@ -45,7 +51,7 @@ alwaysApply: false
 ### APIs Disponibles
 
 ```
-GET /api/schedules/available?sedeId=X&modalityId=Y&inspectionTypeId=Z&date=YYYY-MM-DD
+GET /api/schedules/available?sedeId=X&modalityId=Y&date=YYYY-MM-DD
 GET /api/sedes/:sedeId/vehicle-types
 POST /api/schedules/appointments
 ```
@@ -53,6 +59,7 @@ POST /api/schedules/appointments
 ## Sedes Reales Configuradas
 
 ### Bogotá (Cundinamarca)
+
 - **CDA 197**: AUTOPISTA NORTE No. 197 -75 (Livianos, Pesados, Motos)
   - L-V: 7:00-17:00, Sáb: 8:00-17:00
 - **CDA Distrital**: Carrera 36 # 19 – 21 (Livianos)
@@ -61,24 +68,28 @@ POST /api/schedules/appointments
   - L-S: 6:00-18:00
 
 ### Cali (Valle del Cauca)
+
 - **CDA Cali Norte**: CRA 1 N° 47 – 250 (Livianos, Pesados, Motos)
   - L-V: 7:00-17:00, Sáb: 8:00-17:00, Dom: 8:00-12:00
 - **CDA Cali Sur**: CRA 41 N° 6-02 (Livianos, Motos)
   - L-V: 7:00-17:00, Sáb: 8:00-17:00, Dom: 8:00-12:00
 
 ### Sedes Administrativas
+
 - **Sede Comercial Bogotá** - Para usuarios comerciales
 - **Sede Soporte Bogotá** - Para contact center
 
 ## Configuración de Horarios
 
 ### Patrones de Días
+
 - **Individual**: `"1"` (solo lunes)
 - **Rango**: `"1,2,3,4,5"` (lunes a viernes)
 - **Específicos**: `"1,3,5"` (lunes, miércoles, viernes)
 - **Fines de semana**: `"6,7"` (sábado y domingo)
 
 ### Intervalos Flexibles
+
 - Configurables en minutos: 30, 60, 90, etc.
 - Capacidad por intervalo: 1-20 cupos
 - Validación automática de disponibilidad
@@ -86,6 +97,7 @@ POST /api/schedules/appointments
 ## Seeding del Sistema
 
 ### Orden de Ejecución
+
 1. **RBAC**: [seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)
 2. **Datos básicos**: [seedData.js](mdc:apps/server/scripts/seedData.js)
 3. **Usuario admin**: [seedUser.js](mdc:apps/server/scripts/seedUser.js)
@@ -95,6 +107,7 @@ POST /api/schedules/appointments
 7. **Usuarios específicos**: [seedUsers.js](mdc:apps/server/scripts/seedUsers.js)
 
 ### Comando Principal
+
 ```bash
 cd apps/server
 node scripts/seedAll.js
@@ -103,16 +116,18 @@ node scripts/seedAll.js
 ## Relaciones del Modelo
 
 ### VehicleType ↔ Sede (N:N)
+
 ```javascript
 // A través de SedeVehicleType
-Sede.belongsToMany(VehicleType, { through: SedeVehicleType })
-VehicleType.belongsToMany(Sede, { through: SedeVehicleType })
+Sede.belongsToMany(VehicleType, { through: SedeVehicleType });
+VehicleType.belongsToMany(Sede, { through: SedeVehicleType });
 ```
 
 ### ScheduleTemplate → Appointment (1:N)
+
 ```javascript
-ScheduleTemplate.hasMany(Appointment, { foreignKey: 'schedule_template_id' })
-Appointment.belongsTo(ScheduleTemplate, { foreignKey: 'schedule_template_id' })
+ScheduleTemplate.hasMany(Appointment, { foreignKey: 'schedule_template_id' });
+Appointment.belongsTo(ScheduleTemplate, { foreignKey: 'schedule_template_id' });
 ```
 
 ### Validaciones de Negocio

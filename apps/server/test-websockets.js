@@ -57,7 +57,7 @@ async function testWebSockets() {
 
         // 2. Conectar al WebSocket
         console.log('2. Conectando al WebSocket...');
-        const socket = io('http://localhost:3000', {
+        const socket = io('http://192.168.20.6:3000', {
             auth: {
                 token: token
             },

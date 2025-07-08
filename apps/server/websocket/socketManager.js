@@ -24,7 +24,7 @@ class SocketManager {
     initialize(server) {
         this.io = new Server(server, {
             cors: {
-                origin: process.env.FRONTEND_URL || "http://localhost:5173",
+                origin: process.env.FRONTEND_URL || "http://192.168.20.6:5173",
                 methods: ["GET", "POST"],
                 credentials: true
             },

@@ -4,17 +4,9 @@ import { createModelWithSoftDeletes } from './baseModel.js';
 const Appointment = createModelWithSoftDeletes('Appointment', {
     sede_id: {
         type: DataTypes.BIGINT,
-        allowNull: true,
-        references: {
-            model: 'sedes',
-            key: 'id'
-        }
-    },
-    call_log_id: {
-        type: DataTypes.BIGINT,
         allowNull: false,
         references: {
-            model: 'call_logs',
+            model: 'sedes',
             key: 'id'
         }
     },
@@ -26,14 +18,6 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
             key: 'id'
         }
     },
-    inspection_type_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-            model: 'inspection_types',
-            key: 'id'
-        }
-    },
     inspection_modality_id: {
         type: DataTypes.BIGINT,
         allowNull: false,
@@ -42,52 +26,44 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
             key: 'id'
         }
     },
-    vehicle_type_id: {
+    user_id: {
         type: DataTypes.BIGINT,
-        allowNull: true,
+        allowNull: false,
         references: {
-            model: 'vehicle_types',
-            key: 'id'
-        }
-    },
-    schedule_template_id: {
-        type: DataTypes.BIGINT,
-        allowNull: true,
-        references: {
-            model: 'schedule_templates',
+            model: 'users',
             key: 'id'
         }
     },
     scheduled_date: {
         type: DataTypes.DATEONLY,
-        allowNull: true,
+        allowNull: false
     },
     scheduled_time: {
         type: DataTypes.TIME,
-        allowNull: true,
+        allowNull: false
     },
-    scheduled_time_end: {
-        type: DataTypes.TIME,
-        allowNull: true,
-        comment: 'Hora de fin del intervalo asignado'
-    },
-    inspection_address: {
-        type: DataTypes.STRING(500),
-        allowNull: true,
-        comment: 'Dirección específica para inspección a domicilio'
+    status: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        defaultValue: 'pending',
+        comment: 'Estado de la cita (pending, confirmed, cancelled, etc.)'
     },
     notes: {
         type: DataTypes.TEXT,
-        allowNull: true,
-        comment: 'Observaciones adicionales del agendamiento'
-    },
-    status: {
-        type: DataTypes.ENUM('PROGRAMADA', 'CONFIRMADA', 'EN_CURSO', 'COMPLETADA', 'CANCELADA', 'REPROGRAMADA'),
-        allowNull: false,
-        defaultValue: 'PROGRAMADA'
+        allowNull: true
     },
 }, {
     tableName: 'appointments',
+    indexes: [
+        {
+            name: 'appointment_sede_modality_idx',
+            fields: ['sede_id', 'inspection_modality_id']
+        },
+        {
+            name: 'appointment_inspection_order_idx',
+            fields: ['inspection_order_id']
+        }
+    ]
 });
 
 export default Appointment; 

@@ -131,7 +131,7 @@ DB_STORAGE=./database.sqlite
 ### Ejemplo de Login
 
 ```bash
-curl -X POST http://localhost:3001/api/auth/login \
+curl -X POST http://192.168.20.6:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "usuario@example.com",
@@ -174,7 +174,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ### Ejemplo de Crear Usuario
 
 ```bash
-curl -X POST http://localhost:3001/api/users \
+curl -X POST http://192.168.20.6:3001/api/users \
   -H "Content-Type: application/json" \
   -d '{
     "sede_id": 1,
@@ -188,7 +188,7 @@ curl -X POST http://localhost:3001/api/users \
 ### Ejemplo de Obtener Perfil del Usuario Autenticado
 
 ```bash
-curl -X GET http://localhost:3001/api/users/profile \
+curl -X GET http://192.168.20.6:3001/api/users/profile \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -439,7 +439,7 @@ app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
 #### Ejemplo: Crear un permiso
 
 ```bash
-curl -X POST http://localhost:3001/api/permissions \
+curl -X POST http://192.168.20.6:3001/api/permissions \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{ "name": "users.export", "description": "Exportar usuarios", "resource": "users", "action": "export", "endpoint": "/api/users/export", "method": "GET" }'
@@ -448,7 +448,7 @@ curl -X POST http://localhost:3001/api/permissions \
 #### Ejemplo: Editar un permiso
 
 ```bash
-curl -X PUT http://localhost:3001/api/permissions/10 \
+curl -X PUT http://192.168.20.6:3001/api/permissions/10 \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{ "name": "users.export", "description": "Permite exportar usuarios", "resource": "users", "action": "export", "endpoint": "/api/users/export", "method": "GET" }'
@@ -457,14 +457,14 @@ curl -X PUT http://localhost:3001/api/permissions/10 \
 #### Ejemplo: Eliminar un permiso
 
 ```bash
-curl -X DELETE http://localhost:3001/api/permissions/10 \
+curl -X DELETE http://192.168.20.6:3001/api/permissions/10 \
   -H "Authorization: Bearer <token>"
 ```
 
 #### Ejemplo: Asignar permisos a un rol
 
 ```bash
-curl -X POST http://localhost:3001/api/roles/1/permissions \
+curl -X POST http://192.168.20.6:3001/api/roles/1/permissions \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{ "permissions": [1, 2, 3, 4] }'
@@ -473,14 +473,14 @@ curl -X POST http://localhost:3001/api/roles/1/permissions \
 #### Ejemplo: Obtener permisos de un rol
 
 ```bash
-curl -X GET http://localhost:3001/api/roles/1/permissions \
+curl -X GET http://192.168.20.6:3001/api/roles/1/permissions \
   -H "Authorization: Bearer <token>"
 ```
 
 #### Ejemplo: Asignar roles a un usuario
 
 ```bash
-curl -X POST http://localhost:3001/api/users/1/roles \
+curl -X POST http://192.168.20.6:3001/api/users/1/roles \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{ "roles": [1, 2] }'
@@ -489,14 +489,14 @@ curl -X POST http://localhost:3001/api/users/1/roles \
 #### Ejemplo: Obtener roles de un usuario
 
 ```bash
-curl -X GET http://localhost:3001/api/users/1/roles \
+curl -X GET http://192.168.20.6:3001/api/users/1/roles \
   -H "Authorization: Bearer <token>"
 ```
 
 #### Ejemplo: Listar usuarios con sus roles
 
 ```bash
-curl -X GET http://localhost:3001/api/users/with-roles \
+curl -X GET http://192.168.20.6:3001/api/users/with-roles \
   -H "Authorization: Bearer <token>"
 ```
 

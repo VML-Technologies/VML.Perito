@@ -88,7 +88,7 @@ class PushService {
      * Generar acción de click para la notificación
      */
     generateClickAction(notification) {
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const baseUrl = process.env.FRONTEND_URL || 'http://192.168.20.6:5173';
 
         // Determinar URL basada en el tipo de notificación
         if (notification.inspection_order_id) {

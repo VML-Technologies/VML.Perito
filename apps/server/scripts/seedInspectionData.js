@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import sequelize from '../config/database.js';
 import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import CallStatus from '../models/callStatus.js';
-import InspectionType from '../models/inspectionType.js';
+import InspectionModality from '../models/inspectionModality.js';
 import NotificationChannel from '../models/notificationChannel.js';
 import NotificationType from '../models/notificationType.js';
 import NotificationConfig from '../models/notificationConfig.js';
@@ -125,37 +125,40 @@ const seedInspectionData = async () => {
             }
         }
 
-        // ===== TIPOS DE INSPECCIÓN =====
-        const inspectionTypes = [
+        // ===== MODALIDADES DE INSPECCIÓN =====
+        const inspectionModalities = [
             {
-                name: 'En sede',
+                name: 'En Sede',
                 description: 'Inspección realizada en las instalaciones de la empresa',
+                code: 'SEDE',
                 active: true
             },
             {
-                name: 'A domicilio',
+                name: 'A Domicilio',
                 description: 'Inspección realizada en el domicilio del cliente',
+                code: 'DOMICILIO',
                 active: true
             },
             {
-                name: 'Remoto',
+                name: 'Virtual',
                 description: 'Inspección realizada de forma virtual',
+                code: 'VIRTUAL',
                 active: true
             }
         ];
 
-        console.log('🔍 Creando tipos de inspección...');
-        const createdInspectionTypes = [];
-        for (const typeData of inspectionTypes) {
-            const [type, created] = await InspectionType.findOrCreate({
-                where: { name: typeData.name },
-                defaults: typeData
+        console.log('🔍 Creando modalidades de inspección...');
+        const createdModalities = [];
+        for (const modalityData of inspectionModalities) {
+            const [modality, created] = await InspectionModality.findOrCreate({
+                where: { code: modalityData.code },
+                defaults: modalityData
             });
-            createdInspectionTypes.push(type);
+            createdModalities.push(modality);
             if (created) {
-                console.log(`✅ Tipo de inspección creado: ${type.name}`);
+                console.log(`✅ Modalidad creada: ${modality.name}`);
             } else {
-                console.log(`ℹ️ Tipo de inspección ya existe: ${type.name}`);
+                console.log(`ℹ️ Modalidad ya existe: ${modality.name}`);
             }
         }
 
@@ -327,7 +330,7 @@ const seedInspectionData = async () => {
         console.log(`📊 Resumen:`);
         console.log(`   - Estados de órdenes: ${createdStatuses.length}`);
         console.log(`   - Estados de llamadas: ${createdCallStatuses.length}`);
-        console.log(`   - Tipos de inspección: ${createdInspectionTypes.length}`);
+        console.log(`   - Modalidades de inspección: ${createdModalities.length}`);
         console.log(`   - Canales de notificación: ${createdChannels.length}`);
         console.log(`   - Tipos de notificación: ${createdNotificationTypes.length}`);
 

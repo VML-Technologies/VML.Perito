@@ -29,7 +29,7 @@ const server = createServer(app);
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: 'http://192.168.20.6:5173', credentials: true }));
 app.use(express.json());
 
 // Rutas de autenticación
@@ -115,7 +115,6 @@ app.get('/api/contact-agent/call-statuses', requirePermission('contact_agent.rea
 
 // Gestión de agendamientos
 app.post('/api/contact-agent/appointments', requirePermission('contact_agent.create_appointment'), contactAgentController.createAppointment);
-app.get('/api/contact-agent/inspection-types', requirePermission('contact_agent.read'), contactAgentController.getInspectionTypes);
 
 // Rutas geográficas para agendamientos
 app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'), contactAgentController.getDepartments);
@@ -129,6 +128,7 @@ app.get('/api/contact-agent/available-sedes', requirePermission('contact_agent.r
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
 
 // Rutas para gestión de horarios y disponibilidad
+app.get('/api/schedules/available', scheduleController.getAvailableSchedules);
 app.get('/api/schedules/available', requirePermission('contact_agent.read'), scheduleController.getAvailableSchedules);
 app.get('/api/sedes/:sedeId/vehicle-types', requirePermission('contact_agent.read'), scheduleController.getSedeVehicleTypes);
 app.post('/api/schedules/appointments', requirePermission('contact_agent.create_appointment'), scheduleController.createScheduledAppointment);
@@ -287,10 +287,10 @@ const startServer = async () => {
         // Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
 
-        server.listen(port, () => {
-            console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);
+        server.listen(port, '0.0.0.0', () => {
+            console.log(`🚀 Servidor Express escuchando en http://192.168.20.6:${port}`);
             console.log(`📊 Base de datos: ${process.env.DATABASE_DRIVER || 'mysql'}`);
-            console.log(`🔌 WebSockets disponibles en ws://localhost:${port}`);
+            console.log(`🔌 WebSockets disponibles en ws://192.168.20.6:${port}`);
         });
     } catch (error) {
         console.error('❌ Error al conectar con la base de datos:', error);

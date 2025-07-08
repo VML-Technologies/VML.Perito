@@ -1,5 +1,5 @@
 // Configuración de la API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.20.6:3000';
 
 export const API_ROUTES = {
     AUTH: {
@@ -60,7 +60,6 @@ export const API_ROUTES = {
         CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
         CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
         APPOINTMENTS: `${API_BASE_URL}/api/contact-agent/appointments`,
-        INSPECTION_TYPES: `${API_BASE_URL}/api/contact-agent/inspection-types`,
         DEPARTMENTS: `${API_BASE_URL}/api/contact-agent/departments`,
         CITIES: (departmentId) => `${API_BASE_URL}/api/contact-agent/cities/${departmentId}`,
         SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,
@@ -74,6 +73,12 @@ export const API_ROUTES = {
         STATS: `${API_BASE_URL}/api/coordinador-contacto/stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
+    },
+    // ===== NUEVAS RUTAS - Sistema de Horarios =====
+    SCHEDULES: {
+        AVAILABLE: `${API_BASE_URL}/api/schedules/available`,
+        APPOINTMENTS: `${API_BASE_URL}/api/schedules/appointments`,
+        VEHICLE_TYPES: (sedeId) => `${API_BASE_URL}/api/sedes/${sedeId}/vehicle-types`,
     },
 };
 

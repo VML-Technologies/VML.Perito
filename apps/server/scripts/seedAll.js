@@ -62,8 +62,14 @@ const seedAll = async () => {
         await seedRealSedes();
         console.log('✅ Sedes reales creadas correctamente.');
 
-        // 8. Crear usuarios con nuevos roles
-        console.log('\n👥 Paso 7: Creando usuarios con roles específicos...');
+        // 8. Configurar disponibilidad de modalidades por sede
+        console.log('\n🎯 Paso 7: Configurando disponibilidad de modalidades...');
+        const { default: seedSedeModalityAvailability } = await import('./seedSedeModalityAvailability.js');
+        await seedSedeModalityAvailability();
+        console.log('✅ Disponibilidad de modalidades configurada correctamente.');
+
+        // 9. Crear usuarios con nuevos roles
+        console.log('\n👥 Paso 8: Creando usuarios con roles específicos...');
         const { default: seedUsers } = await import('./seedUsers.js');
         await seedUsers();
         console.log('✅ Usuarios con roles específicos creados correctamente.');
@@ -75,13 +81,14 @@ const seedAll = async () => {
         console.log('   - Permisos nuevos: inspection_orders.*, contact_agent.*, coordinador_contacto.*');
         console.log('   - Estados de órdenes de inspección');
         console.log('   - Estados de llamadas');
-        console.log('   - Tipos de inspección (En sede, A domicilio, Remoto)');
-        console.log('   - Sistema de modalidades: Tipos de sede (CDA, Comercial, Soporte)');
         console.log('   - Modalidades de inspección: En Sede, A Domicilio, Virtual');
+        console.log('   - Sistema de modalidades: Tipos de sede (CDA, Comercial, Soporte)');
         console.log('   - Tipos de vehículos: Livianos, Pesados, Motos');
         console.log('   - Sedes reales: CDA 197, CDA Distrital, CDA PREVITAX (Bogotá)');
         console.log('   - Sedes reales: CDA Cali Norte, CDA Cali Sur (Cali)');
         console.log('   - Sedes administrativas: Comercial y Soporte (Bogotá)');
+        console.log('   - Agendamiento: Solo CDAs para inspecciones de asegurabilidad');
+        console.log('   - Modalidades: Todas En Sede, CDA Distrital y Cali Norte con las 3 opciones');
         console.log('   - Horarios flexibles con intervalos de 1 hora y capacidad de 5 cupos');
         console.log('   - Configuración de tipos de vehículos por sede');
         console.log('   - Sistema de notificaciones configurado');

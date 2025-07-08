@@ -18,14 +18,6 @@ const SedeModalityAvailability = createModelWithSoftDeletes('SedeModalityAvailab
             key: 'id'
         }
     },
-    inspection_type_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-            model: 'inspection_types',
-            key: 'id'
-        }
-    },
     active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -57,8 +49,8 @@ const SedeModalityAvailability = createModelWithSoftDeletes('SedeModalityAvailab
     indexes: [
         {
             unique: true,
-            name: 'sede_modality_type_unique',
-            fields: ['sede_id', 'inspection_modality_id', 'inspection_type_id']
+            name: 'sede_modality_unique',
+            fields: ['sede_id', 'inspection_modality_id']
         }
     ]
 });

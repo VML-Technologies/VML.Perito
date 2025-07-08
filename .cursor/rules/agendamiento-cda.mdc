@@ -1,0 +1,17 @@
+# Sistema de Agendamiento de Inspecciones de Asegurabilidad (CDAs)
+
+- **Solo las sedes de tipo CDA** pueden tener agendamiento de inspecciones de asegurabilidad.
+- Las sedes comerciales y de soporte son solo administrativas y no permiten agendamiento.
+- Cada sede CDA puede tener una o más modalidades disponibles (En Sede, A Domicilio, Virtual), pero por defecto solo En Sede, salvo excepciones (CDA Distrital y Cali Norte).
+- El modelo `ScheduleTemplate` define los horarios disponibles para cada sede, modalidad y tipo de inspección.
+- El frontend **no debe mostrar selector de modalidad**: la modalidad se determina automáticamente según la sede seleccionada y la configuración de backend.
+- El selector de sede debe mostrar nombre, dirección y horarios de forma clara y visual.
+- El sistema debe mostrar los slots de horarios disponibles según la configuración de la sede y modalidad.
+- Si no existen horarios, se debe poblar la tabla `ScheduleTemplate` para todas las combinaciones necesarias.
+- El backend debe filtrar y devolver solo las sedes CDA y sus horarios disponibles.
+- El frontend debe consumir la API de horarios y mostrar los slots de forma visual e intuitiva.
+  description:
+  globs:
+  alwaysApply: false
+
+---

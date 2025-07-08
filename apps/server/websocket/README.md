@@ -40,7 +40,7 @@ await webSocketSystem.initialize(server);
 
 ```env
 JWT_SECRET=tu_secreto_jwt
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://192.168.20.6:5173
 ```
 
 ## 📡 Conexión desde el Cliente
@@ -50,7 +50,7 @@ FRONTEND_URL=http://localhost:5173
 ```javascript
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3000', {
+const socket = io('http://192.168.20.6:3000', {
   auth: {
     token: 'tu_jwt_token_aqui',
   },

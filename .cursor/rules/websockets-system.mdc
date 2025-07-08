@@ -3,17 +3,20 @@ description:
 globs:
 alwaysApply: false
 ---
+
 # Sistema de WebSockets - VML.Perito
 
 ## Arquitectura del Sistema
 
 ### Componentes Principales
+
 - [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Sistema principal y punto de entrada
 - [apps/server/websocket/socketManager.js](mdc:apps/server/websocket/socketManager.js) - Gestor de conexiones y autenticación
 - [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js) - Sistema de notificaciones
 - [apps/server/websocket/realtimeHandler.js](mdc:apps/server/websocket/realtimeHandler.js) - Actualizaciones en tiempo real
 
 ### Integración en Servidor
+
 ```javascript
 // En apps/server/index.js
 import webSocketSystem from './websocket/index.js';
@@ -25,32 +28,36 @@ await webSocketSystem.initialize(server);
 ## Autenticación y Seguridad
 
 ### 1. Autenticación JWT Obligatoria
+
 ```javascript
 // Cliente debe enviar token JWT
-const socket = io('http://localhost:3000', {
-    auth: {
-        token: 'jwt_token_aqui'
-    }
+const socket = io('http://192.168.20.6:3000', {
+  auth: {
+    token: 'jwt_token_aqui',
+  },
 });
 ```
 
 ### 2. Verificación Automática de Permisos
+
 ```javascript
 // En eventos del servidor - verificación automática
-socket.userPermissions // Array de permisos del usuario
-socket.userRoles // Array de roles del usuario
-socket.user // Objeto completo del usuario
+socket.userPermissions; // Array de permisos del usuario
+socket.userRoles; // Array de roles del usuario
+socket.user; // Objeto completo del usuario
 ```
 
 ### 3. Salas Automáticas por Roles
+
 - `user_${userId}` - Sala personal del usuario
 - `role_${roleName}` - Sala por rol (ej: `role_super_admin`)
 
 ## Sistema de Notificaciones
 
 ### Tipos de Notificaciones Predefinidos
+
 - `system` - Notificaciones del sistema
-- `user` - Relacionadas con usuarios  
+- `user` - Relacionadas con usuarios
 - `security` - Alertas de seguridad
 - `document` - Documentos
 - `rbac` - Roles y permisos
@@ -58,72 +65,68 @@ socket.user // Objeto completo del usuario
 ### Patrones de Uso en Backend
 
 #### 1. Enviar a Usuario Específico
+
 ```javascript
 import webSocketSystem from './websocket/index.js';
 
 await webSocketSystem.sendNotification(userId, {
-    type: 'user',
-    title: 'Perfil actualizado',
-    message: 'Tu información ha sido actualizada.',
-    priority: 'normal' // low, normal, high, urgent
+  type: 'user',
+  title: 'Perfil actualizado',
+  message: 'Tu información ha sido actualizada.',
+  priority: 'normal', // low, normal, high, urgent
 });
 ```
 
 #### 2. Enviar a Rol Específico
+
 ```javascript
 await webSocketSystem.sendNotificationToRole('super_admin', {
-    type: 'system',
-    title: 'Nuevo usuario',
-    message: 'Se ha registrado un nuevo usuario.',
-    priority: 'normal'
+  type: 'system',
+  title: 'Nuevo usuario',
+  message: 'Se ha registrado un nuevo usuario.',
+  priority: 'normal',
 });
 ```
 
 #### 3. Broadcast a Todos
+
 ```javascript
 await webSocketSystem.broadcastNotification({
-    type: 'system',
-    title: 'Mantenimiento programado',
-    message: 'El sistema estará en mantenimiento.',
-    priority: 'high'
+  type: 'system',
+  title: 'Mantenimiento programado',
+  message: 'El sistema estará en mantenimiento.',
+  priority: 'high',
 });
 ```
 
 ### Patrones de Uso en Frontend
 
 #### 1. Escuchar Notificaciones
+
 ```javascript
 socket.on('notification', (notification) => {
-    // Estructura estándar de notificación
-    const {
-        id,
-        type,
-        title,
-        message,
-        priority,
-        timestamp,
-        icon,
-        color,
-        data
-    } = notification;
-    
-    // Mostrar notificación en UI
-    showNotification(notification);
+  // Estructura estándar de notificación
+  const { id, type, title, message, priority, timestamp, icon, color, data } = notification;
+
+  // Mostrar notificación en UI
+  showNotification(notification);
 });
 ```
 
 #### 2. Marcar como Leída
+
 ```javascript
 socket.emit('notification_read', { notificationId: 'notif_123' });
 
 socket.on('notification_read_confirmed', (data) => {
-    console.log('Notificación marcada como leída');
+  console.log('Notificación marcada como leída');
 });
 ```
 
 ## Sistema de Tiempo Real
 
 ### Canales Disponibles
+
 - `users` - Cambios en usuarios (requiere `users.read`)
 - `roles` - Cambios en roles (requiere `roles.read`)
 - `permissions` - Cambios en permisos (requiere `permissions.read`)
@@ -133,41 +136,44 @@ socket.on('notification_read_confirmed', (data) => {
 ### Patrones de Uso
 
 #### 1. Suscribirse a Canales
+
 ```javascript
 // Suscribirse a múltiples canales
-socket.emit('subscribe_to_data', { 
-    channels: ['users', 'system'] 
+socket.emit('subscribe_to_data', {
+  channels: ['users', 'system'],
 });
 
 socket.on('subscribed_to_data', (data) => {
-    console.log('Suscrito a:', data.channels);
+  console.log('Suscrito a:', data.channels);
 });
 ```
 
 #### 2. Recibir Actualizaciones
+
 ```javascript
 socket.on('data_update', (update) => {
-    const { channel, data, timestamp } = update;
-    
-    switch(channel) {
-        case 'users':
-            updateUsersList(data);
-            break;
-        case 'system':
-            updateSystemStats(data);
-            break;
-    }
+  const { channel, data, timestamp } = update;
+
+  switch (channel) {
+    case 'users':
+      updateUsersList(data);
+      break;
+    case 'system':
+      updateSystemStats(data);
+      break;
+  }
 });
 ```
 
 #### 3. Enviar Actualizaciones (Backend)
+
 ```javascript
 // Notificar cambio en usuarios
 await webSocketSystem.broadcastDataUpdate('users', {
-    type: 'user_change',
-    changeType: 'created', // created, updated, deleted
-    userId: newUser.id,
-    data: newUser
+  type: 'user_change',
+  changeType: 'created', // created, updated, deleted
+  userId: newUser.id,
+  data: newUser,
 });
 ```
 
@@ -175,68 +181,71 @@ await webSocketSystem.broadcastDataUpdate('users', {
 
 ### Eventos Cliente → Servidor
 
-| Evento | Descripción | Permisos Requeridos |
-|--------|-------------|-------------------|
-| `ping` | Test de conectividad | Ninguno |
-| `test_connection` | Prueba de conexión | Ninguno |
-| `join_room` | Unirse a sala personalizada | Ninguno |
-| `leave_room` | Salir de sala | Ninguno |
-| `get_connected_users` | Obtener usuarios conectados | `users.read` |
-| `subscribe_to_data` | Suscribirse a canales | Según canal |
-| `get_realtime_data` | Obtener datos en tiempo real | Según canal |
-| `get_system_stats` | Estadísticas del sistema | `system.read` |
-| `send_admin_message` | Enviar mensaje a admin | `admin.notify` |
-| `broadcast_maintenance` | Aviso de mantenimiento | `super_admin` |
+| Evento                  | Descripción                  | Permisos Requeridos |
+| ----------------------- | ---------------------------- | ------------------- |
+| `ping`                  | Test de conectividad         | Ninguno             |
+| `test_connection`       | Prueba de conexión           | Ninguno             |
+| `join_room`             | Unirse a sala personalizada  | Ninguno             |
+| `leave_room`            | Salir de sala                | Ninguno             |
+| `get_connected_users`   | Obtener usuarios conectados  | `users.read`        |
+| `subscribe_to_data`     | Suscribirse a canales        | Según canal         |
+| `get_realtime_data`     | Obtener datos en tiempo real | Según canal         |
+| `get_system_stats`      | Estadísticas del sistema     | `system.read`       |
+| `send_admin_message`    | Enviar mensaje a admin       | `admin.notify`      |
+| `broadcast_maintenance` | Aviso de mantenimiento       | `super_admin`       |
 
 ### Eventos Servidor → Cliente
 
-| Evento | Descripción |
-|--------|-------------|
-| `connected` | Confirmación de conexión exitosa |
-| `notification` | Nueva notificación |
-| `data_update` | Actualización de datos en tiempo real |
-| `connected_users` | Lista de usuarios conectados |
-| `system_stats` | Estadísticas del sistema |
-| `error` | Error en operación |
+| Evento            | Descripción                           |
+| ----------------- | ------------------------------------- |
+| `connected`       | Confirmación de conexión exitosa      |
+| `notification`    | Nueva notificación                    |
+| `data_update`     | Actualización de datos en tiempo real |
+| `connected_users` | Lista de usuarios conectados          |
+| `system_stats`    | Estadísticas del sistema              |
+| `error`           | Error en operación                    |
 
 ## Extensión del Sistema
 
 ### 1. Agregar Nuevos Eventos
+
 ```javascript
 // En cualquier parte del backend
 const socketManager = webSocketSystem.getSocketManager();
 
 socketManager.registerEventHandler('mi_evento', async (socket, data) => {
-    // Verificar permisos si es necesario
-    if (!socket.userPermissions.includes('mi_permiso')) {
-        socket.emit('error', { message: 'Sin permisos' });
-        return;
-    }
-    
-    // Lógica del evento
-    console.log('Evento recibido:', data);
-    
-    // Responder al cliente
-    socket.emit('mi_respuesta', { 
-        resultado: 'procesado',
-        timestamp: new Date().toISOString()
-    });
+  // Verificar permisos si es necesario
+  if (!socket.userPermissions.includes('mi_permiso')) {
+    socket.emit('error', { message: 'Sin permisos' });
+    return;
+  }
+
+  // Lógica del evento
+  console.log('Evento recibido:', data);
+
+  // Responder al cliente
+  socket.emit('mi_respuesta', {
+    resultado: 'procesado',
+    timestamp: new Date().toISOString(),
+  });
 });
 ```
 
 ### 2. Agregar Nuevos Tipos de Notificaciones
+
 ```javascript
 const notificationHandler = webSocketSystem.getNotificationHandler();
 
 notificationHandler.registerNotificationType('mi_tipo', {
-    icon: 'custom-icon',
-    color: '#ff6b6b',
-    sound: true,
-    description: 'Mi tipo personalizado'
+  icon: 'custom-icon',
+  color: '#ff6b6b',
+  sound: true,
+  description: 'Mi tipo personalizado',
 });
 ```
 
 ### 3. Agregar Nuevos Canales de Datos
+
 ```javascript
 // Extender realtimeHandler.js
 // 1. Agregar permisos en hasChannelPermission()
@@ -247,6 +256,7 @@ notificationHandler.registerNotificationType('mi_tipo', {
 ## Integración con Controladores
 
 ### Notificaciones Automáticas en CRUD
+
 ```javascript
 // En userController.js - ejemplo implementado
 import webSocketSystem from '../websocket/index.js';
@@ -254,7 +264,7 @@ import webSocketSystem from '../websocket/index.js';
 async store(req, res) {
     // Crear usuario
     const user = await User.create(userData);
-    
+
     // Notificación automática
     if (webSocketSystem.isInitialized()) {
         await webSocketSystem.sendNotificationToRole('super_admin', {
@@ -263,7 +273,7 @@ async store(req, res) {
             message: `Se ha creado el usuario: ${user.name}`
         });
     }
-    
+
     res.json(user);
 }
 ```
@@ -271,29 +281,33 @@ async store(req, res) {
 ## Monitoreo y Debugging
 
 ### 1. Estadísticas en Tiempo Real
+
 ```javascript
 // Obtener estadísticas completas
 const stats = webSocketSystem.getFullStats();
 
 // Incluye:
 // - Conexiones activas
-// - Canales suscritos  
+// - Canales suscritos
 // - Eventos registrados
 // - Uso de memoria
 // - Uptime del servidor
 ```
 
 ### 2. Endpoints REST de Monitoreo
+
 ```bash
 # Estadísticas completas (requiere system.read)
 GET /api/websocket/stats
 
-# Usuarios conectados (requiere users.read)  
+# Usuarios conectados (requiere users.read)
 GET /api/websocket/connected-users
 ```
 
 ### 3. Logs Automáticos
+
 El sistema registra automáticamente:
+
 - Conexiones y desconexiones
 - Errores de autenticación
 - Eventos procesados
@@ -302,40 +316,44 @@ El sistema registra automáticamente:
 ## Mejores Prácticas
 
 ### 1. Manejo de Conexiones
+
 ```javascript
 // Siempre manejar errores de conexión
 socket.on('connect_error', (error) => {
-    console.error('Error de conexión:', error.message);
-    // Implementar reconexión automática
+  console.error('Error de conexión:', error.message);
+  // Implementar reconexión automática
 });
 
 // Manejar desconexiones
 socket.on('disconnect', (reason) => {
-    console.log('Desconectado:', reason);
-    // Limpiar estado local si es necesario
+  console.log('Desconectado:', reason);
+  // Limpiar estado local si es necesario
 });
 ```
 
 ### 2. Validación de Datos
+
 ```javascript
 // En eventos del servidor - siempre validar
 socketManager.registerEventHandler('mi_evento', async (socket, data) => {
-    // Validar estructura de datos
-    if (!data || typeof data.campo !== 'string') {
-        socket.emit('error', { message: 'Datos inválidos' });
-        return;
-    }
-    
-    // Procesar evento
+  // Validar estructura de datos
+  if (!data || typeof data.campo !== 'string') {
+    socket.emit('error', { message: 'Datos inválidos' });
+    return;
+  }
+
+  // Procesar evento
 });
 ```
 
 ### 3. Gestión de Memoria
+
 - Limpiar suscripciones al desconectar
 - Evitar almacenar grandes objetos en memoria
 - Usar salas para aislar comunicaciones
 
 ### 4. Seguridad
+
 - Siempre verificar permisos antes de procesar eventos
 - Validar todos los datos de entrada
 - No exponer información sensible en eventos
@@ -344,6 +362,7 @@ socketManager.registerEventHandler('mi_evento', async (socket, data) => {
 ## Testing
 
 ### Script de Pruebas
+
 ```bash
 # Ejecutar pruebas completas del sistema
 cd apps/server
@@ -351,6 +370,7 @@ node test-websockets.js
 ```
 
 ### Pruebas Incluidas
+
 - ✅ Autenticación JWT
 - ✅ Conexión/desconexión
 - ✅ Ping/Pong

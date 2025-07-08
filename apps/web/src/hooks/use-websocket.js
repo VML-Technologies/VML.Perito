@@ -31,13 +31,13 @@ export const useWebSocket = () => {
             console.log('🔌 Conectando Socket.IO...', {
                 userId: user.id,
                 userName: user.name,
-                url: 'http://localhost:3000'
+                url: 'http://192.168.20.6:3000'
             });
 
             setConnectionStatus('connecting');
 
             // Crear conexión Socket.IO
-            socketRef.current = io('http://localhost:3000', {
+            socketRef.current = io('http://192.168.20.6:3000', {
                 auth: {
                     token: token
                 },

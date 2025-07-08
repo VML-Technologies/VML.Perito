@@ -3,17 +3,20 @@ description:
 globs:
 alwaysApply: false
 ---
+
 # Configuración de Ejecución del Proyecto VML.Perito
 
 ## Servidores en Ejecución
 
 ### Backend (Server)
+
 - **Puerto**: 3000
 - **Ruta**: `apps/server`
 - **Estado**: Ejecutándose con hot reload
 - **Comando**: `node index.js` o `npm run dev`
 
 ### Frontend (Web)
+
 - **Puerto**: 5173
 - **Ruta**: `apps/web`
 - **Estado**: Ejecutándose con hot reload
@@ -26,12 +29,13 @@ alwaysApply: false
 3. **Para validaciones de terminal**: Solicitar al usuario que comparta la salida
 4. **Hot reload activo**: Los cambios se reflejan automáticamente
 5. **Endpoints disponibles**:
-   - Backend: `http://localhost:3000`
-   - Frontend: `http://localhost:5173`
+   - Backend: `http://192.168.20.6:3000`
+   - Frontend: `http://192.168.20.6:5173`
 
 ## Diagnóstico de Problemas
 
 Si hay errores, solicitar al usuario que comparta:
+
 - Logs del servidor backend
 - Logs del frontend
 - Salida de comandos específicos cuando sea necesario

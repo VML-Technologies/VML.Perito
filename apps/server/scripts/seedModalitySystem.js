@@ -1,8 +1,7 @@
 import {
     SedeType,
     InspectionModality,
-    VehicleType,
-    InspectionType
+    VehicleType
 } from '../models/index.js';
 
 const seedModalitySystem = async () => {
@@ -53,10 +52,6 @@ const seedModalitySystem = async () => {
             });
             console.log(`${wasCreated ? '✅ Creado' : 'ℹ️  Existía'} tipo de vehículo: ${vehicleType.name}`);
         }
-
-        // 4. Verificar tipos de inspección
-        const inspectionTypes = await InspectionType.findAll();
-        console.log(`ℹ️  Tipos de inspección disponibles: ${inspectionTypes.length}`);
 
         console.log('✅ Sistema de modalidades avanzado configurado exitosamente');
 

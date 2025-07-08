@@ -2,7 +2,6 @@ import {
     ScheduleTemplate,
     Sede,
     InspectionModality,
-    InspectionType,
     Appointment,
     VehicleType,
     SedeVehicleType
@@ -10,13 +9,22 @@ import {
 import { Op } from 'sequelize';
 
 class ScheduleController {
-    
+    constructor() {
+        // Bind methods to the instance to ensure 'this' context is maintained
+        this.getAvailableSchedules = this.getAvailableSchedules.bind(this);
+        this.generateTimeSlots = this.generateTimeSlots.bind(this);
+        this.getSedeVehicleTypes = this.getSedeVehicleTypes.bind(this);
+        this.createScheduledAppointment = this.createScheduledAppointment.bind(this);
+        this.timeToMinutes = this.timeToMinutes.bind(this); // Bind auxiliary methods if they use 'this' or are called by other bound methods
+        this.minutesToTime = this.minutesToTime.bind(this);
+    }
+
     // Obtener horarios disponibles para una sede, modalidad y tipo
     async getAvailableSchedules(req, res) {
         try {
-            const { sedeId, modalityId, inspectionTypeId, date } = req.query;
+            const { sedeId, modalityId, date } = req.query;
 
-            if (!sedeId || !modalityId || !inspectionTypeId || !date) {
+            if (!sedeId || !modalityId || !date) {
                 return res.status(400).json({
                     success: false,
                     message: 'Sede, modalidad, tipo de inspección y fecha son requeridos'
@@ -32,7 +40,6 @@ class ScheduleController {
                 where: {
                     sede_id: sedeId,
                     inspection_modality_id: modalityId,
-                    inspection_type_id: inspectionTypeId,
                     active: true,
                     days_pattern: {
                         [Op.like]: `%${dayOfWeek}%`
@@ -48,33 +55,28 @@ class ScheduleController {
                         model: InspectionModality,
                         as: 'inspectionModality',
                         attributes: ['id', 'name', 'code']
-                    },
-                    {
-                        model: InspectionType,
-                        as: 'inspectionType',
-                        attributes: ['id', 'name']
                     }
                 ],
                 order: [['priority', 'DESC'], ['start_time', 'ASC']]
             });
 
             // Generar intervalos disponibles para cada plantilla
-            const availableSlots = [];
-
-            for (const template of scheduleTemplates) {
-                const slots = await this.generateTimeSlots(template, date);
-                availableSlots.push({
-                    template: {
-                        id: template.id,
-                        name: template.name,
-                        start_time: template.start_time,
-                        end_time: template.end_time,
-                        interval_minutes: template.interval_minutes,
-                        capacity_per_interval: template.capacity_per_interval
-                    },
-                    slots: slots
-                });
-            }
+            const availableSlots = await Promise.all(
+                scheduleTemplates.map(async (template) => { // Using an arrow function here
+                    const slots = await this.generateTimeSlots(template, date);
+                    return {
+                        template: {
+                            id: template.id,
+                            name: template.name,
+                            start_time: template.start_time,
+                            end_time: template.end_time,
+                            interval_minutes: template.interval_minutes,
+                            capacity_per_interval: template.capacity_per_interval
+                        },
+                        slots: slots
+                    };
+                })
+            );
 
             res.json({
                 success: true,
@@ -93,7 +95,7 @@ class ScheduleController {
     // Generar slots de tiempo para una plantilla específica
     async generateTimeSlots(template, date) {
         const slots = [];
-        
+
         // Convertir horas a minutos para facilitar cálculos
         const startMinutes = this.timeToMinutes(template.start_time);
         const endMinutes = this.timeToMinutes(template.end_time);
@@ -104,7 +106,6 @@ class ScheduleController {
             where: {
                 sede_id: template.sede_id,
                 inspection_modality_id: template.inspection_modality_id,
-                inspection_type_id: template.inspection_type_id,
                 scheduled_date: date,
                 status: {
                     [Op.not]: 'CANCELADA'
@@ -180,7 +181,6 @@ class ScheduleController {
             const {
                 callLogId,
                 inspectionOrderId,
-                inspectionTypeId,
                 inspectionModalityId,
                 vehicleTypeId,
                 sedeId,
@@ -192,7 +192,7 @@ class ScheduleController {
             } = req.body;
 
             // Validaciones básicas
-            if (!callLogId || !inspectionOrderId || !inspectionTypeId || !inspectionModalityId) {
+            if (!callLogId || !inspectionOrderId || !inspectionModalityId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Campos requeridos faltantes'
@@ -212,7 +212,7 @@ class ScheduleController {
                 // Verificar capacidad disponible
                 const slots = await this.generateTimeSlots(template, scheduledDate);
                 const requestedSlot = slots.find(slot => slot.start_time === scheduledTime);
-                
+
                 if (!requestedSlot || requestedSlot.available_capacity <= 0) {
                     return res.status(400).json({
                         success: false,
@@ -234,7 +234,6 @@ class ScheduleController {
             const appointment = await Appointment.create({
                 call_log_id: callLogId,
                 inspection_order_id: inspectionOrderId,
-                inspection_type_id: inspectionTypeId,
                 inspection_modality_id: inspectionModalityId,
                 vehicle_type_id: vehicleTypeId,
                 sede_id: sedeId,
@@ -253,10 +252,6 @@ class ScheduleController {
                     {
                         model: InspectionModality,
                         as: 'inspectionModality'
-                    },
-                    {
-                        model: InspectionType,
-                        as: 'inspectionType'
                     },
                     {
                         model: VehicleType,

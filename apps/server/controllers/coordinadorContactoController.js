@@ -2,8 +2,8 @@ import InspectionOrder from '../models/inspectionOrder.js';
 import CallLog from '../models/callLog.js';
 import CallStatus from '../models/callStatus.js';
 import Appointment from '../models/appointment.js';
-import InspectionType from '../models/inspectionType.js';
 import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
+import InspectionModality from '../models/inspectionModality.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import Sede from '../models/sede.js';
@@ -345,8 +345,8 @@ class CoordinadorContactoController {
                         as: 'appointments',
                         include: [
                             {
-                                model: InspectionType,
-                                as: 'inspectionType',
+                                model: InspectionModality,
+                                as: 'inspectionModality',
                                 attributes: ['id', 'name', 'description']
                             },
                             {

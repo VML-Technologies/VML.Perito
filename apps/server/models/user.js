@@ -4,7 +4,7 @@ import { createModelWithSoftDeletes } from './baseModel.js';
 const User = createModelWithSoftDeletes('User', {
     sede_id: {
         type: DataTypes.BIGINT,
-        allowNull: false,
+        allowNull: true,
     },
     name: {
         type: DataTypes.STRING(150),

@@ -2,7 +2,6 @@ import {
     InspectionModality,
     SedeModalityAvailability,
     Sede,
-    InspectionType,
     City,
     Department,
     SedeType,
@@ -72,25 +71,24 @@ class AppointmentController {
         }
     }
 
-    // Obtener tipos de inspección disponibles por modalidad
-    async getInspectionTypesByModality(req, res) {
+    // Obtener modalidades de inspección disponibles por ciudad
+    async getInspectionModalitiesByCity(req, res) {
         try {
-            const { modalityId, cityId } = req.query;
+            const { cityId } = req.query;
 
-            if (!modalityId || !cityId) {
+            if (!cityId) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Modalidad y ciudad son requeridos'
+                    message: 'Ciudad es requerida'
                 });
             }
 
-            const inspectionTypes = await InspectionType.findAll({
+            const inspectionModalities = await InspectionModality.findAll({
                 include: [{
                     model: SedeModalityAvailability,
                     as: 'sedeAvailabilities',
                     required: true,
                     where: {
-                        inspection_modality_id: modalityId,
                         active: true
                     },
                     include: [{
@@ -108,11 +106,11 @@ class AppointmentController {
 
             res.json({
                 success: true,
-                data: inspectionTypes
+                data: inspectionModalities
             });
 
         } catch (error) {
-            console.error('Error obteniendo tipos de inspección:', error);
+            console.error('Error obteniendo modalidades de inspección:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor'
@@ -123,9 +121,9 @@ class AppointmentController {
     // Obtener sedes disponibles por modalidad y tipo de inspección
     async getAvailableSedes(req, res) {
         try {
-            const { modalityId, inspectionTypeId, cityId } = req.query;
+            const { modalityId, cityId } = req.query;
 
-            if (!modalityId || !inspectionTypeId || !cityId) {
+            if (!modalityId || !cityId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Modalidad, tipo de inspección y ciudad son requeridos'
@@ -140,7 +138,6 @@ class AppointmentController {
                         required: true,
                         where: {
                             inspection_modality_id: modalityId,
-                            inspection_type_id: inspectionTypeId,
                             active: true
                         },
                         include: [{
@@ -205,7 +202,6 @@ class AppointmentController {
             const {
                 callLogId,
                 inspectionOrderId,
-                inspectionTypeId,
                 inspectionModalityId,
                 sedeId,
                 scheduledDate,
@@ -215,7 +211,7 @@ class AppointmentController {
             } = req.body;
 
             // Validaciones básicas
-            if (!callLogId || !inspectionOrderId || !inspectionTypeId || !inspectionModalityId) {
+            if (!callLogId || !inspectionOrderId || !inspectionModalityId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Campos requeridos faltantes'
@@ -228,7 +224,6 @@ class AppointmentController {
                     where: {
                         sede_id: sedeId,
                         inspection_modality_id: inspectionModalityId,
-                        inspection_type_id: inspectionTypeId,
                         active: true
                     }
                 });
@@ -245,7 +240,6 @@ class AppointmentController {
             const appointment = await Appointment.create({
                 call_log_id: callLogId,
                 inspection_order_id: inspectionOrderId,
-                inspection_type_id: inspectionTypeId,
                 inspection_modality_id: inspectionModalityId,
                 sede_id: sedeId,
                 scheduled_date: scheduledDate,
@@ -261,10 +255,6 @@ class AppointmentController {
                     {
                         model: InspectionModality,
                         as: 'inspectionModality'
-                    },
-                    {
-                        model: InspectionType,
-                        as: 'inspectionType'
                     },
                     {
                         model: Sede,

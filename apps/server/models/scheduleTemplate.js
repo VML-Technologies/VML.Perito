@@ -18,14 +18,6 @@ const ScheduleTemplate = createModelWithSoftDeletes('ScheduleTemplate', {
             key: 'id'
         }
     },
-    inspection_type_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-            model: 'inspection_types',
-            key: 'id'
-        }
-    },
     name: {
         type: DataTypes.STRING(200),
         allowNull: false,
@@ -73,8 +65,8 @@ const ScheduleTemplate = createModelWithSoftDeletes('ScheduleTemplate', {
     tableName: 'schedule_templates',
     indexes: [
         {
-            name: 'schedule_sede_modality_type_idx',
-            fields: ['sede_id', 'inspection_modality_id', 'inspection_type_id']
+            name: 'schedule_sede_modality_idx',
+            fields: ['sede_id', 'inspection_modality_id']
         }
     ]
 });

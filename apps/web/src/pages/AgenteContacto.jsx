@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,8 @@ import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/contexts/auth-context';
+import CalendarioAgendamiento from '@/components/CalendarioAgendamiento';
+import useScheduleValidation from '@/hooks/use-schedule-validation';
 
 export default function AgenteContacto() {
     const [orders, setOrders] = useState([]);
@@ -42,9 +44,12 @@ export default function AgenteContacto() {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('call');
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState(null);
+    const [calendarSelectedDate, setCalendarSelectedDate] = useState('');
     const { showToast } = useNotificationContext();
     const { isConnected } = useWebSocket();
     const { user } = useAuth();
+    const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -133,6 +138,42 @@ export default function AgenteContacto() {
             setSedes([]);
         }
     }, [selectedCity]);
+
+    // Validar en tiempo real cuando cambian los parámetros del agendamiento (con debounce)
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (appointmentForm.sede_id && selectedModality && appointmentForm.inspection_type_id) {
+                validateRealTime(
+                    appointmentForm.sede_id,
+                    selectedModality,
+                    appointmentForm.inspection_type_id,
+                    appointmentForm.fecha_inspeccion,
+                    appointmentForm.hora_inspeccion
+                );
+            } else {
+                clearValidations();
+            }
+        }, 500); // 500ms debounce para evitar validaciones excesivas
+
+        return () => clearTimeout(timeoutId);
+    }, [
+        appointmentForm.sede_id,
+        selectedModality,
+        appointmentForm.inspection_type_id,
+        appointmentForm.fecha_inspeccion,
+        appointmentForm.hora_inspeccion
+    ]);
+
+    // useEffect para seleccionar automáticamente la modalidad si solo hay una opción
+    useEffect(() => {
+        if (modalities.length === 1 && !selectedModality) {
+            setSelectedModality(modalities[0].id.toString());
+            setAppointmentForm(prev => ({
+                ...prev,
+                inspection_modality_id: modalities[0].id.toString()
+            }));
+        }
+    }, [modalities, selectedModality]);
 
     const loadInitialData = async () => {
         setLoading(true);
@@ -287,12 +328,12 @@ export default function AgenteContacto() {
         }
     };
 
-    const loadAvailableSedes = async (modalityId, inspectionTypeId, cityId) => {
-        if (!modalityId || !inspectionTypeId || !cityId) return;
+    const loadAvailableSedes = async (modalityId, cityId) => {
+        if (!modalityId  || !cityId) return;
 
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_ROUTES.CONTACT_AGENT.AVAILABLE_SEDES}?modalityId=${modalityId}&inspectionTypeId=${inspectionTypeId}&cityId=${cityId}`, {
+            const response = await fetch(`${API_ROUTES.CONTACT_AGENT.AVAILABLE_SEDES}?modalityId=${modalityId}&cityId=${cityId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -492,8 +533,27 @@ export default function AgenteContacto() {
         const needsScheduling = selectedStatus?.creates_schedule;
 
         setShowAppointmentForm(needsScheduling);
-
     };
+
+    // Manejar selección de slot de horario
+    const handleSlotSelect = useCallback((slotData) => {
+        setSelectedSlot(slotData);
+
+        setAppointmentForm(prev => ({
+            ...prev,
+            fecha_inspeccion: calendarSelectedDate || prev.fecha_inspeccion,
+            hora_inspeccion: slotData.startTime
+        }));
+    }, [calendarSelectedDate]);
+
+    // Callback para cuando cambia la fecha en el calendario
+    const handleCalendarDateChange = useCallback((selectedDate) => {
+        setCalendarSelectedDate(selectedDate);
+        setAppointmentForm(prev => ({
+            ...prev,
+            fecha_inspeccion: selectedDate
+        }));
+    }, []);
 
     if (loading) {
         return (
@@ -634,7 +694,7 @@ export default function AgenteContacto() {
 
             {/* Side Panel */}
             <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
-                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                <SheetContent className="w-full sm:max-w-lg overflow-y-auto py-2 px-4">
                     {selectedOrder && (
                         <>
                             <SheetHeader>
@@ -644,7 +704,7 @@ export default function AgenteContacto() {
                                 </SheetDescription>
                             </SheetHeader>
 
-                            <div className="mt-6 space-y-6">
+                            <div className="flex flex-col gap-4">
                                 {/* Order Details */}
                                 <Card>
                                     <CardHeader>
@@ -736,138 +796,266 @@ export default function AgenteContacto() {
                                     </Card>
                                 )}
 
-                                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                                    <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="call">Registrar Llamada</TabsTrigger>
-                                        <TabsTrigger value="appointment">Agendar Inspección</TabsTrigger>
-                                    </TabsList>
-
-                                    <TabsContent value="call">
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className="text-base">Registrar Llamada</CardTitle>
-                                                <CardDescription>
-                                                    Documenta el resultado de la llamada
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <form onSubmit={handleCallSubmit} className="space-y-4">
-                                                    <div>
-                                                        <Label htmlFor="call_status">Estado de la Llamada *</Label>
-                                                        <Select
-                                                            value={callForm.call_status_id}
-                                                            onValueChange={handleCallStatusChange}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona el estado" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {callStatuses.map((status) => (
-                                                                    <SelectItem key={status.id} value={status.id.toString()}>
-                                                                        <div className="flex items-center justify-between w-full">
-                                                                            <span>{status.name}</span>
-                                                                            {status.creates_schedule && (
-                                                                                <div className="flex items-center gap-1 text-xs text-blue-600">
-                                                                                    <Calendar className="h-3 w-3" />
-                                                                                    <span>Requiere agenda</span>
-                                                                                </div>
-                                                                            )}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Registrar Llamada</CardTitle>
+                                        <CardDescription>
+                                            Documenta el resultado de la llamada
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <form onSubmit={handleCallSubmit} className="space-y-4">
+                                            <div>
+                                                <Label htmlFor="call_status">Estado de la Llamada *</Label>
+                                                <Select
+                                                    value={callForm.call_status_id}
+                                                    onValueChange={handleCallStatusChange}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecciona el estado" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {callStatuses.map((status) => (
+                                                            <SelectItem key={status.id} value={status.id.toString()}>
+                                                                <div className="flex items-center justify-between w-full">
+                                                                    <span>{status.name}</span>
+                                                                    {status.creates_schedule && (
+                                                                        <div className="flex items-center gap-1 text-xs text-blue-600">
+                                                                            <Calendar className="h-3 w-3" />
+                                                                            <span>Requiere agenda</span>
                                                                         </div>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    <div>
-                                                        <Label htmlFor="observaciones">Observaciones</Label>
-                                                        <Input
-                                                            id="observaciones"
-                                                            placeholder="Notas adicionales sobre la llamada"
-                                                            value={callForm.observaciones}
-                                                            onChange={(e) => setCallForm(prev => ({
-                                                                ...prev,
-                                                                observaciones: e.target.value
-                                                            }))}
-                                                        />
-                                                    </div>
-
-                                                    <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                                                        <div className="flex items-center gap-2">
-                                                            <Clock className="h-3 w-3" />
-                                                            <span>La fecha de seguimiento se registrará automáticamente</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Formulario de agendamiento condicional */}
-                                                    {showAppointmentForm && (
-                                                        <div className="border-t pt-4 mt-4">
-                                                            <div className="mb-4">
-                                                                <div className="flex items-center gap-2 mb-3">
-                                                                    <Calendar className="h-4 w-4 text-blue-600" />
-                                                                    <span className="font-medium text-sm text-blue-600">
-                                                                        Datos del Agendamiento
-                                                                    </span>
+                                                                    )}
                                                                 </div>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    El estado seleccionado requiere agendar una cita. Completa los datos a continuación.
-                                                                </p>
-                                                            </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-                                                            <div className="space-y-4">
-                                                                <div className="grid grid-cols-2 gap-2">
-                                                                    <div>
-                                                                        <Label htmlFor="fecha_inspeccion_inline">Fecha *</Label>
-                                                                        <Input
-                                                                            id="fecha_inspeccion_inline"
-                                                                            type="date"
-                                                                            value={appointmentForm.fecha_inspeccion}
-                                                                            onChange={(e) => setAppointmentForm(prev => ({
-                                                                                ...prev,
-                                                                                fecha_inspeccion: e.target.value
-                                                                            }))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label htmlFor="hora_inspeccion_inline">Hora *</Label>
-                                                                        <Input
-                                                                            id="hora_inspeccion_inline"
-                                                                            type="time"
-                                                                            value={appointmentForm.hora_inspeccion}
-                                                                            onChange={(e) => setAppointmentForm(prev => ({
-                                                                                ...prev,
-                                                                                hora_inspeccion: e.target.value
-                                                                            }))}
-                                                                        />
-                                                                    </div>
-                                                                </div>
+                                            <div>
+                                                <Label htmlFor="observaciones">Observaciones</Label>
+                                                <Input
+                                                    id="observaciones"
+                                                    placeholder="Notas adicionales sobre la llamada"
+                                                    value={callForm.observaciones}
+                                                    onChange={(e) => setCallForm(prev => ({
+                                                        ...prev,
+                                                        observaciones: e.target.value
+                                                    }))}
+                                                />
+                                            </div>
 
+                                            <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>La fecha de seguimiento se registrará automáticamente</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Formulario de agendamiento condicional */}
+                                            {showAppointmentForm && (
+                                                <div className="border-t pt-4 mt-4">
+
+                                                    <Card>
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base">Agendar Inspección</CardTitle>
+                                                            <CardDescription>
+                                                                Programa una cita para la inspección
+                                                            </CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                                                                {/* Departamento */}
                                                                 <div>
-                                                                    <Label htmlFor="direccion_inspeccion_inline">Dirección de Inspección</Label>
-                                                                    <Input
-                                                                        id="direccion_inspeccion_inline"
-                                                                        placeholder="Dirección donde se realizará la inspección"
-                                                                        value={appointmentForm.direccion_inspeccion}
-                                                                        onChange={(e) => setAppointmentForm(prev => ({
-                                                                            ...prev,
-                                                                            direccion_inspeccion: e.target.value
-                                                                        }))}
+                                                                    <Label htmlFor="department">Departamento *</Label>
+                                                                    <Select
+                                                                        value={selectedDepartment}
+                                                                        onValueChange={(value) => {
+                                                                            setSelectedDepartment(value);
+                                                                            setSelectedCity('');
+                                                                            setSelectedModality('');
+                                                                            setSedes([]);
+                                                                            setModalities([]);
+                                                                            if (value) {
+                                                                                loadCities(value);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Selecciona departamento" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {departments.map((dept) => (
+                                                                                <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                                                    {dept.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+
+                                                                {/* Ciudad */}
+                                                                <div>
+                                                                    <Label htmlFor="city">Ciudad *</Label>
+                                                                    <Select
+                                                                        value={selectedCity}
+                                                                        onValueChange={(value) => {
+                                                                            setSelectedCity(value);
+                                                                            setSelectedModality('');
+                                                                            setSedes([]);
+                                                                            if (value && selectedDepartment) {
+                                                                                loadModalities(selectedDepartment, value);
+                                                                            }
+                                                                        }}
+                                                                        disabled={!selectedDepartment}
+                                                                    >
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Selecciona ciudad" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {cities.map((city) => (
+                                                                                <SelectItem key={city.id} value={city.id.toString()}>
+                                                                                    {city.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+
+                                                                {/* Sede */}
+                                                                <div>
+                                                                    <Label htmlFor="sede">Centro de Diagnóstico Automotor (CDA) *</Label>
+                                                                    <Select
+                                                                        value={appointmentForm.sede_id}
+                                                                        onValueChange={(value) => {
+                                                                            setAppointmentForm(prev => ({
+                                                                                ...prev,
+                                                                                sede_id: value
+                                                                            }));
+                                                                            // Cargar modalidades disponibles para esta sede
+                                                                            if (value) {
+                                                                                loadModalities(selectedDepartment, selectedCity);
+                                                                            }
+                                                                        }}
+                                                                        disabled={!selectedCity}
+                                                                    >
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Selecciona un CDA" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {sedes.filter(sede => sede.sede_type_id === 1).length === 0 ? (
+                                                                                <div className="p-2 text-xs text-muted-foreground">No hay CDAs disponibles para esta ciudad</div>
+                                                                            ) : (
+                                                                                sedes.filter(sede => sede.sede_type_id === 1).map((sede) => (
+                                                                                    <SelectItem key={sede.id} value={sede.id.toString()}>
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="font-medium">{sede.name}</span>
+                                                                                            <span className="text-xs text-muted-foreground">{sede.address}</span>
+                                                                                        </div>
+                                                                                    </SelectItem>
+                                                                                ))
+                                                                            )}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                                        Solo se muestran Centros de Diagnóstico Automotor (CDA) para agendar inspecciones de asegurabilidad
+                                                                    </p>
+                                                                </div>
+
+                                                                {/* Modalidad (si hay más de una) */}
+                                                                {modalities.length > 0 && (
+                                                                    <div>
+                                                                        <Label htmlFor="modality">Modalidad de Inspección *</Label>
+                                                                        <Select
+                                                                            value={selectedModality}
+                                                                            onValueChange={(value) => {
+                                                                                setSelectedModality(value);
+                                                                                setAppointmentForm(prev => ({
+                                                                                    ...prev,
+                                                                                    inspection_modality_id: value
+                                                                                }));
+                                                                                setSelectedSlot(null); // Limpiar slot seleccionado al cambiar modalidad
+                                                                            }}
+                                                                            disabled={!appointmentForm.sede_id}
+                                                                        >
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Selecciona modalidad" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {modalities.map((modality) => (
+                                                                                    <SelectItem key={modality.id} value={modality.id.toString()}>
+                                                                                        <div className="flex items-center justify-between w-full">
+                                                                                            <span>{modality.name}</span>
+                                                                                            <span className="text-xs text-muted-foreground">
+                                                                                                {modality.sedesCount} sedes
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                )}
+
+
+
+                                                                {/* Calendario y Horarios Disponibles */}
+                                                                <div className="space-y-4">
+                                                                    <Label>Selecciona Fecha y Horario para Inspección de Asegurabilidad *</Label>
+                                                                    <CalendarioAgendamiento
+                                                                        sedeId={appointmentForm.sede_id}
+                                                                        modalityId={selectedModality}
+                                                                        onSlotSelect={handleSlotSelect}
+                                                                        selectedSlot={selectedSlot}
+                                                                        disabled={!appointmentForm.sede_id || !selectedModality}
                                                                     />
+
+                                                                    {/* Mostrar slot seleccionado */}
+                                                                    {selectedSlot && (
+                                                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                                            <div className="flex items-center gap-2 text-blue-800">
+                                                                                <Calendar className="h-4 w-4" />
+                                                                                <span className="font-medium">Inspección de Asegurabilidad - Horario seleccionado:</span>
+                                                                            </div>
+                                                                            <div className="mt-1 text-sm text-blue-700">
+                                                                                <div>Fecha: {appointmentForm.fecha_inspeccion}</div>
+                                                                                <div>Hora: {selectedSlot.startTime} - {selectedSlot.endTime}</div>
+                                                                                <div>Capacidad disponible: {selectedSlot.availableCapacity}/{selectedSlot.totalCapacity}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {validationState.errors.slot && (
+                                                                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                                            <div className="flex items-center gap-2 text-red-800">
+                                                                                <AlertCircle className="h-4 w-4" />
+                                                                                <span className="text-sm">{validationState.errors.slot}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
-                                                                <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded border border-blue-200">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <AlertCircle className="h-3 w-3 text-blue-600" />
-                                                                        <span>
-                                                                            Los detalles adicionales (tipo de inspección, sede) se pueden completar en la pestaña "Agendar Inspección" si es necesario.
-                                                                        </span>
+                                                                {/* Dirección (solo si es modalidad domicilio) */}
+                                                                {selectedModality && modalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
+                                                                    <div>
+                                                                        <Label htmlFor="direccion_inspeccion">Dirección de Inspección *</Label>
+                                                                        <Input
+                                                                            id="direccion_inspeccion"
+                                                                            placeholder="Dirección donde se realizará la inspección"
+                                                                            value={appointmentForm.direccion_inspeccion}
+                                                                            onChange={(e) => setAppointmentForm(prev => ({
+                                                                                ...prev,
+                                                                                direccion_inspeccion: e.target.value
+                                                                            }))}
+                                                                        />
                                                                     </div>
-                                                                </div>
+                                                                )}
 
+                                                                {/* Observaciones */}
                                                                 <div>
-                                                                    <Label htmlFor="observaciones_appointment_inline">Observaciones del Agendamiento</Label>
+                                                                    <Label htmlFor="observaciones_appointment">Observaciones</Label>
                                                                     <Input
-                                                                        id="observaciones_appointment_inline"
+                                                                        id="observaciones_appointment"
                                                                         placeholder="Notas adicionales del agendamiento"
                                                                         value={appointmentForm.observaciones}
                                                                         onChange={(e) => setAppointmentForm(prev => ({
@@ -876,250 +1064,25 @@ export default function AgenteContacto() {
                                                                         }))}
                                                                     />
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
 
-                                                    <Button type="submit" className="w-full">
-                                                        <Phone className="h-4 w-4 mr-2" />
-                                                        Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
-                                                    </Button>
-                                                </form>
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent>
+                                                                <Button type="submit" className="w-full mt-4">
+                                                                    <Calendar className="h-4 w-4 mr-2" />
+                                                                    Guardar y Agendar Inspección
+                                                                </Button>
+                                                            </form>
+                                                        </CardContent>
+                                                    </Card>
 
-                                    <TabsContent value="appointment">
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className="text-base">Agendar Inspección</CardTitle>
-                                                <CardDescription>
-                                                    Programa una cita para la inspección
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <form onSubmit={handleAppointmentSubmit} className="space-y-4">
-                                                    {/* Departamento */}
-                                                    <div>
-                                                        <Label htmlFor="department">Departamento *</Label>
-                                                        <Select
-                                                            value={selectedDepartment}
-                                                            onValueChange={(value) => {
-                                                                setSelectedDepartment(value);
-                                                                setSelectedCity('');
-                                                                setSelectedModality('');
-                                                                setSedes([]);
-                                                                setModalities([]);
-                                                                if (value) {
-                                                                    loadCities(value);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona departamento" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {departments.map((dept) => (
-                                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                                        {dept.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
+                                                </div>
+                                            )}
 
-                                                    {/* Ciudad */}
-                                                    <div>
-                                                        <Label htmlFor="city">Ciudad *</Label>
-                                                        <Select
-                                                            value={selectedCity}
-                                                            onValueChange={(value) => {
-                                                                setSelectedCity(value);
-                                                                setSelectedModality('');
-                                                                setSedes([]);
-                                                                if (value && selectedDepartment) {
-                                                                    loadModalities(selectedDepartment, value);
-                                                                }
-                                                            }}
-                                                            disabled={!selectedDepartment}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona ciudad" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {cities.map((city) => (
-                                                                    <SelectItem key={city.id} value={city.id.toString()}>
-                                                                        {city.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {/* Modalidad */}
-                                                    <div>
-                                                        <Label htmlFor="modality">Modalidad de Inspección *</Label>
-                                                        <Select
-                                                            value={selectedModality}
-                                                            onValueChange={(value) => {
-                                                                setSelectedModality(value);
-                                                                setSedes([]);
-                                                                setAppointmentForm(prev => ({
-                                                                    ...prev,
-                                                                    inspection_modality_id: value
-                                                                }));
-                                                            }}
-                                                            disabled={!selectedCity}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona modalidad" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {modalities.map((modality) => (
-                                                                    <SelectItem key={modality.id} value={modality.id.toString()}>
-                                                                        <div className="flex items-center justify-between w-full">
-                                                                            <span>{modality.name}</span>
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {modality.sedesCount} sedes
-                                                                            </span>
-                                                                        </div>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {/* Tipo de Inspección */}
-                                                    <div>
-                                                        <Label htmlFor="inspection_type">Tipo de Inspección *</Label>
-                                                        <Select
-                                                            value={appointmentForm.inspection_type_id}
-                                                            onValueChange={(value) => {
-                                                                setAppointmentForm(prev => ({
-                                                                    ...prev,
-                                                                    inspection_type_id: value
-                                                                }));
-                                                                // Cargar sedes disponibles para esta modalidad y tipo
-                                                                if (selectedModality && selectedCity) {
-                                                                    loadAvailableSedes(selectedModality, value, selectedCity);
-                                                                }
-                                                            }}
-                                                            disabled={!selectedModality}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona el tipo" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {inspectionTypes.map((type) => (
-                                                                    <SelectItem key={type.id} value={type.id.toString()}>
-                                                                        {type.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {/* Sede */}
-                                                    <div>
-                                                        <Label htmlFor="sede">Sede *</Label>
-                                                        <Select
-                                                            value={appointmentForm.sede_id}
-                                                            onValueChange={(value) => setAppointmentForm(prev => ({
-                                                                ...prev,
-                                                                sede_id: value
-                                                            }))}
-                                                            disabled={!appointmentForm.inspection_type_id}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecciona sede" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {sedes.map((sede) => (
-                                                                    <SelectItem key={sede.id} value={sede.id.toString()}>
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium">{sede.name}</span>
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {sede.address}
-                                                                            </span>
-                                                                            {sede.availability && (
-                                                                                <span className="text-xs text-blue-600">
-                                                                                    Horario: {sede.availability.workingHoursStart} - {sede.availability.workingHoursEnd}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {/* Fecha y Hora */}
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <div>
-                                                            <Label htmlFor="fecha_inspeccion">Fecha *</Label>
-                                                            <Input
-                                                                id="fecha_inspeccion"
-                                                                type="date"
-                                                                value={appointmentForm.fecha_inspeccion}
-                                                                onChange={(e) => setAppointmentForm(prev => ({
-                                                                    ...prev,
-                                                                    fecha_inspeccion: e.target.value
-                                                                }))}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor="hora_inspeccion">Hora *</Label>
-                                                            <Input
-                                                                id="hora_inspeccion"
-                                                                type="time"
-                                                                value={appointmentForm.hora_inspeccion}
-                                                                onChange={(e) => setAppointmentForm(prev => ({
-                                                                    ...prev,
-                                                                    hora_inspeccion: e.target.value
-                                                                }))}
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Dirección (solo si es modalidad domicilio) */}
-                                                    {selectedModality && modalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
-                                                        <div>
-                                                            <Label htmlFor="direccion_inspeccion">Dirección de Inspección *</Label>
-                                                            <Input
-                                                                id="direccion_inspeccion"
-                                                                placeholder="Dirección donde se realizará la inspección"
-                                                                value={appointmentForm.direccion_inspeccion}
-                                                                onChange={(e) => setAppointmentForm(prev => ({
-                                                                    ...prev,
-                                                                    direccion_inspeccion: e.target.value
-                                                                }))}
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                    {/* Observaciones */}
-                                                    <div>
-                                                        <Label htmlFor="observaciones_appointment">Observaciones</Label>
-                                                        <Input
-                                                            id="observaciones_appointment"
-                                                            placeholder="Notas adicionales del agendamiento"
-                                                            value={appointmentForm.observaciones}
-                                                            onChange={(e) => setAppointmentForm(prev => ({
-                                                                ...prev,
-                                                                observaciones: e.target.value
-                                                            }))}
-                                                        />
-                                                    </div>
-
-                                                    <Button type="submit" className="w-full">
-                                                        <Calendar className="h-4 w-4 mr-2" />
-                                                        Agendar Inspección
-                                                    </Button>
-                                                </form>
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent>
-                                </Tabs>
+                                            <Button type="submit" className="w-full">
+                                                <Phone className="h-4 w-4 mr-2" />
+                                                Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
+                                            </Button>
+                                        </form>
+                                    </CardContent>
+                                </Card>
                             </div>
                         </>
                     )}

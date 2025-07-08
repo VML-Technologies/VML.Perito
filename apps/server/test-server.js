@@ -4,14 +4,14 @@ async function testServer() {
     try {
         console.log('Probando conexión al servidor...');
 
-        const response = await fetch('http://localhost:3000/api');
+        const response = await fetch('http://192.168.20.6:3000/api');
         const data = await response.json();
 
         console.log('✅ Servidor respondiendo correctamente:', data);
 
         // Probar login
         console.log('\nProbando login...');
-        const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+        const loginResponse = await fetch('http://192.168.20.6:3000/api/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ async function testServer() {
             // Probar perfil con el token
             if (loginData.token) {
                 console.log('\nProbando perfil...');
-                const profileResponse = await fetch('http://localhost:3000/api/users/profile', {
+                const profileResponse = await fetch('http://192.168.20.6:3000/api/users/profile', {
                     headers: {
                         'Authorization': `Bearer ${loginData.token}`
                     }

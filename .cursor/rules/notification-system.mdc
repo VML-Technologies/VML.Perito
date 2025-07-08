@@ -1,350 +1,63 @@
----
-description:
-globs:
-alwaysApply: false
----
-# Sistema de Notificaciones Transversal
+# Notification System Guidelines
 
-## Arquitectura General
+## Use Existing Notification Provider
 
-El sistema de notificaciones es **transversal** y maneja múltiples canales de comunicación:
+The application has a centralized notification system in [App.jsx](mdc:apps/web/src/App.jsx) using `NotificationProvider`. Always use this instead of browser alerts.
 
-- **In-App**: WebSocket + Base de datos para persistencia
-- **Email**: Plantillas HTML con proveedores externos
-- **WhatsApp**: Integración con Meta API o Twilio
-- **SMS**: Servicios de mensajería con validación
-- **Push**: Firebase Cloud Messaging (FCM)
-
-## Modelos de Datos
-
-### Modelo Principal
-- **[Notification](mdc:apps/server/models/notification.js)**: Almacena todas las notificaciones
-- **[NotificationConfig](mdc:apps/server/models/notificationConfig.js)**: Configuraciones y plantillas
-- **[NotificationQueue](mdc:apps/server/models/notificationQueue.js)**: Cola de procesamiento
-- **[NotificationChannel](mdc:apps/server/models/notificationChannel.js)**: Canales disponibles
-- **[NotificationType](mdc:apps/server/models/notificationType.js)**: Tipos de notificación
-
-### Estructura de Datos
-```javascript
-// Notification - Estado completo de una notificación
-{
-    id: number,
-    notification_config_id: number,
-    recipient_type: 'user' | 'client',
-    recipient_user_id: number,
-    title: string,
-    content: string,
-    status: 'pending' | 'scheduled' | 'sending' | 'sent' | 'delivered' | 'failed' | 'read',
-    priority: 'low' | 'normal' | 'high' | 'urgent',
-    scheduled_at: Date,
-    metadata: JSON,
-    websocket_delivered: boolean
-}
-```
-
-## Servicio Central
-
-### NotificationService
-**Ubicación**: [apps/server/services/notificationService.js](mdc:apps/server/services/notificationService.js)
+## Implementation Pattern
 
 ```javascript
-// Crear notificación por tipo
-await NotificationService.createNotification('orden_creada', {
-    order: orderData,
-    client: clientData,
-    agent: agentData
-}, {
-    recipient_user_id: userId, // Opcional: destinatario específico
-    scheduled_at: futureDate   // Opcional: programar envío
+// ✅ Correct - Use notification context
+import { useNotification } from '../contexts/notification-context.jsx';
+
+const { showNotification } = useNotification();
+
+// Success notification
+showNotification({
+  type: 'success',
+  title: 'Éxito',
+  message: 'Operación completada exitosamente',
+});
+
+// Error notification
+showNotification({
+  type: 'error',
+  title: 'Error',
+  message: 'Ha ocurrido un error inesperado',
 });
 ```
 
-### Patrones de Uso
+## Notification Types
+
+- `success`: Green notification for successful operations
+- `error`: Red notification for errors
+- `warning`: Yellow notification for warnings
+- `info`: Blue notification for informational messages
+
+## Spanish Messages
+
+All notification messages must be in Spanish:
+
+- ✅ "Agendamiento creado exitosamente"
+- ✅ "Error al procesar la solicitud"
+- ❌ "Appointment created successfully"
+
+## Context Usage
+
+The notification context is available throughout the app via:
+
 ```javascript
-// 1. Notificación inmediata a roles específicos
-await NotificationService.createNotification('orden_asignada', {
-    order: { numero: '123456', cliente: 'Juan Pérez' },
-    agent: { name: 'Ana García' }
-});
-
-// 2. Notificación programada a usuario específico
-await NotificationService.createNotification('recordatorio_cita', {
-    appointment: appointmentData
-}, {
-    recipient_user_id: clientId,
-    scheduled_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h después
-});
-
-// 3. Notificación a cliente externo
-await NotificationService.createNotification('orden_agendada', {
-    order: orderData,
-    client: {
-        name: order.nombre_contacto,
-        phone: order.celular_contacto,
-        email: order.correo_contacto
-    }
-});
+const notificationContext = useContext(NotificationContext);
 ```
 
-## Servicios de Canales
+## Avoid Browser Alerts
 
-### In-App Service
-**Ubicación**: [apps/server/services/channels/inAppService.js](mdc:apps/server/services/channels/inAppService.js)
+Never use `alert()`, `confirm()`, or `prompt()` - always use the notification system for better UX.
 
-- **Integración WebSocket**: Usa el sistema WebSocket existente
-- **Persistencia**: Almacena en BD para usuarios desconectados
-- **Tiempo real**: Notificaciones toast inmediatas
-
-```javascript
-// Inicializar con WebSocket system
-inAppService.initialize(webSocketSystem);
-
-// Verifica conectividad
-const isConnected = inAppService.isUserConnected(userId);
-```
-
-### Email Service
-**Ubicación**: [apps/server/services/channels/emailService.js](mdc:apps/server/services/channels/emailService.js)
-
-- **Templates HTML**: Generación automática de plantillas
-- **Proveedores**: Preparado para NodeMailer, SendGrid, etc.
-- **Prioridades**: Mapeo de urgencia a headers de email
-
-```javascript
-// Configurar proveedor (pendiente implementación)
-emailService.configureProvider('sendgrid', {
-    apiKey: process.env.SENDGRID_API_KEY
-});
-```
-
-### WhatsApp Service
-**Ubicación**: [apps/server/services/channels/whatsappService.js](mdc:apps/server/services/channels/whatsappService.js)
-
-- **Formateo**: Mensajes con Markdown para WhatsApp
-- **Validación**: Números de teléfono colombianos
-- **Webhooks**: Manejo de estados de entrega
-
-### SMS Service
-**Ubicación**: [apps/server/services/channels/smsService.js](mdc:apps/server/services/channels/smsService.js)
-
-- **Límites**: Máximo 160 caracteres por mensaje
-- **Costos**: Cálculo estimado por segmentos
-- **Formato**: Mensajes optimizados para SMS
-
-### Push Service
-**Ubicación**: [apps/server/services/channels/pushService.js](mdc:apps/server/services/channels/pushService.js)
-
-- **FCM**: Firebase Cloud Messaging
-- **Service Worker**: Notificaciones en navegador
-- **Deep Links**: URLs específicas por tipo de notificación
-
-## Configuración de Notificaciones
-
-### Plantillas con Variables
-```javascript
-// En NotificationConfig
-{
-    template_title: "Nueva orden asignada: {{order.numero}}",
-    template_content: "Hola {{agent.name}}, se te ha asignado la orden {{order.numero}} para el cliente {{order.cliente}}",
-    template_variables: {
-        "order.numero": "Número de la orden",
-        "order.cliente": "Nombre del cliente",
-        "agent.name": "Nombre del agente"
-    }
-}
-```
-
-### Targeting por Roles
-```javascript
-{
-    target_roles: ["coordinador_contacto", "agente_contacto"],
-    target_users: [123, 456], // IDs específicos
-    for_clients: true,         // Para clientes externos
-    for_users: true           // Para usuarios del sistema
-}
-```
-
-### Programación
-```javascript
-{
-    schedule_type: "immediate" | "delayed" | "recurring",
-    schedule_delay_minutes: 60,        // Para delayed
-    schedule_cron: "0 9 * * 1-5"      // Para recurring
-}
-```
-
-## Controlador de APIs
-
-**Ubicación**: [apps/server/controllers/notificationController.js](mdc:apps/server/controllers/notificationController.js)
-
-### Endpoints Principales
-```javascript
-GET    /api/notifications              // Obtener notificaciones del usuario
-POST   /api/notifications/:id/read     // Marcar como leída
-POST   /api/notifications/read-all     // Marcar todas como leídas
-GET    /api/notifications/stats        // Estadísticas
-POST   /api/notifications/push-token   // Registrar token push
-POST   /api/webhooks/:channel          // Webhooks de proveedores
-```
-
-### Formato de Respuesta
-```javascript
-{
-    success: true,
-    data: {
-        notifications: [
-            {
-                id: 1,
-                title: "Nueva orden asignada",
-                description: "Se te ha asignado la orden #123456",
-                type: "orden_asignada",
-                priority: "normal",
-                read: false,
-                time: "Hace 5 minutos",
-                timestamp: "2024-01-15T10:30:00Z"
-            }
-        ],
-        pagination: {
-            total: 25,
-            unread_count: 3,
-            page: 1,
-            pages: 3
-        }
-    }
-}
-```
-
-## Integración con Sistema Existente
-
-### WebSocket Integration
-```javascript
-// En index.js del servidor
-import NotificationService from './services/notificationService.js';
-
-// Inicializar servicio In-App con WebSocket
-const inAppService = NotificationService.channels.in_app;
-inAppService.initialize(webSocketSystem);
-```
-
-### Uso en Controladores Existentes
-```javascript
-// En coordinadorContactoController.js
-import NotificationService from '../services/notificationService.js';
-
-// Al asignar orden
-await NotificationService.createNotification('orden_asignada', {
-    order: updatedOrder,
-    agent: assignedAgent,
-    coordinator: req.user
-}, {
-    recipient_user_id: agent_id
-});
-```
-
-## Cola de Procesamiento
-
-### NotificationQueue
-- **Procesamiento automático**: Cada minuto via cron
-- **Reintentos**: Exponential backoff para fallos
-- **Prioridades**: urgent > high > normal > low
-- **Bloqueos**: Previene procesamiento duplicado
-
-### Estados de Cola
-```javascript
-{
-    status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled',
-    attempts: number,
-    next_attempt_at: Date,
-    worker_id: string
-}
-```
-
-## Tipos de Notificación Estándar
-
-### Sistema de Inspecciones
-- **`orden_creada`**: Nueva orden creada por comercial
-- **`orden_asignada`**: Orden asignada a agente
-- **`orden_reasignada`**: Orden reasignada a otro agente
-- **`orden_removida`**: Orden removida de asignación
-- **`orden_agendada`**: Inspección agendada
-- **`recordatorio_cita`**: Recordatorio de cita próxima
-
-### Configuración por Tipo
-```javascript
-// orden_asignada
-{
-    channels: ['in_app', 'email'],
-    target_roles: [], // Vacío porque es específica
-    priority: 'high',
-    schedule_type: 'immediate'
-}
-
-// orden_agendada  
-{
-    channels: ['sms', 'whatsapp', 'email'],
-    for_clients: true,
-    priority: 'normal',
-    schedule_type: 'immediate'
-}
-```
-
-## Debugging y Logs
-
-### Logs Estándar
-```javascript
-console.log('📬 Creando notificación tipo: orden_asignada');
-console.log('📱 Enviando In-App a usuario 123');
-console.log('📧 Enviando email a: user@example.com');
-console.log('✅ Notificación enviada: ID 456 via in_app');
-```
-
-### Monitoreo
-- **Estados**: Tracking completo de cada notificación
-- **Reintentos**: Log de intentos fallidos
-- **Métricas**: Estadísticas por canal y tipo
-- **Webhooks**: Log de respuestas de proveedores
-
-## Mejores Prácticas
-
-### 1. Creación de Notificaciones
-```javascript
-// ✅ Bueno: Datos estructurados
-await NotificationService.createNotification('orden_asignada', {
-    order: { id, numero, cliente },
-    agent: { id, name, email }
-});
-
-// ❌ Malo: Datos incompletos
-await NotificationService.createNotification('orden_asignada', {
-    orderId: 123
-});
-```
-
-### 2. Manejo de Errores
-```javascript
-try {
-    await NotificationService.createNotification(type, data);
-} catch (error) {
-    console.error('Error creando notificación:', error);
-    // No fallar el proceso principal por notificaciones
-}
-```
-
-### 3. Plantillas
-```javascript
-// ✅ Bueno: Variables claras
-"Orden {{order.numero}} asignada a {{agent.name}}"
-
-// ❌ Malo: Variables confusas  
-"Orden {{numero}} asignada a {{nombre}}"
-```
-
-### 4. Programación
-```javascript
-// ✅ Bueno: Usar opciones para scheduling
-await NotificationService.createNotification('recordatorio', data, {
-    scheduled_at: appointmentDate - (24 * 60 * 60 * 1000) // 24h antes
 });
 
 // ❌ Malo: Hardcodear delays en configuración
+
+```
+
 ```

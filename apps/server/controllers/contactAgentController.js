@@ -3,12 +3,11 @@ import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import CallLog from '../models/callLog.js';
 import CallStatus from '../models/callStatus.js';
 import Appointment from '../models/appointment.js';
-import InspectionType from '../models/inspectionType.js';
 import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
-import { InspectionModality, SedeModalityAvailability } from '../models/index.js';
+import { InspectionModality, SedeModalityAvailability, SedeType } from '../models/index.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
 
@@ -48,7 +47,7 @@ class ContactAgentController {
         this.createCallLog = this.createCallLog.bind(this);
         this.createAppointment = this.createAppointment.bind(this);
         this.getCallStatuses = this.getCallStatuses.bind(this);
-        this.getInspectionTypes = this.getInspectionTypes.bind(this);
+        this.getInspectionModalities = this.getInspectionModalities.bind(this);
         this.getDepartments = this.getDepartments.bind(this);
         this.getCities = this.getCities.bind(this);
         this.getSedes = this.getSedes.bind(this);
@@ -175,8 +174,8 @@ class ContactAgentController {
                         as: 'appointments',
                         include: [
                             {
-                                model: InspectionType,
-                                as: 'inspectionType'
+                                model: InspectionModality,
+                                as: 'inspectionModality'
                             },
                             {
                                 model: Sede,
@@ -296,8 +295,8 @@ class ContactAgentController {
             const fullAppointment = await Appointment.findByPk(appointment.id, {
                 include: [
                     {
-                        model: InspectionType,
-                        as: 'inspectionType'
+                        model: InspectionModality,
+                        as: 'inspectionModality'
                     },
                     {
                         model: Sede,
@@ -347,16 +346,16 @@ class ContactAgentController {
         }
     }
 
-    // Obtener tipos de inspección
-    async getInspectionTypes(req, res) {
+    // Obtener modalidades de inspección
+    async getInspectionModalities(req, res) {
         try {
-            const types = await InspectionType.findAll({
+            const modalities = await InspectionModality.findAll({
                 where: { active: true },
                 order: [['name', 'ASC']]
             });
-            res.json(types);
+            res.json(modalities);
         } catch (error) {
-            res.status(500).json({ message: 'Error al obtener tipos de inspección', error: error.message });
+            res.status(500).json({ message: 'Error al obtener modalidades de inspección', error: error.message });
         }
     }
 
@@ -462,9 +461,9 @@ class ContactAgentController {
     // Obtener sedes disponibles por modalidad y tipo de inspección
     async getAvailableSedes(req, res) {
         try {
-            const { modalityId, inspectionTypeId, cityId } = req.query;
+            const { modalityId, cityId } = req.query;
 
-            if (!modalityId || !inspectionTypeId || !cityId) {
+            if (!modalityId || !cityId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Modalidad, tipo de inspección y ciudad son requeridos'
@@ -479,7 +478,6 @@ class ContactAgentController {
                         required: true,
                         where: {
                             inspection_modality_id: modalityId,
-                            inspection_type_id: inspectionTypeId,
                             active: true
                         },
                         include: [{
@@ -494,6 +492,11 @@ class ContactAgentController {
                             model: Department,
                             as: 'department'
                         }]
+                    },
+                    {
+                        model: SedeType,
+                        as: 'sedeType',
+                        where: { code: 'CDA' } // Solo sedes CDA para agendamiento
                     }
                 ],
                 where: {

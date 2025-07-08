@@ -13,7 +13,6 @@ import InspectionOrderStatus from './inspectionOrderStatus.js';
 import InspectionOrder from './inspectionOrder.js';
 import CallStatus from './callStatus.js';
 import CallLog from './callLog.js';
-import InspectionType from './inspectionType.js';
 import Appointment from './appointment.js';
 import NotificationChannel from './notificationChannel.js';
 import NotificationType from './notificationType.js';
@@ -225,34 +224,14 @@ CallLog.belongsTo(User, {
     as: 'Agent'
 });
 
-// CallLog -> Appointments (1:N)
-CallLog.hasMany(Appointment, {
-    foreignKey: 'call_log_id',
+// InspectionModality -> Appointments (1:N)
+InspectionModality.hasMany(Appointment, {
+    foreignKey: 'inspection_modality_id',
     as: 'appointments'
 });
-Appointment.belongsTo(CallLog, {
-    foreignKey: 'call_log_id',
-    as: 'callLog'
-});
-
-// InspectionOrder -> Appointments (1:N)
-InspectionOrder.hasMany(Appointment, {
-    foreignKey: 'inspection_order_id',
-    as: 'appointments'
-});
-Appointment.belongsTo(InspectionOrder, {
-    foreignKey: 'inspection_order_id',
-    as: 'inspectionOrder'
-});
-
-// InspectionType -> Appointments (1:N)
-InspectionType.hasMany(Appointment, {
-    foreignKey: 'inspection_type_id',
-    as: 'appointments'
-});
-Appointment.belongsTo(InspectionType, {
-    foreignKey: 'inspection_type_id',
-    as: 'inspectionType'
+Appointment.belongsTo(InspectionModality, {
+    foreignKey: 'inspection_modality_id',
+    as: 'inspectionModality'
 });
 
 // Sede -> Appointments (1:N)
@@ -265,6 +244,26 @@ Appointment.belongsTo(Sede, {
     as: 'sede'
 });
 
+// User -> Appointments (1:N)
+User.hasMany(Appointment, {
+    foreignKey: 'user_id',
+    as: 'appointments'
+});
+Appointment.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+// InspectionOrder -> Appointments (1:N)
+InspectionOrder.hasMany(Appointment, {
+    foreignKey: 'inspection_order_id',
+    as: 'appointments'
+});
+Appointment.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
 // ===== NUEVAS RELACIONES MODALIDADES =====
 
 // SedeType -> Sedes (1:N)
@@ -275,16 +274,6 @@ SedeType.hasMany(Sede, {
 Sede.belongsTo(SedeType, {
     foreignKey: 'sede_type_id',
     as: 'sedeType'
-});
-
-// InspectionModality -> Appointments (1:N)
-InspectionModality.hasMany(Appointment, {
-    foreignKey: 'inspection_modality_id',
-    as: 'appointments'
-});
-Appointment.belongsTo(InspectionModality, {
-    foreignKey: 'inspection_modality_id',
-    as: 'inspectionModality'
 });
 
 // SedeModalityAvailability relaciones
@@ -306,26 +295,7 @@ SedeModalityAvailability.belongsTo(InspectionModality, {
     as: 'inspectionModality'
 });
 
-InspectionType.hasMany(SedeModalityAvailability, {
-    foreignKey: 'inspection_type_id',
-    as: 'sedeAvailabilities'
-});
-SedeModalityAvailability.belongsTo(InspectionType, {
-    foreignKey: 'inspection_type_id',
-    as: 'inspectionType'
-});
-
 // ===== NUEVAS RELACIONES SISTEMA AVANZADO =====
-
-// VehicleType relaciones
-VehicleType.hasMany(Appointment, {
-    foreignKey: 'vehicle_type_id',
-    as: 'appointments'
-});
-Appointment.belongsTo(VehicleType, {
-    foreignKey: 'vehicle_type_id',
-    as: 'vehicleType'
-});
 
 // SedeVehicleType relaciones (N:N entre Sede y VehicleType)
 Sede.belongsToMany(VehicleType, {
@@ -377,25 +347,6 @@ InspectionModality.hasMany(ScheduleTemplate, {
 ScheduleTemplate.belongsTo(InspectionModality, {
     foreignKey: 'inspection_modality_id',
     as: 'inspectionModality'
-});
-
-InspectionType.hasMany(ScheduleTemplate, {
-    foreignKey: 'inspection_type_id',
-    as: 'scheduleTemplates'
-});
-ScheduleTemplate.belongsTo(InspectionType, {
-    foreignKey: 'inspection_type_id',
-    as: 'inspectionType'
-});
-
-// Appointment -> ScheduleTemplate
-ScheduleTemplate.hasMany(Appointment, {
-    foreignKey: 'schedule_template_id',
-    as: 'appointments'
-});
-Appointment.belongsTo(ScheduleTemplate, {
-    foreignKey: 'schedule_template_id',
-    as: 'scheduleTemplate'
 });
 
 // ===== RELACIONES NOTIFICACIONES =====
@@ -475,7 +426,6 @@ export {
     InspectionOrder,
     CallStatus,
     CallLog,
-    InspectionType,
     Appointment,
     NotificationChannel,
     NotificationType,

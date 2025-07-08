@@ -1,0 +1,44 @@
+# Guías de Debugging y Desarrollo
+
+## Reglas para debugging efectivo
+
+### 1. Console.log y Debugging
+
+- **NUNCA** dejar `console.log` en código de producción
+- **NUNCA** dejar `debugger` en código de producción
+- **SIEMPRE** usar herramientas de desarrollo del navegador para debugging
+- **SIEMPRE** usar React DevTools para inspeccionar componentes
+
+### 2. Performance Monitoring
+
+- **SIEMPRE** usar React Profiler para identificar bottlenecks
+- **SIEMPRE** monitorear re-renders innecesarios
+- **SIEMPRE** usar `React.memo()` para componentes que reciben las mismas props
+- **SIEMPRE** usar `useCallback` y `useMemo` apropiadamente
+
+### 3. Error Handling
+
+- **SIEMPRE** implementar error boundaries
+- **SIEMPRE** manejar estados de loading y error
+- **SIEMPRE** mostrar mensajes de error amigables al usuario
+- **NUNCA** dejar errores sin manejar en producción
+
+### 4. Code Quality
+
+- **SIEMPRE** usar ESLint y Prettier
+- **SIEMPRE** escribir tests para funcionalidad crítica
+- **SIEMPRE** documentar funciones complejas
+- **SIEMPRE** usar TypeScript cuando sea posible
+
+### 5. Performance Best Practices
+
+- **SIEMPRE** implementar debounce para inputs que disparan llamadas API
+- **SIEMPRE** usar cache para datos que no cambian frecuentemente
+- **SIEMPRE** optimizar imágenes y assets
+- **SIEMPRE** usar lazy loading para componentes pesados
+
+## Archivos de referencia
+
+- [AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx)
+- [CalendarioAgendamiento.jsx](mdc:apps/web/src/components/CalendarioAgendamiento.jsx)
+- [TimeSlotSelector.jsx](mdc:apps/web/src/components/TimeSlotSelector.jsx)
