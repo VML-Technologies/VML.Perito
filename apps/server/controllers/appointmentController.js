@@ -201,17 +201,38 @@ class AppointmentController {
         try {
             const {
                 callLogId,
+                call_log_id, // aceptar ambos
                 inspectionOrderId,
+                inspection_order_id, // aceptar ambos
                 inspectionModalityId,
+                inspection_modality_id, // aceptar ambos
                 sedeId,
+                sede_id, // aceptar ambos
                 scheduledDate,
+                scheduled_date, // aceptar ambos
                 scheduledTime,
+                scheduled_time, // aceptar ambos
                 inspectionAddress,
-                notes
+                direccion_inspeccion, // aceptar ambos
+                notes,
+                observaciones, // aceptar ambos
+                userId,
+                user_id // aceptar ambos
             } = req.body;
 
+            // Normalizar los campos para soportar ambos nombres
+            const _callLogId = call_log_id || callLogId;
+            const _inspectionOrderId = inspection_order_id || inspectionOrderId;
+            const _inspectionModalityId = inspection_modality_id || inspectionModalityId;
+            const _sedeId = sede_id || sedeId;
+            const _scheduledDate = scheduled_date || scheduledDate;
+            const _scheduledTime = scheduled_time || scheduledTime;
+            const _inspectionAddress = direccion_inspeccion || inspectionAddress;
+            const _notes = observaciones || notes;
+            const _userId = user_id || userId;
+
             // Validaciones básicas
-            if (!callLogId || !inspectionOrderId || !inspectionModalityId) {
+            if (!_callLogId || !_inspectionOrderId || !_inspectionModalityId || !_userId || !_scheduledDate || !_scheduledTime) {
                 return res.status(400).json({
                     success: false,
                     message: 'Campos requeridos faltantes'
@@ -219,11 +240,11 @@ class AppointmentController {
             }
 
             // Validar que la modalidad esté disponible en la sede
-            if (sedeId) {
+            if (_sedeId) {
                 const availability = await SedeModalityAvailability.findOne({
                     where: {
-                        sede_id: sedeId,
-                        inspection_modality_id: inspectionModalityId,
+                        sede_id: _sedeId,
+                        inspection_modality_id: _inspectionModalityId,
                         active: true
                     }
                 });
@@ -238,14 +259,14 @@ class AppointmentController {
 
             // Crear el agendamiento
             const appointment = await Appointment.create({
-                call_log_id: callLogId,
-                inspection_order_id: inspectionOrderId,
-                inspection_modality_id: inspectionModalityId,
-                sede_id: sedeId,
-                scheduled_date: scheduledDate,
-                scheduled_time: scheduledTime,
-                inspection_address: inspectionAddress,
-                notes: notes,
+                call_log_id: _callLogId,
+                inspection_order_id: _inspectionOrderId,
+                inspection_modality_id: _inspectionModalityId,
+                sede_id: _sedeId,
+                scheduled_date: _scheduledDate,
+                scheduled_time: _scheduledTime,
+                inspection_address: _inspectionAddress,
+                notes: _notes,
                 status: 'PROGRAMADA'
             });
 

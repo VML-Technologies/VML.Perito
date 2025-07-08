@@ -329,7 +329,7 @@ export default function AgenteContacto() {
     };
 
     const loadAvailableSedes = async (modalityId, cityId) => {
-        if (!modalityId  || !cityId) return;
+        if (!modalityId || !cityId) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -370,23 +370,17 @@ export default function AgenteContacto() {
         });
     };
 
+    // Cambiar handleCallSubmit para manejar ambos procesos
     const handleCallSubmit = async (e) => {
         e.preventDefault();
         if (!selectedOrder || !callForm.call_status_id) {
             showToast('Selecciona un estado de llamada', 'warning');
             return;
         }
-
         try {
             const token = localStorage.getItem('authToken');
-
-            // Agregar fecha de seguimiento automática (momento actual)
-            const callDataWithTimestamp = {
-                ...callForm,
-                fecha_seguimiento: new Date().toISOString()
-            };
-
-            const response = await fetch(API_ROUTES.CONTACT_AGENT.CALL_LOGS, {
+            // 1. Registrar llamada
+            const callResponse = await fetch(API_ROUTES.CONTACT_AGENT.CALL_LOGS, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -394,60 +388,52 @@ export default function AgenteContacto() {
                 },
                 body: JSON.stringify({
                     inspection_order_id: selectedOrder.id,
-                    ...callDataWithTimestamp
+                    ...callForm,
+                    fecha_seguimiento: new Date().toISOString()
                 })
             });
+            if (!callResponse.ok) throw new Error('Error al registrar la llamada');
+            const callData = await callResponse.json();
+            // 2. Si requiere agendamiento, registrar agendamiento
+            const selectedStatus = callStatuses.find(status => status.id.toString() === callForm.call_status_id);
 
-            if (response.ok) {
-                showToast('Llamada registrada exitosamente', 'success');
+            console.log(selectedStatus);
 
-                // Verificar si el estado seleccionado requiere agendamiento
-                const selectedStatus = callStatuses.find(status => status.id.toString() === callForm.call_status_id);
-                const needsScheduling = selectedStatus?.creates_schedule;
+            if (selectedStatus?.creates_schedule) {
 
-                if (needsScheduling) {
-                    // Si requiere agendamiento, verificar que los datos estén completos
-                    if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
-                        showToast('Completa la fecha y hora del agendamiento', 'warning');
-                        return;
-                    }
-
-                    // Crear el agendamiento
-                    try {
-                        const appointmentResponse = await fetch(API_ROUTES.CONTACT_AGENT.APPOINTMENTS, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                inspection_order_id: selectedOrder.id,
-                                ...appointmentForm
-                            })
-                        });
-
-                        if (appointmentResponse.ok) {
-                            showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
-                            setIsPanelOpen(false);
-                        } else {
-                            throw new Error('Error al crear el agendamiento');
-                        }
-                    } catch (appointmentError) {
-                        console.error('Error creating appointment:', appointmentError);
-                        showToast('Llamada registrada, pero error al crear agendamiento', 'warning');
-                    }
-                } else {
-                    // Si no requiere agendamiento, cerrar el panel
-                    setIsPanelOpen(false);
+                console.log("Requiere agendamiento");
+                console.log(appointmentForm);
+                if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
+                    showToast('Completa la fecha y hora del agendamiento', 'warning');
+                    return;
                 }
-
-                await loadOrders(); // Refresh orders
+                const appointmentBody = {
+                    inspection_order_id: selectedOrder.id,
+                    call_log_id: callData.data?.id, // Usa el ID de la llamada recién creada
+                    user_id: user?.id, // Enviar el usuario autenticado
+                    ...appointmentForm,
+                    scheduled_date: appointmentForm.fecha_inspeccion, // Enviar ambos nombres
+                    scheduled_time: appointmentForm.hora_inspeccion
+                };
+                const appointmentResponse = await fetch(API_ROUTES.CONTACT_AGENT.APPOINTMENTS, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appointmentBody)
+                }).then(res => {
+                    console.log(res);
+                });
+                if (!appointmentResponse.ok) throw new Error('Error al crear el agendamiento');
+                showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
             } else {
-                throw new Error('Error al registrar la llamada');
+                showToast('Llamada registrada exitosamente', 'success');
             }
+            setIsPanelOpen(false);
+            await loadOrders();
         } catch (error) {
-            console.error('Error submitting call:', error);
-            showToast('Error al registrar la llamada', 'error');
+            showToast('Error al registrar la llamada o agendamiento', 'error');
         }
     };
 
@@ -548,7 +534,6 @@ export default function AgenteContacto() {
 
     // Callback para cuando cambia la fecha en el calendario
     const handleCalendarDateChange = useCallback((selectedDate) => {
-        setCalendarSelectedDate(selectedDate);
         setAppointmentForm(prev => ({
             ...prev,
             fecha_inspeccion: selectedDate
@@ -855,7 +840,6 @@ export default function AgenteContacto() {
                                             {/* Formulario de agendamiento condicional */}
                                             {showAppointmentForm && (
                                                 <div className="border-t pt-4 mt-4">
-
                                                     <Card>
                                                         <CardHeader>
                                                             <CardTitle className="text-base">Agendar Inspección</CardTitle>
@@ -864,7 +848,8 @@ export default function AgenteContacto() {
                                                             </CardDescription>
                                                         </CardHeader>
                                                         <CardContent>
-                                                            <form onSubmit={handleAppointmentSubmit} className="space-y-4">
+                                                            {/* Eliminar el form y el botón de submit aquí, solo mostrar los campos */}
+                                                            <div className="space-y-4">
                                                                 {/* Departamento */}
                                                                 <div>
                                                                     <Label htmlFor="department">Departamento *</Label>
@@ -893,7 +878,6 @@ export default function AgenteContacto() {
                                                                         </SelectContent>
                                                                     </Select>
                                                                 </div>
-
                                                                 {/* Ciudad */}
                                                                 <div>
                                                                     <Label htmlFor="city">Ciudad *</Label>
@@ -921,7 +905,6 @@ export default function AgenteContacto() {
                                                                         </SelectContent>
                                                                     </Select>
                                                                 </div>
-
                                                                 {/* Sede */}
                                                                 <div>
                                                                     <Label htmlFor="sede">Centro de Diagnóstico Automotor (CDA) *</Label>
@@ -932,7 +915,6 @@ export default function AgenteContacto() {
                                                                                 ...prev,
                                                                                 sede_id: value
                                                                             }));
-                                                                            // Cargar modalidades disponibles para esta sede
                                                                             if (value) {
                                                                                 loadModalities(selectedDepartment, selectedCity);
                                                                             }
@@ -961,7 +943,6 @@ export default function AgenteContacto() {
                                                                         Solo se muestran Centros de Diagnóstico Automotor (CDA) para agendar inspecciones de asegurabilidad
                                                                     </p>
                                                                 </div>
-
                                                                 {/* Modalidad (si hay más de una) */}
                                                                 {modalities.length > 0 && (
                                                                     <div>
@@ -974,7 +955,7 @@ export default function AgenteContacto() {
                                                                                     ...prev,
                                                                                     inspection_modality_id: value
                                                                                 }));
-                                                                                setSelectedSlot(null); // Limpiar slot seleccionado al cambiar modalidad
+                                                                                setSelectedSlot(null);
                                                                             }}
                                                                             disabled={!appointmentForm.sede_id}
                                                                         >
@@ -996,9 +977,6 @@ export default function AgenteContacto() {
                                                                         </Select>
                                                                     </div>
                                                                 )}
-
-
-
                                                                 {/* Calendario y Horarios Disponibles */}
                                                                 <div className="space-y-4">
                                                                     <Label>Selecciona Fecha y Horario para Inspección de Asegurabilidad *</Label>
@@ -1008,8 +986,8 @@ export default function AgenteContacto() {
                                                                         onSlotSelect={handleSlotSelect}
                                                                         selectedSlot={selectedSlot}
                                                                         disabled={!appointmentForm.sede_id || !selectedModality}
+                                                                        onDateChange={handleCalendarDateChange} // CONECTA EL CALLBACK
                                                                     />
-
                                                                     {/* Mostrar slot seleccionado */}
                                                                     {selectedSlot && (
                                                                         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1024,7 +1002,6 @@ export default function AgenteContacto() {
                                                                             </div>
                                                                         </div>
                                                                     )}
-
                                                                     {validationState.errors.slot && (
                                                                         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                                                                             <div className="flex items-center gap-2 text-red-800">
@@ -1034,7 +1011,6 @@ export default function AgenteContacto() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-
                                                                 {/* Dirección (solo si es modalidad domicilio) */}
                                                                 {selectedModality && modalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
                                                                     <div>
@@ -1050,7 +1026,6 @@ export default function AgenteContacto() {
                                                                         />
                                                                     </div>
                                                                 )}
-
                                                                 {/* Observaciones */}
                                                                 <div>
                                                                     <Label htmlFor="observaciones_appointment">Observaciones</Label>
@@ -1064,15 +1039,9 @@ export default function AgenteContacto() {
                                                                         }))}
                                                                     />
                                                                 </div>
-
-                                                                <Button type="submit" className="w-full mt-4">
-                                                                    <Calendar className="h-4 w-4 mr-2" />
-                                                                    Guardar y Agendar Inspección
-                                                                </Button>
-                                                            </form>
+                                                            </div>
                                                         </CardContent>
                                                     </Card>
-
                                                 </div>
                                             )}
 

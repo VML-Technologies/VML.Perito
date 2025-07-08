@@ -264,6 +264,10 @@ Appointment.belongsTo(InspectionOrder, {
     as: 'inspectionOrder'
 });
 
+// Relación Appointment <-> CallLog
+Appointment.belongsTo(CallLog, { as: 'callLog', foreignKey: 'call_log_id' });
+CallLog.hasOne(Appointment, { as: 'appointment', foreignKey: 'call_log_id' });
+
 // ===== NUEVAS RELACIONES MODALIDADES =====
 
 // SedeType -> Sedes (1:N)

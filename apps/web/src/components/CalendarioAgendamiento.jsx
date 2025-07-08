@@ -10,7 +10,8 @@ const CalendarioAgendamiento = ({
     modalityId,
     onSlotSelect,
     selectedSlot,
-    disabled = false
+    disabled = false,
+    onDateChange // NUEVO PROP
 }) => {
     const [selectedDate, setSelectedDate] = useState('');
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -116,7 +117,10 @@ const CalendarioAgendamiento = ({
 
         const dateString = date.date.toISOString().split('T')[0];
         setSelectedDate(dateString);
-    }, [disabled]);
+        if (onDateChange) {
+            onDateChange(dateString); // Notificar al padre
+        }
+    }, [disabled, onDateChange]);
 
     const isDateSelected = useCallback((date) => {
         return date.date.toISOString().split('T')[0] === selectedDate;

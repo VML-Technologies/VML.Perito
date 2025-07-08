@@ -34,6 +34,16 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
             key: 'id'
         }
     },
+    // NUEVO CAMPO PARA RELACIONAR CON CALL LOG
+    call_log_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'call_logs',
+            key: 'id'
+        },
+        comment: 'ID del registro de llamada asociado a este agendamiento'
+    },
     scheduled_date: {
         type: DataTypes.DATEONLY,
         allowNull: false
