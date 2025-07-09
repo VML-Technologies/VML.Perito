@@ -175,6 +175,23 @@ export default function AgenteContacto() {
         }
     }, [modalities, selectedModality]);
 
+    // Solo escuchamos 'call_logged' para feedback visual inmediato.
+    // El backend también emite 'order_status_updated' al agendar, pero no mostramos toast aquí.
+    // En el futuro puedes agregar un listener específico para agendamientos si lo deseas.
+    useEffect(() => {
+        const handleCallLogged = (event) => {
+            const { order_number, message, agent_id } = event.detail;
+            if (user && String(agent_id) === String(user.id)) {
+                showToast(message || `Llamada registrada para la orden #${order_number}`, 'success');
+                loadOrders();
+            }
+        };
+        window.addEventListener('call_logged', handleCallLogged);
+        return () => {
+            window.removeEventListener('call_logged', handleCallLogged);
+        };
+    }, [showToast, user]);
+
     const loadInitialData = async () => {
         setLoading(true);
         try {
@@ -397,12 +414,7 @@ export default function AgenteContacto() {
             // 2. Si requiere agendamiento, registrar agendamiento
             const selectedStatus = callStatuses.find(status => status.id.toString() === callForm.call_status_id);
 
-            console.log(selectedStatus);
-
             if (selectedStatus?.creates_schedule) {
-
-                console.log("Requiere agendamiento");
-                console.log(appointmentForm);
                 if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
                     showToast('Completa la fecha y hora del agendamiento', 'warning');
                     return;

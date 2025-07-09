@@ -7,6 +7,10 @@ import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
+import Notification from '../models/notification.js';
+import NotificationConfig from '../models/notificationConfig.js';
+import NotificationType from '../models/notificationType.js';
+import NotificationChannel from '../models/notificationChannel.js';
 import { InspectionModality, SedeModalityAvailability, SedeType } from '../models/index.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
@@ -269,6 +273,21 @@ class ContactAgentController {
             });
 
             // TODO: Emitir evento WebSocket
+            const webSocketSystem = req.app.get('webSocketSystem');
+            if (webSocketSystem && webSocketSystem.isInitialized()) {
+                const notificationData = {
+                    type: 'call_logged',
+                    order_id: order.id,
+                    order_number: order.numero,
+                    agent_id: req.user.id,
+                    agent_name: req.user.name,
+                    call_log_id: callLog.id,
+                    message: `Llamada registrada para la orden #${order.numero}`,
+                    timestamp: new Date().toISOString()
+                };
+                webSocketSystem.sendToUser(req.user.id, 'call_logged', notificationData);
+            }
+
             // TODO: Crear notificación
 
             res.status(201).json({
@@ -289,7 +308,39 @@ class ContactAgentController {
     // Crear agendamiento
     async createAppointment(req, res) {
         try {
+            const { inspection_order_id } = req.body;
+
+            // Validar que se proporcione el ID de la orden
+            if (!inspection_order_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'inspection_order_id es requerido'
+                });
+            }
+
+            // Verificar que la orden existe y está asignada al agente
+            const order = await InspectionOrder.findOne({
+                where: {
+                    id: inspection_order_id,
+                    assigned_agent_id: req.user.id
+                }
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden no encontrada o no asignada a este agente'
+                });
+            }
+
+            // Crear el agendamiento
             const appointment = await Appointment.create(req.body);
+
+            // Actualizar el estado de la orden a "Agendado" (id: 3)
+            await order.update({
+                status: 3, // ID del estado "Agendado"
+                updated_at: new Date()
+            });
 
             // Cargar el agendamiento completo
             const fullAppointment = await Appointment.findByPk(appointment.id, {
@@ -325,12 +376,104 @@ class ContactAgentController {
                 ]
             });
 
-            // TODO: Emitir evento WebSocket
-            // TODO: Crear notificación
+            // Emitir evento WebSocket para notificar el cambio de estado
+            const webSocketSystem = req.app.get('webSocketSystem');
+            if (webSocketSystem && webSocketSystem.isInitialized()) {
+                const notificationData = {
+                    type: 'order_status_updated',
+                    order_id: inspection_order_id,
+                    order_number: order.numero,
+                    new_status: 'Agendado',
+                    previous_status: order.InspectionOrderStatus?.name || 'Desconocido',
+                    appointment_id: appointment.id,
+                    assigned_agent_id: order.assigned_agent_id, // <--- AGREGADO
+                    assigned_agent_name: req.user?.name,        // <--- Opcional, para mostrar en el toast
+                    message: `La orden #${order.numero} ha sido agendada exitosamente`,
+                    timestamp: new Date().toISOString()
+                };
 
-            res.status(201).json(fullAppointment);
+                // Enviar notificación al coordinador y otros agentes
+                webSocketSystem.getSocketManager().broadcast('order_status_updated', notificationData);
+                console.log(`📡 Notificación de cambio de estado enviada:`, notificationData);
+
+                // Emitir también call_logged al agente
+                const callLogNotification = {
+                    type: 'call_logged',
+                    order_id: order.id,
+                    order_number: order.numero,
+                    agent_id: req.user.id,
+                    agent_name: req.user.name,
+                    call_log_id: appointment.call_log_id,
+                    message: `Llamada registrada para la orden #${order.numero}`,
+                    timestamp: new Date().toISOString()
+                };
+                webSocketSystem.sendToUser(req.user.id, 'call_logged', callLogNotification);
+            }
+
+            // Crear notificación de agendamiento
+            try {
+                // Buscar configuración de notificación para agendamientos
+                const appointmentNotificationType = await NotificationType.findOne({
+                    where: { name: 'appointment_scheduled' }
+                });
+
+                const inAppChannel = await NotificationChannel.findOne({
+                    where: { name: 'in_app' }
+                });
+
+                if (appointmentNotificationType && inAppChannel) {
+                    const appointmentNotificationConfig = await NotificationConfig.findOne({
+                        where: {
+                            notification_type_id: appointmentNotificationType.id,
+                            notification_channel_id: inAppChannel.id,
+                            for_users: true,
+                            active: true
+                        }
+                    });
+
+                    if (appointmentNotificationConfig) {
+                        // Crear notificación para el agente que creó el agendamiento
+                        await Notification.create({
+                            notification_config_id: appointmentNotificationConfig.id,
+                            inspection_order_id: inspection_order_id,
+                            appointment_id: appointment.id,
+                            recipient_user_id: req.user.id,
+                            recipient_type: 'user',
+                            title: 'Agendamiento Creado',
+                            content: `Se ha agendado exitosamente la orden #${order.numero} - ${order.nombre_cliente} (${order.placa})`,
+                            priority: 'normal',
+                            status: 'pending',
+                            metadata: {
+                                type: 'appointment_created',
+                                order_number: order.numero,
+                                order_id: inspection_order_id,
+                                appointment_id: appointment.id,
+                                client_name: order.nombre_cliente,
+                                vehicle_plate: order.placa,
+                                agent_id: req.user.id
+                            }
+                        });
+
+                        console.log(`✅ Notificación de agendamiento creada para orden #${order.numero}`);
+                    }
+                }
+            } catch (notificationError) {
+                console.error('Error creando notificación de agendamiento:', notificationError);
+                // No fallar el proceso principal si la notificación falla
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Agendamiento creado exitosamente',
+                data: fullAppointment
+            });
         } catch (error) {
-            res.status(400).json({ message: 'Error al crear agendamiento', error: error.message });
+            console.error('Error al crear agendamiento:', error);
+            res.status(400).json({
+                success: false,
+                message: 'Error al crear agendamiento',
+                error: error.message
+            });
         }
     }
 
