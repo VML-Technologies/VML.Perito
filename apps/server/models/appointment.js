@@ -53,14 +53,20 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         allowNull: false
     },
     status: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed'),
         allowNull: false,
         defaultValue: 'pending',
-        comment: 'Estado de la cita (pending, confirmed, cancelled, etc.)'
+        comment: 'Estado de la cita (pending, assigned, sent, delivered, read, completed, failed)'
     },
     notes: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    session_id: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        unique: true,
+        comment: 'ID único de sesión para la inspección'
     },
 }, {
     tableName: 'appointments',
@@ -72,6 +78,10 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         {
             name: 'appointment_inspection_order_idx',
             fields: ['inspection_order_id']
+        },
+        {
+            name: 'appointment_session_id_idx',
+            fields: ['session_id']
         }
     ]
 });
