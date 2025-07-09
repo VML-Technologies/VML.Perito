@@ -18,6 +18,7 @@ import NotificationChannel from './notificationChannel.js';
 import NotificationType from './notificationType.js';
 import NotificationConfig from './notificationConfig.js';
 import Notification from './notification.js';
+import NotificationQueue from './notificationQueue.js';
 import SedeType from './sedeType.js';
 import InspectionModality from './inspectionModality.js';
 import SedeModalityAvailability from './sedeModalityAvailability.js';
@@ -415,6 +416,16 @@ Notification.belongsTo(User, {
     as: 'recipientUser'
 });
 
+// Notification -> NotificationQueue (1:1)
+Notification.hasOne(NotificationQueue, {
+    foreignKey: 'notification_id',
+    as: 'queue'
+});
+NotificationQueue.belongsTo(Notification, {
+    foreignKey: 'notification_id',
+    as: 'notification'
+});
+
 export {
     Department,
     City,
@@ -435,6 +446,7 @@ export {
     NotificationType,
     NotificationConfig,
     Notification,
+    NotificationQueue,
     SedeType,
     InspectionModality,
     SedeModalityAvailability,

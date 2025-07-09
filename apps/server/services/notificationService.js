@@ -13,11 +13,11 @@ import PushService from './channels/pushService.js';
 class NotificationService {
     constructor() {
         this.channels = {
-            email: new EmailService(),
-            whatsapp: new WhatsAppService(),
-            sms: new SMSService(),
-            in_app: new InAppService(),
-            push: new PushService()
+            email: EmailService,
+            whatsapp: WhatsAppService,
+            sms: SMSService,
+            in_app: InAppService,
+            push: PushService
         };
 
         this.isProcessing = false;
@@ -448,6 +448,11 @@ class NotificationService {
                         {
                             model: NotificationType,
                             as: 'type'
+                        },
+                        {
+                            model: NotificationChannel,
+                            as: 'channel',
+                            where: { name: 'in_app' } // Solo notificaciones in_app
                         }
                     ]
                 }

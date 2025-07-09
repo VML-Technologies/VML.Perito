@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { API_ROUTES } from '@/config/api';
 
 // Tipos de notificaciones y sus acciones correspondientes
 const NOTIFICATION_ACTIONS = {
@@ -41,52 +42,48 @@ const NOTIFICATION_ACTIONS = {
 };
 
 export function useNotifications() {
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'inspeccion_aprobada',
-            title: "Inspección Aprobada",
-            description: "La orden de inspección 1234567890 ha sido aprobada",
-            time: "Hace 5 minutos",
-            read: false,
-            appointment_id: null,
-            inspection_order_id: 1234567890
-        },
-        {
-            id: 2,
-            type: 'inspeccion_rechazada',
-            title: "Inspección Rechazada",
-            description: "La orden de inspección 1234567890 ha sido rechazada",
-            time: "Hace 1 hora",
-            read: false,
-            appointment_id: null,
-            inspection_order_id: 1234567890
-        },
-        {
-            id: 3,
-            type: 'inspeccion_en_curso',
-            title: "Inspección en curso",
-            description: "La orden de inspección 1234567890 ha sido iniciada",
-            time: "Hace 2 horas",
-            read: true,
-            appointment_id: null,
-            inspection_order_id: 1234567890
-        },
-        {
-            id: 4,
-            type: 'inspeccion_agendada',
-            title: "Inspección agendada",
-            description: "La orden de inspección 1234567890 ha sido agendada",
-            time: "Hace 3 horas",
-            read: false,
-            appointment_id: 456,
-            inspection_order_id: 1234567890
-        }
-    ]);
-
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    // Cargar notificaciones desde la API
+    const fetchNotifications = useCallback(async () => {
+        try {
+            setLoading(true);
+
+            console.log('Cargando notificaciones');
+            const token = localStorage.getItem('authToken');
+
+            if (!token) {
+                setNotifications([]);
+                return;
+            }
+
+            const response = await fetch(API_ROUTES.NOTIFICATIONS.GET_USER_NOTIFICATIONS, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setNotifications(data.data.notifications || []);
+                } else {
+                    console.error('Error cargando notificaciones:', data.message);
+                    setNotifications([]);
+                }
+            } else {
+                console.error('Error en la respuesta:', response.status);
+                setNotifications([]);
+            }
+        } catch (error) {
+            console.error('Error cargando notificaciones:', error);
+            setNotifications([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     // Mostrar toast
     const showToast = useCallback((message, type = 'info') => {
@@ -98,23 +95,102 @@ export function useNotifications() {
         setToast(null);
     }, []);
 
+    // Cargar notificaciones al montar el componente
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
+
+    // Actualizar notificaciones cada 30 segundos
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchNotifications();
+        }, 30000); // 30 segundos
+
+        return () => clearInterval(interval);
+    }, [fetchNotifications]);
+
+    // Escuchar eventos de WebSocket para actualizaciones en tiempo real
+    useEffect(() => {
+        const handleNewNotification = (event) => {
+            console.log('🔔 Nueva notificación recibida via WebSocket:', event.detail);
+            // Recargar notificaciones inmediatamente
+            fetchNotifications();
+            showToast('Nueva notificación recibida', 'info');
+        };
+
+        const handleOrderAssigned = (event) => {
+            console.log('🎯 Orden asignada - actualizando notificaciones:', event.detail);
+            // Recargar notificaciones cuando se asigna una orden
+            fetchNotifications();
+        };
+
+        // Registrar listeners para eventos de WebSocket
+        window.addEventListener('newNotification', handleNewNotification);
+        window.addEventListener('orderAssigned', handleOrderAssigned);
+        window.addEventListener('orderRemoved', handleOrderAssigned);
+
+        return () => {
+            window.removeEventListener('newNotification', handleNewNotification);
+            window.removeEventListener('orderAssigned', handleOrderAssigned);
+            window.removeEventListener('orderRemoved', handleOrderAssigned);
+        };
+    }, [fetchNotifications, showToast]);
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+
     // Marcar notificación como leída
-    const markAsRead = useCallback((notificationId) => {
-        setNotifications(prev =>
-            prev.map(notification =>
-                notification.id === notificationId
-                    ? { ...notification, read: true }
-                    : notification
-            )
-        );
-    }, []);
+    const markAsRead = useCallback(async (notificationId) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_ROUTES.NOTIFICATIONS.MARK_AS_READ}/${notificationId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                setNotifications(prev =>
+                    prev.map(notification =>
+                        notification.id === notificationId
+                            ? { ...notification, read: true }
+                            : notification
+                    )
+                );
+            } else {
+                console.error('Error marcando notificación como leída');
+                showToast('Error al marcar notificación como leída', 'error');
+            }
+        } catch (error) {
+            console.error('Error marcando notificación como leída:', error);
+            showToast('Error al marcar notificación como leída', 'error');
+        }
+    }, [showToast]);
 
     // Marcar todas como leídas
-    const markAllAsRead = useCallback(() => {
-        setNotifications(prev =>
-            prev.map(notification => ({ ...notification, read: true }))
-        );
-        showToast('Todas las notificaciones marcadas como leídas', 'success');
+    const markAllAsRead = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.NOTIFICATIONS.MARK_ALL_AS_READ, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                setNotifications(prev =>
+                    prev.map(notification => ({ ...notification, read: true }))
+                );
+                showToast('Todas las notificaciones marcadas como leídas', 'success');
+            } else {
+                console.error('Error marcando todas como leídas');
+                showToast('Error al marcar todas las notificaciones como leídas', 'error');
+            }
+        } catch (error) {
+            console.error('Error marcando todas como leídas:', error);
+            showToast('Error al marcar todas las notificaciones como leídas', 'error');
+        }
     }, [showToast]);
 
     // Manejar click en notificación
@@ -127,7 +203,7 @@ export function useNotifications() {
 
         if (!action) {
             console.warn(`No se encontró acción para el tipo de notificación: ${notification.type}`);
-            showToast('Acción no disponible para este tipo de notificación', 'warning');
+            showToast(`Notificación: ${notification.title || 'Sin título'}`, 'info');
             return;
         }
 
@@ -184,15 +260,22 @@ export function useNotifications() {
         showToast('Notificación eliminada', 'success');
     }, [showToast]);
 
+    // Recargar notificaciones
+    const refreshNotifications = useCallback(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
+
     return {
         notifications,
         unreadCount,
+        loading,
         toast,
         markAsRead,
         markAllAsRead,
         handleNotificationClick,
         addNotification,
         removeNotification,
+        refreshNotifications,
         showToast,
         hideToast
     };

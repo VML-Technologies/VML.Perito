@@ -3,6 +3,17 @@ import { Notification, NotificationConfig } from '../models/index.js';
 import { Op } from 'sequelize';
 
 class NotificationController {
+    constructor() {
+        this.getUserNotifications = this.getUserNotifications.bind(this);
+        this.markAsRead = this.markAsRead.bind(this);
+        this.markAllAsRead = this.markAllAsRead.bind(this);
+        this.getUnreadCount = this.getUnreadCount.bind(this);
+        this.getStats = this.getStats.bind(this);
+        this.createNotification = this.createNotification.bind(this);
+        this.registerPushToken = this.registerPushToken.bind(this);
+        this.handleDeliveryWebhook = this.handleDeliveryWebhook.bind(this);
+        this.formatTimeAgo = this.formatTimeAgo.bind(this);
+    }
 
     /**
      * Obtener notificaciones del usuario actual

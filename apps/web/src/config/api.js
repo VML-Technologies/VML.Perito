@@ -80,6 +80,13 @@ export const API_ROUTES = {
         APPOINTMENTS: `${API_BASE_URL}/api/schedules/appointments`,
         VEHICLE_TYPES: (sedeId) => `${API_BASE_URL}/api/sedes/${sedeId}/vehicle-types`,
     },
+    // ===== RUTAS DE NOTIFICACIONES =====
+    NOTIFICATIONS: {
+        GET_USER_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/user`,
+        MARK_AS_READ: `${API_BASE_URL}/api/notifications`,
+        MARK_ALL_AS_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
+        STATS: `${API_BASE_URL}/api/notifications/stats`,
+    },
 };
 
 export const API_CONFIG = {

@@ -15,13 +15,18 @@ export function NotificationMenu() {
     const {
         notifications,
         unreadCount,
+        loading,
         markAsRead,
         markAllAsRead,
         handleNotificationClick,
         removeNotification
     } = useNotificationContext();
 
-    const handleNotificationItemClick = (notification) => {
+    const handleNotificationItemClick = async (notification) => {
+        // Marcar como leída si no lo está
+        if (!notification.read) {
+            await markAsRead(notification.id);
+        }
         handleNotificationClick(notification);
     };
 
@@ -62,7 +67,11 @@ export function NotificationMenu() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    {notifications.length === 0 ? (
+                    {loading ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            Cargando notificaciones...
+                        </div>
+                    ) : notifications.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             No hay notificaciones
                         </div>
@@ -70,7 +79,7 @@ export function NotificationMenu() {
                         notifications.map((notification) => (
                             <DropdownMenuItem
                                 key={notification.id}
-                                className={`p-3 cursor-pointer hover:bg-muted/50 ${!notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                                className={`p-3 my-2 cursor-pointer hover:bg-muted/50 ${!notification.read ? 'bg-blue-50 border-l-2 border-blue-500' : ''
                                     }`}
                                 onClick={() => handleNotificationItemClick(notification)}
                             >
@@ -93,7 +102,7 @@ export function NotificationMenu() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <p className={`text-sm ${!notification.read ? 'text-blue-700' : 'text-muted-foreground'}`}>
+                                    <p className={`text-xs ${!notification.read ? 'text-blue-700' : 'text-muted-foreground'}`}>
                                         {notification.description}
                                     </p>
                                     {!notification.read && (

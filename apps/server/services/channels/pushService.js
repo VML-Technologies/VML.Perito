@@ -216,4 +216,4 @@ class PushService {
     }
 }
 
-export default PushService; 
+export default new PushService(); 

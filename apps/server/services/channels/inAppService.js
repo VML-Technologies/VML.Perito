@@ -86,4 +86,4 @@ class InAppService {
     }
 }
 
-export default InAppService; 
+export default new InAppService(); 

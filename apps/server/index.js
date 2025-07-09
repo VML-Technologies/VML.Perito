@@ -10,6 +10,7 @@ import cityController from './controllers/cityController.js';
 import companyController from './controllers/companyController.js';
 import sedeController from './controllers/sedeController.js';
 import { requirePermission } from './middleware/rbac.js';
+import { requireAuth } from './middleware/auth.js';
 import permissionController from './controllers/permissionController.js';
 import roleController from './controllers/roleController.js';
 import webSocketSystem from './websocket/index.js';
@@ -17,6 +18,7 @@ import inspectionOrderController from './controllers/inspectionOrderController.j
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
+import notificationController from './controllers/notificationController.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -128,7 +130,6 @@ app.get('/api/contact-agent/available-sedes', requirePermission('contact_agent.r
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
 
 // Rutas para gestión de horarios y disponibilidad
-app.get('/api/schedules/available', scheduleController.getAvailableSchedules);
 app.get('/api/schedules/available', requirePermission('contact_agent.read'), scheduleController.getAvailableSchedules);
 app.get('/api/sedes/:sedeId/vehicle-types', requirePermission('contact_agent.read'), scheduleController.getSedeVehicleTypes);
 app.post('/api/schedules/appointments', requirePermission('contact_agent.create_appointment'), scheduleController.createScheduledAppointment);
@@ -141,6 +142,14 @@ app.get('/api/coordinador-contacto/orders/:id', requirePermission('coordinador_c
 app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getStats);
 app.get('/api/coordinador-contacto/agents', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getAgents);
 app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_contacto.assign'), coordinadorContactoController.assignAgent);
+
+// ===== RUTAS DE NOTIFICACIONES =====
+
+// Rutas para gestión de notificaciones (requieren autenticación)
+app.get('/api/notifications/user', requireAuth, notificationController.getUserNotifications);
+app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
+app.put('/api/notifications/mark-all-read', requireAuth, notificationController.markAllAsRead);
+app.get('/api/notifications/stats', requireAuth, notificationController.getStats);
 
 // Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
 // Endpoint de perfil sin restricciones de permisos (solo requiere autenticación)

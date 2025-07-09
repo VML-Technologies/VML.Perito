@@ -26,6 +26,16 @@ class NotificationHandler {
         // Enviar por WebSocket si está conectado
         const sent = socketManager.sendToUser(userId, 'notification', notificationData);
 
+        // Emitir evento personalizado para el frontend
+        if (sent) {
+            // Emitir evento para actualizar notificaciones en tiempo real
+            socketManager.sendToUser(userId, 'newNotification', {
+                type: 'newNotification',
+                notification: notificationData,
+                timestamp: new Date().toISOString()
+            });
+        }
+
         // Aquí podrías agregar lógica para guardar en BD si el usuario no está conectado
         if (!sent) {
             console.log(`📨 Usuario ${userId} no conectado, notificación guardada para entrega posterior`);

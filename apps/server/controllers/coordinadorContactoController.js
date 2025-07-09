@@ -566,59 +566,87 @@ class CoordinadorContactoController {
     // Método auxiliar para crear notificaciones de asignación
     async createAssignmentNotification(agentId, inspectionOrderId, type) {
         try {
-            // Buscar configuración de notificación para asignación de órdenes
-            const notificationConfig = await NotificationConfig.findOne({
+            // Obtener datos de la orden
+            const order = await InspectionOrder.findByPk(inspectionOrderId, {
                 include: [
                     {
-                        model: NotificationType,
-                        as: 'type',
-                        where: { name: 'asignacion_orden' }
-                    },
-                    {
-                        model: NotificationChannel,
-                        as: 'channel',
-                        where: { name: 'sistema' }
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name']
                     }
-                ],
+                ]
+            });
+
+            if (!order) {
+                console.warn(`Orden ${inspectionOrderId} no encontrada para crear notificación`);
+                return;
+            }
+
+            // Buscar la configuración de notificación para asignaciones de órdenes
+            const notificationType = await NotificationType.findOne({
+                where: { name: 'asignacion_orden' }
+            });
+
+            const notificationChannel = await NotificationChannel.findOne({
+                where: { name: 'sistema' }
+            });
+
+            if (!notificationType || !notificationChannel) {
+                console.warn('No se encontró configuración de notificación para asignaciones');
+                return;
+            }
+
+            const notificationConfig = await NotificationConfig.findOne({
                 where: {
+                    notification_type_id: notificationType.id,
+                    notification_channel_id: notificationChannel.id,
                     for_users: true,
                     active: true
                 }
             });
 
             if (!notificationConfig) {
-                console.warn('No se encontró configuración de notificación para asignación de órdenes');
+                console.warn('No se encontró configuración activa para notificaciones de asignación');
                 return;
             }
 
-            // Obtener datos de la orden
-            const order = await InspectionOrder.findByPk(inspectionOrderId);
-
-            const title = type === 'reasignacion'
-                ? 'Orden Reasignada'
-                : type === 'remocion'
-                    ? 'Orden Removida'
-                    : 'Nueva Orden Asignada';
-
-            const content = type === 'reasignacion'
-                ? `Te han reasignado la orden de inspección #${order.numero} para el vehículo ${order.placa}`
-                : type === 'remocion'
-                    ? `La orden de inspección #${order.numero} para el vehículo ${order.placa} ha sido removida de tu asignación`
-                    : `Te han asignado una nueva orden de inspección #${order.numero} para el vehículo ${order.placa}`;
+            // Crear notificación directamente en la base de datos
+            const notificationData = {
+                notification_config_id: notificationConfig.id,
+                title: type === 'reasignacion' ? 'Orden Reasignada' : 'Nueva Orden Asignada',
+                content: type === 'reasignacion'
+                    ? `Te han reasignado la orden #${order.numero} - ${order.nombre_cliente} (${order.placa})`
+                    : `Te han asignado una nueva orden #${order.numero} - ${order.nombre_cliente} (${order.placa})`,
+                recipient_user_id: agentId,
+                recipient_type: 'user',
+                inspection_order_id: inspectionOrderId,
+                priority: 'normal',
+                status: 'pending',
+                metadata: {
+                    type: type,
+                    order_number: order.numero,
+                    order_id: inspectionOrderId,
+                    client_name: order.nombre_cliente,
+                    vehicle_plate: order.placa,
+                    status: order.InspectionOrderStatus?.name
+                }
+            };
 
             // Crear la notificación
-            await Notification.create({
-                notification_config_id: notificationConfig.id,
-                inspection_order_id: inspectionOrderId,
-                recipient_type: 'user',
-                recipient_user_id: agentId,
-                title: title,
-                content: content,
-                status: 'pending'
+            const notification = await Notification.create(notificationData);
+
+            console.log(`✅ Notificación creada para agente ${agentId}:`, {
+                id: notification.id,
+                type: type,
+                order: order.numero,
+                config_id: notificationConfig.id
             });
 
+            return notification;
+
         } catch (error) {
-            console.error('Error al crear notificación de asignación:', error);
+            console.error('Error creando notificación de asignación:', error);
+            throw error;
         }
     }
 }

@@ -177,4 +177,4 @@ class WhatsAppService {
     }
 }
 
-export default WhatsAppService; 
+export default new WhatsAppService(); 

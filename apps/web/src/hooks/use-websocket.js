@@ -104,6 +104,7 @@ export const useWebSocket = () => {
             socketRef.current.on('order_removed', handleOrderRemoved);
             socketRef.current.on('order_updated', handleOrderUpdated);
             socketRef.current.on('notification', handleNotification);
+            socketRef.current.on('newNotification', handleNewNotification);
             socketRef.current.on('test_message', handleTestMessage);
 
 
@@ -195,6 +196,21 @@ export const useWebSocket = () => {
 
         const { title, message, type = 'info' } = data;
         showToast(title || message, type, 5000);
+    };
+
+    const handleNewNotification = (data) => {
+        console.log('🔔 Nueva notificación recibida:', data);
+
+        // Emitir evento personalizado para actualizar notificaciones
+        window.dispatchEvent(new CustomEvent('newNotification', {
+            detail: data
+        }));
+
+        // Mostrar toast de nueva notificación
+        const { notification } = data;
+        if (notification && notification.title) {
+            showToast(notification.title, 'info', 3000);
+        }
     };
 
     const handleTestMessage = (data) => {

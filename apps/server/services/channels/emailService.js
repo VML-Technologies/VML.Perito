@@ -143,4 +143,4 @@ class EmailService {
     }
 }
 
-export default EmailService; 
+export default new EmailService(); 
