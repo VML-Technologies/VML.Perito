@@ -40,7 +40,7 @@ export const WebSocketStatus = () => {
         <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
             <Badge variant="outline" className="text-xs">
-                WebSocket: {getStatusText()}
+                Conexion tiempo real: {getStatusText()}
             </Badge>
         </div>
     );
