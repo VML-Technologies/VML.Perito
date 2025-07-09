@@ -34,6 +34,10 @@ const port = process.env.PORT || 3000;
 app.use(cors({ origin: 'http://192.168.20.6:5173', credentials: true }));
 app.use(express.json());
 
+// Servir archivos estáticos de la carpeta dist/web
+app.use(express.static('./../../dist/web'));
+
+
 // Rutas de autenticación
 app.post('/api/auth/login', login);
 app.get('/api/auth/verify', verify);
