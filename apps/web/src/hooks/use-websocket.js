@@ -15,6 +15,9 @@ export const useWebSocket = () => {
     const maxReconnectAttempts = 5;
     const reconnectDelay = 3000; // 3 segundos
 
+    // Obtener la URL base del backend desde variables de entorno
+    const WS_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
     const connect = () => {
         if (!isAuthenticated || !user) {
             console.log('❌ No se puede conectar WebSocket: usuario no autenticado');
@@ -31,13 +34,13 @@ export const useWebSocket = () => {
             console.log('🔌 Conectando Socket.IO...', {
                 userId: user.id,
                 userName: user.name,
-                url: 'http://192.168.20.6:3000'
+                url: WS_BASE_URL
             });
 
             setConnectionStatus('connecting');
 
             // Crear conexión Socket.IO
-            socketRef.current = io('http://192.168.20.6:3000', {
+            socketRef.current = io(WS_BASE_URL, {
                 auth: {
                     token: token
                 },
