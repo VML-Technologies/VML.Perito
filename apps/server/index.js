@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import sequelize from './config/database.js';
 import { login, verify, logout } from './controllers/authController.js';
@@ -30,13 +32,16 @@ const app = express();
 const server = createServer(app);
 const port = process.env.PORT || 3000;
 
+// Setup para __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Middleware
-app.use(cors({ origin: 'http://192.168.20.6:5173', credentials: true }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
 // Servir archivos estáticos de la carpeta dist/web
-app.use(express.static('./../../dist/web'));
-
+const staticPath = path.join(__dirname, '../web/dist');
 
 // Rutas de autenticación
 app.post('/api/auth/login', login);
@@ -282,6 +287,12 @@ app.get('/api/inspection-orders-simple', async (req, res) => {
         console.error('Error en consulta simple:', error);
         res.status(500).json({ error: error.message, stack: error.stack });
     }
+});
+
+app.use(express.static(staticPath));
+
+app.get('/{*name}', (req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 // Sincronizar base de datos y arrancar servidor
