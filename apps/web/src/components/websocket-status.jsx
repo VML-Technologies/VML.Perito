@@ -22,15 +22,15 @@ export const WebSocketStatus = () => {
     const getStatusText = () => {
         switch (connectionStatus) {
             case 'connected':
-                return 'Conectado';
+                return 'Sistema funcional';
             case 'connecting':
-                return 'Conectando...';
+                return 'Conectando al sistema...';
             case 'reconnecting':
                 return `Reconectando... (${reconnectAttempts})`;
             case 'error':
-                return 'Error';
+                return 'Error de sistema';
             case 'failed':
-                return 'Falló';
+                return 'Falló la conexión';
             default:
                 return 'Desconectado';
         }
@@ -38,9 +38,11 @@ export const WebSocketStatus = () => {
 
     return (
         <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
             <Badge variant="outline" className="text-xs">
-                Conexion tiempo real: {getStatusText()}
+                <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+                    {getStatusText()}
+                </div>
             </Badge>
         </div>
     );
