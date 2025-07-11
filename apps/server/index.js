@@ -156,9 +156,9 @@ app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_cont
 
 // Rutas para gestión de notificaciones (requieren autenticación)
 app.get('/api/notifications/user', requireAuth, notificationController.getUserNotifications);
-app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
 app.put('/api/notifications/mark-all-read', requireAuth, notificationController.markAllAsRead);
 app.get('/api/notifications/stats', requireAuth, notificationController.getStats);
+app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
 
 // Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
 // Endpoint de perfil sin restricciones de permisos (solo requiere autenticación)
