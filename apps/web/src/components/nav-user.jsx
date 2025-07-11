@@ -1,10 +1,9 @@
 import {
-  CreditCard,
   MoreVertical,
   LogOut,
-  Bell,
   Lock,
   User,
+  HeadsetIcon,
 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -23,18 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { UserIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { useNotificationContext } from "@/contexts/notification-context"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
   const { user, logout } = useAuth()
   const { showToast } = useNotificationContext()
   const navigate = useNavigate()
@@ -66,31 +60,38 @@ export function NavUser() {
   if (!user) return null
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+
+    <div className="flex items-center gap-2">
+      <div>
+        <Avatar className="h-8 w-8 rounded-lg">
+          <AvatarImage src={user.avatar} lt={user.name} />
+          <AvatarFallback className="rounded-lg">
+            {
+              user.roles.find(role => role.name === 'agente_contacto') ?
+                <HeadsetIcon className="size-4" /> : <>
+                  {getUserInitials(user.name)}
+                </>
+            }
+          </AvatarFallback>
+        </Avatar>
+      </div>
+      <div className="w-48">
+        <span className="truncate font-medium w-full">{user.name || 'Usuario'}</span>
+        <Select className="w-full">
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecciona un estado" />
+          </SelectTrigger>
+          <SelectContent className="w-full">
+            <SelectItem value="almuerzo">Almuerzo</SelectItem>
+            <SelectItem value="en_linea">En linea</SelectItem>
+            <SelectItem value="en_descanso">En descanso</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">
-                  {getUserInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name || 'Usuario'}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  <Badge variant="outline" className="bg-green-100 border-green-300 text-green-700">
-                    <span className="text-xs">
-                      Conectado
-                    </span>
-                  </Badge>
-                </span>
-              </div>
-              <MoreVertical className="ml-auto size-4" />
-            </SidebarMenuButton>
+            <MoreVertical className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
@@ -133,7 +134,7 @@ export function NavUser() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+      </div>
+    </div>
   );
 }
