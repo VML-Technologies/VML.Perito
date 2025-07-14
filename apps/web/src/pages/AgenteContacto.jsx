@@ -482,18 +482,33 @@ export default function AgenteContacto() {
                     scheduled_date: appointmentForm.fecha_inspeccion, // Enviar ambos nombres
                     scheduled_time: appointmentForm.hora_inspeccion
                 };
-                const appointmentResponse = await fetch(API_ROUTES.CONTACT_AGENT.APPOINTMENTS, {
+                fetch(API_ROUTES.CONTACT_AGENT.APPOINTMENTS, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(appointmentBody)
-                }).then(res => {
-                    console.log(res);
-                });
-                if (!appointmentResponse.ok) throw new Error('Error al crear el agendamiento');
-                showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
+                })
+                    .then(res => {
+                        console.log('appointmentResponse');
+                        console.log(res);
+
+                        if (!res.ok) {
+                            // It's good practice to throw an error here so the .catch block handles it
+                            return res.json().then(err => { throw new Error(`Error al crear el agendamiento: ${err.message || res.statusText}`); });
+                        }
+                        return res; // Pass the response along if it's OK
+                    })
+                    .then(appointmentResponse => {
+                        console.log('appointmentResponse2'); // This will be the same as the first console.log(res) if successful
+                        console.log(appointmentResponse);
+                        showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
+                    })
+                    .catch(error => {
+                        console.error("Fetch error:", error);
+                        showToast(`Error: ${error.message}`, 'error');
+                    });
             } else {
                 showToast('Llamada registrada exitosamente', 'success');
             }
