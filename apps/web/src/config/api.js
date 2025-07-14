@@ -65,6 +65,8 @@ export const API_ROUTES = {
         SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,
         MODALITIES: `${API_BASE_URL}/api/contact-agent/modalities`,
         AVAILABLE_SEDES: `${API_BASE_URL}/api/contact-agent/available-sedes`,
+        ALL_MODALITIES: `${API_BASE_URL}/api/contact-agent/all-modalities`,
+        SEDES_BY_MODALITY: `${API_BASE_URL}/api/contact-agent/sedes-by-modality`,
     },
     // ===== NUEVAS RUTAS - Coordinador de Contact Center =====
     COORDINADOR_CONTACTO: {
