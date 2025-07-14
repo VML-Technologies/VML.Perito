@@ -264,18 +264,12 @@ const CalendarioAgendamiento = ({
 
                     {/* Fecha seleccionada */}
                     {selectedDate && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="mt-2 p-2 bg-blue-50 rounded-lg">
                             <p className="text-sm font-medium text-blue-800">
                                 Fecha seleccionada: {formatDate(new Date(selectedDate + 'T00:00:00'))}
                             </p>
                         </div>
                     )}
-
-                    {/* Instrucciones */}
-                    <div className="mt-4 text-xs text-gray-500 space-y-1">
-                        <p>• Solo puedes seleccionar fechas a partir de hoy</p>
-                        <p>• El punto azul indica el día actual</p>
-                    </div>
                 </CardContent>
             </Card>
 

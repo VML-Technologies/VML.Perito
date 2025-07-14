@@ -226,7 +226,7 @@ const TimeSlotSelector = ({
                 ))}
 
                 {/* Leyenda */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                {/* <div className="mt-6 pt-4 border-t border-gray-200">
                     <p className="text-sm font-medium text-gray-700 mb-2">Leyenda de capacidad:</p>
                     <div className="flex gap-4 text-xs">
                         <div className="flex items-center gap-1">
@@ -242,7 +242,7 @@ const TimeSlotSelector = ({
                             <span>Baja disponibilidad (&lt;40%)</span>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </CardContent>
         </Card>
     );

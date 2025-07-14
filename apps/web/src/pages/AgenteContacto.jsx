@@ -969,13 +969,6 @@ export default function AgenteContacto() {
                                                 />
                                             </div>
 
-                                            <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="h-3 w-3" />
-                                                    <span>La fecha de seguimiento se registrará automáticamente</span>
-                                                </div>
-                                            </div>
-
                                             {/* Formulario de agendamiento condicional */}
                                             {showAppointmentForm && (
                                                 <div className="border-t pt-4 mt-4">
@@ -995,17 +988,18 @@ export default function AgenteContacto() {
                                                                         value={selectedModality}
                                                                         onValueChange={handleModalityChange}
                                                                     >
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Selecciona modalidad de inspección" />
+                                                                        <SelectTrigger className="w-full">
+                                                                            <SelectValue
+                                                                                placeholder="Selecciona modalidad de inspección"
+                                                                                value={allModalities.find(m => m.id.toString() === selectedModality)?.name || ''}
+                                                                            />
                                                                         </SelectTrigger>
-                                                                        <SelectContent>
+                                                                        <SelectContent className="w-full">
                                                                             {allModalities.map((modality) => (
                                                                                 <SelectItem key={modality.id} value={modality.id.toString()}>
                                                                                     <div className="flex justify-between w-full items-center">
                                                                                         <span>{modality.name}</span>
-                                                                                        <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                                                                                            {modality.sedesCount} sedes disponibles
-                                                                                        </span>
+                                                                                        <span className="text-xs text-muted-foreground ml-2">{modality.sedesCount} sedes</span>
                                                                                     </div>
                                                                                 </SelectItem>
                                                                             ))}
@@ -1024,14 +1018,20 @@ export default function AgenteContacto() {
                                                                             value={selectedDepartment}
                                                                             onValueChange={handleDepartmentChange}
                                                                             disabled={!selectedModality}
+                                                                            className="w-full"
                                                                         >
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Selecciona un departamento" />
+                                                                            <SelectTrigger className="w-full">
+                                                                                <SelectValue
+                                                                                    placeholder="Selecciona un departamento"
+                                                                                    value={filteredDepartments.find(d => d.id.toString() === selectedDepartment)?.name || ''}
+                                                                                />
                                                                             </SelectTrigger>
-                                                                            <SelectContent>
+                                                                            <SelectContent className="w-full">
                                                                                 {filteredDepartments.map((department) => (
                                                                                     <SelectItem key={department.id} value={department.id.toString()}>
-                                                                                        <span>{department.name}</span>
+                                                                                        <div className="flex justify-between w-full items-center">
+                                                                                            <span>{department.name}</span>
+                                                                                        </div>
                                                                                     </SelectItem>
                                                                                 ))}
                                                                             </SelectContent>
@@ -1050,14 +1050,20 @@ export default function AgenteContacto() {
                                                                             value={selectedCity}
                                                                             onValueChange={handleCityChange}
                                                                             disabled={!selectedDepartment}
+                                                                            className="w-full"
                                                                         >
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Selecciona una ciudad" />
+                                                                            <SelectTrigger className="w-full">
+                                                                                <SelectValue
+                                                                                    placeholder="Selecciona una ciudad"
+                                                                                    value={filteredCities.find(c => c.id.toString() === selectedCity)?.name || ''}
+                                                                                />
                                                                             </SelectTrigger>
-                                                                            <SelectContent>
+                                                                            <SelectContent className="w-full">
                                                                                 {filteredCities.map((city) => (
                                                                                     <SelectItem key={city.id} value={city.id.toString()}>
-                                                                                        <span>{city.name}</span>
+                                                                                        <div className="flex justify-between w-full items-center">
+                                                                                            <span>{city.name}</span>
+                                                                                        </div>
                                                                                     </SelectItem>
                                                                                 ))}
                                                                             </SelectContent>
@@ -1076,17 +1082,21 @@ export default function AgenteContacto() {
                                                                             value={appointmentForm.sede_id}
                                                                             onValueChange={handleSedeChange}
                                                                             disabled={!selectedCity}
+                                                                            className="w-full"
                                                                         >
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Selecciona un CDA" />
+                                                                            <SelectTrigger className="w-full">
+                                                                                <SelectValue
+                                                                                    placeholder="Selecciona un CDA"
+                                                                                    // Solo muestra el nombre de la sede seleccionada
+                                                                                    value={filteredSedes.find(s => s.id.toString() === appointmentForm.sede_id)?.name || ''}
+                                                                                />
                                                                             </SelectTrigger>
-                                                                            <SelectContent>
+                                                                            <SelectContent className="w-full">
                                                                                 {filteredSedes.map((sede) => (
                                                                                     <SelectItem key={sede.id} value={sede.id.toString()}>
-                                                                                        <div className="flex flex-col">
+                                                                                        <div className="flex justify-between w-full items-center">
                                                                                             <span className="font-medium">{sede.name}</span>
-                                                                                            <span className="text-xs text-muted-foreground">{sede.address}</span>
-                                                                                            <span className="text-xs text-blue-600">{sede.city}, {sede.department}</span>
+                                                                                            <span className="text-xs text-muted-foreground ml-2">{sede.address}</span>
                                                                                         </div>
                                                                                     </SelectItem>
                                                                                 ))}
@@ -1099,39 +1109,43 @@ export default function AgenteContacto() {
                                                                 )}
 
                                                                 {/* Calendario y Horarios Disponibles */}
-                                                                <div className="space-y-4">
-                                                                    <Label>Selecciona Fecha y Horario para Inspección de Asegurabilidad *</Label>
-                                                                    <CalendarioAgendamiento
-                                                                        sedeId={appointmentForm.sede_id}
-                                                                        modalityId={selectedModality}
-                                                                        onSlotSelect={handleSlotSelect}
-                                                                        selectedSlot={selectedSlot}
-                                                                        disabled={!appointmentForm.sede_id || !selectedModality}
-                                                                        onDateChange={handleCalendarDateChange}
-                                                                    />
-                                                                    {/* Mostrar slot seleccionado */}
-                                                                    {selectedSlot && (
-                                                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                                                            <div className="flex items-center gap-2 text-blue-800">
-                                                                                <Calendar className="h-4 w-4" />
-                                                                                <span className="font-medium">Inspección de Asegurabilidad - Horario seleccionado:</span>
-                                                                            </div>
-                                                                            <div className="mt-1 text-sm text-blue-700">
-                                                                                <div>Fecha: {appointmentForm.fecha_inspeccion}</div>
-                                                                                <div>Hora: {selectedSlot.startTime} - {selectedSlot.endTime}</div>
-                                                                                <div>Capacidad disponible: {selectedSlot.availableCapacity}/{selectedSlot.totalCapacity}</div>
-                                                                            </div>
+                                                                {
+                                                                    (!(!appointmentForm.sede_id || !selectedModality)) && <>
+                                                                        <div className="space-y-4">
+                                                                            <Label>Selecciona Fecha y Horario para Inspección de Asegurabilidad *</Label>
+                                                                            <CalendarioAgendamiento
+                                                                                sedeId={appointmentForm.sede_id}
+                                                                                modalityId={selectedModality}
+                                                                                onSlotSelect={handleSlotSelect}
+                                                                                selectedSlot={selectedSlot}
+                                                                                disabled={!appointmentForm.sede_id || !selectedModality}
+                                                                                onDateChange={handleCalendarDateChange}
+                                                                            />
+                                                                            {/* Mostrar slot seleccionado */}
+                                                                            {selectedSlot && (
+                                                                                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                                                    <div className="flex items-center gap-2 text-blue-800">
+                                                                                        <Calendar className="h-4 w-4" />
+                                                                                        <span className="font-medium">Inspección de Asegurabilidad - Horario seleccionado:</span>
+                                                                                    </div>
+                                                                                    <div className="mt-1 text-sm text-blue-700">
+                                                                                        <div>Fecha: {appointmentForm.fecha_inspeccion}</div>
+                                                                                        <div>Hora: {selectedSlot.startTime} - {selectedSlot.endTime}</div>
+                                                                                        <div>Capacidad disponible: {selectedSlot.availableCapacity}/{selectedSlot.totalCapacity}</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                            {validationState.errors.slot && (
+                                                                                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                                                    <div className="flex items-center gap-2 text-red-800">
+                                                                                        <AlertCircle className="h-4 w-4" />
+                                                                                        <span className="text-sm">{validationState.errors.slot}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                    )}
-                                                                    {validationState.errors.slot && (
-                                                                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                                                                            <div className="flex items-center gap-2 text-red-800">
-                                                                                <AlertCircle className="h-4 w-4" />
-                                                                                <span className="text-sm">{validationState.errors.slot}</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                    </>
+                                                                }
 
                                                                 {/* Dirección (solo si es modalidad domicilio) */}
                                                                 {selectedModality && allModalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
