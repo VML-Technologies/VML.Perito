@@ -663,7 +663,7 @@ export default function CoordinadorContacto() {
 
             {/* Panel de Detalles */}
             <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
-                <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
+                <SheetContent className="w-full sm:max-w-4xl overflow-y-auto px-4">
                     {selectedOrder && (
                         <>
                             <SheetHeader>
@@ -673,13 +673,13 @@ export default function CoordinadorContacto() {
                                 </SheetDescription>
                             </SheetHeader>
 
-                            <div className="mt-6 space-y-6">
+                            <div className="mt-2 space-y-4">
                                 {/* Información General */}
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="text-base">Información General</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                    <CardContent className="grid grid-cols-2 gap-2 text-sm">
                                         <div>
                                             <span className="font-medium">Cliente:</span>
                                             <p>{selectedOrder.nombre_cliente}</p>
