@@ -502,6 +502,116 @@ class ContactAgentController {
         }
     }
 
+    // Obtener todas las modalidades disponibles (sin filtrar por ubicación)
+    async getAllAvailableModalities(req, res) {
+        try {
+            const modalities = await InspectionModality.findAll({
+                where: { active: true },
+                include: [{
+                    model: SedeModalityAvailability,
+                    as: 'sedeAvailabilities',
+                    required: true,
+                    where: { active: true },
+                    include: [{
+                        model: Sede,
+                        as: 'sede',
+                        required: true,
+                        where: { active: true }
+                    }]
+                }],
+                order: [['name', 'ASC']]
+            });
+
+            const modalitiesWithCount = modalities.map(modality => ({
+                id: modality.id,
+                name: modality.name,
+                code: modality.code,
+                description: modality.description,
+                sedesCount: modality.sedeAvailabilities.length
+            }));
+
+            res.json({
+                success: true,
+                data: modalitiesWithCount
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo modalidades:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor'
+            });
+        }
+    }
+
+    // Obtener sedes disponibles por modalidad (sin filtrar por ciudad)
+    async getSedesByModality(req, res) {
+        try {
+            const { modalityId } = req.query;
+
+            if (!modalityId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Modalidad es requerida'
+                });
+            }
+
+            // Nuevo enfoque: buscar por SedeModalityAvailability
+            const sede_modality_availability = await SedeModalityAvailability.findAll({
+                where: {
+                    inspection_modality_id: modalityId
+                },
+                include: [
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [
+                            {
+                                model: City,
+                                as: 'city',
+                                include: [{ model: Department, as: 'department' }]
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            // Mapear la respuesta para que sea igual que antes
+            const sedesWithAvailability = sede_modality_availability.map(item => {
+                const sede = item.sede;
+                return {
+                    id: sede.id,
+                    name: sede.name,
+                    address: sede.address,
+                    phone: sede.phone,
+                    email: sede.email,
+                    city: sede.city?.name,
+                    department: sede.city?.department?.name,
+                    department_id: sede.city?.department?.id,
+                    city_id: sede.city?.id,
+                    availability: {
+                        maxDailyCapacity: item.max_daily_capacity,
+                        workingHoursStart: item.working_hours_start,
+                        workingHoursEnd: item.working_hours_end,
+                        workingDays: item.working_days
+                    }
+                };
+            });
+
+            res.json({
+                success: true,
+                data: sedesWithAvailability
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo sedes por modalidad:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor'
+            });
+        }
+    }
+
     // Obtener departamentos
     async getDepartments(req, res) {
         try {
