@@ -685,30 +685,30 @@ export default function CoordinadorContacto() {
                                             <p>{selectedOrder.nombre_cliente}</p>
                                         </div>
                                         <div>
+                                            <span className="font-medium">Placa:</span>
+                                            <p className="font-mono font-medium">{selectedOrder.placa}</p>
+                                        </div>
+                                        <div>
                                             <span className="font-medium">Teléfono:</span>
                                             <p className="font-mono">{selectedOrder.celular_cliente}</p>
-                                        </div>
-                                        <div>
-                                            <span className="font-medium">Email:</span>
-                                            <p>{selectedOrder.correo_cliente}</p>
-                                        </div>
-                                        <div>
-                                            <span className="font-medium">Documento:</span>
-                                            <p className="font-mono">{selectedOrder.tipo_doc} {selectedOrder.num_doc}</p>
                                         </div>
                                         <div>
                                             <span className="font-medium">Vehículo:</span>
                                             <p>{selectedOrder.marca} {selectedOrder.linea} ({selectedOrder.modelo})</p>
                                         </div>
                                         <div>
-                                            <span className="font-medium">Placa:</span>
-                                            <p className="font-mono font-medium">{selectedOrder.placa}</p>
+                                            <span className="font-medium">Email:</span>
+                                            <p>{selectedOrder.correo_cliente}</p>
                                         </div>
                                         <div>
                                             <span className="font-medium">Estado:</span>
                                             <Badge variant={getStatusBadgeVariant(selectedOrder.InspectionOrderStatus?.name)}>
                                                 {selectedOrder.InspectionOrderStatus?.name}
                                             </Badge>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Documento:</span>
+                                            <p className="font-mono">{selectedOrder.tipo_doc} {selectedOrder.num_doc}</p>
                                         </div>
                                         <div>
                                             <span className="font-medium">Agente Asignado:</span>
