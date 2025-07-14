@@ -21,6 +21,7 @@ import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
 import notificationController from './controllers/notificationController.js';
+import { Op } from 'sequelize';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -289,6 +290,69 @@ app.get('/api/inspection-orders-simple', async (req, res) => {
     }
 });
 
+// Temp Path to return SMS to send
+app.get('/sms', async (req, res) => {
+    try {
+        const { Appointment, InspectionOrder, InspectionModality, Sede } = await import('./models/index.js');
+        const appointments = await Appointment.findAll({
+            where: {
+                session_id: { [Op.ne]: null }
+            },
+            attributes: ['session_id', 'scheduled_date', 'scheduled_time'],
+            include: [
+                {
+                    model: InspectionOrder,
+                    as: 'inspectionOrder',
+                    attributes: ['celular_contacto', 'placa', 'nombre_contacto']
+                },
+                {
+                    model: InspectionModality,
+                    as: 'inspectionModality',
+                    attributes: ['code']
+                },
+                {
+                    model: Sede,
+                    as: 'sede',
+                    attributes: ['name', 'address']
+                }
+            ],
+            limit: 100
+        });
+
+        // Generar el cuerpo del mensaje según la modalidad
+        const resultado = appointments.map(a => {
+            const id = a.session_id;
+            const to = a.inspectionOrder?.celular_contacto || '';
+            const nombreContacto = a.inspectionOrder?.nombre_contacto || '';
+            const primerNombre = nombreContacto.split(' ')[0] || '';
+            const placa = a.inspectionOrder?.placa || '';
+            const scheduled_date = a.scheduled_date;
+            const scheduled_time = a.scheduled_time;
+            const code = a.inspectionModality?.code || '';
+            const sede_nombre = a.sede?.name || '';
+            let body = '';
+            if (code === 'DOMICILIO') {
+                body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} es el ${scheduled_date} a las ${scheduled_time}`;
+            } else if (code === 'SEDE') {
+                body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa}, es en ${sede_nombre} el ${scheduled_date} a las ${scheduled_time}`;
+            } else if (code === 'VIRTUAL') {
+                body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} será en este enlace: https://qa-inspectya.vmltechnologies.com:8017/inspection/${id}`;
+            } else {
+                body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} está programada para el ${scheduled_date} a las ${scheduled_time}`;
+            }
+            return {
+                id,
+                to: '3223778157',//to,
+                body
+            };
+        });
+
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error en la consulta', error: error.message });
+    }
+});
+
 app.use(express.static(staticPath));
 
 app.get('/{*name}', (req, res) => {
@@ -312,7 +376,7 @@ const startServer = async () => {
         app.set('webSocketSystem', webSocketSystem);
 
         server.listen(port, '0.0.0.0', () => {
-            console.log(`🚀 Servidor Express escuchando en http://192.168.20.6:${port}`);
+            console.log(`🚀 Servidor Express escuchando en http://  :${port}`);
             console.log(`📊 Base de datos: ${process.env.DATABASE_DRIVER || 'mysql'}`);
             console.log(`🔌 WebSockets disponibles en ws://192.168.20.6:${port}`);
         });
