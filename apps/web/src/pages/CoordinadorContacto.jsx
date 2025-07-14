@@ -478,6 +478,16 @@ export default function CoordinadorContacto() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
+                                            onClick={() => handleSort('id')}
+                                            className="font-semibold"
+                                        >
+                                            ID {getSortIcon('id')}
+                                        </Button>
+                                    </th>
+                                    <th className="text-left p-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() => handleSort('numero')}
                                             className="font-semibold"
                                         >
@@ -496,25 +506,21 @@ export default function CoordinadorContacto() {
                                     </th>
                                     <th className="text-left p-2">Teléfono</th>
                                     <th className="text-left p-2">Email</th>
-                                    <th className="text-left p-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleSort('placa')}
-                                            className="font-semibold"
-                                        >
-                                            Placa {getSortIcon('placa')}
-                                        </Button>
+                                    <th className="text-left p-2" onClick={() => handleSort('placa')}>
+                                        <div className="flex justify-between">
+                                            Placa
+                                            <span className="mt-2">
+                                                {getSortIcon('placa')}
+                                            </span>
+                                        </div>
                                     </th>
-                                    <th className="text-left p-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleSort('created_at')}
-                                            className="font-semibold"
-                                        >
-                                            Fecha {getSortIcon('created_at')}
-                                        </Button>
+                                    <th className="text-left p-2" onClick={() => handleSort('created_at')}>
+                                        <div className="flex justify-between">
+                                            Fecha de solicitud
+                                            <span className="mt-2">
+                                                {getSortIcon('created_at')}
+                                            </span>
+                                        </div>
                                     </th>
                                     <th className="text-left p-2">Estado</th>
                                     <th className="text-left p-2">Agente Asignado</th>
@@ -535,6 +541,7 @@ export default function CoordinadorContacto() {
                                 ) : (
                                     orders.map((order) => (
                                         <tr key={order.id} className="border-b hover:bg-muted/50">
+                                            <td className="p-2 font-mono font-medium">#{order.id}</td>
                                             <td className="p-2 font-mono font-medium">#{order.numero}</td>
                                             <td className="p-2">{order.nombre_cliente}</td>
                                             <td className="p-2 font-mono">{order.celular_cliente}</td>
