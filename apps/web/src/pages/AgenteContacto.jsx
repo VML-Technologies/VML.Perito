@@ -892,39 +892,41 @@ export default function AgenteContacto() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3 max-h-40 overflow-y-auto">
-                                                {selectedOrder.callLogs.slice(0, 5).map((callLog, index) => (
-                                                    <div key={index} className="p-3 bg-muted/50 rounded-lg border-l-4 border-blue-500">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                                                <span className="font-medium text-sm">
-                                                                    {callLog.status?.name || 'Estado desconocido'}
-                                                                </span>
-                                                            </div>
-                                                            <span className="text-muted-foreground text-xs">
-                                                                {formatDateTime(callLog.call_time)}
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="space-y-1 text-xs text-muted-foreground">
-                                                            <div className="flex items-center gap-2">
-                                                                <User className="h-3 w-3" />
-                                                                <span>
-                                                                    Agente: {callLog.Agent?.name || 'No especificado'}
-                                                                </span>
-                                                            </div>
-
-                                                            {callLog.comments && (
-                                                                <div className="flex items-start gap-2 mt-2">
-                                                                    <FileText className="h-3 w-3 mt-0.5" />
-                                                                    <span className="text-xs italic">
-                                                                        "{callLog.comments}"
+                                                {selectedOrder.callLogs
+                                                    .sort((a, b) => new Date(b.call_time) - new Date(a.call_time))
+                                                    .slice(0, 5).map((callLog, index) => (
+                                                        <div key={index} className="p-3 bg-muted/50 rounded-lg border-l-4 border-blue-500">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                                    <span className="font-medium text-sm">
+                                                                        {callLog.status?.name || 'Estado desconocido'}
                                                                     </span>
                                                                 </div>
-                                                            )}
+                                                                <span className="text-muted-foreground text-xs">
+                                                                    {formatDateTime(callLog.call_time)}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="space-y-1 text-xs text-muted-foreground">
+                                                                <div className="flex items-center gap-2">
+                                                                    <User className="h-3 w-3" />
+                                                                    <span>
+                                                                        Agente: {callLog.Agent?.name || 'No especificado'}
+                                                                    </span>
+                                                                </div>
+
+                                                                {callLog.comments && (
+                                                                    <div className="flex items-start gap-2 mt-2">
+                                                                        <FileText className="h-3 w-3 mt-0.5" />
+                                                                        <span className="text-xs italic">
+                                                                            "{callLog.comments}"
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
                                                 {selectedOrder.callLogs.length > 5 && (
                                                     <div className="text-center text-xs text-muted-foreground py-2">
                                                         y {selectedOrder.callLogs.length - 5} llamadas más...

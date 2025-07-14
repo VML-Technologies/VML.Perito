@@ -743,36 +743,42 @@ export default function CoordinadorContacto() {
                                             </CardHeader>
                                             <CardContent>
                                                 {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 ? (
-                                                    <div className="space-y-4">
-                                                        {selectedOrder.callLogs.map((call) => (
-                                                            <div key={call.id} className="border rounded-lg p-4">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <PhoneCall className="h-4 w-4" />
-                                                                        <span className="font-medium">
+                                                    <div className="space-y-3 max-h-40 overflow-y-auto">
+                                                        {selectedOrder.callLogs
+                                                            .sort((a, b) => new Date(b.call_time) - new Date(a.call_time))
+                                                            .map((call, index) => (
+                                                                <div key={call.id} className="p-3 bg-muted/50 rounded-lg border-l-4 border-blue-500">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                                            <span className="font-medium text-sm">
+                                                                                {call.status?.name || 'Estado desconocido'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <span className="text-muted-foreground text-xs">
                                                                             {formatDate(call.call_time)}
                                                                         </span>
                                                                     </div>
-                                                                    <Badge variant={getStatusBadgeVariant(call.status?.name)}>
-                                                                        {call.status?.name}
-                                                                    </Badge>
+
+                                                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <User className="h-3 w-3" />
+                                                                            <span>
+                                                                                Agente: {call.Agent?.name || 'No especificado'}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {call.comments && (
+                                                                            <div className="flex items-start gap-2 mt-2">
+                                                                                <FileText className="h-3 w-3 mt-0.5" />
+                                                                                <span className="text-xs italic">
+                                                                                    "{call.comments}"
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                {call.Agent && (
-                                                                    <div className="flex items-center gap-2 mb-2">
-                                                                        <User className="h-4 w-4 text-muted-foreground" />
-                                                                        <span className="text-sm text-muted-foreground">
-                                                                            Agente: {call.Agent.name}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                                {call.comments && (
-                                                                    <div className="text-sm">
-                                                                        <span className="font-medium">Observaciones:</span>
-                                                                        <p className="mt-1">{call.comments}</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
+                                                            ))}
                                                     </div>
                                                 ) : (
                                                     <div className="text-center py-8 text-muted-foreground">
