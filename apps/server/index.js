@@ -137,6 +137,10 @@ app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.rea
 app.get('/api/contact-agent/modalities', requirePermission('contact_agent.read'), contactAgentController.getAvailableModalities);
 app.get('/api/contact-agent/available-sedes', requirePermission('contact_agent.read'), contactAgentController.getAvailableSedes);
 
+// Nuevas rutas para el flujo mejorado de agendamiento
+app.get('/api/contact-agent/all-modalities', requirePermission('contact_agent.read'), contactAgentController.getAllAvailableModalities);
+app.get('/api/contact-agent/sedes-by-modality', requirePermission('contact_agent.read'), contactAgentController.getSedesByModality);
+
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
 
 // Rutas para gestión de horarios y disponibilidad
@@ -342,7 +346,8 @@ app.get('/sms', async (req, res) => {
             }
             return {
                 id,
-                to: '3223778157',//to,
+                // to: '3223778157',
+                to,
                 body
             };
         });

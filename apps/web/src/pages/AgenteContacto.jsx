@@ -51,6 +51,14 @@ export default function AgenteContacto() {
     const { user } = useAuth();
     const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
 
+    // Nuevos estados para el flujo mejorado
+    const [allModalities, setAllModalities] = useState([]);
+    const [availableSedesByModality, setAvailableSedesByModality] = useState([]);
+    const [filteredDepartments, setFilteredDepartments] = useState([]);
+    const [filteredCities, setFilteredCities] = useState([]);
+    const [filteredSedes, setFilteredSedes] = useState([]);
+    const [selectedSede, setSelectedSede] = useState(null);
+
     // Estados del formulario
     const [callForm, setCallForm] = useState({
         call_status_id: '',
@@ -199,7 +207,8 @@ export default function AgenteContacto() {
                 loadOrders(),
                 loadCallStatuses(),
                 loadInspectionTypes(),
-                loadDepartments()
+                loadDepartments(),
+                loadAllModalities()
             ]);
         } catch (error) {
             console.error('Error loading initial data:', error);
@@ -364,6 +373,45 @@ export default function AgenteContacto() {
         }
     };
 
+    // Nueva función para cargar todas las modalidades disponibles
+    const loadAllModalities = async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.CONTACT_AGENT.ALL_MODALITIES, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setAllModalities(data.data || []);
+            }
+        } catch (error) {
+            console.error('Error loading all modalities:', error);
+        }
+    };
+
+    // Nueva función para cargar sedes por modalidad
+    const loadSedesByModality = async (modalityId) => {
+        if (!modalityId) return;
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_ROUTES.CONTACT_AGENT.SEDES_BY_MODALITY}?modalityId=${modalityId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setAvailableSedesByModality(data.data || []);
+                return data.data || []; // Retornar los sedes para filtrar
+            }
+        } catch (error) {
+            console.error('Error loading sedes by modality:', error);
+        }
+    };
+
     const handleOrderSelect = (order) => {
         setSelectedOrder(order);
         setIsPanelOpen(true);
@@ -385,6 +433,13 @@ export default function AgenteContacto() {
             sede_id: '',
             observaciones: ''
         });
+
+        // Reset nuevos estados del flujo mejorado
+        setSelectedModality('');
+        setSelectedSede(null);
+        setAvailableSedesByModality([]);
+        setSelectedSlot(null);
+        setCalendarSelectedDate('');
     };
 
     // Cambiar handleCallSubmit para manejar ambos procesos
@@ -531,6 +586,88 @@ export default function AgenteContacto() {
         const needsScheduling = selectedStatus?.creates_schedule;
 
         setShowAppointmentForm(needsScheduling);
+    };
+
+    // Nueva función para manejar la selección de modalidad
+    const handleModalityChange = (modalityId) => {
+        setSelectedModality(modalityId);
+        setSelectedSede(null);
+        setSelectedDepartment('');
+        setSelectedCity('');
+        setAppointmentForm(prev => ({
+            ...prev,
+            sede_id: '',
+            inspection_modality_id: modalityId
+        }));
+        setSelectedSlot(null);
+        setCalendarSelectedDate('');
+
+        if (modalityId) {
+            loadSedesByModality(modalityId).then((sedes) => {
+                // Extraer departamentos únicos
+                const departments = [];
+                const deptIds = new Set();
+                sedes.forEach(sede => {
+                    if (sede.department_id && !deptIds.has(sede.department_id)) {
+                        departments.push({ id: sede.department_id, name: sede.department });
+                        deptIds.add(sede.department_id);
+                    }
+                });
+                setFilteredDepartments(departments);
+                setFilteredCities([]);
+                setFilteredSedes([]);
+            });
+        } else {
+            setAvailableSedesByModality([]);
+            setFilteredDepartments([]);
+            setFilteredCities([]);
+            setFilteredSedes([]);
+        }
+    };
+
+    // Nueva función para manejar la selección de departamento
+    const handleDepartmentChange = (departmentId) => {
+        setSelectedDepartment(departmentId);
+        setSelectedCity('');
+        setSelectedSede(null);
+        setAppointmentForm(prev => ({ ...prev, sede_id: '' }));
+        setSelectedSlot(null);
+        setCalendarSelectedDate('');
+        // Filtrar ciudades posibles
+        const cities = [];
+        const cityIds = new Set();
+        availableSedesByModality.forEach(sede => {
+            if (sede.department_id === parseInt(departmentId) && sede.city_id && !cityIds.has(sede.city_id)) {
+                cities.push({ id: sede.city_id, name: sede.city });
+                cityIds.add(sede.city_id);
+            }
+        });
+        setFilteredCities(cities);
+        setFilteredSedes([]);
+    };
+
+    // Nueva función para manejar la selección de ciudad
+    const handleCityChange = (cityId) => {
+        setSelectedCity(cityId);
+        setSelectedSede(null);
+        setAppointmentForm(prev => ({ ...prev, sede_id: '' }));
+        setSelectedSlot(null);
+        setCalendarSelectedDate('');
+        // Filtrar sedes posibles
+        const sedes = availableSedesByModality.filter(sede => sede.city_id === parseInt(cityId));
+        setFilteredSedes(sedes);
+    };
+
+    // Nueva función para manejar la selección de sede
+    const handleSedeChange = (sedeId) => {
+        const selectedSedeData = filteredSedes.find(sede => sede.id.toString() === sedeId);
+        setSelectedSede(selectedSedeData);
+        setAppointmentForm(prev => ({
+            ...prev,
+            sede_id: sedeId
+        }));
+        setSelectedSlot(null);
+        setCalendarSelectedDate('');
     };
 
     // Manejar selección de slot de horario
@@ -850,135 +987,117 @@ export default function AgenteContacto() {
                                                             </CardDescription>
                                                         </CardHeader>
                                                         <CardContent>
-                                                            {/* Eliminar el form y el botón de submit aquí, solo mostrar los campos */}
                                                             <div className="space-y-4">
-                                                                {/* Departamento */}
+                                                                {/* Modalidad de Inspección - PRIMER PASO */}
                                                                 <div>
-                                                                    <Label htmlFor="department">Departamento *</Label>
+                                                                    <Label htmlFor="modality">Modalidad de Inspección *</Label>
                                                                     <Select
-                                                                        value={selectedDepartment}
-                                                                        onValueChange={(value) => {
-                                                                            setSelectedDepartment(value);
-                                                                            setSelectedCity('');
-                                                                            setSelectedModality('');
-                                                                            setSedes([]);
-                                                                            setModalities([]);
-                                                                            if (value) {
-                                                                                loadCities(value);
-                                                                            }
-                                                                        }}
+                                                                        value={selectedModality}
+                                                                        onValueChange={handleModalityChange}
                                                                     >
                                                                         <SelectTrigger>
-                                                                            <SelectValue placeholder="Selecciona departamento" />
+                                                                            <SelectValue placeholder="Selecciona modalidad de inspección" />
                                                                         </SelectTrigger>
                                                                         <SelectContent>
-                                                                            {departments.map((dept) => (
-                                                                                <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                                                    {dept.name}
+                                                                            {allModalities.map((modality) => (
+                                                                                <SelectItem key={modality.id} value={modality.id.toString()}>
+                                                                                    <div className="flex justify-between w-full items-center">
+                                                                                        <span>{modality.name}</span>
+                                                                                        <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                                                                                            {modality.sedesCount} sedes disponibles
+                                                                                        </span>
+                                                                                    </div>
                                                                                 </SelectItem>
                                                                             ))}
                                                                         </SelectContent>
                                                                     </Select>
+                                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                                        Selecciona la modalidad para ver las sedes disponibles
+                                                                    </p>
                                                                 </div>
-                                                                {/* Ciudad */}
-                                                                <div>
-                                                                    <Label htmlFor="city">Ciudad *</Label>
-                                                                    <Select
-                                                                        value={selectedCity}
-                                                                        onValueChange={(value) => {
-                                                                            setSelectedCity(value);
-                                                                            setSelectedModality('');
-                                                                            setSedes([]);
-                                                                            if (value && selectedDepartment) {
-                                                                                loadModalities(selectedDepartment, value);
-                                                                            }
-                                                                        }}
-                                                                        disabled={!selectedDepartment}
-                                                                    >
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Selecciona ciudad" />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {cities.map((city) => (
-                                                                                <SelectItem key={city.id} value={city.id.toString()}>
-                                                                                    {city.name}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                                {/* Sede */}
-                                                                <div>
-                                                                    <Label htmlFor="sede">Centro de Diagnóstico Automotor (CDA) *</Label>
-                                                                    <Select
-                                                                        value={appointmentForm.sede_id}
-                                                                        onValueChange={(value) => {
-                                                                            setAppointmentForm(prev => ({
-                                                                                ...prev,
-                                                                                sede_id: value
-                                                                            }));
-                                                                            if (value) {
-                                                                                loadModalities(selectedDepartment, selectedCity);
-                                                                            }
-                                                                        }}
-                                                                        disabled={!selectedCity}
-                                                                    >
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Selecciona un CDA" />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {sedes.filter(sede => sede.sede_type_id === 1).length === 0 ? (
-                                                                                <div className="p-2 text-xs text-muted-foreground">No hay CDAs disponibles para esta ciudad</div>
-                                                                            ) : (
-                                                                                sedes.filter(sede => sede.sede_type_id === 1).map((sede) => (
+
+                                                                {/* Departamento - SEGUNDO PASO */}
+                                                                {filteredDepartments.length > 0 && (
+                                                                    <div>
+                                                                        <Label htmlFor="department">Departamento *</Label>
+                                                                        <Select
+                                                                            value={selectedDepartment}
+                                                                            onValueChange={handleDepartmentChange}
+                                                                            disabled={!selectedModality}
+                                                                        >
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Selecciona un departamento" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {filteredDepartments.map((department) => (
+                                                                                    <SelectItem key={department.id} value={department.id.toString()}>
+                                                                                        <span>{department.name}</span>
+                                                                                    </SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                            Selecciona el departamento para ver las ciudades disponibles
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Ciudad - TERCER PASO */}
+                                                                {filteredCities.length > 0 && (
+                                                                    <div>
+                                                                        <Label htmlFor="city">Ciudad *</Label>
+                                                                        <Select
+                                                                            value={selectedCity}
+                                                                            onValueChange={handleCityChange}
+                                                                            disabled={!selectedDepartment}
+                                                                        >
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Selecciona una ciudad" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {filteredCities.map((city) => (
+                                                                                    <SelectItem key={city.id} value={city.id.toString()}>
+                                                                                        <span>{city.name}</span>
+                                                                                    </SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                            Selecciona la ciudad para ver las sedes disponibles
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Sede - CUARTO PASO */}
+                                                                {filteredSedes.length > 0 && (
+                                                                    <div>
+                                                                        <Label htmlFor="sede">Centro de Diagnóstico Automotor (CDA) *</Label>
+                                                                        <Select
+                                                                            value={appointmentForm.sede_id}
+                                                                            onValueChange={handleSedeChange}
+                                                                            disabled={!selectedCity}
+                                                                        >
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Selecciona un CDA" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {filteredSedes.map((sede) => (
                                                                                     <SelectItem key={sede.id} value={sede.id.toString()}>
                                                                                         <div className="flex flex-col">
                                                                                             <span className="font-medium">{sede.name}</span>
                                                                                             <span className="text-xs text-muted-foreground">{sede.address}</span>
-                                                                                        </div>
-                                                                                    </SelectItem>
-                                                                                ))
-                                                                            )}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                                        Solo se muestran Centros de Diagnóstico Automotor (CDA) para agendar inspecciones de asegurabilidad
-                                                                    </p>
-                                                                </div>
-                                                                {/* Modalidad (si hay más de una) */}
-                                                                {modalities.length > 0 && (
-                                                                    <div>
-                                                                        <Label htmlFor="modality">Modalidad de Inspección *</Label>
-                                                                        <Select
-                                                                            value={selectedModality}
-                                                                            onValueChange={(value) => {
-                                                                                setSelectedModality(value);
-                                                                                setAppointmentForm(prev => ({
-                                                                                    ...prev,
-                                                                                    inspection_modality_id: value
-                                                                                }));
-                                                                                setSelectedSlot(null);
-                                                                            }}
-                                                                            disabled={!appointmentForm.sede_id}
-                                                                        >
-                                                                            <SelectTrigger>
-                                                                                <SelectValue placeholder="Selecciona modalidad" />
-                                                                            </SelectTrigger>
-                                                                            <SelectContent>
-                                                                                {modalities.map((modality) => (
-                                                                                    <SelectItem key={modality.id} value={modality.id.toString()}>
-                                                                                        <div className="flex items-center justify-between w-full">
-                                                                                            <span>{modality.name}</span>
-                                                                                            <span className="text-xs text-muted-foreground">
-                                                                                                {modality.sedesCount} sedes
-                                                                                            </span>
+                                                                                            <span className="text-xs text-blue-600">{sede.city}, {sede.department}</span>
                                                                                         </div>
                                                                                     </SelectItem>
                                                                                 ))}
                                                                             </SelectContent>
                                                                         </Select>
+                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                            Solo se muestran Centros de Diagnóstico Automotor (CDA) para agendar inspecciones de asegurabilidad
+                                                                        </p>
                                                                     </div>
                                                                 )}
+
                                                                 {/* Calendario y Horarios Disponibles */}
                                                                 <div className="space-y-4">
                                                                     <Label>Selecciona Fecha y Horario para Inspección de Asegurabilidad *</Label>
@@ -988,7 +1107,7 @@ export default function AgenteContacto() {
                                                                         onSlotSelect={handleSlotSelect}
                                                                         selectedSlot={selectedSlot}
                                                                         disabled={!appointmentForm.sede_id || !selectedModality}
-                                                                        onDateChange={handleCalendarDateChange} // CONECTA EL CALLBACK
+                                                                        onDateChange={handleCalendarDateChange}
                                                                     />
                                                                     {/* Mostrar slot seleccionado */}
                                                                     {selectedSlot && (
@@ -1013,8 +1132,9 @@ export default function AgenteContacto() {
                                                                         </div>
                                                                     )}
                                                                 </div>
+
                                                                 {/* Dirección (solo si es modalidad domicilio) */}
-                                                                {selectedModality && modalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
+                                                                {selectedModality && allModalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
                                                                     <div>
                                                                         <Label htmlFor="direccion_inspeccion">Dirección de Inspección *</Label>
                                                                         <Input
@@ -1028,6 +1148,7 @@ export default function AgenteContacto() {
                                                                         />
                                                                     </div>
                                                                 )}
+
                                                                 {/* Observaciones */}
                                                                 <div>
                                                                     <Label htmlFor="observaciones_appointment">Observaciones</Label>
