@@ -37,7 +37,7 @@ export const WebSocketStatus = () => {
     };
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="tutorial-websocketStatus flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />

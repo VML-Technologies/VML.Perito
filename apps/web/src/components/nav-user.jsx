@@ -61,7 +61,7 @@ export function NavUser() {
 
   return (
 
-    <div className="flex items-center gap-2">
+    <div className="tutorial-profile flex items-center gap-2">
       <div>
         <Avatar className="h-8 w-8 rounded-lg">
           <AvatarImage src={user.avatar} lt={user.name} />
@@ -75,7 +75,7 @@ export function NavUser() {
           </AvatarFallback>
         </Avatar>
       </div>
-      <div className="w-48">
+      <div className="tutorial-userState w-48">
         <span className="truncate font-medium w-full">{user.name || 'Usuario'}</span>
         <Select className="w-full">
           <SelectTrigger className="w-full">

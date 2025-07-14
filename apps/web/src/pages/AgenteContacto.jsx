@@ -26,6 +26,7 @@ import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/contexts/auth-context';
 import CalendarioAgendamiento from '@/components/CalendarioAgendamiento';
 import useScheduleValidation from '@/hooks/use-schedule-validation';
+import { useTutorial } from '@/contexts/tutorial-context';
 
 export default function AgenteContacto() {
     const [orders, setOrders] = useState([]);
@@ -50,6 +51,7 @@ export default function AgenteContacto() {
     const { isConnected } = useWebSocket();
     const { user } = useAuth();
     const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
+    const { tutorialAction, setTutorialAction } = useTutorial();
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -191,6 +193,13 @@ export default function AgenteContacto() {
             window.removeEventListener('call_logged', handleCallLogged);
         };
     }, [showToast, user]);
+
+    useEffect(() => {
+        if (tutorialAction?.type === 'abrirPanel' && orders.length > 0) {
+            handleOrderSelect(orders[tutorialAction.payload.orderIndex] || orders[0]);
+            setTutorialAction(null);
+        }
+    }, [tutorialAction, orders, setTutorialAction]);
 
     const loadInitialData = async () => {
         setLoading(true);
@@ -569,7 +578,7 @@ export default function AgenteContacto() {
             <div>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Agente de Contact Center</h1>
+                        <h1 className="tutorial-userRole text-3xl font-bold">Agente de Contact Center</h1>
                         <p className="text-muted-foreground">
                             Gestiona llamadas a clientes y programa agendamientos de inspección
                         </p>
@@ -578,7 +587,7 @@ export default function AgenteContacto() {
             </div>
 
             {/* Search */}
-            <Card>
+            <Card className="tutorial-search">
                 <CardHeader>
                     <CardTitle>Buscar Órdenes</CardTitle>
                     <CardDescription>
@@ -602,7 +611,7 @@ export default function AgenteContacto() {
             </Card>
 
             {/* Orders List */}
-            <Card>
+            <Card className="tutorial-ordersList">
                 <CardHeader>
                     <CardTitle>Órdenes Pendientes de Contacto</CardTitle>
                     <CardDescription>
@@ -661,7 +670,7 @@ export default function AgenteContacto() {
                                                     {order.InspectionOrderStatus?.name || 'Sin estado'}
                                                 </Badge>
                                             </td>
-                                            <td className="p-2">
+                                            <td className="p-2 tutorial-contactButton">
                                                 <Button
                                                     size="sm"
                                                     onClick={() => handleOrderSelect(order)}
@@ -683,7 +692,7 @@ export default function AgenteContacto() {
             <Sheet open={isPanelOpen} onOpenChange={setIsPanelOpen}>
                 <SheetContent className="w-full sm:max-w-lg overflow-y-auto py-2 px-4">
                     {selectedOrder && (
-                        <>
+                        <div>
                             <SheetHeader>
                                 <SheetTitle>Gestionar Orden #{selectedOrder.numero}</SheetTitle>
                                 <SheetDescription>
@@ -693,7 +702,7 @@ export default function AgenteContacto() {
 
                             <div className="flex flex-col gap-4">
                                 {/* Order Details */}
-                                <Card>
+                                <Card className="tutorial-orderDetails">
                                     <CardHeader>
                                         <CardTitle className="text-base">Detalles de la Orden</CardTitle>
                                     </CardHeader>
@@ -731,7 +740,7 @@ export default function AgenteContacto() {
 
                                 {/* Call History */}
                                 {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
-                                    <Card>
+                                    <Card className="tutorial-callHistory">
                                         <CardHeader>
                                             <CardTitle className="text-base flex items-center gap-2">
                                                 <Phone className="h-4 w-4" />
@@ -783,7 +792,8 @@ export default function AgenteContacto() {
                                     </Card>
                                 )}
 
-                                <Card>
+                                {/* Call Form */}
+                                <Card className="tutorial-callForm">
                                     <CardHeader>
                                         <CardTitle className="text-base">Registrar Llamada</CardTitle>
                                         <CardDescription>
@@ -841,7 +851,7 @@ export default function AgenteContacto() {
 
                                             {/* Formulario de agendamiento condicional */}
                                             {showAppointmentForm && (
-                                                <div className="border-t pt-4 mt-4">
+                                                <div className="border-t pt-4 mt-4 tutorial-agendaForm">
                                                     <Card>
                                                         <CardHeader>
                                                             <CardTitle className="text-base">Agendar Inspección</CardTitle>
@@ -1047,7 +1057,7 @@ export default function AgenteContacto() {
                                                 </div>
                                             )}
 
-                                            <Button type="submit" className="w-full">
+                                            <Button type="submit" className="w-full tutorial-submitButton">
                                                 <Phone className="h-4 w-4 mr-2" />
                                                 Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
                                             </Button>
@@ -1055,7 +1065,7 @@ export default function AgenteContacto() {
                                     </CardContent>
                                 </Card>
                             </div>
-                        </>
+                        </div>
                     )}
                 </SheetContent>
             </Sheet>
