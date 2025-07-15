@@ -371,7 +371,7 @@ const startServer = async () => {
         console.log('✅ Conexión a la base de datos establecida correctamente.');
 
         // Sincronizar modelos (crear tablas si no existen)
-        await sequelize.sync({ force: false });
+        await sequelize.sync({ force: false, alter: true });
         console.log('✅ Modelos sincronizados con la base de datos.');
 
         // Inicializar sistema de WebSockets
