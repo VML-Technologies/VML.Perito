@@ -53,10 +53,10 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed'),
+        type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed', 'revision_supervisor'),
         allowNull: false,
         defaultValue: 'pending',
-        comment: 'Estado de la cita (pending, assigned, sent, delivered, read, completed, failed)'
+        comment: 'Estado de la cita (pending, assigned, sent, delivered, read, completed, failed, revision_supervisor)'
     },
     notes: {
         type: DataTypes.TEXT,
@@ -67,6 +67,42 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         allowNull: true,
         unique: true,
         comment: 'ID único de sesión para la inspección'
+    },
+    // Campos de timestamp para cada estado
+    assigned_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando se asignó un inspector'
+    },
+    sent_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando se envió al inspector'
+    },
+    delivered_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando se entregó al inspector'
+    },
+    read_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando el inspector leyó la asignación'
+    },
+    revision_sent_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando se envió a revisión de supervisor'
+    },
+    completed_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando se completó la inspección'
+    },
+    failed_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando falló la inspección'
     },
 }, {
     tableName: 'appointments',

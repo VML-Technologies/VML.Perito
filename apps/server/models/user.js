@@ -44,6 +44,10 @@ const User = createModelWithSoftDeletes('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
     },
+    intermediary_key: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
 }, {
     tableName: 'users',
 });

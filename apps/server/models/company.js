@@ -8,7 +8,7 @@ const Company = createModelWithSoftDeletes('Company', {
     },
     nit: {
         type: DataTypes.STRING(20),
-        allowNull: false,
+        allowNull: true,
         unique: true,
     },
     city_id: {
