@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
+import StatsCards from '@/components/StatsCards';
 
 export default function CoordinadorContacto() {
     // Estados principales
@@ -314,51 +315,7 @@ export default function CoordinadorContacto() {
             </div>
 
             {/* Cards de Estadísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.total}</div>
-                        <p className="text-xs text-muted-foreground">Órdenes totales</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Sin Asignar</CardTitle>
-                        <UserX className="h-4 w-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{stats.sin_asignar}</div>
-                        <p className="text-xs text-muted-foreground">Pendientes</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">En Gestión</CardTitle>
-                        <Users className="h-4 w-4 text-yellow-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-yellow-500">{stats.en_gestion}</div>
-                        <p className="text-xs text-muted-foreground">Asignadas</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Agendadas</CardTitle>
-                        <Calendar className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{stats.agendadas}</div>
-                        <p className="text-xs text-muted-foreground">Con cita</p>
-                    </CardContent>
-                </Card>
-            </div>
+            <StatsCards stats={stats} variant="colorful" />
 
             {/* Filtros y Búsqueda */}
             <Card>

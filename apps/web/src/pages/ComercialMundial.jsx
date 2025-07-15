@@ -18,6 +18,7 @@ import {
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
 import CreateOrderModal from '@/components/CreateOrderModal';
+import StatsCards from '@/components/StatsCards';
 
 export default function ComercialMundial() {
     const [orders, setOrders] = useState([]);
@@ -165,59 +166,7 @@ export default function ComercialMundial() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Órdenes</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.total || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                            +{stats.thisMonth || 0} este mes
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.pending || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Esperando contacto
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Agendadas</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.scheduled || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Con fecha confirmada
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Finalizadas</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.completed || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                            +{stats.completedThisWeek || 0} esta semana
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
+            <StatsCards stats={stats} variant="simple" />
 
             {/* Main Content */}
             <Tabs defaultValue="orders" className="space-y-4">
