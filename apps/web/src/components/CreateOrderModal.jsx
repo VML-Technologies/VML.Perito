@@ -42,7 +42,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         callback_url: '',
         numero: '',
         intermediario: '',
-        clave_intermediario: '',
+        clave_intermediario: user?.intermediary_key || '',
         sucursal: '',
         cod_oficina: '',
         fecha: new Date().toISOString().split('T')[0], // Fecha actual por defecto
@@ -96,10 +96,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             callback_url: 'https://apis.segurosmundial.com.co/exp/api/prod/v1/webhook',
             numero: '123456789',
             intermediario: 'Intermediario',
-            clave_intermediario: 'Clave2000',
+            clave_intermediario: user?.intermediary_key || 'Clave2000',
             sucursal: 'Sucursal',
             cod_oficina: '0000',
-            fecha: '2025-07-04',
+            fecha: new Date().toISOString().split('T')[0],
             vigencia: '30',
             avaluo: 'Avaluo',
             vlr_accesorios: 'Valor accesorios',
@@ -147,13 +147,33 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
     }, [isOpen]);
 
+    // Actualizar clave de intermediario cuando cambie el usuario
+    useEffect(() => {
+        if (user?.intermediary_key) {
+            setFormData(prev => ({
+                ...prev,
+                clave_intermediario: user.intermediary_key
+            }));
+        }
+    }, [user?.intermediary_key]);
+
+    // Actualizar fecha cuando se abra el modal
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(prev => ({
+                ...prev,
+                fecha: new Date().toISOString().split('T')[0]
+            }));
+        }
+    }, [isOpen]);
+
     const resetForm = () => {
         setFormData({
             producto: '',
             callback_url: '',
             numero: '',
             intermediario: '',
-            clave_intermediario: '',
+            clave_intermediario: user?.intermediary_key || '',
             sucursal: '',
             cod_oficina: '',
             fecha: new Date().toISOString().split('T')[0],
@@ -221,7 +241,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             }
         });
 
-        // Validaciones específicas
+        // Validaciones específicas según el modelo
         if (formData.correo_cliente && !/\S+@\S+\.\S+/.test(formData.correo_cliente)) {
             newErrors.correo_cliente = 'El formato del email no es válido';
         }
@@ -230,20 +250,78 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             newErrors.correo_contacto = 'El formato del email no es válido';
         }
 
-        if (formData.placa && !/^[A-Z]{3}[0-9]{3}$|^[A-Z]{3}[0-9]{2}[A-Z]$/.test(formData.placa.toUpperCase())) {
-            newErrors.placa = 'Formato de placa no válido (ej: ABC123 o ABC12D)';
+        // Validación de placa (máximo 6 caracteres)
+        if (formData.placa && formData.placa.length > 6) {
+            newErrors.placa = 'La placa no puede tener más de 6 caracteres';
         }
 
-        if (formData.modelo && (isNaN(formData.modelo) || formData.modelo < 1900 || formData.modelo > new Date().getFullYear() + 5)) {
-            newErrors.modelo = 'El año debe ser válido';
+        // Validación de modelo (máximo 4 caracteres)
+        if (formData.modelo && formData.modelo.length > 4) {
+            newErrors.modelo = 'El modelo no puede tener más de 4 caracteres';
         }
 
+        // Validación de cilindraje (máximo 10 caracteres)
+        if (formData.cilindraje && formData.cilindraje.length > 10) {
+            newErrors.cilindraje = 'El cilindraje no puede tener más de 10 caracteres';
+        }
+
+        // Validación de color (máximo 100 caracteres)
+        if (formData.color && formData.color.length > 100) {
+            newErrors.color = 'El color no puede tener más de 100 caracteres';
+        }
+
+        // Validación de celular (máximo 10 caracteres)
         if (formData.celular_cliente && formData.celular_cliente.length > 10) {
             newErrors.celular_cliente = 'El celular no puede tener más de 10 dígitos';
         }
 
         if (formData.celular_contacto && formData.celular_contacto.length > 10) {
             newErrors.celular_contacto = 'El celular no puede tener más de 10 dígitos';
+        }
+
+        // Validación de num_doc (máximo 15 caracteres)
+        if (formData.num_doc && formData.num_doc.length > 15) {
+            newErrors.num_doc = 'El número de documento no puede tener más de 15 caracteres';
+        }
+
+        // Validación de cod_fasecolda (máximo 8 caracteres)
+        if (formData.cod_fasecolda && formData.cod_fasecolda.length > 8) {
+            newErrors.cod_fasecolda = 'El código FASECOLDA no puede tener más de 8 caracteres';
+        }
+
+        // Validación de clave_intermediario (máximo 10 caracteres)
+        if (formData.clave_intermediario && formData.clave_intermediario.length > 10) {
+            newErrors.clave_intermediario = 'La clave de intermediario no puede tener más de 10 caracteres';
+        }
+
+        // Validación de cod_oficina (máximo 10 caracteres)
+        if (formData.cod_oficina && formData.cod_oficina.length > 10) {
+            newErrors.cod_oficina = 'El código de oficina no puede tener más de 10 caracteres';
+        }
+
+        // Validación de vigencia (máximo 10 caracteres)
+        if (formData.vigencia && formData.vigencia.length > 10) {
+            newErrors.vigencia = 'La vigencia no puede tener más de 10 caracteres';
+        }
+
+        // Validación de correo_cliente (máximo 150 caracteres)
+        if (formData.correo_cliente && formData.correo_cliente.length > 150) {
+            newErrors.correo_cliente = 'El email no puede tener más de 150 caracteres';
+        }
+
+        // Validación de correo_contacto (máximo 150 caracteres)
+        if (formData.correo_contacto && formData.correo_contacto.length > 150) {
+            newErrors.correo_contacto = 'El email no puede tener más de 150 caracteres';
+        }
+
+        // Validación de nombre_cliente (máximo 200 caracteres)
+        if (formData.nombre_cliente && formData.nombre_cliente.length > 200) {
+            newErrors.nombre_cliente = 'El nombre del cliente no puede tener más de 200 caracteres';
+        }
+
+        // Validación de nombre_contacto (máximo 250 caracteres)
+        if (formData.nombre_contacto && formData.nombre_contacto.length > 250) {
+            newErrors.nombre_contacto = 'El nombre del contacto no puede tener más de 250 caracteres';
         }
 
         setErrors(newErrors);
@@ -268,7 +346,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 ...formData,
                 placa: formData.placa.toUpperCase(),
                 numero: parseInt(formData.numero),
-                status: parseInt(formData.status)
+                status: parseInt(formData.status),
+                clave_intermediario: user?.intermediary_key || formData.clave_intermediario,
+                fecha: new Date().toISOString().split('T')[0]
                 // sede_id se toma automáticamente del usuario autenticado en el backend
             };
 
@@ -307,26 +387,22 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             <Car className="h-5 w-5" />
                             <SheetTitle>Nueva Orden de Inspección</SheetTitle>
                         </div>
-                        {isSuperAdmin && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={fillTestData}
-                                disabled={loading}
-                                className="flex items-center gap-2"
-                            >
-                                <TestTube className="h-4 w-4" />
-                                Datos de Prueba
-                            </Button>
-                        )}
+                        {/* {isSuperAdmin && ( */}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={fillTestData}
+                            disabled={loading}
+                            className="flex items-center gap-2"
+                        >
+                            <TestTube className="h-4 w-4" />
+                            Datos de Prueba
+                        </Button>
+                        {/* )} */}
                     </div>
                     <SheetDescription>
                         Completa todos los datos requeridos para crear una nueva orden de inspección
-
-
-
-
                     </SheetDescription>
                 </SheetHeader>
 
@@ -383,6 +459,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.fecha}
                                     onChange={(e) => handleInputChange('fecha', e.target.value)}
                                     className={errors.fecha ? 'border-red-500' : ''}
+                                    readOnly // Campo de solo lectura
+                                    disabled // Deshabilitado para evitar cambios
                                 />
                                 {errors.fecha && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -418,6 +496,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.clave_intermediario}
                                     onChange={(e) => handleInputChange('clave_intermediario', e.target.value)}
                                     className={errors.clave_intermediario ? 'border-red-500' : ''}
+                                    readOnly // Campo de solo lectura
+                                    disabled // Deshabilitado para evitar cambios
                                 />
                                 {errors.clave_intermediario && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">

@@ -35,6 +35,7 @@ export const login = async (req, res) => {
                 email: user.email,
                 sede_id: user.sede_id,
                 phone: user.phone,
+                intermediary_key: user.intermediary_key,
                 roles: user.roles || []
             },
         });
@@ -67,6 +68,7 @@ export const verify = async (req, res) => {
                 email: user.email,
                 sede_id: user.sede_id,
                 phone: user.phone,
+                intermediary_key: user.intermediary_key,
                 roles: user.roles || []
             });
         } catch (err) {

@@ -45,6 +45,7 @@ const seedUsers = async () => {
                     phone: '300-7654321',
                     password: hashedPassword,
                     is_active: true,
+                    intermediary_key: 'COMERCIAL001',
                     notification_channel_in_app_enabled: true,
                     notification_channel_sms_enabled: true,
                     notification_channel_email_enabled: true,
