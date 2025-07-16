@@ -261,20 +261,42 @@ export default function CoordinadorContacto() {
         }));
     };
 
-    const getStatusBadgeVariant = (status) => {
-        const variants = {
-            'Creada': 'secondary',
-            'Contacto exitoso': 'default',
-            'Agendado': 'default',
-            'No contesta': 'destructive',
-            'Ocupado': 'outline',
-            'Número incorrecto': 'destructive',
-            'Solicita reagendar': 'outline',
-            'En progreso': 'default',
-            'Finalizada': 'default',
-            'Cancelada': 'destructive'
+    const getStatusBadgeVariant = (status, inspectionResult) => {
+        // Si inspection_result es null, usar el status de la orden
+        if (!inspectionResult) {
+            const variants = {
+                'Creada': 'secondary',
+                'Contacto exitoso': 'default',
+                'Agendado': 'default',
+                'No contesta': 'destructive',
+                'Ocupado': 'outline',
+                'Número incorrecto': 'destructive',
+                'Solicita reagendar': 'outline',
+                'En progreso': 'default',
+                'Finalizada': 'default',
+                'Cancelada': 'destructive'
+            };
+            return variants[status] || 'secondary';
+        }
+
+        // Si inspection_result tiene valor, usar esa lógica
+        const resultVariants = {
+            'RECHAZADO - Vehículo no asegurable': 'destructive',
+            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'outline',
+            'PENDIENTE - Inspección en proceso': 'secondary',
+            'APROBADO - Vehículo asegurable': 'default'
         };
-        return variants[status] || 'secondary';
+        return resultVariants[inspectionResult] || 'secondary';
+    };
+
+    const getStatusDisplay = (status, inspectionResult) => {
+        // Si inspection_result es null, mostrar el status de la orden
+        if (!inspectionResult) {
+            return status || 'Sin estado';
+        }
+
+        // Si inspection_result tiene valor, mostrar ese resultado
+        return inspectionResult;
     };
 
     const formatDate = (dateString) => {
@@ -349,6 +371,16 @@ export default function CoordinadorContacto() {
                                     <SelectItem value="2">Contacto exitoso</SelectItem>
                                     <SelectItem value="3">Agendado</SelectItem>
                                     <SelectItem value="4">Finalizada</SelectItem>
+                                    <SelectItem value="5">No contesta</SelectItem>
+                                    <SelectItem value="6">Ocupado</SelectItem>
+                                    <SelectItem value="7">Número incorrecto</SelectItem>
+                                    <SelectItem value="8">Solicita reagendar</SelectItem>
+                                    <SelectItem value="9">En progreso</SelectItem>
+                                    <SelectItem value="10">Cancelada</SelectItem>
+                                    <SelectItem value="result_rechazado">RECHAZADO - Vehículo no asegurable</SelectItem>
+                                    <SelectItem value="result_aprobado_restricciones">APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones</SelectItem>
+                                    <SelectItem value="result_pendiente">PENDIENTE - Inspección en proceso</SelectItem>
+                                    <SelectItem value="result_aprobado">APROBADO - Vehículo asegurable</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -506,9 +538,15 @@ export default function CoordinadorContacto() {
                                             <td className="p-2 font-mono font-medium">{order.placa}</td>
                                             <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
                                             <td className="p-2">
-                                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name)}>
-                                                    {order.InspectionOrderStatus?.name || 'Sin estado'}
-                                                </Badge>
+                                                {order.inspection_result === 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
+                                                    <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
+                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
+                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
+                                                    </Badge>
+                                                )}
                                             </td>
                                             <td className="p-2">
                                                 {order.AssignedAgent ? (
@@ -659,9 +697,15 @@ export default function CoordinadorContacto() {
                                         </div>
                                         <div>
                                             <span className="font-medium">Estado:</span>
-                                            <Badge variant={getStatusBadgeVariant(selectedOrder.InspectionOrderStatus?.name)}>
-                                                {selectedOrder.InspectionOrderStatus?.name}
-                                            </Badge>
+                                            {selectedOrder.inspection_result === 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
+                                                <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
+                                                    {getStatusDisplay(selectedOrder.InspectionOrderStatus?.name, selectedOrder.inspection_result)}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant={getStatusBadgeVariant(selectedOrder.InspectionOrderStatus?.name, selectedOrder.inspection_result)}>
+                                                    {getStatusDisplay(selectedOrder.InspectionOrderStatus?.name, selectedOrder.inspection_result)}
+                                                </Badge>
+                                            )}
                                         </div>
                                         <div>
                                             <span className="font-medium">Documento:</span>

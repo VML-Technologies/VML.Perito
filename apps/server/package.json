@@ -12,7 +12,8 @@
     "seed:rbac": "node scripts/seedRBAC.js",
     "seed:data": "node scripts/seedData.js",
     "update:permissions": "node scripts/updatePermissions.js",
-    "update:intermediary": "node scripts/updateUsersIntermediaryKey.js"
+    "update:intermediary": "node scripts/updateUsersIntermediaryKey.js",
+    "test:inspection-results": "node scripts/testInspectionResults.js"
   },
   "author": "",
   "license": "ISC",

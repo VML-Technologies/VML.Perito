@@ -86,7 +86,22 @@ class CoordinadorContactoController {
 
             // Filtro por estado
             if (status) {
-                whereConditions.status = status;
+                // Manejar filtros especiales para inspection_result
+                if (status.startsWith('result_')) {
+                    const resultMap = {
+                        'result_rechazado': 'RECHAZADO - Vehículo no asegurable',
+                        'result_aprobado_restricciones': 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones',
+                        'result_pendiente': 'PENDIENTE - Inspección en proceso',
+                        'result_aprobado': 'APROBADO - Vehículo asegurable'
+                    };
+
+                    const resultValue = resultMap[status];
+                    if (resultValue) {
+                        whereConditions.inspection_result = resultValue;
+                    }
+                } else {
+                    whereConditions.status = status;
+                }
             }
 
             // Filtro por agente asignado

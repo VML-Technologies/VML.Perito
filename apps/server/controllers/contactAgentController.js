@@ -84,7 +84,22 @@ class ContactAgentController {
             }
 
             if (status) {
-                whereConditions.status = status;
+                // Manejar filtros especiales para inspection_result
+                if (status.startsWith('result_')) {
+                    const resultMap = {
+                        'result_rechazado': 'RECHAZADO - Vehículo no asegurable',
+                        'result_aprobado_restricciones': 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones',
+                        'result_pendiente': 'PENDIENTE - Inspección en proceso',
+                        'result_aprobado': 'APROBADO - Vehículo asegurable'
+                    };
+
+                    const resultValue = resultMap[status];
+                    if (resultValue) {
+                        whereConditions.inspection_result = resultValue;
+                    }
+                } else {
+                    whereConditions.status = status;
+                }
             }
 
             const { count, rows } = await InspectionOrder.findAndCountAll({
@@ -130,6 +145,7 @@ class ContactAgentController {
                 vehiculo_marca: order.marca,
                 vehiculo_modelo: order.modelo,
                 InspectionOrderStatus: order.InspectionOrderStatus,
+                inspection_result: order.inspection_result,
                 callLogs: order.callLogs,
                 callLogsCount: order.callLogs ? order.callLogs.length : 0 // Agregar conteo de intentos
             }));

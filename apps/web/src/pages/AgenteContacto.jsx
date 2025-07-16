@@ -553,20 +553,42 @@ export default function AgenteContacto() {
         }
     };
 
-    const getStatusBadgeVariant = (status) => {
-        const variants = {
-            'Creada': 'secondary',
-            'Contacto exitoso': 'default',
-            'Agendado': 'default',
-            'No contesta': 'destructive',
-            'Ocupado': 'outline',
-            'Número incorrecto': 'destructive',
-            'Solicita reagendar': 'outline',
-            'En progreso': 'default',
-            'Finalizada': 'default',
-            'Cancelada': 'destructive'
+    const getStatusBadgeVariant = (status, inspectionResult) => {
+        // Si inspection_result es null, usar el status de la orden
+        if (!inspectionResult) {
+            const variants = {
+                'Creada': 'secondary',
+                'Contacto exitoso': 'default',
+                'Agendado': 'default',
+                'No contesta': 'destructive',
+                'Ocupado': 'outline',
+                'Número incorrecto': 'destructive',
+                'Solicita reagendar': 'outline',
+                'En progreso': 'default',
+                'Finalizada': 'default',
+                'Cancelada': 'destructive'
+            };
+            return variants[status] || 'secondary';
+        }
+
+        // Si inspection_result tiene valor, usar esa lógica
+        const resultVariants = {
+            'RECHAZADO - Vehículo no asegurable': 'destructive',
+            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'outline',
+            'PENDIENTE - Inspección en proceso': 'secondary',
+            'APROBADO - Vehículo asegurable': 'default'
         };
-        return variants[status] || 'secondary';
+        return resultVariants[inspectionResult] || 'secondary';
+    };
+
+    const getStatusDisplay = (status, inspectionResult) => {
+        // Si inspection_result es null, mostrar el status de la orden
+        if (!inspectionResult) {
+            return status || 'Sin estado';
+        }
+
+        // Si inspection_result tiene valor, mostrar ese resultado
+        return inspectionResult;
     };
 
     const formatDate = (dateString) => {
@@ -809,9 +831,15 @@ export default function AgenteContacto() {
                                                 </div>
                                             </td>
                                             <td className="p-2">
-                                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name)}>
-                                                    {order.InspectionOrderStatus?.name || 'Sin estado'}
-                                                </Badge>
+                                                {order.inspection_result === 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
+                                                    <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
+                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
+                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
+                                                    </Badge>
+                                                )}
                                             </td>
                                             <td className="p-2">
                                                 <Button
