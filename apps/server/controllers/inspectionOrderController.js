@@ -42,6 +42,15 @@ registerPermission({
     description: 'Eliminar órdenes de inspección',
 });
 
+registerPermission({
+    name: 'inspection_orders.stats',
+    resource: 'inspection_orders',
+    action: 'stats',
+    endpoint: '/api/inspection-orders/stats',
+    method: 'GET',
+    description: 'Ver estadísticas de órdenes de inspección',
+});
+
 class InspectionOrderController extends BaseController {
     constructor() {
         super(InspectionOrder);
@@ -59,62 +68,203 @@ class InspectionOrderController extends BaseController {
     // Listar órdenes con paginación, búsqueda y ordenamiento
     async index(req, res) {
         try {
-            // Respuesta simple para diagnosticar
+            const {
+                page = 1,
+                limit = 10,
+                search = '',
+                status = '',
+                date_from = '',
+                date_to = '',
+                sortBy = 'created_at',
+                sortOrder = 'DESC'
+            } = req.query;
+
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            // Construir condiciones WHERE
+            const whereConditions = {};
+
+            // Filtrar por intermediary_key del usuario logueado
+            if (req.user.intermediary_key) {
+                whereConditions.clave_intermediario = req.user.intermediary_key;
+            }
+
+            // Búsqueda por texto (placa, nombre cliente, documento, número)
+            if (search) {
+                whereConditions[Op.or] = [
+                    { placa: { [Op.like]: `%${search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${search}%` } },
+                    { num_doc: { [Op.like]: `%${search}%` } },
+                    { correo_cliente: { [Op.like]: `%${search}%` } },
+                    { numero: { [Op.like]: `%${search}%` } }
+                ];
+            }
+
+            // Filtro por estado
+            if (status) {
+                whereConditions.status = status;
+            }
+
+            // Filtros de fecha
+            if (date_from) {
+                whereConditions.created_at = {
+                    ...whereConditions.created_at,
+                    [Op.gte]: new Date(date_from)
+                };
+            }
+
+            if (date_to) {
+                whereConditions.created_at = {
+                    ...whereConditions.created_at,
+                    [Op.lte]: new Date(date_to + ' 23:59:59')
+                };
+            }
+
+            // Validar campos de ordenamiento
+            const validSortFields = ['id', 'numero', 'nombre_cliente', 'placa', 'created_at', 'status'];
+            const validSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+            const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+            const { count, rows } = await InspectionOrder.findAndCountAll({
+                where: whereConditions,
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email'],
+                        required: false
+                    },
+                    {
+                        model: User,
+                        as: 'AssignedAgent',
+                        attributes: ['id', 'name', 'email'],
+                        required: false
+                    }
+                ],
+                limit: parseInt(limit),
+                offset: offset,
+                order: [[validSortBy, validSortOrder]],
+                distinct: true
+            });
+
             res.json({
-                data: [],
-                pagination: {
-                    total: 0,
-                    page: 1,
-                    pages: 0,
-                    limit: 10
-                },
-                debug: 'Respuesta desde controlador simplificado'
+                success: true,
+                data: {
+                    orders: rows,
+                    pagination: {
+                        total: count,
+                        page: parseInt(page),
+                        pages: Math.ceil(count / parseInt(limit)),
+                        limit: parseInt(limit),
+                        hasNext: parseInt(page) < Math.ceil(count / parseInt(limit)),
+                        hasPrev: parseInt(page) > 1
+                    },
+                    filters: {
+                        search,
+                        status,
+                        date_from,
+                        date_to,
+                        sortBy: validSortBy,
+                        sortOrder: validSortOrder
+                    }
+                }
             });
         } catch (error) {
-            console.error('Error detallado en index:', error);
-            res.status(500).json({ message: 'Error al obtener órdenes de inspección', error: error.message });
+            console.error('Error al obtener órdenes:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener órdenes',
+                error: error.message
+            });
         }
     }
 
     // Obtener estadísticas
     async getStats(req, res) {
         try {
-            const { user_id = '' } = req.query;
-
             const whereConditions = {};
-            if (user_id) {
-                whereConditions.user_id = user_id;
+
+            // Filtrar por intermediary_key del usuario logueado
+            if (req.user.intermediary_key) {
+                whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
-            const total = await this.model.count({ where: whereConditions });
+            const [
+                total,
+                pendientes,
+                en_gestion,
+                agendadas,
+                completadas,
+                sin_asignar
+            ] = await Promise.all([
+                // Total de órdenes
+                InspectionOrder.count({ where: whereConditions }),
 
-            const statusStats = await this.model.findAll({
-                where: whereConditions,
-                include: [
-                    {
-                        model: InspectionOrderStatus,
-                        as: 'statusInfo',
-                        attributes: ['id', 'name']
+                // Órdenes pendientes (estado 1 - Creada)
+                InspectionOrder.count({
+                    where: {
+                        ...whereConditions,
+                        status: 1
                     }
-                ],
-                attributes: [
-                    'status',
-                    [this.model.sequelize.fn('COUNT', this.model.sequelize.col('InspectionOrder.id')), 'count']
-                ],
-                group: ['status', 'statusInfo.id', 'statusInfo.name'],
-                raw: false
-            });
+                }),
+
+                // Órdenes en gestión (tienen agente asignado pero no están agendadas)
+                InspectionOrder.count({
+                    where: {
+                        ...whereConditions,
+                        assigned_agent_id: { [Op.not]: null },
+                        status: { [Op.in]: [1, 2] } // Creada o En contacto
+                    }
+                }),
+
+                // Órdenes agendadas (estado 3 - Agendado)
+                InspectionOrder.count({
+                    where: {
+                        ...whereConditions,
+                        status: 3
+                    }
+                }),
+
+                // Órdenes completadas (estado 4 - Finalizada)
+                InspectionOrder.count({
+                    where: {
+                        ...whereConditions,
+                        status: 4
+                    }
+                }),
+
+                // Órdenes sin asignar
+                InspectionOrder.count({
+                    where: {
+                        ...whereConditions,
+                        assigned_agent_id: null
+                    }
+                })
+            ]);
 
             res.json({
-                total,
-                statusStats: statusStats.map(stat => ({
-                    status_id: stat.status,
-                    status_name: stat.statusInfo?.name || 'Desconocido',
-                    count: parseInt(stat.get('count'))
-                }))
+                success: true,
+                data: {
+                    total,
+                    pendientes,
+                    en_gestion,
+                    agendadas,
+                    completadas,
+                    sin_asignar
+                }
             });
         } catch (error) {
-            res.status(500).json({ message: 'Error al obtener estadísticas', error: error.message });
+            console.error('Error al obtener estadísticas:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener estadísticas',
+                error: error.message
+            });
         }
     }
 
@@ -140,7 +290,7 @@ class InspectionOrderController extends BaseController {
                     },
                     {
                         model: InspectionOrderStatus,
-                        as: 'statusInfo',
+                        as: 'InspectionOrderStatus',
                         attributes: ['id', 'name', 'description']
                     }
                 ]
@@ -164,7 +314,7 @@ class InspectionOrderController extends BaseController {
                     },
                     {
                         model: InspectionOrderStatus,
-                        as: 'statusInfo',
+                        as: 'InspectionOrderStatus',
                         attributes: ['id', 'name', 'description']
                     }
                 ]
@@ -189,10 +339,17 @@ class InspectionOrderController extends BaseController {
                 return res.status(400).json({ message: 'Placa es requerida para la búsqueda' });
             }
 
+            const whereConditions = {
+                placa: { [Op.like]: `%${placa}%` }
+            };
+
+            // Filtrar por intermediary_key del usuario logueado
+            if (req.user.intermediary_key) {
+                whereConditions.clave_intermediario = req.user.intermediary_key;
+            }
+
             const orders = await this.model.findAll({
-                where: {
-                    placa: { [Op.like]: `%${placa}%` }
-                },
+                where: whereConditions,
                 include: [
                     {
                         model: User,
@@ -201,7 +358,7 @@ class InspectionOrderController extends BaseController {
                     },
                     {
                         model: InspectionOrderStatus,
-                        as: 'statusInfo',
+                        as: 'InspectionOrderStatus',
                         attributes: ['id', 'name', 'description']
                     }
                 ],
@@ -216,4 +373,4 @@ class InspectionOrderController extends BaseController {
     }
 }
 
-export default new InspectionOrderController(); 
+export default InspectionOrderController; 

@@ -483,7 +483,8 @@ const seedRBAC = async () => {
                 p.name.startsWith('inspection_orders.') ||
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
-                p.name.startsWith('sedes.read')
+                p.name.startsWith('sedes.read') ||
+                p.name === 'users.read' // Necesario para acceder al perfil
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({

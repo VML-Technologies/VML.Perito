@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     PlusCircle,
@@ -13,38 +15,108 @@ import {
     XCircle,
     TrendingUp,
     BarChart3,
-    Calendar
+    Calendar,
+    ChevronUp,
+    ChevronDown,
+    Eye
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
 import CreateOrderModal from '@/components/CreateOrderModal';
 import StatsCards from '@/components/StatsCards';
+import { useWebSocket } from '@/hooks/use-websocket';
 
 export default function ComercialMundial() {
     const [orders, setOrders] = useState([]);
-    const [stats, setStats] = useState({});
+    const [stats, setStats] = useState({
+        total: 0,
+        pendientes: 0,
+        en_gestion: 0,
+        agendadas: 0,
+        completadas: 0,
+        sin_asignar: 0
+    });
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [showCreateModal, setShowCreateModal] = useState(false);
+
+    // Estados de filtros y paginación
+    const [filters, setFilters] = useState({
+        search: '',
+        status: '',
+        date_from: '',
+        date_to: '',
+        sortBy: 'created_at',
+        sortOrder: 'DESC'
+    });
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        pages: 0,
+        hasNext: false,
+        hasPrev: false
+    });
+
     const { showToast } = useNotificationContext();
+    const { socket } = useWebSocket();
 
     // Cargar datos iniciales
     useEffect(() => {
-        loadData();
-    }, [currentPage]);
+        loadInitialData();
+    }, []);
 
-    const loadData = async () => {
+    // Cargar datos cuando cambien los filtros o paginación
+    useEffect(() => {
+        loadOrders();
+    }, [filters, pagination.page]);
+
+    // Escuchar eventos de WebSocket para actualizaciones en tiempo real
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleOrderUpdate = (data) => {
+            console.log('Orden actualizada via WebSocket:', data);
+            // Recargar datos cuando se actualice una orden
+            loadOrders();
+            loadStats();
+        };
+
+        const handleOrderCreated = (data) => {
+            console.log('Nueva orden creada via WebSocket:', data);
+            // Recargar datos cuando se cree una nueva orden
+            loadOrders();
+            loadStats();
+        };
+
+        const handleAgentAssignment = (data) => {
+            console.log('Agente asignado via WebSocket:', data);
+            // Recargar datos cuando se asigne un agente
+            loadOrders();
+            loadStats();
+        };
+
+        // Suscribirse a eventos
+        socket.on('order_updated', handleOrderUpdate);
+        socket.on('order_created', handleOrderCreated);
+        socket.on('agent_assigned', handleAgentAssignment);
+
+        return () => {
+            socket.off('order_updated', handleOrderUpdate);
+            socket.off('order_created', handleOrderCreated);
+            socket.off('agent_assigned', handleAgentAssignment);
+        };
+    }, [socket]);
+
+    const loadInitialData = async () => {
         setLoading(true);
         try {
             await Promise.all([
-                loadOrders(),
-                loadStats()
+                loadStats(),
+                loadOrders()
             ]);
         } catch (error) {
-            console.error('Error loading data:', error);
-            showToast('Error al cargar los datos', 'error');
+            console.error('Error loading initial data:', error);
+            showToast('Error al cargar los datos iniciales', 'error');
         } finally {
             setLoading(false);
         }
@@ -53,14 +125,13 @@ export default function ComercialMundial() {
     const loadOrders = async () => {
         try {
             const token = localStorage.getItem('authToken');
-            const url = new URL(API_ROUTES.INSPECTION_ORDERS.LIST);
-            url.searchParams.append('page', currentPage);
-            url.searchParams.append('limit', '10');
-            if (searchTerm) {
-                url.searchParams.append('search', searchTerm);
-            }
+            const params = new URLSearchParams({
+                page: pagination.page.toString(),
+                limit: pagination.limit.toString(),
+                ...filters
+            });
 
-            const response = await fetch(url, {
+            const response = await fetch(`${API_ROUTES.INSPECTION_ORDERS.LIST}?${params}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -69,8 +140,14 @@ export default function ComercialMundial() {
 
             if (response.ok) {
                 const data = await response.json();
-                setOrders(data.orders || []);
-                setTotalPages(data.totalPages || 1);
+                setOrders(data.data.orders);
+                setPagination(prev => ({
+                    ...prev,
+                    total: data.data.pagination.total,
+                    pages: data.data.pagination.pages,
+                    hasNext: data.data.pagination.hasNext,
+                    hasPrev: data.data.pagination.hasPrev
+                }));
             } else {
                 throw new Error('Error al cargar órdenes');
             }
@@ -92,24 +169,39 @@ export default function ComercialMundial() {
 
             if (response.ok) {
                 const data = await response.json();
-                setStats(data);
+                setStats(data.data);
             } else {
                 throw new Error('Error al cargar estadísticas');
             }
         } catch (error) {
             console.error('Error loading stats:', error);
-            // No mostrar toast para estadísticas para no ser invasivo
+            showToast('Error al cargar las estadísticas', 'error');
         }
     };
 
-    const handleSearch = async () => {
-        setCurrentPage(1);
-        await loadOrders();
+    const handleFilterChange = (key, value) => {
+        // Convertir valores especiales a string vacío para el backend
+        const backendValue = (value === 'all') ? '' : value;
+
+        setFilters(prev => ({
+            ...prev,
+            [key]: backendValue
+        }));
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
+
+    const handleSort = (field) => {
+        const newOrder = filters.sortBy === field && filters.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+        setFilters(prev => ({
+            ...prev,
+            sortBy: field,
+            sortOrder: newOrder
+        }));
     };
 
     const handleOrderCreated = async (newOrder) => {
         // Refresh the orders list and stats
-        await loadData();
+        await loadInitialData();
         showToast(`Orden #${newOrder.numero} creada exitosamente`, 'success');
     };
 
@@ -134,8 +226,15 @@ export default function ComercialMundial() {
         return new Date(dateString).toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
+    };
+
+    const getSortIcon = (field) => {
+        if (filters.sortBy !== field) return null;
+        return filters.sortOrder === 'ASC' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
     };
 
     if (loading) {
@@ -143,7 +242,7 @@ export default function ComercialMundial() {
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-4 text-muted-foreground">Cargando datos...</p>
+                    <p className="mt-4 text-muted-foreground">Cargando panel comercial...</p>
                 </div>
             </div>
         );
@@ -166,7 +265,7 @@ export default function ComercialMundial() {
             </div>
 
             {/* Statistics Cards */}
-            <StatsCards stats={stats} variant="simple" />
+            <StatsCards stats={stats} variant="colorful" />
 
             {/* Main Content */}
             <Tabs defaultValue="orders" className="space-y-4">
@@ -176,26 +275,81 @@ export default function ComercialMundial() {
                 </TabsList>
 
                 <TabsContent value="orders" className="space-y-4">
-                    {/* Search and Filters */}
+                    {/* Filtros y Búsqueda */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Buscar Órdenes</CardTitle>
-                            <CardDescription>
-                                Encuentra órdenes por número, placa o cliente
-                            </CardDescription>
+                            <CardTitle>Filtros y Búsqueda</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Buscar por número de orden, placa, cliente..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                />
-                                <Button onClick={handleSearch}>
-                                    <Search className="h-4 w-4 mr-2" />
-                                    Buscar
-                                </Button>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div>
+                                    <Label htmlFor="search">Buscar</Label>
+                                    <Input
+                                        id="search"
+                                        placeholder="Placa, cliente, documento..."
+                                        value={filters.search}
+                                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="status">Estado</Label>
+                                    <Select
+                                        value={filters.status}
+                                        onValueChange={(value) => handleFilterChange('status', value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Todos los estados" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todos los estados</SelectItem>
+                                            <SelectItem value="1">Creada</SelectItem>
+                                            <SelectItem value="2">Contacto exitoso</SelectItem>
+                                            <SelectItem value="3">Agendado</SelectItem>
+                                            <SelectItem value="4">Finalizada</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="date_from">Fecha Desde</Label>
+                                    <Input
+                                        id="date_from"
+                                        type="date"
+                                        value={filters.date_from}
+                                        onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="date_to">Fecha Hasta</Label>
+                                    <Input
+                                        id="date_to"
+                                        type="date"
+                                        value={filters.date_to}
+                                        onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex items-end">
+                                    <Button
+                                        onClick={() => {
+                                            setFilters({
+                                                search: '',
+                                                status: '',
+                                                date_from: '',
+                                                date_to: '',
+                                                sortBy: 'created_at',
+                                                sortOrder: 'DESC'
+                                            });
+                                            setPagination(prev => ({ ...prev, page: 1 }));
+                                        }}
+                                        variant="outline"
+                                        className="w-full"
+                                    >
+                                        Limpiar Filtros
+                                    </Button>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -205,7 +359,7 @@ export default function ComercialMundial() {
                         <CardHeader>
                             <CardTitle>Lista de Órdenes</CardTitle>
                             <CardDescription>
-                                {orders.length} órdenes encontradas
+                                {pagination.total} órdenes encontradas
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -213,18 +367,67 @@ export default function ComercialMundial() {
                                 <table className="w-full border-collapse">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="text-left p-2">Número</th>
-                                            <th className="text-left p-2">Fecha</th>
-                                            <th className="text-left p-2">Cliente</th>
-                                            <th className="text-left p-2">Placa</th>
+                                            <th className="text-left p-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSort('id')}
+                                                    className="font-semibold"
+                                                >
+                                                    ID {getSortIcon('id')}
+                                                </Button>
+                                            </th>
+                                            <th className="text-left p-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSort('numero')}
+                                                    className="font-semibold"
+                                                >
+                                                    Número {getSortIcon('numero')}
+                                                </Button>
+                                            </th>
+                                            <th className="text-left p-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSort('nombre_cliente')}
+                                                    className="font-semibold"
+                                                >
+                                                    Cliente {getSortIcon('nombre_cliente')}
+                                                </Button>
+                                            </th>
+                                            <th className="text-left p-2">Teléfono</th>
+                                            <th className="text-left p-2">Email</th>
+                                            <th className="text-left p-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSort('placa')}
+                                                    className="font-semibold"
+                                                >
+                                                    Placa {getSortIcon('placa')}
+                                                </Button>
+                                            </th>
+                                            <th className="text-left p-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSort('created_at')}
+                                                    className="font-semibold"
+                                                >
+                                                    Fecha de solicitud {getSortIcon('created_at')}
+                                                </Button>
+                                            </th>
                                             <th className="text-left p-2">Estado</th>
+                                            <th className="text-left p-2">Agente Asignado</th>
                                             <th className="text-left p-2">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {orders.length === 0 ? (
                                             <tr>
-                                                <td colSpan="6" className="text-center p-8">
+                                                <td colSpan="9" className="text-center p-8">
                                                     <div className="text-muted-foreground">
                                                         <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                                                         <p>No se encontraron órdenes</p>
@@ -235,14 +438,30 @@ export default function ComercialMundial() {
                                         ) : (
                                             orders.map((order) => (
                                                 <tr key={order.id} className="border-b hover:bg-muted/50">
-                                                    <td className="p-2 font-mono">{order.numero}</td>
-                                                    <td className="p-2">{formatDate(order.fecha_creacion)}</td>
-                                                    <td className="p-2">{order.cliente_nombre}</td>
-                                                    <td className="p-2 font-mono">{order.vehiculo_placa}</td>
+                                                    <td className="p-2 font-mono font-medium">#{order.id}</td>
+                                                    <td className="p-2 font-mono font-medium">#{order.numero}</td>
+                                                    <td className="p-2">{order.nombre_cliente}</td>
+                                                    <td className="p-2 font-mono">{order.celular_cliente}</td>
+                                                    <td className="p-2 text-sm">{order.correo_cliente}</td>
+                                                    <td className="p-2 font-mono font-medium">{order.placa}</td>
+                                                    <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
                                                     <td className="p-2">
                                                         <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name)}>
                                                             {order.InspectionOrderStatus?.name || 'Sin estado'}
                                                         </Badge>
+                                                    </td>
+                                                    <td className="p-2">
+                                                        {order.AssignedAgent ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                                                <span className="text-sm">{order.AssignedAgent.name}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                <XCircle className="h-4 w-4 text-red-500" />
+                                                                <span className="text-sm text-muted-foreground">Sin asignar</span>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="p-2">
                                                         <Button
@@ -250,7 +469,8 @@ export default function ComercialMundial() {
                                                             variant="outline"
                                                             onClick={() => {/* TODO: Abrir detalles */ }}
                                                         >
-                                                            Ver detalles
+                                                            <Eye className="h-4 w-4 mr-1" />
+                                                            Ver
                                                         </Button>
                                                     </td>
                                                 </tr>
@@ -260,28 +480,30 @@ export default function ComercialMundial() {
                                 </table>
                             </div>
 
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center gap-2 mt-4">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                    >
-                                        Anterior
-                                    </Button>
-                                    <span className="py-2 px-4">
-                                        Página {currentPage} de {totalPages}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                    >
-                                        Siguiente
-                                    </Button>
+                            {/* Paginación */}
+                            {pagination.pages > 1 && (
+                                <div className="flex items-center justify-between mt-4">
+                                    <div className="text-sm text-muted-foreground">
+                                        Página {pagination.page} de {pagination.pages} ({pagination.total} total)
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                                            disabled={!pagination.hasPrev}
+                                        >
+                                            Anterior
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                                            disabled={!pagination.hasNext}
+                                        >
+                                            Siguiente
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </CardContent>

@@ -16,7 +16,7 @@ import { requireAuth } from './middleware/auth.js';
 import permissionController from './controllers/permissionController.js';
 import roleController from './controllers/roleController.js';
 import webSocketSystem from './websocket/index.js';
-import inspectionOrderController from './controllers/inspectionOrderController.js';
+import InspectionOrderController from './controllers/inspectionOrderController.js';
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
@@ -28,6 +28,9 @@ import './models/index.js';
 
 // Cargar variables de entorno
 dotenv.config();
+
+// Crear instancia del controlador de órdenes de inspección
+const inspectionOrderController = new InspectionOrderController();
 
 const app = express();
 const server = createServer(app);

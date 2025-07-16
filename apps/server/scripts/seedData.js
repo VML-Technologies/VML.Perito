@@ -18,17 +18,33 @@ const seedData = async () => {
         console.log('✅ Conexión a la base de datos establecida.');
 
         // Crear departamentos (incluyendo los necesarios para sedes reales)
-        const departments = await Department.bulkCreate([
+        console.log('📋 Creando departamentos...');
+        const departments = [];
+        const departmentData = [
             { name: 'Cundinamarca' }, // Para Bogotá
             { name: 'Valle del Cauca' }, // Para Cali
             { name: 'Antioquia' }, // Para Medellín
             { name: 'Atlántico' }, // Para Barranquilla
             { name: 'Santander' } // Para Bucaramanga
-        ], { ignoreDuplicates: true });
-        console.log('✅ Departamentos creados:', departments.length);
+        ];
+
+        for (const deptData of departmentData) {
+            const [dept, created] = await Department.findOrCreate({
+                where: { name: deptData.name },
+                defaults: deptData
+            });
+            departments.push(dept);
+            if (created) {
+                console.log(`✅ Departamento creado: ${dept.name}`);
+            } else {
+                console.log(`ℹ️ Departamento ya existe: ${dept.name}`);
+            }
+        }
 
         // Crear ciudades (incluyendo las necesarias para sedes reales)
-        const cities = await City.bulkCreate([
+        console.log('🏙️ Creando ciudades...');
+        const cities = [];
+        const cityData = [
             // Cundinamarca
             { name: 'Bogotá', department_id: 1 },
             { name: 'Soacha', department_id: 1 },
@@ -50,11 +66,28 @@ const seedData = async () => {
 
             // Santander
             { name: 'Bucaramanga', department_id: 5 }
-        ], { ignoreDuplicates: true });
-        console.log('✅ Ciudades creadas:', cities.length);
+        ];
+
+        for (const cityDataItem of cityData) {
+            const [city, created] = await City.findOrCreate({
+                where: { 
+                    name: cityDataItem.name,
+                    department_id: cityDataItem.department_id 
+                },
+                defaults: cityDataItem
+            });
+            cities.push(city);
+            if (created) {
+                console.log(`✅ Ciudad creada: ${city.name}`);
+            } else {
+                console.log(`ℹ️ Ciudad ya existe: ${city.name}`);
+            }
+        }
 
         // Crear empresas (Previcar será la principal)
-        const companies = await Company.bulkCreate([
+        console.log('🏢 Creando empresas...');
+        const companies = [];
+        const companyData = [
             {
                 name: 'Previcar',
                 nit: '900123456-7',
@@ -79,8 +112,20 @@ const seedData = async () => {
                 email: 'info@consultores.com',
                 phone: '602-4567890'
             }
-        ], { ignoreDuplicates: true });
-        console.log('✅ Empresas creadas:', companies.length);
+        ];
+
+        for (const companyDataItem of companyData) {
+            const [company, created] = await Company.findOrCreate({
+                where: { name: companyDataItem.name },
+                defaults: companyDataItem
+            });
+            companies.push(company);
+            if (created) {
+                console.log(`✅ Empresa creada: ${company.name}`);
+            } else {
+                console.log(`ℹ️ Empresa ya existe: ${company.name}`);
+            }
+        }
 
         console.log('\n🎉 Datos básicos creados exitosamente!');
         console.log('\n📊 Resumen:');
