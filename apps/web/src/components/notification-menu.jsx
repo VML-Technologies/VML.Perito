@@ -42,14 +42,14 @@ export function NotificationMenu() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <div className="relative cursor-pointer">
-                    <Bell size={24} />
+                <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
+                    <Bell size={20} />
                     {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                             {unreadCount}
                         </span>
                     )}
-                </div>
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
                 <div className="flex items-center justify-between p-2">
@@ -85,7 +85,7 @@ export function NotificationMenu() {
                             >
                                 <div className="flex flex-col gap-1 w-full">
                                     <div className="flex justify-between items-start">
-                                        <span className={`font-medium ${!notification.read ? 'text-blue-900' : ''}`}>
+                                        <span className={`font-medium text-sm ${!notification.read ? 'text-blue-900' : ''}`}>
                                             {notification.title}
                                         </span>
                                         <div className="flex items-center gap-1">

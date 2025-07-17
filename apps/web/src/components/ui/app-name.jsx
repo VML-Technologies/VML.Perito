@@ -7,8 +7,10 @@ function AppName({
   const appName = import.meta.env.VITE_APP_NAME
 
   return (
-    <div>
-      <h1 className="text-3xl font-medium">{appName}</h1>
+    <div className={cn("min-w-0", className)}>
+      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-medium truncate">
+        {appName}
+      </h1>
     </div>
   );
 }

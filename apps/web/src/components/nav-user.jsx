@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useNotificationContext } from "@/contexts/notification-context"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 
 export function NavUser() {
   const { user, logout } = useAuth()
@@ -60,11 +61,11 @@ export function NavUser() {
   if (!user) return null
 
   return (
-
-    <div className="flex items-center gap-2">
-      <div>
+    <div className="flex items-center gap-1 sm:gap-2">
+      {/* Avatar - Always visible */}
+      <div className="flex-shrink-0">
         <Avatar className="h-8 w-8 rounded-lg">
-          <AvatarImage src={user.avatar} lt={user.name} />
+          <AvatarImage src={user.avatar} alt={user.name} />
           <AvatarFallback className="rounded-lg">
             {
               user.roles.find(role => role.name === 'agente_contacto') ?
@@ -75,23 +76,31 @@ export function NavUser() {
           </AvatarFallback>
         </Avatar>
       </div>
-      <div className="w-48">
-        <span className="truncate font-medium w-full">{user.name || 'Usuario'}</span>
-        <Select className="w-full">
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Selecciona un estado" />
-          </SelectTrigger>
-          <SelectContent className="w-full">
-            <SelectItem value="almuerzo">Almuerzo</SelectItem>
-            <SelectItem value="en_linea">En linea</SelectItem>
-            <SelectItem value="en_descanso">En descanso</SelectItem>
-          </SelectContent>
-        </Select>
+
+      {/* User info and status - Hidden on mobile */}
+      <div className="hidden sm:block min-w-0 flex-1">
+        <div className="w-32 lg:w-48">
+          <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
+          <Select className="w-full">
+            <SelectTrigger className="w-full h-7 text-xs">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent className="w-full">
+              <SelectItem value="almuerzo">Almuerzo</SelectItem>
+              <SelectItem value="en_linea">En línea</SelectItem>
+              <SelectItem value="en_descanso">En descanso</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div>
+
+      {/* Menu trigger - Always visible */}
+      <div className="flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <MoreVertical className="ml-auto size-4" />
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreVertical className="size-4" />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
@@ -106,7 +115,7 @@ export function NavUser() {
                     {getUserInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
                   <span className="truncate font-medium">{user.name || 'Usuario'}</span>
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email || 'Sin email'}
@@ -118,18 +127,18 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link to="/profile">
-                  <User />
+                  <User className="mr-2 h-4 w-4" />
                   Mi Perfil
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Lock />
+                <Lock className="mr-2 h-4 w-4" />
                 Cambiar contraseña
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
+              <LogOut className="mr-2 h-4 w-4" />
               Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>

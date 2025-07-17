@@ -36,12 +36,38 @@ export const WebSocketStatus = () => {
         }
     };
 
+    const getStatusTextMobile = () => {
+        switch (connectionStatus) {
+            case 'connected':
+                return 'OK';
+            case 'connecting':
+                return 'Conectando...';
+            case 'reconnecting':
+                return `Reconectando (${reconnectAttempts})`;
+            case 'error':
+                return 'Error';
+            case 'failed':
+                return 'Falló';
+            default:
+                return 'Offline';
+        }
+    };
+
     return (
         <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
+            {/* Desktop version */}
+            <Badge variant="outline" className="hidden md:flex text-xs">
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
                     {getStatusText()}
+                </div>
+            </Badge>
+
+            {/* Mobile version */}
+            <Badge variant="outline" className="md:hidden text-xs px-2 py-1">
+                <div className="flex items-center gap-1">
+                    <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
+                    <span className="text-xs">{getStatusTextMobile()}</span>
                 </div>
             </Badge>
         </div>
