@@ -142,7 +142,7 @@ export function useNotifications() {
     const markAsRead = useCallback(async (notificationId) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_ROUTES.NOTIFICATIONS.MARK_AS_READ}/${notificationId}`, {
+            const response = await fetch(API_ROUTES.NOTIFICATIONS.MARK_AS_READ(notificationId), {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`
