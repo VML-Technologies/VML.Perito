@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/contexts/auth-context';
 import OrdersFilters from '@/components/OrdersFilters';
 import OrdersTable from '@/components/OrdersTable';
@@ -19,15 +18,8 @@ export default function AgenteContacto() {
         assigned_agent_id: ''
     });
     const [callStatuses, setCallStatuses] = useState([]);
-    const [inspectionTypes, setInspectionTypes] = useState([]);
-    const [departments, setDepartments] = useState([]);
-    const [cities, setCities] = useState([]);
-    const [sedes, setSedes] = useState([]);
-    const [modalities, setModalities] = useState([]);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
-
     const { showToast } = useNotificationContext();
-    const { isConnected } = useWebSocket();
     const { user } = useAuth();
 
     // Cargar datos iniciales
@@ -84,7 +76,9 @@ export default function AgenteContacto() {
         };
     }, []);
 
-    // Escuchar eventos de llamadas registradas
+    // Solo escuchamos 'call_logged' para feedback visual inmediato.
+    // El backend también emite 'order_status_updated' al agendar, pero no mostramos toast aquí.
+    // En el futuro puedes agregar un listener específico para agendamientos si lo deseas.
     useEffect(() => {
         const handleCallLogged = (event) => {
             const { order_number, message, agent_id } = event.detail;
@@ -111,9 +105,7 @@ export default function AgenteContacto() {
         try {
             await Promise.all([
                 loadOrders(),
-                loadCallStatuses(),
-                loadInspectionTypes(),
-                loadDepartments()
+                loadCallStatuses()
             ]);
         } catch (error) {
             console.error('Error loading initial data:', error);
@@ -134,7 +126,6 @@ export default function AgenteContacto() {
                     url.searchParams.append(key, value);
                 }
             });
-
             const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -172,54 +163,9 @@ export default function AgenteContacto() {
         }
     };
 
-    const loadInspectionTypes = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(API_ROUTES.CONTACT_AGENT.INSPECTION_TYPES, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setInspectionTypes(data);
-            }
-        } catch (error) {
-            console.error('Error loading inspection types:', error);
-        }
-    };
-
-    const loadDepartments = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(API_ROUTES.CONTACT_AGENT.DEPARTMENTS, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setDepartments(data);
-            }
-        } catch (error) {
-            console.error('Error loading departments:', error);
-        }
-    };
-
     const handleOrderSelect = (order) => {
         setSelectedOrder(order);
         setIsPanelOpen(true);
-    };
-
-    const handleOrderUpdated = () => {
-        loadOrders();
-    };
-
-    const handlePanelClose = () => {
-        setIsPanelOpen(false);
-        setSelectedOrder(null);
     };
 
     const handleFilterChange = (key, value) => {
@@ -237,6 +183,10 @@ export default function AgenteContacto() {
             date_to: '',
             assigned_agent_id: ''
         });
+    };
+
+    const handleOrderUpdate = () => {
+        loadOrders();
     };
 
     if (loading) {
@@ -288,15 +238,9 @@ export default function AgenteContacto() {
             <AgentOrderPanel
                 isOpen={isPanelOpen}
                 onOpenChange={setIsPanelOpen}
-                order={selectedOrder}
+                selectedOrder={selectedOrder}
                 callStatuses={callStatuses}
-                inspectionTypes={inspectionTypes}
-                departments={departments}
-                cities={cities}
-                sedes={sedes}
-                modalities={modalities}
-                onOrderUpdated={handleOrderUpdated}
-                onPanelClose={handlePanelClose}
+                onOrderUpdate={handleOrderUpdate}
             />
         </div>
     );
