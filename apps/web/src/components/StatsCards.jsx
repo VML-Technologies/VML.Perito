@@ -86,7 +86,7 @@ const StatsCards = ({ stats = {}, variant = "simple" }) => {
     const cards = cardConfigurations[variant] || cardConfigurations.simple
 
     return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {cards.map((card) => {
                 const IconComponent = card.icon
                 return (
