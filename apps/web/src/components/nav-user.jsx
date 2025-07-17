@@ -21,9 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  useSidebar,
-} from "@/components/ui/sidebar"
+
 import { useAuth } from "@/contexts/auth-context"
 import { useNotificationContext } from "@/contexts/notification-context"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"

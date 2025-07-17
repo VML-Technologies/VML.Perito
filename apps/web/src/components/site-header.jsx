@@ -20,15 +20,10 @@ export function SiteHeader() {
           <AppName />
         </div>
 
-        {/* Center section - WebSocket Status (hidden on mobile) */}
-        <div className="hidden md:flex items-center justify-center flex-1">
-          <WebSocketStatus />
-        </div>
-
         {/* Right section - User controls */}
         <div className="flex items-center gap-1 sm:gap-2 min-w-0">
           {/* WebSocket Status - Mobile only */}
-          <div className="md:hidden">
+          <div className="hidden md:flex items-center justify-center flex-1">
             <WebSocketStatus />
           </div>
 
