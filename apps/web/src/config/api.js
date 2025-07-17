@@ -34,7 +34,7 @@ export const API_ROUTES = {
     RBAC: {
         BULK_ASSIGNMENTS: `${API_BASE_URL}/api/rbac/bulk-assignments`,
     },
-    // ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN =====
+    // ===== RUTAS UNIFICADAS - ÓRDENES DE INSPECCIÓN =====
     INSPECTION_ORDERS: {
         LIST: `${API_BASE_URL}/api/inspection-orders`,
         STATS: `${API_BASE_URL}/api/inspection-orders/stats`,
@@ -53,9 +53,9 @@ export const API_ROUTES = {
         DELETE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
         BY_COMPANY: (companyId) => `${API_BASE_URL}/api/companies/${companyId}/sedes`,
     },
-    // ===== NUEVAS RUTAS - Agente de Contact =====
+    // ===== RUTAS - Agente de Contact =====
     CONTACT_AGENT: {
-        ORDERS: `${API_BASE_URL}/api/contact-agent/orders`,
+        ORDERS: `${API_BASE_URL}/api/inspection-orders?context=agent`,
         ORDER_DETAILS: (id) => `${API_BASE_URL}/api/contact-agent/orders/${id}`,
         CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
         CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
@@ -68,15 +68,15 @@ export const API_ROUTES = {
         ALL_MODALITIES: `${API_BASE_URL}/api/contact-agent/all-modalities`,
         SEDES_BY_MODALITY: `${API_BASE_URL}/api/contact-agent/sedes-by-modality`,
     },
-    // ===== NUEVAS RUTAS - Coordinador de Contact Center =====
+    // ===== RUTAS - Coordinador de Contact Center =====
     COORDINADOR_CONTACTO: {
-        ORDERS: `${API_BASE_URL}/api/coordinador-contacto/orders`,
+        ORDERS: `${API_BASE_URL}/api/inspection-orders?context=coordinator`,
         ORDER_DETAILS: (id) => `${API_BASE_URL}/api/coordinador-contacto/orders/${id}`,
         STATS: `${API_BASE_URL}/api/coordinador-contacto/stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
     },
-    // ===== NUEVAS RUTAS - Sistema de Horarios =====
+    // ===== RUTAS DE AGENDAMIENTO =====
     SCHEDULES: {
         AVAILABLE: `${API_BASE_URL}/api/schedules/available`,
         APPOINTMENTS: `${API_BASE_URL}/api/schedules/appointments`,
@@ -85,9 +85,8 @@ export const API_ROUTES = {
     // ===== RUTAS DE NOTIFICACIONES =====
     NOTIFICATIONS: {
         GET_USER_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/user`,
-        MARK_AS_READ: `${API_BASE_URL}/api/notifications`,
+        MARK_AS_READ: (id) => `${API_BASE_URL}/api/notifications/${id}`,
         MARK_ALL_AS_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
-        STATS: `${API_BASE_URL}/api/notifications/stats`,
     },
 };
 
