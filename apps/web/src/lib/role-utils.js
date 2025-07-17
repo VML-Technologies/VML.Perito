@@ -55,7 +55,7 @@ export const getPrimaryRoleName = (userRoles) => {
     const roleDisplayNames = {
         'super_admin': 'Súper Administrador',
         'coordinador_contacto': 'Coordinador de Contact Center',
-        'comercial_mundial': 'Comercial Mundial',
+        'comercial_mundial': 'Usuario Comercial',
         'agente_contacto': 'Agente de Contact Center',
         'admin': 'Administrador',
         'manager': 'Gerente',
