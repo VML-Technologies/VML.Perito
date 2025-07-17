@@ -84,10 +84,10 @@ export function AppSidebar({
               <SidebarMenu>
                 {canAccessComercial && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Comercial Mundial">
+                    <SidebarMenuButton asChild tooltip="Dashboard Comercial">
                       <Link to="/comercial-mundial">
                         <Building />
-                        <span>Comercial Mundial</span>
+                        <span>Dashboard Comercial</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
