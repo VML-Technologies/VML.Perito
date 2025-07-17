@@ -68,7 +68,7 @@ export const Dashboard = () => {
                         <div className="flex items-center mb-2">
                             <Building className="mr-2" />
                             <h3 className="text-lg font-semibold">
-                                Comercial Mundial
+                                Dashboard Comercial
                             </h3>
                         </div>
                         <p className="text-green-100 mb-4">
