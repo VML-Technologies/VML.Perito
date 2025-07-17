@@ -107,10 +107,10 @@ app.delete('/api/sedes/:id', sedeController.destroy);
 app.delete('/api/sedes/:id/force', sedeController.forceDestroy);
 app.post('/api/sedes/:id/restore', sedeController.restore);
 
-// ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN =====
+// ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN UNIFICADAS =====
 
-// Rutas para Comercial Mundial (crear/gestionar órdenes)
-app.get('/api/inspection-orders', requirePermission('inspection_orders.read'), inspectionOrderController.index);
+// Endpoint unificado para órdenes de inspección
+app.get('/api/inspection-orders', requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
 app.get('/api/inspection-orders/stats', requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
 app.get('/api/inspection-orders/search', requirePermission('inspection_orders.read'), inspectionOrderController.search);
 app.get('/api/inspection-orders/:id', requirePermission('inspection_orders.read'), inspectionOrderController.show);
@@ -120,8 +120,7 @@ app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.de
 
 // ===== NUEVAS RUTAS - Agente de Contact =====
 
-// Rutas para Agente de Contact
-app.get('/api/contact-agent/orders', requirePermission('contact_agent.read'), contactAgentController.getOrders);
+// Rutas para Agente de Contact (mantener endpoints específicos para funcionalidad adicional)
 app.get('/api/contact-agent/orders/:id', requirePermission('contact_agent.read'), contactAgentController.getOrderDetails);
 
 // Gestión de llamadas
@@ -153,8 +152,7 @@ app.post('/api/schedules/appointments', requirePermission('contact_agent.create_
 
 // ===== NUEVAS RUTAS - Coordinador de Contact Center =====
 
-// Rutas para Coordinador de Contact Center
-app.get('/api/coordinador-contacto/orders', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrders);
+// Rutas para Coordinador de Contact Center (mantener endpoints específicos para funcionalidad adicional)
 app.get('/api/coordinador-contacto/orders/:id', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrderDetails);
 app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getStats);
 app.get('/api/coordinador-contacto/agents', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getAgents);
@@ -374,7 +372,7 @@ const startServer = async () => {
         console.log('✅ Conexión a la base de datos establecida correctamente.');
 
         // Sincronizar modelos (crear tablas si no existen)
-        await sequelize.sync({ force: false, alter: true });
+        await sequelize.sync({ force: false });
         console.log('✅ Modelos sincronizados con la base de datos.');
 
         // Inicializar sistema de WebSockets
