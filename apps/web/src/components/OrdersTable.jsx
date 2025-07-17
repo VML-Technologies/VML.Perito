@@ -319,9 +319,9 @@ const OrdersTable = ({
                                                                         <SelectValue placeholder={order.AssignedAgent ? "Reasignar" : "Asignar"} />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
-                                                                        <SelectItem value="">{order.AssignedAgent ? "Reasignar" : "Asignar"}</SelectItem>
+                                                                        <SelectItem value="reassign">{order.AssignedAgent ? "Reasignar" : "Asignar"}</SelectItem>
                                                                         <SelectItem value="unassign">Quitar asignación</SelectItem>
-                                                                        {agents.map((agent) => (
+                                                                        {agents.filter(agent => agent.id && agent.name).map((agent) => (
                                                                             <SelectItem key={agent.id} value={agent.id.toString()}>
                                                                                 {agent.name}
                                                                             </SelectItem>
@@ -472,9 +472,9 @@ const OrdersTable = ({
                                                                 <SelectValue placeholder={order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"} />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="">{order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"}</SelectItem>
+                                                                <SelectItem value="reassign">{order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"}</SelectItem>
                                                                 <SelectItem value="unassign">Quitar asignación</SelectItem>
-                                                                {agents.map((agent) => (
+                                                                {agents.filter(agent => agent.id && agent.name).map((agent) => (
                                                                     <SelectItem key={agent.id} value={agent.id.toString()}>
                                                                         {agent.name}
                                                                     </SelectItem>
