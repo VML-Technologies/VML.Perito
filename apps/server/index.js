@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import sequelize from './config/database.js';
 import { login, verify, logout } from './controllers/authController.js';
 import userController from './controllers/userController.js';
@@ -22,6 +24,8 @@ import coordinadorContactoController from './controllers/coordinadorContactoCont
 import scheduleController from './controllers/scheduleController.js';
 import notificationController from './controllers/notificationController.js';
 import { Op } from 'sequelize';
+import { securityConfig, createCorsConfig } from './config/security.js';
+import { sqlSanitizerMiddleware } from './utils/sqlSanitizer.js';
 
 // Importar modelos para establecer relaciones
 import './models/index.js';
@@ -40,22 +44,79 @@ const port = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
-app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+// ===== CONFIGURACIÓN DE SEGURIDAD =====
+
+// Configurar CORS usando configuración centralizada
+app.use(cors(createCorsConfig()));
+
+// Configurar Helmet usando configuración centralizada
+app.use(helmet(securityConfig.helmetConfig));
+
+// Rate limiting usando configuración centralizada
+const limiter = rateLimit(securityConfig.rateLimitConfig.general);
+const authLimiter = rateLimit(securityConfig.rateLimitConfig.auth);
+const readLimiter = rateLimit(securityConfig.rateLimitConfig.read);
+
+// Aplicar rate limiting general
+app.use(limiter);
+
+// Sanitización de datos para SQL (prevención de inyección SQL)
+app.use(sqlSanitizerMiddleware);
+
+// Middleware para parsear JSON con límite de tamaño
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Headers de seguridad adicionales usando configuración centralizada
+app.use((req, res, next) => {
+    Object.entries(securityConfig.securityHeaders).forEach(([header, value]) => {
+        res.setHeader(header, value);
+    });
+    next();
+});
+
+// Middleware de logging para monitoreo de seguridad
+app.use((req, res, next) => {
+    const start = Date.now();
+
+    // Log de la solicitud
+    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path} - IP: ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
+
+    // Interceptar la respuesta para logging
+    const originalSend = res.send;
+    res.send = function (data) {
+        const duration = Date.now() - start;
+        const status = res.statusCode;
+
+        // Log de respuesta con colores según el status
+        let logMessage = `📤 [${new Date().toISOString()}] ${req.method} ${req.path} - Status: ${status} - Duration: ${duration}ms`;
+
+        if (status >= 400) {
+            console.error(`❌ ${logMessage}`);
+        } else if (status >= 300) {
+            console.warn(`⚠️ ${logMessage}`);
+        } else {
+            console.log(`✅ ${logMessage}`);
+        }
+
+        originalSend.call(this, data);
+    };
+
+    next();
+});
 
 // Servir archivos estáticos de la carpeta dist/web
 const staticPath = path.join(__dirname, '../web/dist');
 
-// Rutas de autenticación
-app.post('/api/auth/login', login);
-app.get('/api/auth/verify', verify);
-app.post('/api/auth/logout', logout);
+// Rutas de autenticación con rate limiting específico
+app.post('/api/auth/login', authLimiter, login);
+app.get('/api/auth/verify', authLimiter, verify);
+app.post('/api/auth/logout', authLimiter, logout);
 
 // Rutas RBAC
-app.get('/api/permissions', requirePermission('permissions.read'), permissionController.index);
-app.get('/api/permissions/registered', requirePermission('permissions.read'), permissionController.registered);
-app.get('/api/roles', requirePermission('roles.read'), roleController.index);
+app.get('/api/permissions', readLimiter, requirePermission('permissions.read'), permissionController.index);
+app.get('/api/permissions/registered', readLimiter, requirePermission('permissions.read'), permissionController.registered);
+app.get('/api/roles', readLimiter, requirePermission('roles.read'), roleController.index);
 app.post('/api/roles', requirePermission('roles.create'), roleController.store);
 app.put('/api/roles/:id', requirePermission('roles.update'), roleController.update);
 app.delete('/api/roles/:id', requirePermission('roles.delete'), roleController.destroy);
@@ -70,50 +131,50 @@ app.get('/api/users/with-roles', requirePermission('users.read'), roleController
 app.post('/api/rbac/bulk-assignments', requirePermission('roles.update'), roleController.updateBulkAssignments);
 
 // Rutas de departamentos
-app.get('/api/departments', departmentController.index);
-app.get('/api/departments/:id', departmentController.show);
-app.post('/api/departments', departmentController.store);
-app.put('/api/departments/:id', departmentController.update);
-app.delete('/api/departments/:id', departmentController.destroy);
-app.delete('/api/departments/:id/force', departmentController.forceDestroy);
-app.post('/api/departments/:id/restore', departmentController.restore);
+app.get('/api/departments', readLimiter, requirePermission('departments.read'), departmentController.index);
+app.get('/api/departments/:id', readLimiter, requirePermission('departments.read'), departmentController.show);
+app.post('/api/departments', requirePermission('departments.create'), departmentController.store);
+app.put('/api/departments/:id', requirePermission('departments.update'), departmentController.update);
+app.delete('/api/departments/:id', requirePermission('departments.delete'), departmentController.destroy);
+app.delete('/api/departments/:id/force', requirePermission('departments.delete'), departmentController.forceDestroy);
+app.post('/api/departments/:id/restore', requirePermission('departments.update'), departmentController.restore);
 
 // Rutas de ciudades
-app.get('/api/cities', cityController.index);
-app.get('/api/cities/:id', cityController.show);
-app.get('/api/departments/:departmentId/cities', cityController.getByDepartment);
-app.post('/api/cities', cityController.store);
-app.put('/api/cities/:id', cityController.update);
-app.delete('/api/cities/:id', cityController.destroy);
-app.delete('/api/cities/:id/force', cityController.forceDestroy);
-app.post('/api/cities/:id/restore', cityController.restore);
+app.get('/api/cities', readLimiter, requirePermission('cities.read'), cityController.index);
+app.get('/api/cities/:id', readLimiter, requirePermission('cities.read'), cityController.show);
+app.get('/api/departments/:departmentId/cities', readLimiter, requirePermission('cities.read'), cityController.getByDepartment);
+app.post('/api/cities', requirePermission('cities.create'), cityController.store);
+app.put('/api/cities/:id', requirePermission('cities.update'), cityController.update);
+app.delete('/api/cities/:id', requirePermission('cities.delete'), cityController.destroy);
+app.delete('/api/cities/:id/force', requirePermission('cities.delete'), cityController.forceDestroy);
+app.post('/api/cities/:id/restore', requirePermission('cities.update'), cityController.restore);
 
 // Rutas de empresas
-app.get('/api/companies', companyController.index);
-app.get('/api/companies/:id', companyController.show);
-app.post('/api/companies', companyController.store);
-app.put('/api/companies/:id', companyController.update);
-app.delete('/api/companies/:id', companyController.destroy);
-app.delete('/api/companies/:id/force', companyController.forceDestroy);
-app.post('/api/companies/:id/restore', companyController.restore);
+app.get('/api/companies', readLimiter, requirePermission('companies.read'), companyController.index);
+app.get('/api/companies/:id', readLimiter, requirePermission('companies.read'), companyController.show);
+app.post('/api/companies', requirePermission('companies.create'), companyController.store);
+app.put('/api/companies/:id', requirePermission('companies.update'), companyController.update);
+app.delete('/api/companies/:id', requirePermission('companies.delete'), companyController.destroy);
+app.delete('/api/companies/:id/force', requirePermission('companies.delete'), companyController.forceDestroy);
+app.post('/api/companies/:id/restore', requirePermission('companies.update'), companyController.restore);
 
 // Rutas de sedes
-app.get('/api/sedes', sedeController.index);
-app.get('/api/sedes/:id', sedeController.show);
-app.get('/api/companies/:companyId/sedes', sedeController.getByCompany);
-app.post('/api/sedes', sedeController.store);
-app.put('/api/sedes/:id', sedeController.update);
-app.delete('/api/sedes/:id', sedeController.destroy);
-app.delete('/api/sedes/:id/force', sedeController.forceDestroy);
-app.post('/api/sedes/:id/restore', sedeController.restore);
+app.get('/api/sedes', readLimiter, requirePermission('sedes.read'), sedeController.index);
+app.get('/api/sedes/:id', readLimiter, requirePermission('sedes.read'), sedeController.show);
+app.get('/api/companies/:companyId/sedes', readLimiter, requirePermission('sedes.read'), sedeController.getByCompany);
+app.post('/api/sedes', requirePermission('sedes.create'), sedeController.store);
+app.put('/api/sedes/:id', requirePermission('sedes.update'), sedeController.update);
+app.delete('/api/sedes/:id', requirePermission('sedes.delete'), sedeController.destroy);
+app.delete('/api/sedes/:id/force', requirePermission('sedes.delete'), sedeController.forceDestroy);
+app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeController.restore);
 
 // ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN UNIFICADAS =====
 
 // Endpoint unificado para órdenes de inspección
-app.get('/api/inspection-orders', requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
-app.get('/api/inspection-orders/stats', requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
-app.get('/api/inspection-orders/search', requirePermission('inspection_orders.read'), inspectionOrderController.search);
-app.get('/api/inspection-orders/:id', requirePermission('inspection_orders.read'), inspectionOrderController.show);
+app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
+app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
+app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
+app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
 app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
 app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.delete'), inspectionOrderController.destroy);
@@ -213,15 +274,15 @@ app.get('/api/users/profile', async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor', error: error.message });
     }
 });
-app.get('/api/users/trashed/all', userController.indexWithTrashed);
-app.get('/api/users/trashed/only', userController.onlyTrashed);
-app.get('/api/users', userController.index);
-app.get('/api/users/:id', userController.show);
-app.post('/api/users', userController.store);
-app.put('/api/users/:id', userController.update);
-app.delete('/api/users/:id', userController.destroy);
-app.delete('/api/users/:id/force', userController.forceDestroy);
-app.post('/api/users/:id/restore', userController.restore);
+app.get('/api/users/trashed/all', readLimiter, requirePermission('users.read'), userController.indexWithTrashed);
+app.get('/api/users/trashed/only', readLimiter, requirePermission('users.read'), userController.onlyTrashed);
+app.get('/api/users', readLimiter, requirePermission('users.read'), userController.index);
+app.get('/api/users/:id', readLimiter, requirePermission('users.read'), userController.show);
+app.post('/api/users', requirePermission('users.create'), userController.store);
+app.put('/api/users/:id', requirePermission('users.update'), userController.update);
+app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
+app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
+app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore);
 
 // Ejemplo de endpoint protegido
 app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
@@ -246,17 +307,17 @@ app.get('/api/websocket/connected-users', requirePermission('users.read'), (req,
 });
 
 // Ruta de prueba
-app.get('/api', (req, res) => {
+app.get('/api', requirePermission('system.read'), (req, res) => {
     res.json({ message: '¡Hola desde el servidor Express!' });
 });
 
 // Agregar endpoint de prueba simple
-app.get('/api/test', (req, res) => {
+app.get('/api/test', requirePermission('system.read'), (req, res) => {
     res.json({ message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
 });
 
-// Endpoint para verificar usuarios conectados (sin autenticación para debugging)
-app.get('/api/websocket/debug', (req, res) => {
+// Endpoint para verificar usuarios conectados (requiere permisos de sistema)
+app.get('/api/websocket/debug', requirePermission('system.read'), (req, res) => {
     if (webSocketSystem.isInitialized()) {
         const stats = webSocketSystem.getFullStats();
         res.json({
@@ -270,7 +331,7 @@ app.get('/api/websocket/debug', (req, res) => {
 });
 
 // Verificar que la tabla de inspection_orders existe
-app.get('/api/inspection-orders-test', async (req, res) => {
+app.get('/api/inspection-orders-test', requirePermission('inspection_orders.read'), async (req, res) => {
     try {
         const { InspectionOrder } = await import('./models/index.js');
         const count = await InspectionOrder.count();
@@ -280,8 +341,8 @@ app.get('/api/inspection-orders-test', async (req, res) => {
     }
 });
 
-// Endpoint de prueba para inspection orders sin autenticación
-app.get('/api/inspection-orders-simple', async (req, res) => {
+// Endpoint de prueba para inspection orders (requiere permisos de lectura)
+app.get('/api/inspection-orders-simple', requirePermission('inspection_orders.read'), async (req, res) => {
     try {
         const { InspectionOrder } = await import('./models/index.js');
         const orders = await InspectionOrder.findAll({
@@ -295,8 +356,8 @@ app.get('/api/inspection-orders-simple', async (req, res) => {
     }
 });
 
-// Temp Path to return SMS to send
-app.get('/sms', async (req, res) => {
+// Temp Path to return SMS to send (requiere permisos de sistema)
+app.get('/sms', requirePermission('system.read'), async (req, res) => {
     try {
         const { Appointment, InspectionOrder, InspectionModality, Sede } = await import('./models/index.js');
         const appointments = await Appointment.findAll({
@@ -365,6 +426,48 @@ app.get('/{*name}', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
 });
 
+// ===== MIDDLEWARE DE MANEJO DE ERRORES =====
+
+// Middleware para capturar errores de CORS
+app.use((err, req, res, next) => {
+    if (err.message === 'No permitido por CORS') {
+        console.error(`🚫 CORS Error: ${req.method} ${req.path} desde ${req.get('Origin')}`);
+        return res.status(403).json({
+            error: 'Acceso denegado por política de CORS',
+            message: 'El origen de la solicitud no está permitido'
+        });
+    }
+    next(err);
+});
+
+// Middleware para capturar errores de rate limiting
+app.use((err, req, res, next) => {
+    if (err.status === 429) {
+        console.warn(`⏰ Rate Limit Exceeded: ${req.method} ${req.path} desde ${req.ip}`);
+        return res.status(429).json({
+            error: 'Demasiadas solicitudes',
+            message: 'Has excedido el límite de solicitudes. Intenta de nuevo más tarde.',
+            retryAfter: err.headers?.['retry-after'] || 900
+        });
+    }
+    next(err);
+});
+
+// Middleware general de manejo de errores
+app.use((err, req, res, next) => {
+    console.error(`💥 Error no manejado: ${err.message}`);
+    console.error(`📍 Stack: ${err.stack}`);
+
+    // No exponer detalles del error en producción
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    res.status(err.status || 500).json({
+        error: 'Error interno del servidor',
+        message: isDevelopment ? err.message : 'Ha ocurrido un error inesperado',
+        ...(isDevelopment && { stack: err.stack })
+    });
+});
+
 // Sincronizar base de datos y arrancar servidor
 const startServer = async () => {
     try {
@@ -382,9 +485,15 @@ const startServer = async () => {
         app.set('webSocketSystem', webSocketSystem);
 
         server.listen(port, '0.0.0.0', () => {
-            console.log(`🚀 Servidor Express escuchando en http://  :${port}`);
+            console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);
             console.log(`📊 Base de datos: ${process.env.DATABASE_DRIVER || 'mysql'}`);
-            console.log(`🔌 WebSockets disponibles en ws://192.168.20.6:${port}`);
+            console.log(`🔌 WebSockets disponibles en ws://localhost:${port}`);
+            console.log(`🛡️ Seguridad habilitada:`);
+            console.log(`   - CORS configurado para dominios permitidos`);
+            console.log(`   - Helmet activado para headers de seguridad`);
+            console.log(`   - Rate limiting: 1000 req/15min general, 2000 req/15min lectura, 10 req/15min auth`);
+            console.log(`   - Sanitización SQL personalizada activada`);
+            console.log(`   - Logging de seguridad habilitado`);
         });
     } catch (error) {
         console.error('❌ Error al conectar con la base de datos:', error);
