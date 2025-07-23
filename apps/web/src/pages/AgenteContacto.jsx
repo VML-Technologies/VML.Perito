@@ -126,6 +126,10 @@ export default function AgenteContacto() {
                     url.searchParams.append(key, value);
                 }
             });
+
+            // Agregar contexto de agente
+            url.searchParams.append('context', 'agent');
+
             const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -135,7 +139,7 @@ export default function AgenteContacto() {
 
             if (response.ok) {
                 const data = await response.json();
-                setOrders(data.orders || []);
+                setOrders(data.data.orders || []);
             } else {
                 throw new Error('Error al cargar órdenes');
             }

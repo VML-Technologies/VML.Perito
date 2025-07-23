@@ -359,17 +359,17 @@ const AgentOrderPanel = ({
                                 <CardContent className="space-y-2 text-sm">
                                     <div className="grid grid-cols-2 gap-2">
                                         <span className="font-medium">Cliente:</span>
-                                        <span>{selectedOrder.cliente_nombre}</span>
+                                        <span>{selectedOrder.nombre_cliente}</span>
                                         <span className="font-medium">Teléfono:</span>
-                                        <span>{selectedOrder.cliente_telefono}</span>
+                                        <span>{selectedOrder.celular_cliente}</span>
                                         <span className="font-medium">Email:</span>
-                                        <span>{selectedOrder.cliente_email}</span>
+                                        <span>{selectedOrder.correo_cliente}</span>
                                         <span className="font-medium">Placa:</span>
-                                        <span className="font-mono">{selectedOrder.vehiculo_placa}</span>
+                                        <span className="font-mono">{selectedOrder.placa}</span>
                                         <span className="font-medium">Marca:</span>
-                                        <span>{selectedOrder.vehiculo_marca}</span>
+                                        <span>{selectedOrder.marca}</span>
                                         <span className="font-medium">Modelo:</span>
-                                        <span>{selectedOrder.vehiculo_modelo}</span>
+                                        <span>{selectedOrder.modelo}</span>
                                         <span className="font-medium">Intentos de contacto:</span>
                                         <span className="flex items-center gap-2">
                                             <Phone className="h-4 w-4 text-muted-foreground" />

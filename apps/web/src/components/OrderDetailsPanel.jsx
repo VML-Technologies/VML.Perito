@@ -50,11 +50,11 @@ const OrderDetailsPanel = ({
     if (!order) return null;
 
     const orderInfo = [
-        { label: 'Cliente', value: order.nombre_cliente || order.cliente_nombre },
-        { label: 'Placa', value: order.placa || order.vehiculo_placa, className: 'font-mono font-medium' },
-        { label: 'Teléfono', value: order.celular_cliente || order.cliente_telefono, className: 'font-mono' },
-        { label: 'Vehículo', value: `${order.marca || order.vehiculo_marca} ${order.linea || ''} (${order.modelo || order.vehiculo_modelo})` },
-        { label: 'Email', value: order.correo_cliente || order.cliente_email },
+        { label: 'Cliente', value: order.nombre_cliente },
+        { label: 'Placa', value: order.placa, className: 'font-mono font-medium' },
+        { label: 'Teléfono', value: order.celular_cliente, className: 'font-mono' },
+        { label: 'Vehículo', value: `${order.marca} ${order.linea || ''} (${order.modelo})` },
+        { label: 'Email', value: order.correo_cliente },
         { label: 'Documento', value: `${order.tipo_doc || ''} ${order.num_doc || ''}`, className: 'font-mono' },
         {
             label: 'Agente Asignado',

@@ -221,9 +221,9 @@ const OrdersTable = ({
                                         <td className="p-2 font-mono font-medium">#{order.numero}</td>
                                         <td className="p-2">
                                             <div className="space-y-1">
-                                                <div className="font-medium">{order.nombre_cliente || order.cliente_nombre}</div>
-                                                <div className="text-sm text-muted-foreground">{order.correo_cliente || order.cliente_email}</div>
-                                                <div className="text-sm font-mono">{order.celular_cliente || order.cliente_telefono}</div>
+                                                <div className="font-medium">{order.nombre_cliente}</div>
+                                                <div className="text-sm text-muted-foreground">{order.correo_cliente}</div>
+                                                <div className="text-sm font-mono">{order.celular_cliente}</div>
                                             </div>
                                         </td>
                                         <td className="p-2">
@@ -233,7 +233,13 @@ const OrdersTable = ({
                                                 <div className="text-sm font-mono">{order.celular_contacto}</div>
                                             </div>
                                         </td>
-                                        <td className="p-2 font-mono font-medium">{order.placa || order.vehiculo_placa}</td>
+                                        <td className="p-2 font-mono font-medium">
+                                            <div className="flex flex-col">
+                                                <span>{order.placa}</span>
+                                                <span className='text-xs text-muted-foreground'>{order.marca} - {order.modelo}</span>
+                                                <span className='text-xs font-mono'>{order.producto.split("_").join(" ")}</span>
+                                            </div>
+                                        </td>
                                         {isContactTable && (
                                             <td className="p-2">
                                                 <div className="flex items-center gap-2">
@@ -258,9 +264,12 @@ const OrdersTable = ({
                                                     {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
                                                 </Badge>
                                             ) : (
-                                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
-                                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
-                                                </Badge>
+                                                <div className='flex flex-col' s>
+                                                    <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
+                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[0]}
+                                                    </Badge>
+                                                    <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>
+                                                </div>
                                             )}
                                         </td>
                                         {showAgentColumn && !isContactTable && (
@@ -378,9 +387,9 @@ const OrdersTable = ({
                                         <div>
                                             <strong>Cliente:</strong>
                                             <div className="ml-2 space-y-1">
-                                                <div className="font-medium">{order.nombre_cliente || order.cliente_nombre}</div>
-                                                <div className="text-sm text-muted-foreground">{order.correo_cliente || order.cliente_email}</div>
-                                                <div className="text-sm font-mono">{order.celular_cliente || order.cliente_telefono}</div>
+                                                <div className="font-medium">{order.nombre_cliente}</div>
+                                                <div className="text-sm text-muted-foreground">{order.correo_cliente}</div>
+                                                <div className="text-sm font-mono">{order.celular_cliente}</div>
                                             </div>
                                         </div>
                                         <div>
@@ -392,7 +401,7 @@ const OrdersTable = ({
                                             </div>
                                         </div>
                                     </div>
-                                    <p><strong>Placa:</strong> {order.placa || order.vehiculo_placa}</p>
+                                    <p><strong>Placa:</strong> {order.placa}</p>
 
                                     {isContactTable && (
                                         <div className="flex items-center gap-2">

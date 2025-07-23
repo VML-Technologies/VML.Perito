@@ -104,18 +104,13 @@ class InspectionOrderController extends BaseController {
 
             // Búsqueda por texto
             if (search) {
-                const searchFields = context === 'agent'
-                    ? [
-                        { placa: { [Op.like]: `%${search}%` } },
-                        { nombre_cliente: { [Op.like]: `%${search}%` } }
-                    ]
-                    : [
-                        { placa: { [Op.like]: `%${search}%` } },
-                        { nombre_cliente: { [Op.like]: `%${search}%` } },
-                        { num_doc: { [Op.like]: `%${search}%` } },
-                        { correo_cliente: { [Op.like]: `%${search}%` } },
-                        { numero: { [Op.like]: `%${search}%` } }
-                    ];
+                const searchFields = [
+                    { placa: { [Op.like]: `%${search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${search}%` } },
+                    { num_doc: { [Op.like]: `%${search}%` } },
+                    { correo_cliente: { [Op.like]: `%${search}%` } },
+                    { numero: { [Op.like]: `%${search}%` } }
+                ];
 
                 whereConditions[Op.or] = searchFields;
             }
@@ -259,22 +254,25 @@ class InspectionOrderController extends BaseController {
             let transformedOrders = rows;
 
             if (context === 'agent') {
+                // Para el contexto de agente, mantener los nombres originales pero solo incluir campos necesarios
                 transformedOrders = rows.map(order => ({
                     id: order.id,
                     numero: order.numero,
-                    cliente_nombre: order.nombre_cliente,
-                    cliente_telefono: order.celular_cliente,
-                    cliente_email: order.correo_cliente,
-                    vehiculo_placa: order.placa,
-                    vehiculo_marca: order.marca,
-                    vehiculo_modelo: order.modelo,
+                    nombre_cliente: order.nombre_cliente,
+                    celular_cliente: order.celular_cliente,
+                    correo_cliente: order.correo_cliente,
+                    placa: order.placa,
+                    marca: order.marca,
+                    modelo: order.modelo,
+                    producto: order.producto,
                     InspectionOrderStatus: order.InspectionOrderStatus,
                     inspection_result: order.inspection_result,
                     callLogs: order.callLogs,
                     callLogsCount: order.callLogs ? order.callLogs.length : 0,
                     nombre_contacto: order.nombre_contacto,
                     celular_contacto: order.celular_contacto,
-                    correo_contacto: order.correo_contacto
+                    correo_contacto: order.correo_contacto,
+                    created_at: order.created_at
                 }));
             }
 
