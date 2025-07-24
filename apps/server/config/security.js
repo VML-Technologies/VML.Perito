@@ -37,7 +37,7 @@ export const securityConfig = {
     rateLimitConfig: {
         general: {
             windowMs: 15 * 60 * 1000, // 15 minutos
-            max: 1000, // máximo 1000 requests por ventana (más apropiado para apps empresariales)
+            max: 3000, // máximo 1000 requests por ventana (más apropiado para apps empresariales)
             message: {
                 error: 'Demasiadas solicitudes desde esta IP, intenta de nuevo en 15 minutos.',
                 retryAfter: 15 * 60
@@ -45,7 +45,25 @@ export const securityConfig = {
             standardHeaders: true,
             legacyHeaders: false,
             skipSuccessfulRequests: false,
-            skipFailedRequests: false
+            skipFailedRequests: false,
+            // Configuración para identificar IP correctamente (importante para proxies)
+            keyGenerator: (req) => {
+                // Usar la IP real configurada en el middleware
+                return req.realIP ||
+                    req.headers['x-forwarded-for']?.split(',')[0] ||
+                    req.headers['x-real-ip'] ||
+                    req.connection?.remoteAddress ||
+                    req.socket?.remoteAddress ||
+                    req.ip ||
+                    'unknown';
+            },
+            // Función para saltar ciertas rutas del rate limiting
+            skip: (req) => {
+                // Saltar health checks y endpoints de monitoreo
+                return req.path === '/health' ||
+                    req.path === '/api/health' ||
+                    req.path === '/api/websocket/stats';
+            }
         },
         auth: {
             windowMs: 15 * 60 * 1000, // 15 minutos
@@ -57,12 +75,22 @@ export const securityConfig = {
             standardHeaders: true,
             legacyHeaders: false,
             skipSuccessfulRequests: true,
-            skipFailedRequests: false
+            skipFailedRequests: false,
+            // Configuración para identificar IP correctamente
+            keyGenerator: (req) => {
+                return req.realIP ||
+                    req.headers['x-forwarded-for']?.split(',')[0] ||
+                    req.headers['x-real-ip'] ||
+                    req.connection?.remoteAddress ||
+                    req.socket?.remoteAddress ||
+                    req.ip ||
+                    'unknown';
+            }
         },
         // Rate limiting específico para endpoints de lectura (más permisivo)
         read: {
             windowMs: 15 * 60 * 1000, // 15 minutos
-            max: 2000, // máximo 2000 requests de lectura por ventana
+            max: 5000, // máximo 2000 requests de lectura por ventana
             message: {
                 error: 'Demasiadas solicitudes de lectura desde esta IP, intenta de nuevo en 15 minutos.',
                 retryAfter: 15 * 60
@@ -70,7 +98,17 @@ export const securityConfig = {
             standardHeaders: true,
             legacyHeaders: false,
             skipSuccessfulRequests: false,
-            skipFailedRequests: false
+            skipFailedRequests: false,
+            // Configuración para identificar IP correctamente
+            keyGenerator: (req) => {
+                return req.realIP ||
+                    req.headers['x-forwarded-for']?.split(',')[0] ||
+                    req.headers['x-real-ip'] ||
+                    req.connection?.remoteAddress ||
+                    req.socket?.remoteAddress ||
+                    req.ip ||
+                    'unknown';
+            }
         }
     },
 

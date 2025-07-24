@@ -46,6 +46,22 @@ const __dirname = path.dirname(__filename);
 
 // ===== CONFIGURACIÓN DE SEGURIDAD =====
 
+// Middleware para configurar correctamente la IP del cliente (importante para rate limiting)
+app.use((req, res, next) => {
+    // Configurar la IP real del cliente cuando hay proxies
+    req.realIP = req.headers['x-forwarded-for']?.split(',')[0] ||
+        req.headers['x-real-ip'] ||
+        req.connection?.remoteAddress ||
+        req.socket?.remoteAddress ||
+        req.ip ||
+        'unknown';
+
+    // Limpiar la IP (remover prefijos como ::ffff:)
+    req.realIP = req.realIP.replace(/^::ffff:/, '');
+
+    next();
+});
+
 // Configurar CORS usando configuración centralizada
 app.use(cors(createCorsConfig()));
 
@@ -59,6 +75,19 @@ const readLimiter = rateLimit(securityConfig.rateLimitConfig.read);
 
 // Aplicar rate limiting general
 app.use(limiter);
+
+// Middleware para logging de rate limiting
+app.use((req, res, next) => {
+    // Interceptar respuestas de rate limiting
+    const originalSend = res.send;
+    res.send = function (data) {
+        if (res.statusCode === 429) {
+            console.warn(`🚫 RATE LIMIT EXCEEDED: IP ${req.realIP} - ${req.method} ${req.path} - Headers: ${JSON.stringify(res.getHeaders())}`);
+        }
+        originalSend.call(this, data);
+    };
+    next();
+});
 
 // Sanitización de datos para SQL (prevención de inyección SQL)
 app.use(sqlSanitizerMiddleware);
@@ -79,8 +108,8 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
     const start = Date.now();
 
-    // Log de la solicitud
-    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path} - IP: ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
+    // Log de la solicitud con IP real
+    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path} - IP Real: ${req.realIP} - User-Agent: ${req.get('User-Agent')}`);
 
     // Interceptar la respuesta para logging
     const originalSend = res.send;
@@ -89,7 +118,7 @@ app.use((req, res, next) => {
         const status = res.statusCode;
 
         // Log de respuesta con colores según el status
-        let logMessage = `📤 [${new Date().toISOString()}] ${req.method} ${req.path} - Status: ${status} - Duration: ${duration}ms`;
+        let logMessage = `📤 [${new Date().toISOString()}] ${req.method} ${req.path} - IP: ${req.realIP} - Status: ${status} - Duration: ${duration}ms`;
 
         if (status >= 400) {
             console.error(`❌ ${logMessage}`);
@@ -311,6 +340,21 @@ app.get('/api', requirePermission('system.read'), (req, res) => {
     res.json({ message: '¡Hola desde el servidor Express!' });
 });
 
+// Endpoint de prueba para rate limiting
+app.get('/api/test-rate-limit', (req, res) => {
+    res.json({
+        message: 'Rate limiting funcionando correctamente',
+        ip: req.realIP,
+        timestamp: new Date().toISOString(),
+        rateLimit: req.rateLimit,
+        headers: {
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'x-real-ip': req.headers['x-real-ip'],
+            'remote-address': req.connection?.remoteAddress
+        }
+    });
+});
+
 // Agregar endpoint de prueba simple
 app.get('/api/test', requirePermission('system.read'), (req, res) => {
     res.json({ message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
@@ -443,11 +487,13 @@ app.use((err, req, res, next) => {
 // Middleware para capturar errores de rate limiting
 app.use((err, req, res, next) => {
     if (err.status === 429) {
-        console.warn(`⏰ Rate Limit Exceeded: ${req.method} ${req.path} desde ${req.ip}`);
+        console.warn(`⏰ Rate Limit Exceeded: IP ${req.realIP} - ${req.method} ${req.path} - Retry-After: ${err.headers?.['retry-after'] || 'unknown'}`);
         return res.status(429).json({
             error: 'Demasiadas solicitudes',
             message: 'Has excedido el límite de solicitudes. Intenta de nuevo más tarde.',
-            retryAfter: err.headers?.['retry-after'] || 900
+            retryAfter: err.headers?.['retry-after'] || 900,
+            ip: req.realIP,
+            timestamp: new Date().toISOString()
         });
     }
     next(err);
@@ -491,9 +537,11 @@ const startServer = async () => {
             console.log(`🛡️ Seguridad habilitada:`);
             console.log(`   - CORS configurado para dominios permitidos`);
             console.log(`   - Helmet activado para headers de seguridad`);
-            console.log(`   - Rate limiting: 1000 req/15min general, 2000 req/15min lectura, 10 req/15min auth`);
+            console.log(`   - Rate limiting por IP: 1000 req/15min general, 2000 req/15min lectura, 10 req/15min auth`);
+            console.log(`   - Detección de IP mejorada para proxies y load balancers`);
             console.log(`   - Sanitización SQL personalizada activada`);
             console.log(`   - Logging de seguridad habilitado`);
+            console.log(`   - Endpoint de prueba: /api/test-rate-limit`);
         });
     } catch (error) {
         console.error('❌ Error al conectar con la base de datos:', error);
