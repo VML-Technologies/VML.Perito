@@ -311,12 +311,7 @@ app.post('/api/users', requirePermission('users.create'), userController.store);
 app.put('/api/users/:id', requirePermission('users.update'), userController.update);
 app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
-app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore);
-
-// Ejemplo de endpoint protegido
-app.get('/api/users/protected', requirePermission('users.read'), (req, res) => {
-    res.json({ message: 'Tienes permiso para ver usuarios', user: req.user });
-});
+app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore)
 
 // Rutas WebSocket para pruebas y administración
 app.get('/api/websocket/stats', requirePermission('system.read'), (req, res) => {
@@ -355,11 +350,6 @@ app.get('/api/test-rate-limit', (req, res) => {
     });
 });
 
-// Agregar endpoint de prueba simple
-app.get('/api/test', requirePermission('system.read'), (req, res) => {
-    res.json({ message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
-});
-
 // Endpoint para verificar usuarios conectados (requiere permisos de sistema)
 app.get('/api/websocket/debug', requirePermission('system.read'), (req, res) => {
     if (webSocketSystem.isInitialized()) {
@@ -371,32 +361,6 @@ app.get('/api/websocket/debug', requirePermission('system.read'), (req, res) => 
         });
     } else {
         res.status(503).json({ message: 'Sistema de WebSockets no inicializado' });
-    }
-});
-
-// Verificar que la tabla de inspection_orders existe
-app.get('/api/inspection-orders-test', requirePermission('inspection_orders.read'), async (req, res) => {
-    try {
-        const { InspectionOrder } = await import('./models/index.js');
-        const count = await InspectionOrder.count();
-        res.json({ message: 'Tabla accessible', count });
-    } catch (error) {
-        res.status(500).json({ error: error.message, stack: error.stack });
-    }
-});
-
-// Endpoint de prueba para inspection orders (requiere permisos de lectura)
-app.get('/api/inspection-orders-simple', requirePermission('inspection_orders.read'), async (req, res) => {
-    try {
-        const { InspectionOrder } = await import('./models/index.js');
-        const orders = await InspectionOrder.findAll({
-            limit: 5,
-            order: [['created_at', 'DESC']]
-        });
-        res.json({ message: 'Consulta exitosa', count: orders.length, orders });
-    } catch (error) {
-        console.error('Error en consulta simple:', error);
-        res.status(500).json({ error: error.message, stack: error.stack });
     }
 });
 
