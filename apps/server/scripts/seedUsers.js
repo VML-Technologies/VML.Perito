@@ -146,23 +146,6 @@ const seedUsers = async () => {
                     notification_channel_whatsapp_enabled: true,
                 },
                 roles: ['agente_contacto']
-            },
-
-            // Usuario Supervisora con múltiples roles
-            {
-                userData: {
-                    sede_id: 1,
-                    name: 'Patricia Supervisora',
-                    email: 'supervisora@vmlperito.com',
-                    phone: '300-2468135',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['comercial_mundial', 'coordinador_contacto', 'agente_contacto'] // Usuario con múltiples roles
             }
         ];
 
