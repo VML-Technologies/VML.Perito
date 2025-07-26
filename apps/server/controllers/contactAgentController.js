@@ -151,12 +151,14 @@ class ContactAgentController {
             }));
 
             res.json({
-                orders: transformedOrders,
-                pagination: {
-                    total: count,
-                    page: parseInt(page),
-                    pages: Math.ceil(count / parseInt(limit)),
-                    limit: parseInt(limit)
+                data: {
+                    orders: transformedOrders,
+                    pagination: {
+                        total: count,
+                        page: parseInt(page),
+                        pages: Math.ceil(count / parseInt(limit)),
+                        limit: parseInt(limit)
+                    }
                 }
             });
         } catch (error) {

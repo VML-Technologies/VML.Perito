@@ -9,7 +9,7 @@ import City from '../models/city.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 
 // Registrar permisos
 registerPermission({
@@ -174,72 +174,31 @@ class InspectionOrderController extends BaseController {
                     model: InspectionOrderStatus,
                     as: 'InspectionOrderStatus',
                     attributes: ['id', 'name', 'description']
-                }
-            ];
-
-            // Includes específicos para agente
-            if (context === 'agent') {
-                includes.push({
+                }, {
+                    model: User,
+                    as: 'AssignedAgent',
+                    attributes: ['id', 'name', 'email'],
+                    required: false
+                }, {
                     model: CallLog,
                     as: 'callLogs',
+                    attributes: ['id', 'comments', 'created_at'],
                     include: [
                         {
                             model: CallStatus,
                             as: 'status',
-                            attributes: ['id', 'name', 'creates_schedule']
+                            attributes: ['name']
                         },
                         {
                             model: User,
                             as: 'Agent',
-                            attributes: ['id', 'name', 'email'],
+                            attributes: ['name'],
                             required: false
                         }
                     ],
                     order: [['call_time', 'DESC']]
-                });
-            }
-
-            // Includes para coordinador y comercial
-            if (context === 'coordinator' || context === 'comercial') {
-                includes.push(
-                    {
-                        model: User,
-                        as: 'AssignedAgent',
-                        attributes: ['id', 'name', 'email'],
-                        required: false
-                    },
-                    {
-                        model: User,
-                        as: 'Creator',
-                        attributes: ['id', 'name', 'email'],
-                        required: false
-                    }
-                );
-
-                // Includes adicionales para coordinador
-                if (context === 'coordinator') {
-                    includes.push({
-                        model: Sede,
-                        as: 'Sede',
-                        attributes: ['id', 'name'],
-                        required: false,
-                        include: [
-                            {
-                                model: City,
-                                as: 'city',
-                                attributes: ['id', 'name'],
-                                include: [
-                                    {
-                                        model: Department,
-                                        as: 'department',
-                                        attributes: ['id', 'name']
-                                    }
-                                ]
-                            }
-                        ]
-                    });
-                }
-            }
+                },
+            ];
 
             const { count, rows } = await InspectionOrder.findAndCountAll({
                 where: whereConditions,
@@ -272,19 +231,22 @@ class InspectionOrderController extends BaseController {
                     nombre_contacto: order.nombre_contacto,
                     celular_contacto: order.celular_contacto,
                     correo_contacto: order.correo_contacto,
-                    created_at: order.created_at
+                    created_at: order.created_at,
+                    AssignedAgent: order.AssignedAgent // <-- incluir el agente asignado
                 }));
             }
 
             // Respuesta según el contexto
             if (context === 'agent') {
                 res.json({
-                    orders: transformedOrders,
-                    pagination: {
-                        total: count,
-                        page: parseInt(page),
-                        pages: Math.ceil(count / parseInt(limit)),
-                        limit: parseInt(limit)
+                    data: {
+                        orders: transformedOrders,
+                        pagination: {
+                            total: count,
+                            page: parseInt(page),
+                            pages: Math.ceil(count / parseInt(limit)),
+                            limit: parseInt(limit)
+                        }
                     }
                 });
             } else {

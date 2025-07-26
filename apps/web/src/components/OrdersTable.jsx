@@ -50,7 +50,7 @@ const OrdersTable = ({
 
         const resultVariants = {
             'RECHAZADO - Vehículo no asegurable': 'destructive',
-            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'outline', // Custom style for this specific case
+            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'default',
             'PENDIENTE - Inspección en proceso': 'secondary',
             'APROBADO - Vehículo asegurable': 'default'
         };
@@ -120,6 +120,29 @@ const OrdersTable = ({
             : `${pagination.total || orders.length} órdenes encontradas`;
     };
 
+    /**
+     * Obtiene el conteo de intentos de llamada para una orden.
+     * @param {Object} order - La orden de inspección
+     * @returns {number} El número de intentos de llamada
+     */
+    const getCallLogsCount = (order) => {
+        // Método 1: Si callLogsCount está disponible, usarlo
+        if (order.callLogsCount !== undefined && order.callLogsCount !== null) {
+            const count = parseInt(order.callLogsCount);
+            if (!isNaN(count)) {
+                return count;
+            }
+        }
+
+        // Método 2: Si callLogs es un array, usar su longitud
+        if (Array.isArray(order.callLogs)) {
+            return order.callLogs.length;
+        }
+
+        // Valor por defecto
+        return 0;
+    };
+
     return (
         <Card className="rounded-lg shadow-md">
             <CardHeader className="pb-4">
@@ -175,7 +198,7 @@ const OrdersTable = ({
                                         Placa {getSortIcon('placa')}
                                     </Button>
                                 </th>
-                                {isContactTable && <th className="text-left p-2">Intentos</th>}
+                                <th className="text-left p-2">Intentos</th>
                                 <th className="text-left p-2">
                                     <Button
                                         variant="ghost"
@@ -187,9 +210,7 @@ const OrdersTable = ({
                                     </Button>
                                 </th>
                                 <th className="text-left p-2">Estado</th>
-                                {showAgentColumn && !isContactTable && (
-                                    <th className="text-left p-2">Agente Asignado</th>
-                                )}
+                                <th className="text-left p-2">Agente Asignado</th>
                                 {showActions && (
                                     <th className="text-left p-2">Acciones</th>
                                 )}
@@ -240,44 +261,38 @@ const OrdersTable = ({
                                                 <span className='text-xs font-mono'>{order.producto.split("_").join(" ")}</span>
                                             </div>
                                         </td>
-                                        {isContactTable && (
-                                            <td className="p-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Phone className="h-4 w-4 text-muted-foreground" />
-                                                    <span className={`font-medium text-sm px-2 py-1 rounded-full ${(order.callLogsCount || 0) === 0
-                                                        ? 'bg-gray-100 text-gray-600'
-                                                        : (order.callLogsCount || 0) <= 2
-                                                            ? 'bg-blue-100 text-blue-700'
-                                                            : (order.callLogsCount || 0) <= 4
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {order.callLogsCount || order.callLogs?.length || 0}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                        )}
+                                        <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                                <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) === 0
+                                                    ? 'bg-gray-100 text-gray-600'
+                                                    : getCallLogsCount(order) <= 2
+                                                        ? 'bg-blue-100 text-blue-700'
+                                                        : getCallLogsCount(order) <= 4
+                                                            ? 'bg-yellow-100 text-yellow-700'
+                                                            : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                    {getCallLogsCount(order)}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
                                         <td className="p-2">
-                                            {order.inspection_result === 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
-                                                <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
-                                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
+                                            <div className='flex flex-col'>
+                                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
+                                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[0]}
                                                 </Badge>
-                                            ) : (
-                                                <div className='flex flex-col' s>
-                                                    <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
-                                                        {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[0]}
-                                                    </Badge>
-                                                    <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>
-                                                </div>
-                                            )}
+                                                <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>
+                                            </div>
                                         </td>
-                                        {showAgentColumn && !isContactTable && (
+                                        {showAgentColumn && (
                                             <td className="p-2">
                                                 {order.AssignedAgent ? (
                                                     <div className="flex items-center gap-2">
                                                         <UserCheck className="h-4 w-4 text-green-600" />
-                                                        <span className="text-sm">{order.AssignedAgent.name}</span>
+                                                        <span className="text-sm">
+                                                            {order.AssignedAgent.name}
+                                                        </span>
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center gap-2">
@@ -403,24 +418,24 @@ const OrdersTable = ({
                                     </div>
                                     <p><strong>Placa:</strong> {order.placa}</p>
 
-                                    {isContactTable && (
+                                    {/* {isContactTable && ( */}
+                                    <div className="flex items-center gap-2">
+                                        <strong>Intentos:</strong>
                                         <div className="flex items-center gap-2">
-                                            <strong>Intentos:</strong>
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                                <span className={`font-medium text-sm px-2 py-1 rounded-full ${(order.callLogsCount || 0) === 0
-                                                    ? 'bg-gray-100 text-gray-600'
-                                                    : (order.callLogsCount || 0) <= 2
-                                                        ? 'bg-blue-100 text-blue-700'
-                                                        : (order.callLogsCount || 0) <= 4
-                                                            ? 'bg-yellow-100 text-yellow-700'
-                                                            : 'bg-red-100 text-red-700'
-                                                    }`}>
-                                                    {order.callLogsCount || order.callLogs?.length || 0}
-                                                </span>
-                                            </div>
+                                            <Phone className="h-4 w-4 text-muted-foreground" />
+                                            <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) === 0
+                                                ? 'bg-gray-100 text-gray-600'
+                                                : getCallLogsCount(order) <= 2
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : getCallLogsCount(order) <= 4
+                                                        ? 'bg-yellow-100 text-yellow-700'
+                                                        : 'bg-red-100 text-red-700'
+                                                }`}>
+                                                {getCallLogsCount(order)}
+                                            </span>
                                         </div>
-                                    )}
+                                    </div>
+                                    {/* )} */}
 
                                     {showAgentColumn && !isContactTable && (
                                         <div className="flex items-center gap-2">

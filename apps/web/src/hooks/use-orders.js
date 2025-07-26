@@ -41,7 +41,12 @@ export const useOrders = (apiEndpoint, options = {}) => {
                 ...filters
             });
 
-            const response = await fetch(`${apiEndpoint}?${params}`, {
+            const finalUrl = `${apiEndpoint}?${params}`;
+            console.log('🔍 URL construida:', finalUrl);
+            console.log('🔍 apiEndpoint original:', apiEndpoint);
+            console.log('🔍 Parámetros adicionales:', Object.fromEntries(params));
+
+            const response = await fetch(finalUrl, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -50,6 +55,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
 
             if (response.ok) {
                 const data = await response.json();
+
                 setOrders(data.data?.orders || data.orders || []);
                 if (data.data?.pagination) {
                     setPagination(prev => ({

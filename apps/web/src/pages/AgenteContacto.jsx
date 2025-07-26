@@ -117,6 +117,7 @@ export default function AgenteContacto() {
 
     const loadOrders = async () => {
         try {
+            setLoading(true);
             const token = localStorage.getItem('authToken');
             const url = new URL(API_ROUTES.CONTACT_AGENT.ORDERS);
 
@@ -137,15 +138,22 @@ export default function AgenteContacto() {
                 }
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setOrders(data.data.orders || []);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.data && data.data.orders) {
+                setOrders(data.data.orders);
             } else {
-                throw new Error('Error al cargar órdenes');
+                setOrders([]);
             }
         } catch (error) {
-            console.error('Error loading orders:', error);
-            showToast('Error al cargar las órdenes', 'error');
+            console.error('Error al cargar órdenes:', error);
+            // setError('Error al cargar las órdenes'); // This line was not in the original file, so it's removed.
+        } finally {
+            setLoading(false);
         }
     };
 
