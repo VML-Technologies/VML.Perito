@@ -111,9 +111,6 @@ const seedAll = async () => {
         console.log('\n👨‍💼 AGENTE DE CONTACT CENTER (Gestionar llamadas):');
         console.log('   Email: agente1@vmlperito.com');
         console.log('   Contraseña: 123456');
-        console.log('\n👩‍💼 SUPERVISORA (Todos los roles):');
-        console.log('   Email: supervisora@vmlperito.com');
-        console.log('   Contraseña: 123456');
 
     } catch (error) {
         console.error('❌ Error en el proceso de seed:', error);
