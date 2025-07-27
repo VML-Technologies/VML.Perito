@@ -7,6 +7,7 @@ import { RoleBasedRoute } from "@/components/RoleBasedRoute"
 import { Dashboard } from "@/pages/Dashboard"
 import Admin from "@/pages/Admin"
 import Profile from "@/pages/Profile"
+import ForcedPasswordChange from "@/pages/ForcedPasswordChange"
 import ComercialMundial from "@/pages/ComercialMundial"
 import AgenteContacto from "@/pages/AgenteContacto"
 import CoordinadorContacto from "@/pages/CoordinadorContacto"
@@ -69,6 +70,12 @@ function AppContent() {
               <Profile />
             </AuthenticatedLayout>
           }
+        />
+
+        {/* Ruta de cambio de contraseña forzado */}
+        <Route
+          path="/forced-password-change"
+          element={<ForcedPasswordChange />}
         />
 
         {/* ===== NUEVAS RUTAS - SISTEMA DE INSPECCIONES ===== */}

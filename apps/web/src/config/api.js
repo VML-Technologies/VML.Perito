@@ -6,6 +6,8 @@ export const API_ROUTES = {
         LOGIN: `${API_BASE_URL}/api/auth/login`,
         VERIFY: `${API_BASE_URL}/api/auth/verify`,
         LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+        CHANGE_TEMPORARY_PASSWORD: `${API_BASE_URL}/api/auth/change-temporary-password`,
+        CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
     },
     USERS: {
         PROFILE: `${API_BASE_URL}/api/users/profile`,
