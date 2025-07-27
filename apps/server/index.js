@@ -7,7 +7,7 @@ import { createServer } from 'http';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import sequelize from './config/database.js';
-import { login, verify, logout } from './controllers/authController.js';
+import { login, verify, logout, changeTemporaryPassword, changePassword } from './controllers/authController.js';
 import userController from './controllers/userController.js';
 import departmentController from './controllers/departmentController.js';
 import cityController from './controllers/cityController.js';
@@ -141,6 +141,8 @@ const staticPath = path.join(__dirname, '../web/dist');
 app.post('/api/auth/login', authLimiter, login);
 app.get('/api/auth/verify', authLimiter, verify);
 app.post('/api/auth/logout', authLimiter, logout);
+app.post('/api/auth/change-temporary-password', authLimiter, requireAuth, changeTemporaryPassword);
+app.post('/api/auth/change-password', authLimiter, requireAuth, changePassword);
 
 // Rutas RBAC
 app.get('/api/permissions', readLimiter, requirePermission('permissions.read'), permissionController.index);
