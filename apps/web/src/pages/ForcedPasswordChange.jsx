@@ -10,7 +10,7 @@ import { useNotificationContext } from '@/contexts/notification-context';
 import { useNavigate } from 'react-router-dom';
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
 import PasswordValidationErrors from '@/components/PasswordValidationErrors';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 const ForcedPasswordChange = () => {
     const { user, updateUser } = useAuth();
