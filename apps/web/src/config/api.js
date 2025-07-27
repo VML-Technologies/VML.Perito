@@ -57,7 +57,6 @@ export const API_ROUTES = {
     },
     // ===== RUTAS - Agente de Contact =====
     CONTACT_AGENT: {
-        ORDERS: `${API_BASE_URL}/api/inspection-orders?context=agent`,
         ORDER_DETAILS: (id) => `${API_BASE_URL}/api/contact-agent/orders/${id}`,
         CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
         CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
@@ -72,7 +71,6 @@ export const API_ROUTES = {
     },
     // ===== RUTAS - Coordinador de Contact Center =====
     COORDINADOR_CONTACTO: {
-        ORDERS: `${API_BASE_URL}/api/inspection-orders?context=coordinator`,
         ORDER_DETAILS: (id) => `${API_BASE_URL}/api/coordinador-contacto/orders/${id}`,
         STATS: `${API_BASE_URL}/api/coordinador-contacto/stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,

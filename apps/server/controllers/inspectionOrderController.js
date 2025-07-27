@@ -8,6 +8,7 @@ import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
+import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op, Sequelize } from 'sequelize';
 
@@ -92,13 +93,20 @@ class InspectionOrderController extends BaseController {
             // Construir condiciones WHERE según el contexto
             const whereConditions = {};
 
-            // Contexto específico para Agente de Contact
-            if (context === 'agent') {
+            const user = await User.findByPk(req.user.id, {
+                include: [{
+                    model: Role,
+                    as: 'roles',
+                    through: { attributes: [] }
+                }]
+            });
+
+            if (user.roles.some(role => role.name === 'agente_contacto')) {
                 whereConditions.assigned_agent_id = req.user.id;
             }
 
             // Contexto específico para Comercial Mundial
-            if (context === 'comercial' && req.user.intermediary_key) {
+            if (user.roles.some(role => role.name === 'comercial_mundial') && req.user.intermediary_key) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
@@ -135,9 +143,12 @@ class InspectionOrderController extends BaseController {
             }
 
             // Filtro por agente asignado (solo para coordinador)
-            if (context === 'coordinator' && assigned_agent_id) {
+            if (user.roles.some(role => role.name === 'coordinador_contacto') && assigned_agent_id) {
+                console.log(assigned_agent_id)
                 if (assigned_agent_id === 'unassigned') {
                     whereConditions.assigned_agent_id = null;
+                } else if (assigned_agent_id === 'assigned') {
+                    whereConditions.assigned_agent_id = { [Op.not]: null };
                 } else {
                     whereConditions.assigned_agent_id = assigned_agent_id;
                 }
@@ -160,7 +171,7 @@ class InspectionOrderController extends BaseController {
                 whereConditions.created_at = dateConditions;
             }
 
-            // Validar campos de ordenamiento
+            // // Validar campos de ordenamiento
             const allowedSortFields = [
                 'id', 'numero', 'nombre_cliente', 'placa', 'created_at',
                 'status', 'assigned_agent_id'
@@ -168,7 +179,6 @@ class InspectionOrderController extends BaseController {
             const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
             const validSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
-            // Construir includes según el contexto
             const includes = [
                 {
                     model: InspectionOrderStatus,
@@ -209,71 +219,51 @@ class InspectionOrderController extends BaseController {
                 distinct: true
             });
 
-            // Transformar datos según el contexto
-            let transformedOrders = rows;
+            let transformedOrders = rows.map(order => ({
+                id: order.id,
+                numero: order.numero,
+                nombre_cliente: order.nombre_cliente,
+                celular_cliente: order.celular_cliente,
+                correo_cliente: order.correo_cliente,
+                placa: order.placa,
+                marca: order.marca,
+                modelo: order.modelo,
+                producto: order.producto,
+                InspectionOrderStatus: order.InspectionOrderStatus,
+                inspection_result: order.inspection_result,
+                callLogs: order.callLogs,
+                callLogsCount: order.callLogs ? order.callLogs.length : 0,
+                nombre_contacto: order.nombre_contacto,
+                celular_contacto: order.celular_contacto,
+                correo_contacto: order.correo_contacto,
+                created_at: order.created_at,
+                AssignedAgent: order.AssignedAgent,
+                intermediary_key: order.clave_intermediario
+            }));
 
-            if (context === 'agent') {
-                // Para el contexto de agente, mantener los nombres originales pero solo incluir campos necesarios
-                transformedOrders = rows.map(order => ({
-                    id: order.id,
-                    numero: order.numero,
-                    nombre_cliente: order.nombre_cliente,
-                    celular_cliente: order.celular_cliente,
-                    correo_cliente: order.correo_cliente,
-                    placa: order.placa,
-                    marca: order.marca,
-                    modelo: order.modelo,
-                    producto: order.producto,
-                    InspectionOrderStatus: order.InspectionOrderStatus,
-                    inspection_result: order.inspection_result,
-                    callLogs: order.callLogs,
-                    callLogsCount: order.callLogs ? order.callLogs.length : 0,
-                    nombre_contacto: order.nombre_contacto,
-                    celular_contacto: order.celular_contacto,
-                    correo_contacto: order.correo_contacto,
-                    created_at: order.created_at,
-                    AssignedAgent: order.AssignedAgent // <-- incluir el agente asignado
-                }));
-            }
-
-            // Respuesta según el contexto
-            if (context === 'agent') {
-                res.json({
-                    data: {
-                        orders: transformedOrders,
-                        pagination: {
-                            total: count,
-                            page: parseInt(page),
-                            pages: Math.ceil(count / parseInt(limit)),
-                            limit: parseInt(limit)
-                        }
+            res.json({
+                success: true,
+                data: {
+                    orders: transformedOrders,
+                    pagination: {
+                        total: count,
+                        page: parseInt(page),
+                        pages: Math.ceil(count / parseInt(limit)),
+                        limit: parseInt(limit),
+                        hasNext: parseInt(page) < Math.ceil(count / parseInt(limit)),
+                        hasPrev: parseInt(page) > 1
+                    },
+                    filters: {
+                        search,
+                        status,
+                        assigned_agent_id,
+                        date_from,
+                        date_to,
+                        sortBy: validSortBy,
+                        sortOrder: validSortOrder
                     }
-                });
-            } else {
-                res.json({
-                    success: true,
-                    data: {
-                        orders: transformedOrders,
-                        pagination: {
-                            total: count,
-                            page: parseInt(page),
-                            pages: Math.ceil(count / parseInt(limit)),
-                            limit: parseInt(limit),
-                            hasNext: parseInt(page) < Math.ceil(count / parseInt(limit)),
-                            hasPrev: parseInt(page) > 1
-                        },
-                        filters: {
-                            search,
-                            status,
-                            assigned_agent_id,
-                            date_from,
-                            date_to,
-                            sortBy: validSortBy,
-                            sortOrder: validSortOrder
-                        }
-                    }
-                });
-            }
+                }
+            });
         } catch (error) {
             console.error('Error al obtener órdenes:', error);
             res.status(500).json({
