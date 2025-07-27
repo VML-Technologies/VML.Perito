@@ -114,8 +114,9 @@ const OrdersFilters = ({
                                     <SelectValue placeholder="Todos los agentes" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-md shadow-lg">
-                                    <SelectItem value="all">Todos los agentes</SelectItem>
+                                    <SelectItem value="all">Todos</SelectItem>
                                     <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                    <SelectItem value="assigned">Asignados</SelectItem>
                                     {agents.filter(agent => agent.id && agent.name).map((agent) => (
                                         <SelectItem key={agent.id} value={agent.id.toString()}>
                                             {agent.name}
