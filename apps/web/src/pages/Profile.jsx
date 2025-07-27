@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,8 @@ import {
     Key,
     Eye,
     EyeOff,
-    ChevronDown
+    ChevronDown,
+    ArrowLeft
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
@@ -36,7 +37,7 @@ export default function Profile() {
     const { user, updateUser } = useAuth();
     const { showToast } = useNotificationContext();
     const location = useLocation();
-
+    const navigate = useNavigate();
     // Estados para edición de perfil
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -214,23 +215,12 @@ export default function Profile() {
                     <p className="text-muted-foreground">Gestiona tu información personal</p>
                 </div>
                 <div className="flex gap-2">
-                    {!isEditing ? (
-                        <Button onClick={() => setIsEditing(true)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar Perfil
-                        </Button>
-                    ) : (
-                        <>
-                            <Button variant="outline" onClick={handleCancel}>
-                                <X className="mr-2 h-4 w-4" />
-                                Cancelar
-                            </Button>
-                            <Button onClick={handleSave} disabled={saving}>
-                                <Save className="mr-2 h-4 w-4" />
-                                {saving ? 'Guardando...' : 'Guardar'}
-                            </Button>
-                        </>
-                    )}
+                    <Button onClick={() => {
+                        navigate('/dashboard');
+                    }}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Regresar
+                    </Button>
                 </div>
             </div>
 
