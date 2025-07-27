@@ -48,6 +48,11 @@ const User = createModelWithSoftDeletes('User', {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
+    temporary_password: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false,
+    },
 }, {
     tableName: 'users',
 });

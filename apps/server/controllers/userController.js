@@ -4,7 +4,7 @@ import Sede from '../models/sede.js';
 import Company from '../models/company.js';
 import Role from '../models/role.js';
 import Permission from '../models/permission.js';
-import bcrypt from 'bcryptjs';
+import PasswordService from '../services/passwordService.js';
 import webSocketSystem from '../websocket/index.js';
 
 class UserController extends BaseController {
@@ -28,11 +28,22 @@ class UserController extends BaseController {
     async store(req, res) {
         try {
             const { password, ...userData } = req.body;
-            const hashedPassword = await bcrypt.hash(password, 10);
+            
+            // Validar contraseña según la política
+            const passwordValidation = PasswordService.validatePassword(password);
+            if (!passwordValidation.isValid) {
+                return res.status(400).json({ 
+                    message: 'La contraseña no cumple con los requisitos de seguridad',
+                    errors: passwordValidation.errors
+                });
+            }
+
+            const hashedPassword = await PasswordService.hashPassword(password);
 
             const user = await this.model.create({
                 ...userData,
                 password: hashedPassword,
+                temporary_password: false, // Por defecto no es temporal
             });
 
             // No devolver la contraseña en la respuesta
@@ -59,16 +70,41 @@ class UserController extends BaseController {
     // Sobrescribir el método update para manejar contraseñas
     async update(req, res) {
         try {
-            const { password, ...userData } = req.body;
+            const { password, currentPassword, ...userData } = req.body;
             const user = await this.model.findByPk(req.params.id);
 
             if (!user) {
                 return res.status(404).json({ message: 'Usuario no encontrado' });
             }
 
-            // Si se está actualizando la contraseña, hashearla
+            // Si se está actualizando la contraseña, validar la contraseña actual
             if (password) {
-                userData.password = await bcrypt.hash(password, 10);
+                if (!currentPassword) {
+                    return res.status(400).json({ message: 'La contraseña actual es requerida para cambiar la contraseña' });
+                }
+
+                // Verificar que la contraseña actual sea correcta
+                const isValidCurrentPassword = await PasswordService.verifyPassword(currentPassword, user.password);
+                if (!isValidCurrentPassword) {
+                    return res.status(400).json({ message: 'La contraseña actual es incorrecta' });
+                }
+
+                // Validar la nueva contraseña según la política
+                const passwordValidation = PasswordService.validatePassword(password);
+                if (!passwordValidation.isValid) {
+                    return res.status(400).json({ 
+                        message: 'La nueva contraseña no cumple con los requisitos de seguridad',
+                        errors: passwordValidation.errors
+                    });
+                }
+
+                // Hashear la nueva contraseña
+                userData.password = await PasswordService.hashPassword(password);
+                
+                // Si el usuario tenía contraseña temporal, marcarla como permanente
+                if (user.temporary_password) {
+                    userData.temporary_password = false;
+                }
             }
 
             await user.update(userData);
