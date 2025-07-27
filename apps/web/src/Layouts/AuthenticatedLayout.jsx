@@ -7,14 +7,29 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 function AuthenticatedLayout({ children }) {
     const { user, logout } = useAuth();
     const { hasRole, loading } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
     const { toast, hideToast } = useNotificationContext();
-    // Inicializar WebSocket para toda la aplicación autenticada
+    const navigate = useNavigate();
+    const location = useLocation();
+
     useWebSocket();
+
+    useEffect(() => {
+        if (user?.temporary_password && location.pathname !== '/forced-password-change') {
+            navigate('/forced-password-change', { replace: true });
+        }
+    }, [user?.temporary_password, location.pathname, navigate]);
+
+    if (user?.temporary_password && location.pathname !== '/forced-password-change') {
+        return null;
+    }
+
     return (
         <ProtectedRoute>
             <SidebarProvider>

@@ -98,13 +98,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateUser = (userData) => {
+        setUser(userData);
+    };
+
     const value = {
         isAuthenticated,
         user,
         loading,
         login,
         logout,
-        checkAuthStatus
+        checkAuthStatus,
+        updateUser
     };
 
     return (
