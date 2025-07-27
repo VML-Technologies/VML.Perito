@@ -210,7 +210,9 @@ const OrdersTable = ({
                                     </Button>
                                 </th>
                                 <th className="text-left p-2">Estado</th>
-                                <th className="text-left p-2">Agente Asignado</th>
+                                {showAgentColumn && (
+                                    <th className="text-left p-2">Agente Asignado</th>
+                                )}
                                 {showActions && (
                                     <th className="text-left p-2">Acciones</th>
                                 )}
@@ -238,8 +240,8 @@ const OrdersTable = ({
                             ) : (
                                 orders.map((order) => (
                                     <tr key={order.id} className="border-b hover:bg-muted/50">
-                                        <td className="p-2 font-mono font-medium">#{order.id}</td>
-                                        <td className="p-2 font-mono font-medium">#{order.numero}</td>
+                                        <td className="p-2 font-mono font-medium">{order.id}</td>
+                                        <td className="p-2 font-mono font-medium">{order.numero}</td>
                                         <td className="p-2">
                                             <div className="space-y-1">
                                                 <div className="font-medium">{order.nombre_cliente}</div>
