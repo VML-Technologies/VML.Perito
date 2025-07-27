@@ -119,7 +119,7 @@ export default function AgenteContacto() {
         try {
             setLoading(true);
             const token = localStorage.getItem('authToken');
-            const url = new URL(API_ROUTES.CONTACT_AGENT.ORDERS);
+            const url = new URL(API_ROUTES.INSPECTION_ORDERS.LIST);
 
             // Agregar filtros a la URL
             Object.entries(filters).forEach(([key, value]) => {
@@ -143,7 +143,7 @@ export default function AgenteContacto() {
             }
 
             const data = await response.json();
-            
+
             if (data.data && data.data.orders) {
                 setOrders(data.data.orders);
             } else {

@@ -29,7 +29,7 @@ export default function CoordinadorContacto() {
         handleSort,
         handlePageChange,
         handleClearFilters
-    } = useOrders(API_ROUTES.COORDINADOR_CONTACTO.ORDERS, {
+    } = useOrders(API_ROUTES.INSPECTION_ORDERS.LIST, {
         statsEndpoint: API_ROUTES.COORDINADOR_CONTACTO.STATS
     });
 
@@ -88,7 +88,7 @@ export default function CoordinadorContacto() {
         if (agentId === 'reassign') {
             return;
         }
-        
+
         setAssigningOrder(orderId);
         try {
             const token = localStorage.getItem('authToken');
