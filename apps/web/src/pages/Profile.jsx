@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useNotificationContext } from '@/contexts/notification-context';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,32 +11,79 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
     User,
     Mail,
     Phone,
-    MapPin,
-    Calendar,
     Shield,
     Edit,
     Save,
     X,
-    Camera,
     Key,
-    Bell,
-    Settings
+    Eye,
+    EyeOff,
+    ChevronDown
 } from 'lucide-react';
+import { API_ROUTES } from '@/config/api';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
+import PasswordValidationErrors from '@/components/PasswordValidationErrors';
 
 export default function Profile() {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { showToast } = useNotificationContext();
+    const location = useLocation();
+
+    // Estados para edición de perfil
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
-        phone: user?.phone || '',
-        location: user?.location || '',
-        bio: user?.bio || ''
+        phone: user?.phone || ''
     });
+
+    // Actualizar formData cuando el usuario cambie
+    useEffect(() => {
+        setFormData({
+            name: user?.name || '',
+            email: user?.email || '',
+            phone: user?.phone || ''
+        });
+    }, [user]);
+
+    // Estados para cambio de contraseña
+    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('personal');
+
+    // Detectar hash para abrir automáticamente la sección de cambio de contraseña
+    useEffect(() => {
+        if (location.hash === '#changePassword') {
+            setActiveTab('security');
+            setIsPasswordOpen(true);
+            // Limpiar el hash de la URL después de un breve delay
+            setTimeout(() => {
+                window.history.replaceState(null, '', location.pathname);
+            }, 100);
+        }
+    }, [location.hash, location.pathname]);
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false
+    });
+
+    // Estados de carga
+    const [saving, setSaving] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [passwordValidationErrors, setPasswordValidationErrors] = useState([]);
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
@@ -44,21 +92,112 @@ export default function Profile() {
         }));
     };
 
-    const handleSave = () => {
-        // Aquí iría la lógica para guardar los cambios
-        showToast('Perfil actualizado correctamente', 'success');
-        setIsEditing(false);
+    const handlePasswordChange = (field, value) => {
+        setPasswordData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+
+        // Limpiar errores cuando el usuario empiece a escribir en cualquier campo
+        if (passwordValidationErrors.length > 0) {
+            setPasswordValidationErrors([]);
+        }
+    };
+
+    const togglePasswordVisibility = (field) => {
+        setShowPasswords(prev => ({
+            ...prev,
+            [field]: !prev[field]
+        }));
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_ROUTES.USERS.LIST}/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                const updatedUser = await response.json();
+                updateUser(updatedUser);
+                showToast('Perfil actualizado correctamente', 'success');
+                setIsEditing(false);
+            } else {
+                const error = await response.json();
+                showToast(error.message || 'Error al actualizar perfil', 'error');
+            }
+        } catch (error) {
+            showToast('Error al actualizar perfil', 'error');
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleCancel = () => {
         setFormData({
             name: user?.name || '',
             email: user?.email || '',
-            phone: user?.phone || '',
-            location: user?.location || '',
-            bio: user?.bio || ''
+            phone: user?.phone || ''
         });
         setIsEditing(false);
+    };
+
+    const handleChangePassword = async () => {
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            showToast('Las contraseñas nuevas no coinciden', 'error');
+            return;
+        }
+
+        setChangingPassword(true);
+        setPasswordValidationErrors([]);
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.AUTH.CHANGE_PASSWORD, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    currentPassword: passwordData.currentPassword,
+                    newPassword: passwordData.newPassword
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                updateUser(result.user);
+                showToast('Contraseña cambiada correctamente', 'success');
+                setIsPasswordOpen(false);
+                setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                });
+                setPasswordValidationErrors([]);
+            } else {
+                const error = await response.json();
+                if (error.errors && Array.isArray(error.errors)) {
+                    // Mostrar errores de validación en el componente
+                    setPasswordValidationErrors(error.errors);
+                    showToast('Por favor, corrige los errores en la nueva contraseña', 'error');
+                } else {
+                    showToast(error.message || 'Error al cambiar contraseña', 'error');
+                }
+            }
+        } catch (error) {
+            showToast('Error al cambiar contraseña', 'error');
+        } finally {
+            setChangingPassword(false);
+        }
     };
 
     const getInitials = (name) => {
@@ -72,7 +211,7 @@ export default function Profile() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">Mi Perfil</h1>
-                    <p className="text-muted-foreground">Gestiona tu información personal y preferencias</p>
+                    <p className="text-muted-foreground">Gestiona tu información personal</p>
                 </div>
                 <div className="flex gap-2">
                     {!isEditing ? (
@@ -86,20 +225,19 @@ export default function Profile() {
                                 <X className="mr-2 h-4 w-4" />
                                 Cancelar
                             </Button>
-                            <Button onClick={handleSave}>
+                            <Button onClick={handleSave} disabled={saving}>
                                 <Save className="mr-2 h-4 w-4" />
-                                Guardar
+                                {saving ? 'Guardando...' : 'Guardar'}
                             </Button>
                         </>
                     )}
                 </div>
             </div>
 
-            <Tabs defaultValue="personal" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList>
                     <TabsTrigger value="personal">Información Personal</TabsTrigger>
                     <TabsTrigger value="security">Seguridad</TabsTrigger>
-                    <TabsTrigger value="preferences">Preferencias</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="personal" className="space-y-6">
@@ -117,21 +255,12 @@ export default function Profile() {
                         <CardContent className="space-y-6">
                             {/* Avatar y Nombre */}
                             <div className="flex items-center gap-6">
-                                <div className="relative">
-                                    <Avatar className="h-20 w-20">
-                                        <AvatarImage src={user?.avatar} alt={user?.name} />
-                                        <AvatarFallback className="text-lg">
-                                            {getInitials(user?.name)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <Button
-                                        size="icon"
-                                        variant="outline"
-                                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-                                    >
-                                        <Camera className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <Avatar className="h-20 w-20">
+                                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                                    <AvatarFallback className="text-lg">
+                                        {getInitials(user?.name)}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <div className="flex-1">
                                     <Label htmlFor="name">Nombre Completo</Label>
                                     <Input
@@ -175,45 +304,6 @@ export default function Profile() {
                                         className="mt-1"
                                     />
                                 </div>
-                                <div>
-                                    <Label htmlFor="location" className="flex items-center gap-2">
-                                        <MapPin className="h-4 w-4" />
-                                        Ubicación
-                                    </Label>
-                                    <Input
-                                        id="location"
-                                        value={formData.location}
-                                        onChange={(e) => handleInputChange('location', e.target.value)}
-                                        disabled={!isEditing}
-                                        className="mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4" />
-                                        Fecha de Registro
-                                    </Label>
-                                    <Input
-                                        value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                                        disabled
-                                        className="mt-1"
-                                    />
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Biografía */}
-                            <div>
-                                <Label htmlFor="bio">Biografía</Label>
-                                <textarea
-                                    id="bio"
-                                    value={formData.bio}
-                                    onChange={(e) => handleInputChange('bio', e.target.value)}
-                                    disabled={!isEditing}
-                                    className="mt-1 w-full min-h-[100px] p-3 border border-input rounded-md bg-background text-sm resize-none"
-                                    placeholder="Cuéntanos un poco sobre ti..."
-                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -238,14 +328,18 @@ export default function Profile() {
                                 <div>
                                     <Label>Estado de la Cuenta</Label>
                                     <div className="mt-1">
-                                        <Badge variant="default" className="bg-green-100 text-green-800">
-                                            Activa
+                                        <Badge variant={user?.is_active ? "default" : "secondary"}>
+                                            {user?.is_active ? 'Activa' : 'Inactiva'}
                                         </Badge>
                                     </div>
                                 </div>
                                 <div>
-                                    <Label>Último Acceso</Label>
-                                    <Input value={user?.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'N/A'} disabled className="mt-1" />
+                                    <Label>Fecha de Registro</Label>
+                                    <Input
+                                        value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                                        disabled
+                                        className="mt-1"
+                                    />
                                 </div>
                                 <div>
                                     <Label>Roles Asignados</Label>
@@ -274,68 +368,146 @@ export default function Profile() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Contraseña</h3>
-                                    <p className="text-sm text-muted-foreground">Última actualización: hace 30 días</p>
+                            {/* Información sobre políticas de contraseña */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className="text-sm text-blue-700">
+                                    <strong>Políticas de Seguridad:</strong> Tu nueva contraseña debe cumplir con los siguientes requisitos:
+                                    <ul className="mt-2 space-y-1 text-xs">
+                                        <li>• Mínimo 8 caracteres, máximo 128</li>
+                                        <li>• Al menos una letra mayúscula y una minúscula</li>
+                                        <li>• Al menos un número</li>
+                                        <li>• Al menos un carácter especial</li>
+                                        <li>• No puede ser una contraseña común</li>
+                                        <li>• No puede contener caracteres secuenciales o repetidos</li>
+                                    </ul>
                                 </div>
-                                <Button variant="outline">Cambiar Contraseña</Button>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Autenticación de Dos Factores</h3>
-                                    <p className="text-sm text-muted-foreground">Añade una capa extra de seguridad</p>
-                                </div>
-                                <Button variant="outline">Configurar 2FA</Button>
-                            </div>
+                            <Collapsible open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Key className="h-4 w-4" />
+                                            <span>Cambiar Contraseña</span>
+                                        </div>
+                                        <ChevronDown className={`h-4 w-4 transition-transform ${isPasswordOpen ? 'rotate-180' : ''}`} />
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="space-y-4 pt-4">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="currentPassword">Contraseña Actual</Label>
+                                            <div className="relative mt-1">
+                                                <Input
+                                                    id="currentPassword"
+                                                    type={showPasswords.current ? "text" : "password"}
+                                                    value={passwordData.currentPassword}
+                                                    onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                                                    placeholder="Ingresa tu contraseña actual"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => togglePasswordVisibility('current')}
+                                                >
+                                                    {showPasswords.current ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </div>
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Sesiones Activas</h3>
-                                    <p className="text-sm text-muted-foreground">Gestiona tus sesiones activas</p>
-                                </div>
-                                <Button variant="outline">Ver Sesiones</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                                        <div>
+                                            <Label htmlFor="newPassword">Nueva Contraseña</Label>
+                                            <div className="relative mt-1">
+                                                <Input
+                                                    id="newPassword"
+                                                    type={showPasswords.new ? "text" : "password"}
+                                                    value={passwordData.newPassword}
+                                                    onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                                                    placeholder="Ingresa la nueva contraseña"
+                                                    className={passwordValidationErrors.length > 0 ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => togglePasswordVisibility('new')}
+                                                >
+                                                    {showPasswords.new ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                            {passwordData.newPassword && (
+                                                <div className="mt-2">
+                                                    <PasswordStrengthMeter password={passwordData.newPassword} />
+                                                </div>
+                                            )}
 
-                <TabsContent value="preferences" className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Settings className="h-5 w-5" />
-                                Preferencias
-                            </CardTitle>
-                            <CardDescription>
-                                Personaliza tu experiencia
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Notificaciones por Email</h3>
-                                    <p className="text-sm text-muted-foreground">Recibe notificaciones importantes por correo</p>
-                                </div>
-                                <Button variant="outline">Configurar</Button>
-                            </div>
+                                            {/* Mostrar errores de validación */}
+                                            <PasswordValidationErrors errors={passwordValidationErrors} />
+                                        </div>
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Notificaciones Push</h3>
-                                    <p className="text-sm text-muted-foreground">Notificaciones en tiempo real</p>
-                                </div>
-                                <Button variant="outline">Configurar</Button>
-                            </div>
+                                        <div>
+                                            <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
+                                            <div className="relative mt-1">
+                                                <Input
+                                                    id="confirmPassword"
+                                                    type={showPasswords.confirm ? "text" : "password"}
+                                                    value={passwordData.confirmPassword}
+                                                    onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                                                    placeholder="Confirma la nueva contraseña"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => togglePasswordVisibility('confirm')}
+                                                >
+                                                    {showPasswords.confirm ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </div>
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <h3 className="font-medium">Tema de la Aplicación</h3>
-                                    <p className="text-sm text-muted-foreground">Elige entre tema claro u oscuro</p>
-                                </div>
-                                <Button variant="outline">Cambiar Tema</Button>
-                            </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setIsPasswordOpen(false);
+                                                    setPasswordData({
+                                                        currentPassword: '',
+                                                        newPassword: '',
+                                                        confirmPassword: ''
+                                                    });
+                                                }}
+                                                className="flex-1"
+                                            >
+                                                Cancelar
+                                            </Button>
+                                            <Button
+                                                onClick={handleChangePassword}
+                                                disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                                                className="flex-1"
+                                            >
+                                                {changingPassword ? 'Cambiando...' : 'Cambiar Contraseña'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                         </CardContent>
                     </Card>
                 </TabsContent>

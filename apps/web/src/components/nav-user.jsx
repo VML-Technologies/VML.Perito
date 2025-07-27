@@ -66,7 +66,7 @@ export function NavUser() {
           <AvatarImage src={user.avatar} alt={user.name} />
           <AvatarFallback className="rounded-lg">
             {
-              user.roles.find(role => role.name === 'agente_contacto') ?
+              user.roles && user.roles.find(role => role.name === 'agente_contacto') ?
                 <HeadsetIcon className="size-4" /> : <>
                   {getUserInitials(user.name)}
                 </>
@@ -129,9 +129,11 @@ export function NavUser() {
                   Mi Perfil
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Lock className="mr-2 h-4 w-4" />
-                Cambiar contraseña
+              <DropdownMenuItem asChild>
+                <Link to="/profile#changePassword">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Cambiar contraseña
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
