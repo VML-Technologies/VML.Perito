@@ -247,6 +247,7 @@ app.post('/api/schedules/appointments', requirePermission('contact_agent.create_
 // Rutas para Coordinador de Contact Center (mantener endpoints específicos para funcionalidad adicional)
 app.get('/api/coordinador-contacto/orders/:id', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getOrderDetails);
 app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getStats);
+app.get('/api/coordinador-contacto/agent-stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getAgentAssignmentStats);
 app.get('/api/coordinador-contacto/agents', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getAgents);
 app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_contacto.assign'), coordinadorContactoController.assignAgent);
 

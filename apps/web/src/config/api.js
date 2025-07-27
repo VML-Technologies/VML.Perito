@@ -73,6 +73,7 @@ export const API_ROUTES = {
     COORDINADOR_CONTACTO: {
         ORDER_DETAILS: (id) => `${API_BASE_URL}/api/coordinador-contacto/orders/${id}`,
         STATS: `${API_BASE_URL}/api/coordinador-contacto/stats`,
+        AGENT_STATS: `${API_BASE_URL}/api/coordinador-contacto/agent-stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
     },

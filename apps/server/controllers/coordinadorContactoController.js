@@ -313,6 +313,101 @@ class CoordinadorContactoController {
         }
     }
 
+    // Obtener estadísticas de asignaciones por agente
+    async getAgentAssignmentStats(req, res) {
+        try {
+            // Obtener todos los agentes activos con rol agente_contacto
+            const agents = await User.findAll({
+                include: [
+                    {
+                        model: Role,
+                        as: 'roles',
+                        where: { name: 'agente_contacto' },
+                        through: { attributes: [] }
+                    }
+                ],
+                attributes: ['id', 'name', 'email'],
+                where: { is_active: true }
+            });
+
+            // Obtener estadísticas de órdenes por agente
+            const agentStats = await Promise.all(
+                agents.map(async (agent) => {
+                    const [
+                        totalAssigned,
+                        pendingOrders,
+                        inProgressOrders,
+                        scheduledOrders,
+                        completedOrders
+                    ] = await Promise.all([
+                        // Total de órdenes asignadas
+                        InspectionOrder.count({
+                            where: { assigned_agent_id: agent.id }
+                        }),
+                        // Órdenes pendientes (estado 1 - Creada)
+                        InspectionOrder.count({
+                            where: {
+                                assigned_agent_id: agent.id,
+                                status: 1
+                            }
+                        }),
+                        // Órdenes en gestión (estado 2 - En contacto)
+                        InspectionOrder.count({
+                            where: {
+                                assigned_agent_id: agent.id,
+                                status: 2
+                            }
+                        }),
+                        // Órdenes agendadas (estado 3 - Agendado)
+                        InspectionOrder.count({
+                            where: {
+                                assigned_agent_id: agent.id,
+                                status: 3
+                            }
+                        }),
+                        // Órdenes completadas (estado 4 - Finalizada)
+                        InspectionOrder.count({
+                            where: {
+                                assigned_agent_id: agent.id,
+                                status: 4
+                            }
+                        })
+                    ]);
+
+                    return {
+                        agent: {
+                            id: agent.id,
+                            name: agent.name,
+                            email: agent.email
+                        },
+                        stats: {
+                            total: totalAssigned,
+                            pendientes: pendingOrders,
+                            en_gestion: inProgressOrders,
+                            agendadas: scheduledOrders,
+                            completadas: completedOrders
+                        }
+                    };
+                })
+            );
+
+            // Ordenar por total de órdenes asignadas (descendente)
+            agentStats.sort((a, b) => b.stats.total - a.stats.total);
+
+            res.json({
+                success: true,
+                data: agentStats
+            });
+        } catch (error) {
+            console.error('Error al obtener estadísticas de agentes:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener estadísticas de agentes',
+                error: error.message
+            });
+        }
+    }
+
     // Obtener detalles de una orden específica
     async getOrderDetails(req, res) {
         try {
