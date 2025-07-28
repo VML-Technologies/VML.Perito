@@ -120,58 +120,29 @@ export default function ComercialMundial() {
             <StatsCards stats={stats} variant="colorful" />
 
             {/* Main Content */}
-            <Tabs defaultValue="orders" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="orders">Órdenes de Inspección</TabsTrigger>
-                    <TabsTrigger value="reports">Reportes</TabsTrigger>
-                </TabsList>
+            {/* Filtros y Búsqueda */}
+            <OrdersFilters
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onClearFilters={handleClearFiltersWrapper}
+                gridCols="md:grid-cols-5"
+                showAgentFilter={false}
+            />
 
-                <TabsContent value="orders" className="space-y-4">
-                    {/* Filtros y Búsqueda */}
-                    <OrdersFilters
-                        filters={filters}
-                        onFilterChange={handleFilterChange}
-                        onClearFilters={handleClearFiltersWrapper}
-                        gridCols="md:grid-cols-5"
-                        showAgentFilter={false}
-                    />
-
-                    {/* Orders Table */}
-                    <OrdersTable
-                        orders={orders}
-                        pagination={pagination}
-                        onPageChange={handlePageChange}
-                        onSort={handleSort}
-                        sortBy={filters.sortBy}
-                        sortOrder={filters.sortOrder}
-                        onViewDetails={handleViewDetails}
-                        showAgentColumn={true}
-                        showActions={true}
-                        emptyMessage="No se encontraron órdenes"
-                        emptyDescription="Crea una nueva orden para comenzar"
-                    />
-                </TabsContent>
-
-                <TabsContent value="reports" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Reportes y Estadísticas</CardTitle>
-                            <CardDescription>
-                                Análisis de rendimiento y métricas del comercial
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-8">
-                                <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                <p className="text-muted-foreground">Reportes próximamente</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Esta sección incluirá gráficos y reportes detallados
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+            {/* Orders Table */}
+            <OrdersTable
+                orders={orders}
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onSort={handleSort}
+                sortBy={filters.sortBy}
+                sortOrder={filters.sortOrder}
+                onViewDetails={handleViewDetails}
+                showAgentColumn={true}
+                showActions={true}
+                emptyMessage="No se encontraron órdenes"
+                emptyDescription="Crea una nueva orden para comenzar"
+            />
 
             {/* Create Order Modal */}
             <CreateOrderModal
