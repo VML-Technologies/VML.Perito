@@ -50,7 +50,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         allowNull: false,
     },
     numero: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(50),
         allowNull: false,
     },
     intermediario: {

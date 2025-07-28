@@ -6,6 +6,11 @@ const User = createModelWithSoftDeletes('User', {
         type: DataTypes.BIGINT,
         allowNull: true,
     },
+    identification: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        unique: true,
+    },
     name: {
         type: DataTypes.STRING(150),
         allowNull: false,
@@ -16,6 +21,10 @@ const User = createModelWithSoftDeletes('User', {
         unique: true,
     },
     phone: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+    },
+    office: {
         type: DataTypes.STRING(50),
         allowNull: true,
     },
