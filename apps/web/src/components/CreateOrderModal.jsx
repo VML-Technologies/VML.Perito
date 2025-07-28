@@ -415,199 +415,27 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 Información General
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-1 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
-                                <Input
-                                    id="producto"
-                                    placeholder="Tipo de producto"
+                                <Select
                                     value={formData.producto}
-                                    onChange={(e) => handleInputChange('producto', e.target.value)}
-                                    className={errors.producto ? 'border-red-500' : ''}
-                                />
+                                    onValueChange={(value) => handleInputChange('producto', value)}
+                                >
+                                    <SelectTrigger className={`w-full ${errors.producto ? 'border-red-500' : ''}`}>
+                                        <SelectValue placeholder="Seleccionar producto" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Rodando Contigo">Rodando Contigo</SelectItem>
+                                        <SelectItem value="Pesados Carga">Pesados Carga</SelectItem>
+                                        <SelectItem value="Seguro Amarillo">Seguro Amarillo</SelectItem>
+                                        <SelectItem value="Servicio Público de Pasajeros">Servicio Público de Pasajeros</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 {errors.producto && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.producto}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="numero">Número de Orden *</Label>
-                                <Input
-                                    id="numero"
-                                    type="number"
-                                    placeholder="Número único"
-                                    value={formData.numero}
-                                    onChange={(e) => handleInputChange('numero', e.target.value)}
-                                    className={errors.numero ? 'border-red-500' : ''}
-                                />
-                                {errors.numero && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.numero}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="fecha">Fecha *</Label>
-                                <Input
-                                    id="fecha"
-                                    type="date"
-                                    value={formData.fecha}
-                                    onChange={(e) => handleInputChange('fecha', e.target.value)}
-                                    className={errors.fecha ? 'border-red-500' : ''}
-                                    readOnly // Campo de solo lectura
-                                    disabled // Deshabilitado para evitar cambios
-                                />
-                                {errors.fecha && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.fecha}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="intermediario">Intermediario *</Label>
-                                <Input
-                                    id="intermediario"
-                                    placeholder="Nombre del intermediario"
-                                    value={formData.intermediario}
-                                    onChange={(e) => handleInputChange('intermediario', e.target.value)}
-                                    className={errors.intermediario ? 'border-red-500' : ''}
-                                />
-                                {errors.intermediario && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.intermediario}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="clave_intermediario">Clave Intermediario *</Label>
-                                <Input
-                                    id="clave_intermediario"
-                                    placeholder="Clave"
-                                    maxLength={10}
-                                    value={formData.clave_intermediario}
-                                    onChange={(e) => handleInputChange('clave_intermediario', e.target.value)}
-                                    className={errors.clave_intermediario ? 'border-red-500' : ''}
-                                    readOnly // Campo de solo lectura
-                                    disabled // Deshabilitado para evitar cambios
-                                />
-                                {errors.clave_intermediario && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.clave_intermediario}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="vigencia">Vigencia *</Label>
-                                <Input
-                                    id="vigencia"
-                                    placeholder="Vigencia"
-                                    maxLength={10}
-                                    value={formData.vigencia}
-                                    onChange={(e) => handleInputChange('vigencia', e.target.value)}
-                                    className={errors.vigencia ? 'border-red-500' : ''}
-                                />
-                                {errors.vigencia && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.vigencia}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="sucursal">Sucursal *</Label>
-                                <Input
-                                    id="sucursal"
-                                    placeholder="Nombre de la sucursal"
-                                    value={formData.sucursal}
-                                    onChange={(e) => handleInputChange('sucursal', e.target.value)}
-                                    className={errors.sucursal ? 'border-red-500' : ''}
-                                />
-                                {errors.sucursal && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.sucursal}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="cod_oficina">Código Oficina *</Label>
-                                <Input
-                                    id="cod_oficina"
-                                    placeholder="Código"
-                                    maxLength={10}
-                                    value={formData.cod_oficina}
-                                    onChange={(e) => handleInputChange('cod_oficina', e.target.value)}
-                                    className={errors.cod_oficina ? 'border-red-500' : ''}
-                                />
-                                {errors.cod_oficina && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.cod_oficina}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="callback_url">URL de Respuesta *</Label>
-                                <Input
-                                    id="callback_url"
-                                    type="url"
-                                    placeholder="https://..."
-                                    value={formData.callback_url}
-                                    onChange={(e) => handleInputChange('callback_url', e.target.value)}
-                                    className={errors.callback_url ? 'border-red-500' : ''}
-                                />
-                                {errors.callback_url && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.callback_url}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="avaluo">Avalúo *</Label>
-                                <Input
-                                    id="avaluo"
-                                    placeholder="Valor del avalúo"
-                                    value={formData.avaluo}
-                                    onChange={(e) => handleInputChange('avaluo', e.target.value)}
-                                    className={errors.avaluo ? 'border-red-500' : ''}
-                                />
-                                {errors.avaluo && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.avaluo}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="vlr_accesorios">Valor Accesorios *</Label>
-                                <Input
-                                    id="vlr_accesorios"
-                                    placeholder="0"
-                                    value={formData.vlr_accesorios}
-                                    onChange={(e) => handleInputChange('vlr_accesorios', e.target.value)}
-                                    className={errors.vlr_accesorios ? 'border-red-500' : ''}
-                                />
-                                {errors.vlr_accesorios && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.vlr_accesorios}
                                     </p>
                                 )}
                             </div>
@@ -622,7 +450,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 Datos del Vehículo
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <Label htmlFor="placa">Placa *</Label>
                                 <Input
