@@ -22,7 +22,12 @@ class PasswordService {
         'ranger', 'iwantu', 'jennifer', 'hunter', 'joshua', 'maggie',
         'shadow', 'melissa', 'andrea', 'buster', 'jessica', 'danny',
         'oliver', 'charlie', 'andrew', 'michelle', 'jackson', 'tiger',
-        'nicole', 'elephant', 'great', 'spider', 'computer'
+        'nicole', 'elephant', 'great', 'spider', 'computer', 'contraseña',
+        '12345', 'mi contraseña', 'acceso', 'usuario', 'secreto',
+        'admin123', 'clave', 'seguridad', 'hola123', 'prueba', 'bienvenido',
+        'mexico', 'colombia', 'argentina', 'futbol', 'amor', 'felicidad',
+        'estrella', 'angel', 'princesa', 'campeon', 'sol', 'luna', 'maestro',
+        'dios', 'familia', 'amigos'
     ];
 
     // Validar contraseña según la política
