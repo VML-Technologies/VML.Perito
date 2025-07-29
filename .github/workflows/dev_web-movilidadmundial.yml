@@ -44,9 +44,11 @@ jobs:
         with:
           name: node-app
           path: |
-            .
-            !apps/web/**
-            apps/web/dist
+            apps/server/
+            apps/web/dist/
+            azure-startup.sh
+            package.json
+            package-lock.json
 
   deploy:
     runs-on: ubuntu-latest
@@ -67,6 +69,9 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F893C1A17E89431F9FCEBF2ADEEDEEC0 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0F08DCF3D0F84FAE843EDE32A0985114 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6A3F306D725D44AB9625A57B044B42C9 }}
+
+      - name: Wait for Azure to be ready
+        run: sleep 30
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
