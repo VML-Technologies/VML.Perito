@@ -12,6 +12,42 @@ import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op, Sequelize } from 'sequelize';
 
+// Función para generar número de orden incremental
+const generateOrderNumber = async () => {
+    try {
+        // Buscar la última orden para obtener el número más alto
+        const lastOrder = await InspectionOrder.findOne({
+            where: {
+                numero: {
+                    [Op.like]: 'MAN-%'
+                }
+            },
+            order: [['numero', 'DESC']],
+            attributes: ['numero']
+        });
+
+        let nextNumber = 1;
+
+        if (lastOrder && lastOrder.numero) {
+            // Extraer el número de la última orden (ej: "MAN-00001" -> 1)
+            const lastNumberMatch = lastOrder.numero.match(/MAN-(\d+)/);
+            if (lastNumberMatch) {
+                nextNumber = parseInt(lastNumberMatch[1]) + 1;
+            }
+        }
+
+        // Formatear el número con ceros a la izquierda (5 dígitos)
+        const formattedNumber = `MAN-${nextNumber.toString().padStart(5, '0')}`;
+
+        return formattedNumber;
+    } catch (error) {
+        console.error('Error generating order number:', error);
+        // Fallback: usar timestamp como número
+        const timestamp = Date.now();
+        return `MAN-${timestamp.toString().slice(-5)}`;
+    }
+};
+
 // Registrar permisos
 registerPermission({
     name: 'inspection_orders.read',
@@ -368,11 +404,15 @@ class InspectionOrderController extends BaseController {
     // Crear orden con validaciones
     async store(req, res) {
         try {
-            // Agregar el user_id y sede_id del usuario autenticado
+            // Generar número de orden automáticamente
+            const orderNumber = await generateOrderNumber();
+
+            // Agregar el user_id, sede_id y numero del usuario autenticado
             const orderData = {
                 ...req.body,
                 user_id: req.user.id,
-                sede_id: req.user.sede_id
+                sede_id: req.user.sede_id,
+                numero: orderNumber
             };
 
             const order = await this.model.create(orderData);
@@ -395,6 +435,13 @@ class InspectionOrderController extends BaseController {
 
             res.status(201).json(fullOrder);
         } catch (error) {
+            console.error('Error creating inspection order:', error.message);
+
+            // Log specific validation errors if they exist
+            if (error.name === 'SequelizeValidationError') {
+                console.error('Validation errors:', error.errors.map(e => `${e.path}: ${e.message}`));
+            }
+
             res.status(400).json({ message: 'Error al crear orden de inspección', error: error.message });
         }
     }

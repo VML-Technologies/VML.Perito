@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Sheet,
     SheetContent,
@@ -34,16 +35,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const [loading, setLoading] = useState(false);
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
+    const [sameAsClient, setSameAsClient] = useState(true); // Checkbox para sincronizar datos
+    const [clientData, setClientData] = useState({}); // Almacenar datos del cliente por separado
 
     // Estado del formulario con todos los campos del modelo (sin sede_id)
     const [formData, setFormData] = useState({
         // Información general de la orden
         producto: '',
-        callback_url: '',
-        numero: '',
-        intermediario: '',
+        callback_url: user?.email || '',
+        intermediario: user?.name || '',
         clave_intermediario: user?.intermediary_key || '',
-        sucursal: '',
+        sucursal: user?.office || '',
         cod_oficina: '',
         fecha: new Date().toISOString().split('T')[0], // Fecha actual por defecto
         vigencia: '',
@@ -90,19 +92,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
     // Función para llenar datos de prueba
     const fillTestData = () => {
-        setFormData({
+        const testData = {
             // Información general de la orden
-            producto: 'livianos',
-            callback_url: 'https://apis.segurosmundial.com.co/exp/api/prod/v1/webhook',
-            numero: '123456789',
-            intermediario: 'Intermediario',
+            producto: 'Rodando Contigo',
+            callback_url: user?.email || '',
+            intermediario: user?.name || '',
             clave_intermediario: user?.intermediary_key || 'Clave2000',
-            sucursal: 'Sucursal',
-            cod_oficina: '0000',
+            sucursal: user?.office || '',
+            cod_oficina: '',
             fecha: new Date().toISOString().split('T')[0],
-            vigencia: '30',
-            avaluo: 'Avaluo',
-            vlr_accesorios: 'Valor accesorios',
+            vigencia: '',
+            avaluo: '',
+            vlr_accesorios: '0',
 
             // Información del vehículo
             placa: 'ASD123',
@@ -127,20 +128,29 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             celular_cliente: '3000000000',
             correo_cliente: 'correocliente@example.com',
 
-            // Información del contacto
-            nombre_contacto: 'Juan Andres Puentes Rosario',
-            celular_contacto: '3000000000',
-            correo_contacto: 'correocontacto@example.com',
+            // Información del contacto (se sincronizará si sameAsClient está marcado)
+            nombre_contacto: sameAsClient ? 'Juan Andres Puentes Rosario' : '',
+            celular_contacto: sameAsClient ? '3000000000' : '',
+            correo_contacto: sameAsClient ? 'correocliente@example.com' : '',
 
             // Status inicial
             status: '1'
+        };
+
+        setFormData(testData);
+
+        // Guardar datos del cliente por separado
+        setClientData({
+            nombre_cliente: 'Juan Andres Puentes Rosario',
+            celular_cliente: '3000000000',
+            correo_cliente: 'correocliente@example.com'
         });
 
         setErrors({});
-        showToast('Datos de prueba cargados exitosamente', 'success');
+        showToast('Datos de prueba cargados - Puedes modificar cualquier campo antes de enviar', 'success');
     };
 
-    // Limpiar formulario cuando se cierra el modal
+    // Limpiar formulario cuando se cierre el modal
     useEffect(() => {
         if (!isOpen) {
             resetForm();
@@ -167,19 +177,33 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
     }, [isOpen]);
 
+    // Sincronizar datos del contacto cuando cambie el checkbox
+    useEffect(() => {
+        if (sameAsClient && (clientData.nombre_cliente || formData.nombre_cliente)) {
+            setFormData(prev => ({
+                ...prev,
+                nombre_contacto: clientData.nombre_cliente || prev.nombre_cliente,
+                celular_contacto: clientData.celular_cliente || prev.celular_cliente,
+                correo_contacto: clientData.correo_cliente || prev.correo_cliente
+            }));
+        }
+    }, [sameAsClient, clientData]);
+
     const resetForm = () => {
         setFormData({
+            // Información general de la orden
             producto: '',
-            callback_url: '',
-            numero: '',
-            intermediario: '',
+            callback_url: user?.email || '',
+            intermediario: user?.name || '',
             clave_intermediario: user?.intermediary_key || '',
-            sucursal: '',
+            sucursal: user?.office || '',
             cod_oficina: '',
-            fecha: new Date().toISOString().split('T')[0],
+            fecha: new Date().toISOString().split('T')[0], // Fecha actual por defecto
             vigencia: '',
             avaluo: '',
             vlr_accesorios: '0',
+
+            // Información del vehículo
             placa: '',
             marca: '',
             linea: '',
@@ -194,17 +218,25 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             carroceria: '',
             combustible: '',
             cod_fasecolda: '',
+
+            // Información del cliente
             tipo_doc: '',
             num_doc: '',
             nombre_cliente: '',
             celular_cliente: '',
             correo_cliente: '',
+
+            // Información del contacto (vacío por defecto, se sincronizará si sameAsClient está marcado)
             nombre_contacto: '',
             celular_contacto: '',
             correo_contacto: '',
+
+            // Status inicial (1 = Pendiente por defecto)
             status: '1'
         });
         setErrors({});
+        setSameAsClient(true); // Resetear checkbox a marcado
+        setClientData({}); // Limpiar datos del cliente guardados
     };
 
     const handleInputChange = (field, value) => {
@@ -213,6 +245,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             [field]: value
         }));
 
+        // Guardar datos del cliente por separado
+        if (['nombre_cliente', 'celular_cliente', 'correo_cliente'].includes(field)) {
+            setClientData(prev => ({
+                ...prev,
+                [field]: value
+            }));
+        }
+
         // Limpiar error del campo cuando el usuario empiece a escribir
         if (errors[field]) {
             setErrors(prev => ({
@@ -220,23 +260,69 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 [field]: ''
             }));
         }
+
+        // Sincronizar datos del contacto si el checkbox está marcado
+        if (sameAsClient) {
+            const contactFields = {
+                'nombre_cliente': 'nombre_contacto',
+                'celular_cliente': 'celular_contacto',
+                'correo_cliente': 'correo_contacto'
+            };
+
+            if (contactFields[field]) {
+                setFormData(prev => ({
+                    ...prev,
+                    [contactFields[field]]: value
+                }));
+            }
+        }
+    };
+
+    const handleSameAsClientChange = (checked) => {
+        setSameAsClient(checked);
+
+        if (checked) {
+            // Sincronizar datos del cliente al contacto usando los datos guardados
+            setFormData(prev => ({
+                ...prev,
+                nombre_contacto: clientData.nombre_cliente || prev.nombre_cliente,
+                celular_contacto: clientData.celular_cliente || prev.celular_cliente,
+                correo_contacto: clientData.correo_cliente || prev.correo_cliente
+            }));
+        } else {
+            // Limpiar datos del contacto pero mantener los datos del cliente guardados
+            setFormData(prev => ({
+                ...prev,
+                nombre_contacto: '',
+                celular_contacto: '',
+                correo_contacto: ''
+            }));
+        }
     };
 
     const validateForm = () => {
         const newErrors = {};
 
-        // Validaciones obligatorias según el modelo
+        // Validaciones obligatorias - solo campos esenciales según el test data
         const requiredFields = [
-            'producto', 'callback_url', 'numero', 'intermediario', 'clave_intermediario',
-            'sucursal', 'cod_oficina', 'fecha', 'vigencia', 'avaluo', 'vlr_accesorios',
+            'producto', 'callback_url', 'intermediario', 'clave_intermediario',
+            'fecha', 'vlr_accesorios',
             'placa', 'marca', 'linea', 'clase', 'modelo', 'cilindraje', 'color',
             'servicio', 'motor', 'chasis', 'vin', 'carroceria', 'combustible',
             'cod_fasecolda', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
 
+        // Campos opcionales que pueden estar vacíos
+        const optionalFields = [
+            'sucursal', 'cod_oficina', 'vigencia', 'avaluo'
+        ];
+
         requiredFields.forEach(field => {
-            if (!formData[field] || formData[field].toString().trim() === '') {
+            const value = formData[field];
+            const isEmpty = !value || value.toString().trim() === '';
+
+            if (isEmpty) {
                 newErrors[field] = `Este campo es obligatorio`;
             }
         });
@@ -294,12 +380,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             newErrors.clave_intermediario = 'La clave de intermediario no puede tener más de 10 caracteres';
         }
 
-        // Validación de cod_oficina (máximo 10 caracteres)
+        // Validación de cod_oficina (máximo 10 caracteres) - solo si no está vacío
         if (formData.cod_oficina && formData.cod_oficina.length > 10) {
             newErrors.cod_oficina = 'El código de oficina no puede tener más de 10 caracteres';
         }
 
-        // Validación de vigencia (máximo 10 caracteres)
+        // Validación de vigencia (máximo 10 caracteres) - solo si no está vacío
         if (formData.vigencia && formData.vigencia.length > 10) {
             newErrors.vigencia = 'La vigencia no puede tener más de 10 caracteres';
         }
@@ -345,11 +431,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             const submitData = {
                 ...formData,
                 placa: formData.placa.toUpperCase(),
-                numero: parseInt(formData.numero),
-                status: parseInt(formData.status),
+                status: parseInt(formData.status), // Should be 1 for "Creada" status
                 clave_intermediario: user?.intermediary_key || formData.clave_intermediario,
                 fecha: new Date().toISOString().split('T')[0]
-                // sede_id se toma automáticamente del usuario autenticado en el backend
             };
 
             const response = await fetch(API_ROUTES.INSPECTION_ORDERS.CREATE, {
@@ -363,12 +447,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
             if (response.ok) {
                 const newOrder = await response.json();
-                showToast('Orden de inspección creada exitosamente', 'success');
+                showToast(`✅ Orden creada exitosamente - Número: ${newOrder.numero} - Placa: ${submitData.placa}`, 'success');
                 onOrderCreated?.(newOrder);
                 onClose();
             } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al crear la orden');
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (parseError) {
+                    const errorText = await response.text();
+                    errorData = { message: `Error del servidor: ${response.status} ${response.statusText}` };
+                }
+                throw new Error(errorData.message || `Error HTTP ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
             console.error('Error creating order:', error);
@@ -405,7 +495,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                         Completa todos los datos requeridos para crear una nueva orden de inspección
                     </SheetDescription>
                 </SheetHeader>
-
                 <form onSubmit={handleSubmit} className="mt-6 space-y-6">
                     {/* Información General de la Orden */}
                     <Card>
@@ -837,59 +926,90 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 Datos del Contacto
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label htmlFor="nombre_contacto">Nombre Contacto *</Label>
-                                <Input
-                                    id="nombre_contacto"
-                                    placeholder="Nombre del contacto"
-                                    value={formData.nombre_contacto}
-                                    onChange={(e) => handleInputChange('nombre_contacto', e.target.value)}
-                                    className={errors.nombre_contacto ? 'border-red-500' : ''}
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="sameAsClient"
+                                    checked={sameAsClient}
+                                    onCheckedChange={handleSameAsClientChange}
                                 />
-                                {errors.nombre_contacto && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.nombre_contacto}
-                                    </p>
-                                )}
+                                <Label htmlFor="sameAsClient" className="text-sm font-medium">
+                                    Los datos de contacto son los mismos datos del cliente
+                                </Label>
                             </div>
 
-                            <div>
-                                <Label htmlFor="celular_contacto">Celular Contacto *</Label>
-                                <Input
-                                    id="celular_contacto"
-                                    placeholder="3001234567"
-                                    maxLength={10}
-                                    value={formData.celular_contacto}
-                                    onChange={(e) => handleInputChange('celular_contacto', e.target.value)}
-                                    className={errors.celular_contacto ? 'border-red-500' : ''}
-                                />
-                                {errors.celular_contacto && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.celular_contacto}
-                                    </p>
-                                )}
-                            </div>
+                            {!sameAsClient && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <Label htmlFor="nombre_contacto">Nombre Contacto *</Label>
+                                        <Input
+                                            id="nombre_contacto"
+                                            placeholder="Nombre del contacto"
+                                            value={formData.nombre_contacto}
+                                            onChange={(e) => handleInputChange('nombre_contacto', e.target.value)}
+                                            className={errors.nombre_contacto ? 'border-red-500' : ''}
+                                        />
+                                        {errors.nombre_contacto && (
+                                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                                <AlertCircle className="h-3 w-3" />
+                                                {errors.nombre_contacto}
+                                            </p>
+                                        )}
+                                    </div>
 
-                            <div>
-                                <Label htmlFor="correo_contacto">Email Contacto *</Label>
-                                <Input
-                                    id="correo_contacto"
-                                    type="email"
-                                    placeholder="contacto@ejemplo.com"
-                                    value={formData.correo_contacto}
-                                    onChange={(e) => handleInputChange('correo_contacto', e.target.value)}
-                                    className={errors.correo_contacto ? 'border-red-500' : ''}
-                                />
-                                {errors.correo_contacto && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.correo_contacto}
-                                    </p>
-                                )}
-                            </div>
+                                    <div>
+                                        <Label htmlFor="celular_contacto">Celular Contacto *</Label>
+                                        <Input
+                                            id="celular_contacto"
+                                            placeholder="3001234567"
+                                            maxLength={10}
+                                            value={formData.celular_contacto}
+                                            onChange={(e) => handleInputChange('celular_contacto', e.target.value)}
+                                            className={errors.celular_contacto ? 'border-red-500' : ''}
+                                        />
+                                        {errors.celular_contacto && (
+                                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                                <AlertCircle className="h-3 w-3" />
+                                                {errors.celular_contacto}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="correo_contacto">Email Contacto *</Label>
+                                        <Input
+                                            id="correo_contacto"
+                                            type="email"
+                                            placeholder="contacto@ejemplo.com"
+                                            value={formData.correo_contacto}
+                                            onChange={(e) => handleInputChange('correo_contacto', e.target.value)}
+                                            className={errors.correo_contacto ? 'border-red-500' : ''}
+                                        />
+                                        {errors.correo_contacto && (
+                                            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                                <AlertCircle className="h-3 w-3" />
+                                                {errors.correo_contacto}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {sameAsClient && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div className="flex items-center gap-2 text-blue-700">
+                                        <CheckCircle className="h-4 w-4" />
+                                        <span className="text-sm font-medium">
+                                            Los datos del contacto se sincronizarán automáticamente con los datos del cliente
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 text-sm text-blue-600">
+                                        <p>• Nombre: {clientData.nombre_cliente || formData.nombre_cliente || 'No especificado'}</p>
+                                        <p>• Celular: {clientData.celular_cliente || formData.celular_cliente || 'No especificado'}</p>
+                                        <p>• Email: {clientData.correo_cliente || formData.correo_cliente || 'No especificado'}</p>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
