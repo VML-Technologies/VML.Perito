@@ -9,13 +9,9 @@ cd /home/site/wwwroot
 # Instalar dependencias del servidor (siempre actualizar)
 echo "📦 Instalando dependencias del servidor..."
 cd apps/server
-npm install --production --no-optional
-cd ..
+npm install --production --no-optional --prefix .
 echo "✅ Dependencias del servidor instaladas"
-
-
 
 # Iniciar la aplicación
 echo "🚀 Iniciando aplicación..."
-cd apps/server
-npm start 
+node index.js 
