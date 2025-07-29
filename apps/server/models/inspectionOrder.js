@@ -63,11 +63,11 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
     },
     sucursal: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     cod_oficina: {
         type: DataTypes.STRING(10),
-        allowNull: false,
+        allowNull: true,
     },
     fecha: {
         type: DataTypes.DATEONLY,
@@ -75,15 +75,15 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
     },
     vigencia: {
         type: DataTypes.STRING(10),
-        allowNull: false,
+        allowNull: true,
     },
     avaluo: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     vlr_accesorios: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     placa: {
         type: DataTypes.STRING(6),
