@@ -28,4 +28,5 @@ node -e "require('dotenv').config(); console.log('✅ dotenv cargado correctamen
 
 # Iniciar la aplicación
 echo "🚀 Iniciando aplicación..."
+cd apps/server
 npm start 
