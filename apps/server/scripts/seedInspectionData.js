@@ -30,40 +30,20 @@ const seedInspectionData = async () => {
                 description: 'Orden de inspección creada, pendiente de contacto'
             },
             {
-                name: 'Contacto exitoso',
-                description: 'Se logró contactar al cliente exitosamente'
+                name: 'En proceso de agendamiento',
+                description: 'Se inicio proceso de contacto con el cliente'
             },
             {
                 name: 'Agendado',
                 description: 'Inspección agendada con fecha y hora'
             },
             {
-                name: 'No contesta',
-                description: 'Cliente no contesta las llamadas'
+                name: 'Inspeccion en curso',
+                description: 'Inspección en proceso'
             },
             {
-                name: 'Ocupado',
-                description: 'Cliente ocupado, reagendar llamada'
-            },
-            {
-                name: 'Número incorrecto',
-                description: 'Número de teléfono incorrecto'
-            },
-            {
-                name: 'Solicita reagendar',
-                description: 'Cliente solicita reagendar la llamada'
-            },
-            {
-                name: 'En progreso',
-                description: 'Inspección en progreso'
-            },
-            {
-                name: 'Finalizada',
+                name: 'Finalizado',
                 description: 'Inspección completada'
-            },
-            {
-                name: 'Cancelada',
-                description: 'Orden cancelada'
             }
         ];
 
