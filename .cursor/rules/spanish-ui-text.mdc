@@ -1,9 +1,16 @@
+---
+description: Guías para texto de interfaz de usuario en español para VML.Perito, incluyendo mensajes de notificación, errores descriptivos, etiquetas de formularios, placeholders, mensajes de éxito, y ejemplos de implementación correcta usando el sistema de notificaciones en lugar de alerts del navegador.
+alwaysApply: false
+---
+
 # Spanish UI Text Guidelines
 
 ## User-Facing Text Must Be in Spanish
+
 All labels, messages, notifications, and user interface text must be displayed in Spanish.
 
 ## Examples
+
 - ✅ "Agendamiento creado exitosamente"
 - ✅ "Error interno del servidor"
 - ✅ "Campos requeridos faltantes"
@@ -11,14 +18,15 @@ All labels, messages, notifications, and user interface text must be displayed i
 - ❌ "Internal server error"
 
 ## Notification Messages
+
 Use the existing notification system from [App.jsx](mdc:apps/web/src/App.jsx) instead of browser alerts:
 
 ```javascript
 // ✅ Correct - Use notification context
 notificationContext.showNotification({
-    type: 'success',
-    title: 'Éxito',
-    message: 'Agendamiento creado exitosamente'
+  type: 'success',
+  title: 'Éxito',
+  message: 'Agendamiento creado exitosamente',
 });
 
 // ❌ Avoid browser alerts
@@ -26,16 +34,18 @@ alert('Success message');
 ```
 
 ## Error Messages
+
 Always provide descriptive error messages in Spanish:
 
 ```javascript
 res.status(400).json({
-    success: false,
-    message: 'Sede, modalidad y fecha son requeridos'
+  success: false,
+  message: 'Sede, modalidad y fecha son requeridos',
 });
 ```
 
 ## Form Labels and Placeholders
+
 All form elements should have Spanish labels and placeholders:
 
 ```javascript
@@ -44,12 +54,14 @@ All form elements should have Spanish labels and placeholders:
 ```
 
 ## Success Messages
+
 Use positive, action-oriented language:
 
 - ✅ "Agendamiento creado exitosamente"
 - ✅ "Orden de inspección guardada"
 - ✅ "Datos actualizados correctamente"
-description:
-globs:
-alwaysApply: false
+  description:
+  globs:
+  alwaysApply: false
+
 ---

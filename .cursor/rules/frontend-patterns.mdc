@@ -1,3 +1,8 @@
+---
+description: Patrones de desarrollo frontend para VML.Perito, incluyendo estructura de componentes funcionales con hooks, comunicación entre componentes con refs, manejo de estado local y global, mapeo de datos API, hooks personalizados, manejo de errores, componentes UI consistentes, diseño responsive, optimización de rendimiento con memoización, y lazy loading.
+alwaysApply: false
+---
+
 # Frontend Development Patterns
 
 ## Component Structure

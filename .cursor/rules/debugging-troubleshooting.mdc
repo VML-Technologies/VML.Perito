@@ -1,3 +1,8 @@
+---
+description: Guía completa de debugging y troubleshooting para VML.Perito, incluyendo errores comunes de backend (sintaxis, módulos, controladores), problemas de base de datos (columnas, asociaciones), errores de frontend (componentes, API), herramientas de debugging (console logging, React DevTools), prevención de errores, y monitoreo de rendimiento.
+alwaysApply: false
+---
+
 # Debugging and Troubleshooting Guide
 
 ## Common Backend Errors

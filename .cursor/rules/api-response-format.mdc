@@ -1,3 +1,8 @@
+---
+description: Estándares de formato de respuestas API para VML.Perito, incluyendo estructura estándar de respuestas exitosas y de error, códigos de estado HTTP apropiados, manejo de errores de validación, formato de paginación, mensajes de error en español, y patrones de implementación consistentes.
+alwaysApply: false
+---
+
 # API Response Format Standards
 
 ## Standard Response Structure

@@ -1,3 +1,8 @@
+---
+description: Patrones de desarrollo backend para VML.Perito, incluyendo estructura de controladores con export pattern, patrones de servicios singleton, manejo de errores con try-catch, operaciones de base de datos con Sequelize, integración de middleware (autenticación, rate limiting), problemas comunes y soluciones, y mejores prácticas de seguridad.
+alwaysApply: false
+---
+
 # Backend Development Patterns
 
 ## Controller Structure

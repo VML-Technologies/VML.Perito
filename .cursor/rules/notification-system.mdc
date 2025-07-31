@@ -1,5 +1,5 @@
 ---
-description: Esta regla define el sistema de notificaciones, canales de notificacines, eventos, plantillas, etc.
+description: Sistema completo de notificaciones de VML.Perito, incluyendo arquitectura de eventos automatizados, sistema de plantillas con editor WYSIWYG, canales multi-medio (Email, SMS, WhatsApp, In-App, Push), orquestación de notificaciones, integración WebSocket en tiempo real, configuración de canales, variables dinámicas en plantillas, y patrones de seeding para eventos y templates.
 alwaysApply: false
 ---
 

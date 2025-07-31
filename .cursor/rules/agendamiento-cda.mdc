@@ -1,3 +1,8 @@
+---
+description: Sistema de agendamiento específico para CDAs (Centros de Diagnóstico Automotor) de VML.Perito, incluyendo restricciones de sedes tipo CDA, modalidades disponibles (En Sede, A Domicilio, Virtual), configuración de horarios con ScheduleTemplate, filtrado automático de modalidades, selector de sede con información visual, slots de horarios disponibles, y configuración de backend para sedes CDA.
+alwaysApply: false
+---
+
 # Sistema de Agendamiento de Inspecciones de Asegurabilidad (CDAs)
 
 - **Solo las sedes de tipo CDA** pueden tener agendamiento de inspecciones de asegurabilidad.

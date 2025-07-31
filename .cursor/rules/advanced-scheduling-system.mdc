@@ -1,6 +1,8 @@
 ---
+description: Sistema de agendamiento avanzado de VML.Perito, incluyendo horarios flexibles con intervalos configurables, tipos de vehículos (Livianos, Pesados, Motos), sedes reales con direcciones actuales, modalidades de inspección (En Sede, A Domicilio, Virtual), validación de capacidad, integración con contact center, sistema de notificaciones automatizadas, eventos WebSocket en tiempo real, y configuración por defecto del sistema.
 alwaysApply: false
 ---
+
 # Sistema de Agendamiento Avanzado
 
 ## Arquitectura del Sistema
@@ -220,6 +222,7 @@ Appointment.belongsTo(ScheduleTemplate, { foreignKey: 'schedule_template_id' });
 - Grid de horarios disponibles
 - Validación de capacidad en tiempo real
 - Información de tipos admitidos por sede
+
 # Sistema de Agendamiento Avanzado
 
 ## Arquitectura del Sistema

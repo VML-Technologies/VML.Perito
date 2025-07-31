@@ -1,8 +1,8 @@
 ---
-description:
-globs:
+description: Interfaz de administración RBAC moderna de VML.Perito, incluyendo el flujo de cambios y feedback en tiempo real, política de notificaciones (solo al guardar cambios), experiencia de usuario con indicadores visuales inmediatos, badge de cambios pendientes, y referencia a la implementación en Admin.jsx.
 alwaysApply: false
 ---
+
 # UI de Administración RBAC Moderna
 
 La interfaz principal de administración de roles y permisos (RBAC) se encuentra en [Admin.jsx](mdc:apps/web/src/pages/Admin.jsx).

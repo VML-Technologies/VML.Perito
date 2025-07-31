@@ -1,13 +1,14 @@
 ---
-description:
-globs:
+description: Gestión y consolidación de reglas de Cursor para VML.Perito, incluyendo mejores prácticas para crear nuevas reglas, proceso de consolidación para eliminar duplicaciones, auditoría de reglas existentes, estrategias de fusión, convenciones de nomenclatura, organización de contenido, y ejemplos específicos del proyecto.
 alwaysApply: false
 ---
+
 # Cursor Rules Management and Consolidation
 
 ## Rule Creation Best Practices
 
 ### Before Creating New Rules
+
 1. **Review existing rules** - Check `.cursor/rules/` directory for overlapping content
 2. **Identify core themes** - Group related information under existing rules when possible
 3. **Avoid fragmentation** - Don't create multiple small rules for related concepts
@@ -15,6 +16,7 @@ alwaysApply: false
 ### Consolidation Process
 
 #### Step 1: Audit Existing Rules
+
 ```bash
 # List all current rules
 ls .cursor/rules/
@@ -27,7 +29,9 @@ ls .cursor/rules/
 ```
 
 #### Step 2: Identify Duplications
+
 Common duplication patterns to watch for:
+
 - **Architecture descriptions** scattered across multiple rules
 - **Role definitions** repeated in different contexts
 - **Troubleshooting patterns** duplicated in various files
@@ -35,14 +39,18 @@ Common duplication patterns to watch for:
 - **Configuration patterns** repeated in multiple places
 
 #### Step 3: Prioritize Rules to Keep
+
 Keep the rule that is:
+
 - **Most comprehensive** - Contains the most complete information
 - **Most specific to project** - Tailored to actual codebase structure
 - **Most actionable** - Provides clear commands and examples
 - **Most up-to-date** - Reflects current system state
 
 #### Step 4: Consolidate Information
+
 **Merge strategy:**
+
 1. **Primary rule** - Keep the most comprehensive one
 2. **Extract unique value** - Identify information only in secondary rules
 3. **Update primary** - Add unique information to primary rule
@@ -52,16 +60,19 @@ Keep the rule that is:
 ## Project-Specific Consolidation Example
 
 ### What We Had (Duplicated):
+
 - `vml-perito-project-structure.mdc` → Basic architecture
 - `vml-perito-system.mdc` → Comprehensive system guide
 - `project-architecture.mdc` → General architecture patterns
 
 ### What We Kept:
+
 - **`vml-perito-system.mdc`** - Most comprehensive and project-specific
 - **Updated** with missing information from deleted rules
 - **Cross-references** to related files maintained
 
 ### Consolidation Rules Applied:
+
 1. **Eliminated** `vml-perito-project-structure.mdc` (covered by main system rule)
 2. **Preserved** `project-architecture.mdc` (general patterns, not project-specific)
 3. **Enhanced** main rule with specific credentials and current structure
@@ -69,6 +80,7 @@ Keep the rule that is:
 ## Rule Naming Conventions
 
 ### Hierarchical Naming
+
 ```
 [project-name]-[topic].mdc        # Project-specific rules
 [general-topic].mdc               # Generic patterns
@@ -76,6 +88,7 @@ Keep the rule that is:
 ```
 
 ### Examples:
+
 - `vml-perito-system.mdc` - Main project overview
 - `rbac-system.mdc` - RBAC implementation patterns
 - `development-patterns.mdc` - General coding patterns
@@ -84,26 +97,32 @@ Keep the rule that is:
 ## Content Organization Within Rules
 
 ### Rule Structure Template:
+
 ```markdown
 # Title - Clear and Specific
 
 ## Quick Reference Section
+
 - Commands, credentials, key files
 
 ## Detailed Implementation
+
 - Step-by-step processes
 - Code examples
 - File references with [filename](mdc:path/to/file)
 
 ## Common Issues & Solutions
+
 - Known problems
 - Troubleshooting steps
 
 ## Related Rules
+
 - Cross-references to complementary rules
 ```
 
 ### Avoid These Patterns:
+
 - **Scattered credentials** - Keep all in one authoritative place
 - **Repeated architecture** - Don't describe project structure in multiple rules
 - **Fragmented workflows** - Keep complete processes in single rules
@@ -111,11 +130,13 @@ Keep the rule that is:
 ## Maintenance Workflow
 
 ### When Adding New Information:
+
 1. **Check existing rules first** - Can this be added to existing rule?
 2. **Update rather than create** - Prefer updating comprehensive rules
 3. **Reference, don't repeat** - Use cross-references instead of copying
 
 ### Regular Consolidation:
+
 - **Review quarterly** - Check for new duplications
 - **Update after major changes** - Reflect system evolution
 - **Validate references** - Ensure file links remain valid
@@ -123,16 +144,20 @@ Keep the rule that is:
 ## File Reference Best Practices
 
 ### Always Use Relative Paths:
+
 ```markdown
 # ✅ Correct
+
 [index.js](mdc:apps/server/index.js)
 [config.js](mdc:apps/server/config/database.js)
 
 # ❌ Incorrect
+
 [index.js](mdc:/full/path/to/apps/server/index.js)
 ```
 
 ### Reference Key Files Consistently:
+
 - Main entry points
 - Configuration files
 - Core models and controllers
@@ -141,6 +166,7 @@ Keep the rule that is:
 ## Quality Metrics for Rules
 
 ### A Good Rule Should:
+
 - ✅ **Address specific needs** - Solve real development problems
 - ✅ **Provide actionable guidance** - Include commands, examples, patterns
 - ✅ **Reference actual codebase** - Link to real files using mdc: syntax
@@ -148,6 +174,7 @@ Keep the rule that is:
 - ✅ **Avoid duplication** - Not repeat information from other rules
 
 ### Warning Signs:
+
 - ⚠️ **Multiple rules covering same topic**
 - ⚠️ **Generic advice without project context**
 - ⚠️ **Outdated information or credentials**
@@ -156,13 +183,13 @@ Keep the rule that is:
 
 ## Consolidation Decision Matrix
 
-| Keep Rule If | Delete Rule If |
-|--------------|----------------|
-| Most comprehensive | Partial coverage |
-| Project-specific | Generic only |
-| Current information | Outdated |
-| Actionable commands | Theory only |
-| Referenced by other rules | Standalone |
+| Keep Rule If              | Delete Rule If   |
+| ------------------------- | ---------------- |
+| Most comprehensive        | Partial coverage |
+| Project-specific          | Generic only     |
+| Current information       | Outdated         |
+| Actionable commands       | Theory only      |
+| Referenced by other rules | Standalone       |
 
 ## Example Consolidation Commands
 

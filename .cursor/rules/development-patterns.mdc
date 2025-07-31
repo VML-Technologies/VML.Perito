@@ -1,3 +1,8 @@
+---
+description: Patrones de desarrollo generales para VML.Perito, incluyendo convenciones de nomenclatura (camelCase, PascalCase), patrones de controladores con BaseController, binding de métodos, middleware RBAC, validaciones de modelos Sequelize, hooks personalizados de React, integración WebSocket, patrones de notificaciones, agendamiento, contact center, manejo de errores, y optimizaciones de rendimiento.
+alwaysApply: false
+---
+
 # Patrones de Desarrollo - VML.Perito
 
 ## Convenciones de Nomenclatura
