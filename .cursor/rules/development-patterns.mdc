@@ -1,8 +1,3 @@
----
-description:
-globs:
-alwaysApply: false
----
 # Patrones de Desarrollo - VML.Perito
 
 ## Convenciones de Nomenclatura
@@ -10,12 +5,15 @@ alwaysApply: false
 ### Backend
 
 #### Archivos y Directorios
+
 - **Modelos**: `camelCase.js` (ej: `user.js`, `rolePermission.js`)
 - **Controladores**: `camelCaseController.js` (ej: `userController.js`)
 - **Middleware**: `camelCase.js` (ej: `rbac.js`, `permissionRegistry.js`)
+- **Servicios**: `camelCaseService.js` (ej: `templateService.js`, `eventService.js`)
 - **Rutas**: Agrupadas en el archivo principal [apps/server/index.js](mdc:apps/server/index.js)
 
 #### Variables y Funciones
+
 ```javascript
 // camelCase para variables y funciones
 const userName = 'admin';
@@ -29,17 +27,21 @@ const JWT_SECRET = process.env.JWT_SECRET;
 ```
 
 #### Permisos RBAC
+
 ```javascript
 // Patrón: recurso.accion
-'users.read'        // Ver usuarios
-'users.create'      // Crear usuarios
-'roles.update'      // Actualizar roles
-'system.read'       // Ver datos del sistema
+'users.read'; // Ver usuarios
+'users.create'; // Crear usuarios
+'roles.update'; // Actualizar roles
+'system.read'; // Ver datos del sistema
+'coordinador_contacto.assign'; // Asignar agentes
+'agente_contacto.appointment'; // Crear agendamientos
 ```
 
 ### Frontend
 
 #### Archivos y Componentes
+
 - **Componentes**: `PascalCase.jsx` (ej: `UserProfile.jsx`)
 - **Hooks**: `use-kebab-case.js` (ej: `use-permissions.js`)
 - **Contextos**: `kebab-case-context.jsx` (ej: `auth-context.jsx`)
@@ -48,6 +50,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 ## Patrones de Configuración
 
 ### 1. Variables de Entorno en Scripts
+
 **CRÍTICO**: Todos los scripts de seeding deben cargar variables de entorno con ruta explícita:
 
 ```javascript
@@ -67,6 +70,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 ## Patrones de Controladores
 
 ### 1. BaseController Pattern
+
 Todos los controladores heredan de [apps/server/controllers/baseController.js](mdc:apps/server/controllers/baseController.js):
 
 ```javascript
@@ -74,46 +78,47 @@ import { BaseController } from './baseController.js';
 import MyModel from '../models/myModel.js';
 
 class MyController extends BaseController {
-    constructor() {
-        super(MyModel);
-        
-        // IMPORTANTE: Bind de métodos para preservar contexto
-        this.index = this.index.bind(this);
-        this.store = this.store.bind(this);
-        this.update = this.update.bind(this);
-        this.destroy = this.destroy.bind(this);
-        this.customMethod = this.customMethod.bind(this);
+  constructor() {
+    super(MyModel);
+
+    // IMPORTANTE: Bind de métodos para preservar contexto
+    this.index = this.index.bind(this);
+    this.store = this.store.bind(this);
+    this.update = this.update.bind(this);
+    this.destroy = this.destroy.bind(this);
+    this.customMethod = this.customMethod.bind(this);
+  }
+
+  // Sobrescribir métodos base si es necesario
+  async store(req, res) {
+    try {
+      // Lógica personalizada
+      const item = await this.model.create(req.body);
+
+      // Notificación WebSocket si aplica
+      if (webSocketSystem.isInitialized()) {
+        await webSocketSystem.sendNotification(userId, {
+          type: 'system',
+          title: 'Elemento creado',
+          message: 'Se ha creado un nuevo elemento.',
+        });
+      }
+
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(400).json({
+        message: 'Error al crear elemento',
+        error: error.message,
+      });
     }
-    
-    // Sobrescribir métodos base si es necesario
-    async store(req, res) {
-        try {
-            // Lógica personalizada
-            const item = await this.model.create(req.body);
-            
-            // Notificación WebSocket si aplica
-            if (webSocketSystem.isInitialized()) {
-                await webSocketSystem.sendNotification(userId, {
-                    type: 'system',
-                    title: 'Elemento creado',
-                    message: 'Se ha creado un nuevo elemento.'
-                });
-            }
-            
-            res.status(201).json(item);
-        } catch (error) {
-            res.status(400).json({ 
-                message: 'Error al crear elemento', 
-                error: error.message 
-            });
-        }
-    }
+  }
 }
 
 export default new MyController();
 ```
 
 ### 2. Binding de Métodos Obligatorio
+
 ```javascript
 // SIEMPRE hacer bind en el constructor para evitar pérdida de contexto
 constructor() {
@@ -127,6 +132,7 @@ constructor() {
 ## Patrones de Rutas
 
 ### 1. Protección con RBAC
+
 ```javascript
 import { requirePermission } from './middleware/rbac.js';
 
@@ -138,6 +144,7 @@ app.delete('/api/resource/:id', requirePermission('resource.delete'), controller
 ```
 
 ### 2. Orden de Rutas Importante
+
 ```javascript
 // IMPORTANTE: Rutas específicas ANTES que rutas con parámetros
 app.get('/api/users/profile', requirePermission('users.read'), userController.profile);
@@ -148,105 +155,140 @@ app.get('/api/users/:id', userController.show); // Esta va al final
 ## Patrones de Modelos Sequelize
 
 ### 1. Definición de Modelos
+
 ```javascript
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const MyModel = sequelize.define('MyModel', {
+const MyModel = sequelize.define(
+  'MyModel',
+  {
     id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
     name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: true,
-            len: [2, 100]
-        }
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+        len: [2, 100],
+      },
     },
     // Campos de auditoría automáticos
     created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
     updated_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    }
-}, {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
     tableName: 'my_models',
     timestamps: true,
     paranoid: true, // Soft deletes
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    deletedAt: 'deleted_at'
-});
+    deletedAt: 'deleted_at',
+  }
+);
 
 export default MyModel;
 ```
 
 ### 2. Relaciones en models/index.js
+
 ```javascript
 // Definir todas las relaciones en apps/server/models/index.js
 User.belongsToMany(Role, {
-    through: UserRole,
-    foreignKey: 'user_id',
-    otherKey: 'role_id',
-    as: 'roles'
+  through: UserRole,
+  foreignKey: 'user_id',
+  otherKey: 'role_id',
+  as: 'roles',
 });
 ```
 
 ## Patrones Frontend React
 
 ### 1. Componentes con RBAC
+
 ```javascript
 import PermissionGate from '../components/PermissionGate.jsx';
 import { useRBAC } from '../contexts/rbac-context.jsx';
 
 function MyComponent() {
-    const { hasPermission } = useRBAC();
-    
-    return (
-        <div>
-            {/* Renderizado condicional */}
-            {hasPermission('users.create') && (
-                <CreateUserButton />
-            )}
-            
-            {/* O usando PermissionGate */}
-            <PermissionGate permission="users.read">
-                <UsersList />
-            </PermissionGate>
-        </div>
-    );
+  const { hasPermission } = useRBAC();
+
+  return (
+    <div>
+      {/* Renderizado condicional */}
+      {hasPermission('users.create') && <CreateUserButton />}
+
+      {/* O usando PermissionGate */}
+      <PermissionGate permission="users.read">
+        <UsersList />
+      </PermissionGate>
+    </div>
+  );
 }
 ```
 
 ### 2. Hooks Personalizados
+
 ```javascript
 // Patrón para hooks personalizados
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/auth-context.jsx';
 
 export function useCustomHook() {
-    const { token } = useAuth();
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    
-    useEffect(() => {
-        // Lógica del hook
-    }, [token]);
-    
-    return { data, loading, error };
+  const { token } = useAuth();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Lógica del hook
+  }, [token]);
+
+  return { data, loading, error };
+}
+```
+
+### 3. WebSocket Integration
+
+```javascript
+import { useWebSocket } from '../hooks/use-websocket.js';
+
+function MyComponent() {
+  const { isConnected, sendMessage } = useWebSocket();
+
+  useEffect(() => {
+    // Escuchar eventos en tiempo real
+    const handleEvent = (data) => {
+      // Procesar evento
+    };
+
+    window.addEventListener('myEvent', handleEvent);
+    return () => window.removeEventListener('myEvent', handleEvent);
+  }, []);
+
+  return (
+    <div>
+      <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
+        {isConnected ? 'Conectado' : 'Desconectado'}
+      </div>
+    </div>
+  );
 }
 ```
 
 ## Patrones de WebSockets
 
 ### 1. Integración en Controladores
+
 ```javascript
 import webSocketSystem from '../websocket/index.js';
 
@@ -254,7 +296,7 @@ import webSocketSystem from '../websocket/index.js';
 async store(req, res) {
     try {
         const item = await this.model.create(req.body);
-        
+
         // Notificación automática
         if (webSocketSystem.isInitialized()) {
             await webSocketSystem.sendNotificationToRole('admin', {
@@ -264,7 +306,7 @@ async store(req, res) {
                 priority: 'normal'
             });
         }
-        
+
         res.status(201).json(item);
     } catch (error) {
         res.status(400).json({ message: 'Error', error: error.message });
@@ -273,149 +315,195 @@ async store(req, res) {
 ```
 
 ### 2. Eventos Personalizados
+
 ```javascript
 // Registrar eventos personalizados
 const socketManager = webSocketSystem.getSocketManager();
 
 socketManager.registerEventHandler('mi_evento', async (socket, data) => {
-    // 1. Verificar permisos
-    if (!socket.userPermissions.includes('mi_permiso')) {
-        socket.emit('error', { message: 'Sin permisos' });
-        return;
-    }
-    
-    // 2. Validar datos
-    if (!data || !data.campo) {
-        socket.emit('error', { message: 'Datos inválidos' });
-        return;
-    }
-    
-    // 3. Procesar lógica
-    const resultado = await procesarLogica(data);
-    
-    // 4. Responder
-    socket.emit('mi_respuesta', resultado);
+  // 1. Verificar permisos
+  if (!socket.userPermissions.includes('mi_permiso')) {
+    socket.emit('error', { message: 'Sin permisos' });
+    return;
+  }
+
+  // 2. Validar datos
+  if (!data || !data.campo) {
+    socket.emit('error', { message: 'Datos inválidos' });
+    return;
+  }
+
+  // 3. Procesar lógica
+  const resultado = await procesarLogica(data);
+
+  // 4. Responder
+  socket.emit('mi_respuesta', resultado);
+});
+```
+
+## Patrones de Notificaciones
+
+### 1. Sistema de Eventos
+
+```javascript
+import EventService from '../services/eventService.js';
+
+// Registrar evento personalizado
+const eventService = new EventService();
+await eventService.registerEvent({
+  name: 'mi_evento',
+  description: 'Descripción del evento',
+  category: 'custom',
+  is_active: true,
+});
+
+// Disparar evento
+await eventService.triggerEvent('mi_evento', {
+  user_id: userId,
+  data: eventData,
+});
+```
+
+### 2. Plantillas de Notificación
+
+```javascript
+import TemplateService from '../services/templateService.js';
+
+// Crear plantilla
+const templateService = new TemplateService();
+await templateService.createTemplate({
+  name: 'Mi Plantilla',
+  subject: 'Asunto del mensaje',
+  template: 'Hola {{user_name}}, {{message}}',
+  event_name: 'mi_evento',
+  is_active: true,
 });
 ```
 
 ## Manejo de Errores
 
 ### 1. Backend - Respuestas Estándar
+
 ```javascript
 // Patrón de respuestas de error
 try {
-    // Lógica
+  // Lógica
 } catch (error) {
-    res.status(400).json({
-        message: 'Descripción amigable del error',
-        error: error.message,
-        timestamp: new Date().toISOString()
-    });
+  res.status(400).json({
+    message: 'Descripción amigable del error',
+    error: error.message,
+    timestamp: new Date().toISOString(),
+  });
 }
 ```
 
 ### 2. Frontend - Manejo de Errores
+
 ```javascript
 // Patrón para manejo de errores en fetch
 try {
-    const response = await fetch('/api/endpoint', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en la petición');
-    }
-    
-    const result = await response.json();
-    return result;
+  const response = await fetch('/api/endpoint', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Error en la petición');
+  }
+
+  const result = await response.json();
+  return result;
 } catch (error) {
-    console.error('Error:', error.message);
-    // Mostrar error al usuario
-    showNotification({
-        type: 'error',
-        message: error.message
-    });
+  console.error('Error:', error.message);
+  // Mostrar error al usuario
+  showNotification({
+    type: 'error',
+    message: error.message,
+  });
 }
 ```
 
 ## Validación de Datos
 
 ### 1. Backend - Validación en Modelos
+
 ```javascript
 // Usar validaciones de Sequelize
 const MyModel = sequelize.define('MyModel', {
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true,
-            notEmpty: true
-        }
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+      notEmpty: true,
     },
-    age: {
-        type: DataTypes.INTEGER,
-        validate: {
-            min: 0,
-            max: 120
-        }
-    }
+  },
+  age: {
+    type: DataTypes.INTEGER,
+    validate: {
+      min: 0,
+      max: 120,
+    },
+  },
 });
 ```
 
 ### 2. Frontend - Validación en Formularios
+
 ```javascript
 // Patrón de validación en React
 const [errors, setErrors] = useState({});
 
 const validateForm = (data) => {
-    const newErrors = {};
-    
-    if (!data.name?.trim()) {
-        newErrors.name = 'El nombre es requerido';
-    }
-    
-    if (!data.email?.includes('@')) {
-        newErrors.email = 'Email inválido';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const newErrors = {};
+
+  if (!data.name?.trim()) {
+    newErrors.name = 'El nombre es requerido';
+  }
+
+  if (!data.email?.includes('@')) {
+    newErrors.email = 'Email inválido';
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
 };
 ```
 
 ## Testing
 
 ### 1. Scripts de Prueba
+
 ```javascript
 // Patrón para scripts de prueba del backend
 import http from 'http';
 
 async function testEndpoint() {
-    try {
-        // 1. Hacer login
-        const token = await login();
-        
-        // 2. Probar endpoint
-        const result = await makeRequest('/api/endpoint', token);
-        
-        // 3. Verificar resultado
-        console.log('✅ Prueba exitosa:', result);
-    } catch (error) {
-        console.error('❌ Prueba falló:', error.message);
-    }
+  try {
+    // 1. Hacer login
+    const token = await login();
+
+    // 2. Probar endpoint
+    const result = await makeRequest('/api/endpoint', token);
+
+    // 3. Verificar resultado
+    console.log('✅ Prueba exitosa:', result);
+  } catch (error) {
+    console.error('❌ Prueba falló:', error.message);
+  }
 }
 ```
 
 ## Seguridad
 
 ### 1. Principios de Seguridad
+
 - **Autenticación**: JWT obligatorio en todas las rutas protegidas
 - **Autorización**: RBAC en backend Y frontend
 - **Validación**: Datos validados en ambos extremos
@@ -423,6 +511,7 @@ async function testEndpoint() {
 - **Principio de menor privilegio**: Permisos mínimos necesarios
 
 ### 2. Checklist de Seguridad
+
 - [ ] Ruta protegida con `requirePermission()`
 - [ ] Validación de datos en modelo Sequelize
 - [ ] Verificación de permisos en frontend
@@ -433,12 +522,92 @@ async function testEndpoint() {
 ## Performance
 
 ### 1. Optimizaciones Backend
+
 - Usar `attributes: { exclude: ['password'] }` en consultas de usuarios
 - Incluir relaciones solo cuando sea necesario
 - Implementar paginación en listados grandes
 - Usar índices en campos de búsqueda frecuente
 
 ### 2. Optimizaciones Frontend
+
+- Lazy loading de componentes pesados
+- Memoización con `useMemo` y `useCallback`
+- Evitar re-renders innecesarios
+- Optimizar imágenes y assets
+
+## Patrones de Agendamiento
+
+### 1. Horarios Flexibles
+
+```javascript
+// Patrón para manejo de horarios
+const scheduleTemplate = {
+  sede_id: 1,
+  modality_id: 1,
+  day_pattern: '1,2,3,4,5', // Lunes a viernes
+  start_time: '07:00',
+  end_time: '17:00',
+  interval_minutes: 60,
+  capacity_per_slot: 5,
+};
+```
+
+### 2. Validación de Capacidad
+
+```javascript
+// Verificar disponibilidad antes de agendar
+const availableSlots = await ScheduleTemplate.getAvailableSlots({
+  sede_id: sedeId,
+  modality_id: modalityId,
+  date: appointmentDate,
+});
+
+if (availableSlots.length === 0) {
+  throw new Error('No hay horarios disponibles');
+}
+```
+
+## Patrones de Contact Center
+
+### 1. Asignación de Agentes
+
+```javascript
+// Patrón para asignación dinámica
+const assignAgent = async (orderId, agentId) => {
+  const order = await InspectionOrder.findByPk(orderId);
+  const previousAgentId = order.assigned_agent_id;
+
+  await order.update({ assigned_agent_id: agentId });
+
+  // Notificar cambios
+  if (previousAgentId && previousAgentId !== agentId) {
+    await notifyAgentRemoval(previousAgentId, order);
+    await notifyAgentAssignment(agentId, order);
+  }
+};
+```
+
+### 2. Registro de Llamadas
+
+```javascript
+// Patrón para logging de llamadas
+const logCall = async (orderId, agentId, callData) => {
+  const callLog = await CallLog.create({
+    inspection_order_id: orderId,
+    agent_id: agentId,
+    status_id: callData.status_id,
+    observaciones: callData.observaciones,
+    fecha_seguimiento: callData.fecha_seguimiento,
+    call_time: new Date(),
+  });
+
+  // Actualizar estado de orden si es necesario
+  if (callData.status_id === 'contacto_exitoso') {
+    await updateOrderStatus(orderId, 'en_gestion');
+  }
+};
+```
+
 - Lazy loading de componentes pesados
 - Memoización con `useMemo` y `useCallback`
 - Evitar re-renders innecesarios

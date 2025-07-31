@@ -1,9 +1,3 @@
----
-description:
-globs:
-alwaysApply: false
----
-
 # Sistema de Agendamiento Avanzado
 
 ## Arquitectura del Sistema
@@ -100,11 +94,15 @@ POST /api/schedules/appointments
 
 1. **RBAC**: [seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)
 2. **Datos básicos**: [seedData.js](mdc:apps/server/scripts/seedData.js)
-3. **Usuario admin**: [seedUser.js](mdc:apps/server/scripts/seedUser.js)
-4. **Datos inspección**: [seedInspectionData.js](mdc:apps/server/scripts/seedInspectionData.js)
-5. **Sistema modalidades**: [seedModalitySystem.js](mdc:apps/server/scripts/seedModalitySystem.js)
+3. **Sistema modalidades**: [seedModalitySystem.js](mdc:apps/server/scripts/seedModalitySystem.js)
+4. **Usuario admin**: [seedUser.js](mdc:apps/server/scripts/seedUser.js)
+5. **Datos inspección**: [seedInspectionData.js](mdc:apps/server/scripts/seedInspectionData.js)
 6. **Sedes reales**: [seedRealSedes.js](mdc:apps/server/scripts/seedRealSedes.js)
-7. **Usuarios específicos**: [seedUsers.js](mdc:apps/server/scripts/seedUsers.js)
+7. **Disponibilidad modalidades**: [seedSedeModalityAvailability.js](mdc:apps/server/scripts/seedSedeModalityAvailability.js)
+8. **Usuarios específicos**: [seedUsers.js](mdc:apps/server/scripts/seedUsers.js)
+9. **Sistema eventos**: [seedEventSystem.js](mdc:apps/server/scripts/seedEventSystem.js)
+10. **Plantillas**: [seedTemplates.js](mdc:apps/server/scripts/seedTemplates.js)
+11. **Canales**: [seedChannels.js](mdc:apps/server/scripts/seedChannels.js)
 
 ### Comando Principal
 
@@ -137,7 +135,83 @@ Appointment.belongsTo(ScheduleTemplate, { foreignKey: 'schedule_template_id' });
 3. **Vehículos**: Confirmar que la sede acepta el tipo de vehículo
 4. **Modalidad**: Verificar disponibilidad de modalidad en la sede
 
-## Próximas Implementaciones Frontend
+## Frontend Components
+
+### Componentes de Agendamiento
+
+- **CalendarioAgendamiento**: [CalendarioAgendamiento.jsx](mdc:apps/web/src/components/CalendarioAgendamiento.jsx) - Vista de calendario con slots disponibles
+- **TimeSlotSelector**: [TimeSlotSelector.jsx](mdc:apps/web/src/components/TimeSlotSelector.jsx) - Selector de horarios disponibles
+- **CreateOrderModal**: [CreateOrderModal.jsx](mdc:apps/web/src/components/CreateOrderModal.jsx) - Modal de creación de órdenes con agendamiento
+
+### Integración con Contact Center
+
+- **AgenteContacto**: [AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx) - Panel del agente con agendamiento
+- **CoordinadorContacto**: [CoordinadorContacto.jsx](mdc:apps/web/src/pages/CoordinadorContacto.jsx) - Panel del coordinador
+
+## Sistema de Notificaciones
+
+### Eventos Automatizados
+
+- **appointment.scheduled**: Cuando se agenda una cita
+- **appointment.cancelled**: Cuando se cancela una cita
+- **appointment.reminder**: Recordatorio de cita próxima
+
+### Plantillas de Notificación
+
+- **Cita Agendada**: Notificación al cliente cuando se agenda
+- **Recordatorio**: Recordatorio 24h antes de la cita
+- **Confirmación**: Confirmación de asistencia
+
+## WebSocket Integration
+
+### Eventos en Tiempo Real
+
+- **slot.booked**: Cuando se reserva un slot
+- **slot.available**: Cuando se libera un slot
+- **appointment.updated**: Cuando se actualiza una cita
+
+### Actualizaciones Automáticas
+
+- Actualización en tiempo real de disponibilidad
+- Notificaciones de cambios en horarios
+- Sincronización de estado entre agentes
+
+## Configuración por Defecto
+
+### Horarios Estándar
+
+- **Intervalo**: 60 minutos
+- **Capacidad**: 5 cupos por slot
+- **Días laborales**: Lunes a viernes
+- **Horario**: 7:00 AM - 5:00 PM
+
+### Modalidades por Sede
+
+- **CDA 197**: En Sede, A Domicilio, Virtual
+- **CDA Distrital**: En Sede, A Domicilio, Virtual
+- **CDA PREVITAX**: En Sede
+- **CDA Cali Norte**: En Sede, A Domicilio, Virtual
+- **CDA Cali Sur**: En Sede
+
+### Tipos de Vehículo por Sede
+
+- **CDA 197**: Livianos, Pesados, Motos
+- **CDA Distrital**: Livianos
+- **CDA PREVITAX**: Livianos
+- **CDA Cali Norte**: Livianos, Pesados, Motos
+- **CDA Cali Sur**: Livianos, Motos
+
+## Próximas Implementaciones
+
+### Funcionalidades Planificadas
+
+- Selector de tipo de vehículo en formulario
+- Grid de horarios disponibles con vista de capacidad
+- Validación de capacidad en tiempo real
+- Información de tipos admitidos por sede
+- Sistema de recordatorios automáticos
+- Integración con calendarios externos
+- Reportes de ocupación y eficiencia
 
 - Selector de tipo de vehículo en formulario
 - Grid de horarios disponibles

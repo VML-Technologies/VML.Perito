@@ -1,0 +1,171 @@
+# Backend Development Patterns
+
+## Controller Structure
+
+### Export Pattern
+
+Always export controllers as default instances:
+
+```javascript
+// ✅ Correct
+export default new TemplateController();
+
+// ❌ Incorrect
+export default TemplateController;
+export { TemplateController };
+```
+
+### Method Naming
+
+Use consistent method names that match route expectations:
+
+```javascript
+// Standard CRUD methods
+async index(req, res) { /* list all */ }
+async show(req, res) { /* get by id */ }
+async store(req, res) { /* create new */ }
+async update(req, res) { /* update existing */ }
+async destroy(req, res) { /* delete */ }
+
+// Custom methods
+async duplicate(req, res) { /* duplicate resource */ }
+async stats(req, res) { /* get statistics */ }
+async validate(req, res) { /* validate data */ }
+```
+
+## Service Patterns
+
+### Singleton Pattern
+
+Services should be singleton classes:
+
+```javascript
+class TemplateService {
+  constructor() {
+    // Initialize service
+  }
+
+  async createTemplate(data) {
+    // Implementation
+  }
+}
+
+export default new TemplateService();
+```
+
+### Error Handling
+
+Always use try-catch blocks and proper error responses:
+
+```javascript
+async methodName(req, res) {
+    try {
+        // Implementation
+        res.json({ success: true, data: result });
+    } catch (error) {
+        console.error('Error in methodName:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al procesar la solicitud',
+            error: error.message
+        });
+    }
+}
+```
+
+## Database Operations
+
+### Sequelize Usage
+
+- Import models from `../models/index.js`
+- Use proper associations and includes
+- Handle soft deletes appropriately
+- Use transactions for complex operations
+
+### Query Patterns
+
+```javascript
+// Find with associations
+const result = await Model.findByPk(id, {
+  include: [
+    {
+      model: RelatedModel,
+      as: 'relation',
+      attributes: ['id', 'name'],
+    },
+  ],
+});
+
+// Find all with conditions
+const results = await Model.findAll({
+  where: { active: true },
+  order: [['created_at', 'DESC']],
+});
+```
+
+## Middleware Integration
+
+### Authentication
+
+```javascript
+// Use requireAuth for protected routes
+app.get('/api/protected', requireAuth, controller.method);
+
+// Use requirePermission for RBAC
+app.get('/api/admin', requirePermission('admin.read'), controller.method);
+```
+
+### Rate Limiting
+
+```javascript
+// Apply appropriate rate limiters
+app.get('/api/read', readLimiter, controller.method);
+app.post('/api/auth', authLimiter, controller.method);
+app.use(limiter); // General rate limiting
+```
+
+## Common Issues and Fixes
+
+### ES Module Issues
+
+- **Problem**: `require is not defined`
+- **Solution**: Use `import` instead of `require`
+- **Problem**: Missing default export
+- **Solution**: Add `export default new ControllerName()`
+
+### Database Issues
+
+- **Problem**: `Unknown column` errors
+- **Solution**: Check model definitions and migrations
+- **Problem**: Association errors
+- **Solution**: Import `./models/index.js` to establish relationships
+
+### Method Not Found
+
+- **Problem**: `TypeError: argument handler must be a function`
+- **Solution**: Ensure controller methods exist and are properly exported
+
+## Security Best Practices
+
+### Input Validation
+
+- Use SQL sanitization middleware
+- Validate request body data
+- Check permissions before operations
+
+### Error Information
+
+- Don't expose sensitive information in error messages
+- Log errors for debugging
+- Return generic messages to clients
+
+### Authentication
+
+- Verify JWT tokens properly
+- Check user permissions
+- Validate user status (active/inactive)
+  description:
+  globs:
+  alwaysApply: false
+
+---
