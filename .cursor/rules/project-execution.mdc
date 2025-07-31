@@ -1,9 +1,6 @@
 ---
-description:
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
-
 # Configuración de Ejecución del Proyecto VML.Perito
 
 ## Servidores en Ejecución

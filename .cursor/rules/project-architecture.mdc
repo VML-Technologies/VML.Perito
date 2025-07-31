@@ -1,6 +1,5 @@
 ---
-description:
-globs:
+description: Esta regla define la arquitectura del proyecto, las aplicaciones, las rutas, los controladores, los modelos, los middleware, etc.
 alwaysApply: false
 ---
 # Arquitectura del Proyecto VML.Perito

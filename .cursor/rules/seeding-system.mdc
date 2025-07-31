@@ -1,8 +1,9 @@
 ---
-description:
+description: Esta regla define el sistema de seeding, es decir, el sistema de datos de prueba.
 globs:
 alwaysApply: false
 ---
+
 # Sistema de Seeding - VML Perito
 
 ## Orden de Ejecución
@@ -10,45 +11,59 @@ alwaysApply: false
 El sistema de seeding debe ejecutarse en el siguiente orden para mantener la integridad referencial:
 
 ### 1. RBAC - Roles y Permisos
+
 **Archivo**: [seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)
+
 - Crea roles del sistema
 - Define permisos específicos
 - Asigna permisos a roles
 
 ### 2. Datos Básicos - Estructura Geográfica
+
 **Archivo**: [seedData.js](mdc:apps/server/scripts/seedData.js)
+
 - Departamentos (Cundinamarca, Valle del Cauca, Antioquia)
 - Ciudades (Bogotá, Cali, Medellín)
 - Empresas (Previcar como principal)
 
 ### 3. Usuario Administrador
+
 **Archivo**: [seedUser.js](mdc:apps/server/scripts/seedUser.js)
+
 - Crea usuario admin@vmlperito.com
 - Asigna rol super_admin
 - Configura notificaciones
 
 ### 4. Datos de Inspección
+
 **Archivo**: [seedInspectionData.js](mdc:apps/server/scripts/seedInspectionData.js)
+
 - Estados de órdenes de inspección
 - Estados de llamadas (con flag creates_schedule)
 - Tipos de inspección
 - Canales y tipos de notificación
 
 ### 5. Sistema de Modalidades Avanzado
+
 **Archivo**: [seedModalitySystem.js](mdc:apps/server/scripts/seedModalitySystem.js)
+
 - Tipos de sede (CDA, Comercial, Soporte)
 - Modalidades de inspección (En Sede, A Domicilio, Virtual)
 - Tipos de vehículos (Livianos, Pesados, Motos)
 
 ### 6. Sedes Reales con Configuración Completa
+
 **Archivo**: [seedRealSedes.js](mdc:apps/server/scripts/seedRealSedes.js)
+
 - CDAs en Bogotá y Cali con horarios específicos
 - Sedes administrativas (Comercial y Soporte)
 - Configuración de tipos de vehículos por sede
 - Plantillas de horarios con intervalos y capacidades
 
 ### 7. Usuarios Específicos
+
 **Archivo**: [seedUsers.js](mdc:apps/server/scripts/seedUsers.js)
+
 - Comercial Mundial
 - Coordinador de Contact Center
 - 5 Agentes de Contact Center
@@ -64,6 +79,7 @@ node scripts/seedAll.js
 ## Sedes Reales Configuradas
 
 ### Bogotá (Cundinamarca)
+
 ```javascript
 // CDA 197 - Completo
 {
@@ -99,6 +115,7 @@ node scripts/seedAll.js
 ```
 
 ### Cali (Valle del Cauca)
+
 ```javascript
 // CDA Cali Norte - Completo + Domingos
 {
@@ -126,6 +143,7 @@ node scripts/seedAll.js
 ```
 
 ### Sedes Administrativas
+
 ```javascript
 // Sede Comercial - Para usuarios comerciales
 {
@@ -145,12 +163,14 @@ node scripts/seedAll.js
 ## Configuración de Horarios
 
 ### Patrones de Días
+
 - `"1,2,3,4,5"` = Lunes a Viernes
 - `"6"` = Sábados
 - `"7"` = Domingos
 - `"1,2,3,4,5,6"` = Lunes a Sábados
 
 ### Intervalos y Capacidades
+
 - **Intervalo**: 60 minutos por defecto
 - **Capacidad En Sede**: 5 cupos por intervalo
 - **Capacidad A Domicilio**: 3 cupos por intervalo
@@ -159,13 +179,16 @@ node scripts/seedAll.js
 ## Credenciales Creadas
 
 ### Administración
+
 - **Admin**: admin@vmlperito.com / 123456 (super_admin)
 - **Supervisora**: supervisora@vmlperito.com / 123456 (múltiples roles)
 
 ### Comercial
+
 - **Comercial**: comercial@vmlperito.com / 123456 (comercial_mundial)
 
 ### Contact Center
+
 - **Coordinadora**: coordinadora@vmlperito.com / 123456 (coordinador_contacto)
 - **Agente 1**: agente1@vmlperito.com / 123456 (agente_contacto)
 - **Agente 2**: agente2@vmlperito.com / 123456 (agente_contacto)
@@ -176,6 +199,7 @@ node scripts/seedAll.js
 ## Validaciones del Sistema
 
 ### Orden de Dependencias
+
 1. **Departamentos** → Ciudades
 2. **Ciudades** → Empresas, Sedes
 3. **Empresas** → Sedes
@@ -186,6 +210,7 @@ node scripts/seedAll.js
 8. **Modalidades** → ScheduleTemplate
 
 ### Verificaciones Automáticas
+
 - Existencia de ciudades antes de crear sedes
 - Validación de tipos de sede, modalidades y vehículos
 - Verificación de relaciones antes de crear horarios
@@ -194,12 +219,14 @@ node scripts/seedAll.js
 ## Troubleshooting
 
 ### Errores Comunes
+
 1. **Foreign Key Constraint**: Verificar orden de ejecución
 2. **Duplicate Entry**: Los seeders usan `findOrCreate`
 3. **Missing Types**: Ejecutar seedModalitySystem antes de seedRealSedes
 4. **Index Too Long**: Nombres de índices MySQL limitados
 
 ### Comandos de Limpieza
+
 ```bash
 # Recrear BD completa
 FORCE_DB=true npm run setup:db

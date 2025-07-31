@@ -1,7 +1,6 @@
 ---
-title: Optimización de Rendimiento en React
+alwaysApply: true
 ---
-
 # Optimización de Rendimiento en React
 
 ## Reglas para evitar re-renders innecesarios
