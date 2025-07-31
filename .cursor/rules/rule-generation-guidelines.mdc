@@ -1,0 +1,249 @@
+---
+description: Instrucciones para generar reglas de Cursor para VML.Perito, incluyendo estructura de reglas, contenido requerido, patrones comunes, validación de calidad, mantenimiento regular, integración con reglas existentes, y ejemplos específicos del proyecto.
+alwaysApply: false
+---
+
+````
+
+**Description Requirements:**
+
+- Must be comprehensive and specific
+- Include key features and patterns
+- Mention integrations and technologies
+- Be descriptive enough for search and categorization
+
+### Step 3: Structure the Rule Content
+
+#### Template Structure
+
+```markdown
+# [Rule Title] - [Specific Context]
+
+## Quick Reference
+
+- Key commands
+- Important files
+- Essential configurations
+
+## Implementation Details
+
+- Step-by-step processes
+- Code examples with file references
+- Configuration patterns
+
+## Common Patterns
+
+- Reusable code snippets
+- Best practices
+- Anti-patterns to avoid
+
+## Troubleshooting
+
+- Common issues
+- Error resolution
+- Debugging tips
+
+## Related Rules
+
+- Cross-references to complementary rules
+- Dependencies and prerequisites
+````
+
+### Step 4: Add File References
+
+#### Use Consistent Reference Format
+
+```markdown
+# ✅ Correct References
+
+[App.jsx](mdc:apps/web/src/App.jsx)
+[seedAll.js](mdc:apps/server/scripts/seedAll.js)
+[package.json](mdc:apps/server/package.json)
+
+# ❌ Avoid Absolute Paths
+
+[App.jsx](mdc:/full/path/to/App.jsx)
+```
+
+#### Reference Key Files
+
+- Main entry points
+- Configuration files
+- Core models and controllers
+- Key components and services
+
+## Naming Conventions
+
+### Hierarchical Naming System
+
+```
+[project]-[feature].mdc           # Project-specific features
+[pattern]-[context].mdc           # Development patterns
+[system]-[subsystem].mdc          # System components
+```
+
+### Examples
+
+- `vml-perito-system.mdc` - Main system overview
+- `rbac-admin-ui.mdc` - RBAC UI patterns
+- `notification-system.mdc` - Notification architecture
+- `api-controllers.mdc` - API controller patterns
+
+## Content Quality Standards
+
+### Required Elements
+
+- ✅ **Actionable guidance** - Commands, examples, patterns
+- ✅ **File references** - Links to actual codebase files
+- ✅ **Project context** - VML.Perito specific information
+- ✅ **Error handling** - Common issues and solutions
+- ✅ **Cross-references** - Links to related rules
+
+### Avoid These Patterns
+
+- ❌ **Generic advice** without project context
+- ❌ **Duplicated information** from other rules
+- ❌ **Outdated references** or broken links
+- ❌ **Theory without implementation** examples
+
+## Validation Checklist
+
+### Before Finalizing a Rule
+
+#### Content Validation
+
+- [ ] Information is not duplicated in other rules
+- [ ] File references are correct and accessible
+- [ ] Code examples are current and working
+- [ ] Descriptions are comprehensive and specific
+
+#### Structure Validation
+
+- [ ] Metadata header is complete and accurate
+- [ ] Rule follows standard structure template
+- [ ] Cross-references to related rules are included
+- [ ] Naming follows conventions
+
+#### Quality Validation
+
+- [ ] Rule provides actionable guidance
+- [ ] Content is project-specific where appropriate
+- [ ] Error handling and troubleshooting included
+- [ ] Examples are relevant to VML.Perito
+
+## Rule Maintenance
+
+### Regular Review Process
+
+```bash
+# Quarterly review command
+find .cursor/rules -name "*.mdc" -exec echo "=== {} ===" \; -exec head -5 {} \;
+
+# Validate file references
+grep -r "mdc:" .cursor/rules/ | grep -v "mdc:apps/"
+
+# Check for outdated information
+grep -r "deprecated\|outdated\|old" .cursor/rules/
+```
+
+### Update Triggers
+
+- New features added to the system
+- Major architectural changes
+- New development patterns established
+- Reported issues with existing rules
+
+## Integration with Existing Rules
+
+### Cross-Reference Strategy
+
+```markdown
+## Related Rules
+
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Main system overview
+- [development-patterns.mdc](mdc:.cursor/rules/development-patterns.mdc) - General patterns
+- [api-controllers.mdc](mdc:.cursor/rules/api-controllers.mdc) - API patterns
+```
+
+### Dependency Management
+
+- Identify prerequisite rules
+- Ensure information flow between rules
+- Avoid circular references
+- Maintain logical hierarchy
+
+## Example Rule Creation
+
+### Scenario: New Feature Documentation
+
+```markdown
+---
+description: Sistema de reportes avanzados de VML.Perito, incluyendo generación de reportes PDF, exportación a Excel, filtros dinámicos, programación automática de reportes, integración con sistema de notificaciones, dashboard de métricas, y patrones de implementación para nuevos tipos de reportes.
+alwaysApply: false
+---
+
+# Sistema de Reportes Avanzados - VML.Perito
+
+## Quick Reference
+
+- Report generation: `/api/reports/generate`
+- Export formats: PDF, Excel, CSV
+- Scheduling: `/api/reports/schedule`
+
+## Implementation Details
+
+[Detailed implementation with file references]
+
+## Common Patterns
+
+[Reusable patterns and examples]
+
+## Related Rules
+
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc)
+- [api-controllers.mdc](mdc:.cursor/rules/api-controllers.mdc)
+```
+
+## Quality Metrics
+
+### Success Indicators
+
+- Rule is referenced by other rules
+- Developers use the rule for guidance
+- Information remains current and accurate
+- Rule solves real development problems
+
+### Warning Signs
+
+- Rule is never referenced
+- Information becomes outdated quickly
+- Duplicates content from other rules
+- Provides generic advice without context
+
+## Rule Generation Workflow
+
+### Complete Process
+
+1. **Identify Need** - Determine if rule is necessary
+2. **Research Existing** - Check for overlapping content
+3. **Plan Structure** - Choose appropriate template
+4. **Create Content** - Write comprehensive documentation
+5. **Add References** - Link to actual codebase files
+6. **Validate Quality** - Run through checklist
+7. **Cross-Reference** - Link to related rules
+8. **Review and Finalize** - Ensure completeness
+
+### Validation Commands
+
+```bash
+# Final validation before committing
+grep -r "mdc:" .cursor/rules/rule-generation-guidelines.mdc
+head -10 .cursor/rules/rule-generation-guidelines.mdc
+wc -l .cursor/rules/rule-generation-guidelines.mdc
+```
+
+description:
+globs:
+alwaysApply: false
+
+---
