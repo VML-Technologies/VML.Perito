@@ -1,3 +1,225 @@
+---
+alwaysApply: false
+---
+# Sistema de Agendamiento Avanzado
+
+## Arquitectura del Sistema
+
+### Modelos Principales
+
+#### Tipos de Vehículos
+
+- **VehicleType**: [vehicleType.js](mdc:apps/server/models/vehicleType.js) - Define tipos: Livianos, Pesados, Motos
+- **SedeVehicleType**: [sedeVehicleType.js](mdc:apps/server/models/sedeVehicleType.js) - Relación N:N entre sedes y tipos de vehículos
+
+#### Sistema de Horarios Flexibles
+
+- **ScheduleTemplate**: [scheduleTemplate.js](mdc:apps/server/models/scheduleTemplate.js) - Plantillas de horarios con:
+  - Patrones de días flexibles (ej: "1,2,3,4,5" = Lun-Vie, "1,3,5" = Lun-Mie-Vie)
+  - Intervalos personalizables (30, 60, 90 minutos)
+  - Capacidad por intervalo
+  - Horarios de inicio/fin
+
+#### Modelos Actualizados
+
+- **Appointment**: [appointment.js](mdc:apps/server/models/appointment.js) - Agregados campos:
+
+  - `vehicle_type_id` - Tipo de vehículo
+  - `schedule_template_id` - Plantilla de horario utilizada
+  - `scheduled_time_end` - Hora de fin del intervalo
+  - `inspection_address` - Dirección para inspecciones a domicilio
+
+- **SedeType**: [sedeType.js](mdc:apps/server/models/sedeType.js) - Tipos actualizados:
+  - **CDA**: Centro de Diagnóstico Automotor
+  - **COMERCIAL**: Sede comercial y ventas
+  - **SOPORTE**: Sede de soporte y contact center
+
+### Controladores
+
+#### ScheduleController
+
+- **Archivo**: [scheduleController.js](mdc:apps/server/controllers/scheduleController.js)
+- **Funciones principales**:
+  - `getAvailableSchedules()` - Obtiene horarios disponibles para una fecha
+  - `generateTimeSlots()` - Genera intervalos de tiempo disponibles
+  - `getSedeVehicleTypes()` - Obtiene tipos de vehículos por sede
+  - `createScheduledAppointment()` - Crea agendamiento con validación de capacidad
+
+### APIs Disponibles
+
+```
+GET /api/schedules/available?sedeId=X&modalityId=Y&date=YYYY-MM-DD
+GET /api/sedes/:sedeId/vehicle-types
+POST /api/schedules/appointments
+```
+
+## Sedes Reales Configuradas
+
+### Bogotá (Cundinamarca)
+
+- **CDA 197**: AUTOPISTA NORTE No. 197 -75 (Livianos, Pesados, Motos)
+  - L-V: 7:00-17:00, Sáb: 8:00-17:00
+- **CDA Distrital**: Carrera 36 # 19 – 21 (Livianos)
+  - L-V: 7:00-17:00, Sáb: 8:00-17:00
+- **CDA PREVITAX**: CALLE 12 B No. 44 – 08 (Livianos)
+  - L-S: 6:00-18:00
+
+### Cali (Valle del Cauca)
+
+- **CDA Cali Norte**: CRA 1 N° 47 – 250 (Livianos, Pesados, Motos)
+  - L-V: 7:00-17:00, Sáb: 8:00-17:00, Dom: 8:00-12:00
+- **CDA Cali Sur**: CRA 41 N° 6-02 (Livianos, Motos)
+  - L-V: 7:00-17:00, Sáb: 8:00-17:00, Dom: 8:00-12:00
+
+### Sedes Administrativas
+
+- **Sede Comercial Bogotá** - Para usuarios comerciales
+- **Sede Soporte Bogotá** - Para contact center
+
+## Configuración de Horarios
+
+### Patrones de Días
+
+- **Individual**: `"1"` (solo lunes)
+- **Rango**: `"1,2,3,4,5"` (lunes a viernes)
+- **Específicos**: `"1,3,5"` (lunes, miércoles, viernes)
+- **Fines de semana**: `"6,7"` (sábado y domingo)
+
+### Intervalos Flexibles
+
+- Configurables en minutos: 30, 60, 90, etc.
+- Capacidad por intervalo: 1-20 cupos
+- Validación automática de disponibilidad
+
+## Seeding del Sistema
+
+### Orden de Ejecución
+
+1. **RBAC**: [seedRBAC.js](mdc:apps/server/scripts/seedRBAC.js)
+2. **Datos básicos**: [seedData.js](mdc:apps/server/scripts/seedData.js)
+3. **Sistema modalidades**: [seedModalitySystem.js](mdc:apps/server/scripts/seedModalitySystem.js)
+4. **Usuario admin**: [seedUser.js](mdc:apps/server/scripts/seedUser.js)
+5. **Datos inspección**: [seedInspectionData.js](mdc:apps/server/scripts/seedInspectionData.js)
+6. **Sedes reales**: [seedRealSedes.js](mdc:apps/server/scripts/seedRealSedes.js)
+7. **Disponibilidad modalidades**: [seedSedeModalityAvailability.js](mdc:apps/server/scripts/seedSedeModalityAvailability.js)
+8. **Usuarios específicos**: [seedUsers.js](mdc:apps/server/scripts/seedUsers.js)
+9. **Sistema eventos**: [seedEventSystem.js](mdc:apps/server/scripts/seedEventSystem.js)
+10. **Plantillas**: [seedTemplates.js](mdc:apps/server/scripts/seedTemplates.js)
+11. **Canales**: [seedChannels.js](mdc:apps/server/scripts/seedChannels.js)
+
+### Comando Principal
+
+```bash
+cd apps/server
+node scripts/seedAll.js
+```
+
+## Relaciones del Modelo
+
+### VehicleType ↔ Sede (N:N)
+
+```javascript
+// A través de SedeVehicleType
+Sede.belongsToMany(VehicleType, { through: SedeVehicleType });
+VehicleType.belongsToMany(Sede, { through: SedeVehicleType });
+```
+
+### ScheduleTemplate → Appointment (1:N)
+
+```javascript
+ScheduleTemplate.hasMany(Appointment, { foreignKey: 'schedule_template_id' });
+Appointment.belongsTo(ScheduleTemplate, { foreignKey: 'schedule_template_id' });
+```
+
+### Validaciones de Negocio
+
+1. **Capacidad**: Verificar cupos disponibles antes de agendar
+2. **Horarios**: Validar que la sede opere en el día/hora solicitados
+3. **Vehículos**: Confirmar que la sede acepta el tipo de vehículo
+4. **Modalidad**: Verificar disponibilidad de modalidad en la sede
+
+## Frontend Components
+
+### Componentes de Agendamiento
+
+- **CalendarioAgendamiento**: [CalendarioAgendamiento.jsx](mdc:apps/web/src/components/CalendarioAgendamiento.jsx) - Vista de calendario con slots disponibles
+- **TimeSlotSelector**: [TimeSlotSelector.jsx](mdc:apps/web/src/components/TimeSlotSelector.jsx) - Selector de horarios disponibles
+- **CreateOrderModal**: [CreateOrderModal.jsx](mdc:apps/web/src/components/CreateOrderModal.jsx) - Modal de creación de órdenes con agendamiento
+
+### Integración con Contact Center
+
+- **AgenteContacto**: [AgenteContacto.jsx](mdc:apps/web/src/pages/AgenteContacto.jsx) - Panel del agente con agendamiento
+- **CoordinadorContacto**: [CoordinadorContacto.jsx](mdc:apps/web/src/pages/CoordinadorContacto.jsx) - Panel del coordinador
+
+## Sistema de Notificaciones
+
+### Eventos Automatizados
+
+- **appointment.scheduled**: Cuando se agenda una cita
+- **appointment.cancelled**: Cuando se cancela una cita
+- **appointment.reminder**: Recordatorio de cita próxima
+
+### Plantillas de Notificación
+
+- **Cita Agendada**: Notificación al cliente cuando se agenda
+- **Recordatorio**: Recordatorio 24h antes de la cita
+- **Confirmación**: Confirmación de asistencia
+
+## WebSocket Integration
+
+### Eventos en Tiempo Real
+
+- **slot.booked**: Cuando se reserva un slot
+- **slot.available**: Cuando se libera un slot
+- **appointment.updated**: Cuando se actualiza una cita
+
+### Actualizaciones Automáticas
+
+- Actualización en tiempo real de disponibilidad
+- Notificaciones de cambios en horarios
+- Sincronización de estado entre agentes
+
+## Configuración por Defecto
+
+### Horarios Estándar
+
+- **Intervalo**: 60 minutos
+- **Capacidad**: 5 cupos por slot
+- **Días laborales**: Lunes a viernes
+- **Horario**: 7:00 AM - 5:00 PM
+
+### Modalidades por Sede
+
+- **CDA 197**: En Sede, A Domicilio, Virtual
+- **CDA Distrital**: En Sede, A Domicilio, Virtual
+- **CDA PREVITAX**: En Sede
+- **CDA Cali Norte**: En Sede, A Domicilio, Virtual
+- **CDA Cali Sur**: En Sede
+
+### Tipos de Vehículo por Sede
+
+- **CDA 197**: Livianos, Pesados, Motos
+- **CDA Distrital**: Livianos
+- **CDA PREVITAX**: Livianos
+- **CDA Cali Norte**: Livianos, Pesados, Motos
+- **CDA Cali Sur**: Livianos, Motos
+
+## Próximas Implementaciones
+
+### Funcionalidades Planificadas
+
+- Selector de tipo de vehículo en formulario
+- Grid de horarios disponibles con vista de capacidad
+- Validación de capacidad en tiempo real
+- Información de tipos admitidos por sede
+- Sistema de recordatorios automáticos
+- Integración con calendarios externos
+- Reportes de ocupación y eficiencia
+
+- Selector de tipo de vehículo en formulario
+- Grid de horarios disponibles
+- Validación de capacidad en tiempo real
+- Información de tipos admitidos por sede
 # Sistema de Agendamiento Avanzado
 
 ## Arquitectura del Sistema
