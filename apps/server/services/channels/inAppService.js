@@ -18,6 +18,11 @@ class InAppService {
         try {
             console.log(`📱 Enviando notificación In-App a usuario ${notification.recipient_user_id}`);
 
+            // Extraer datos del canal específico si están disponibles
+            const channelData = notification.metadata?.channel_data?.in_app || {};
+            const title = channelData.title || notification.title;
+            const content = channelData.message || notification.content;
+
             let websocketDelivered = false;
 
             // Intentar envío via WebSocket si el usuario está conectado
@@ -26,14 +31,14 @@ class InAppService {
                     const notificationData = {
                         id: notification.id,
                         type: 'in_app_notification',
-                        title: notification.title,
-                        content: notification.content,
+                        title: title,
+                        content: content,
                         priority: notification.priority,
                         metadata: notification.metadata,
                         timestamp: new Date().toISOString()
                     };
 
-                    // Enviar via WebSocket
+                    // Enviar via WebSocket (solo la notificación principal, no la adicional)
                     const sent = this.webSocketSystem.sendToUser(
                         notification.recipient_user_id,
                         'notification',

@@ -21,6 +21,11 @@ class PushService {
         try {
             console.log(`🔔 Enviando Push a usuario: ${notification.recipient_user_id}`);
 
+            // Extraer datos del canal específico si están disponibles
+            const channelData = notification.metadata?.channel_data?.push || {};
+            const title = channelData.title || notification.title;
+            const content = channelData.message || notification.content;
+
             // Verificar si hay token de push
             if (!notification.push_token) {
                 console.warn('⚠️ No hay token de push para el usuario');
@@ -44,7 +49,7 @@ class PushService {
                         channel: 'push',
                         provider: 'simulation',
                         token: notification.push_token.substring(0, 20) + '...',
-                        title: notification.title,
+                        title: title,
                         simulated: true
                     }
                 };
@@ -54,8 +59,8 @@ class PushService {
             const pushData = {
                 to: notification.push_token,
                 notification: {
-                    title: notification.title,
-                    body: notification.content,
+                    title: title,
+                    body: content,
                     icon: '/icon-192x192.png',
                     badge: '/badge-72x72.png',
                     click_action: this.generateClickAction(notification)

@@ -29,6 +29,10 @@ class WhatsAppService {
                 throw new Error('Número de teléfono inválido');
             }
 
+            // Extraer datos del canal específico si están disponibles
+            const channelData = notification.metadata?.channel_data?.whatsapp || {};
+            const message = channelData.message || notification.content;
+
             // TODO: Implementar envío real cuando se defina proveedor
             if (!this.provider) {
                 console.warn('⚠️ Proveedor de WhatsApp no configurado, simulando envío...');
@@ -42,7 +46,7 @@ class WhatsAppService {
                         channel: 'whatsapp',
                         provider: 'simulation',
                         to: notification.recipient_phone,
-                        message: notification.content,
+                        message: message,
                         simulated: true
                     }
                 };
@@ -53,7 +57,7 @@ class WhatsAppService {
                 to: this.formatPhoneNumber(notification.recipient_phone),
                 type: 'text',
                 text: {
-                    body: this.formatMessage(notification)
+                    body: this.formatMessage(notification, channelData)
                 }
             };
 
@@ -76,9 +80,12 @@ class WhatsAppService {
     /**
      * Formatear mensaje para WhatsApp
      */
-    formatMessage(notification) {
-        let message = `*${notification.title}*\n\n`;
-        message += notification.content;
+    formatMessage(notification, channelData = {}) {
+        const title = channelData.title || notification.title;
+        const content = channelData.message || notification.content;
+
+        let message = `*${title}*\n\n`;
+        message += content;
 
         // Agregar footer si es necesario
         if (notification.priority === 'urgent') {
