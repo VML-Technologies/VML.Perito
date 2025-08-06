@@ -6,6 +6,8 @@ import Role from '../models/role.js';
 import Permission from '../models/permission.js';
 import PasswordService from '../services/passwordService.js';
 import webSocketSystem from '../websocket/index.js';
+import EventRegistry from '../services/eventRegistry.js';
+import automatedEventTriggers from '../services/automatedEventTriggers.js';
 
 class UserController extends BaseController {
     constructor() {
@@ -28,11 +30,11 @@ class UserController extends BaseController {
     async store(req, res) {
         try {
             const { password, ...userData } = req.body;
-            
+
             // Validar contraseña según la política
             const passwordValidation = PasswordService.validatePassword(password);
             if (!passwordValidation.isValid) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     message: 'La contraseña no cumple con los requisitos de seguridad',
                     errors: passwordValidation.errors
                 });
@@ -48,6 +50,22 @@ class UserController extends BaseController {
 
             // No devolver la contraseña en la respuesta
             const { password: _, ...userResponse } = user.toJSON();
+
+            // Disparar evento de usuario creado
+            try {
+                await automatedEventTriggers.triggerUserEvents('created', {
+                    id: userResponse.id,
+                    email: userResponse.email,
+                    first_name: userResponse.first_name,
+                    last_name: userResponse.last_name,
+                    role: userResponse.roles?.[0]?.name || 'user'
+                }, {
+                    created_by: req.user?.id,
+                    ip_address: req.ip
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento user.created:', eventError);
+            }
 
             // Enviar notificación de nuevo usuario a administradores
             if (webSocketSystem.isInitialized()) {
@@ -92,7 +110,7 @@ class UserController extends BaseController {
                 // Validar la nueva contraseña según la política
                 const passwordValidation = PasswordService.validatePassword(password);
                 if (!passwordValidation.isValid) {
-                    return res.status(400).json({ 
+                    return res.status(400).json({
                         message: 'La nueva contraseña no cumple con los requisitos de seguridad',
                         errors: passwordValidation.errors
                     });
@@ -100,7 +118,7 @@ class UserController extends BaseController {
 
                 // Hashear la nueva contraseña
                 userData.password = await PasswordService.hashPassword(password);
-                
+
                 // Si el usuario tenía contraseña temporal, marcarla como permanente
                 if (user.temporary_password) {
                     userData.temporary_password = false;
@@ -111,6 +129,41 @@ class UserController extends BaseController {
 
             // No devolver la contraseña en la respuesta
             const { password: _, ...userResponse } = user.toJSON();
+
+            // Disparar evento de cambio de contraseña si se actualizó la contraseña
+            if (password) {
+                try {
+                    await automatedEventTriggers.triggerUserEvents('password_changed', {
+                        id: userResponse.id,
+                        email: userResponse.email,
+                        first_name: userResponse.first_name,
+                        last_name: userResponse.last_name
+                    }, {
+                        changed_by: req.user?.id,
+                        ip_address: req.ip,
+                        changed_at: new Date().toISOString()
+                    });
+                } catch (eventError) {
+                    console.error('Error disparando evento user.password_changed:', eventError);
+                }
+            }
+
+            // Disparar evento de usuario actualizado
+            try {
+                await automatedEventTriggers.triggerUserEvents('updated', {
+                    id: userResponse.id,
+                    email: userResponse.email,
+                    first_name: userResponse.first_name,
+                    last_name: userResponse.last_name,
+                    role: userResponse.roles?.[0]?.name || 'user'
+                }, {
+                    updated_by: req.user?.id,
+                    ip_address: req.ip,
+                    changes: Object.keys(userData)
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento user.updated:', eventError);
+            }
 
             // Enviar notificación de actualización al usuario
             if (webSocketSystem.isInitialized()) {
@@ -126,6 +179,42 @@ class UserController extends BaseController {
             res.json(userResponse);
         } catch (error) {
             res.status(400).json({ message: 'Error al actualizar usuario', error: error.message });
+        }
+    }
+
+    // Sobrescribir el método destroy para disparar eventos
+    async destroy(req, res) {
+        try {
+            const user = await this.model.findByPk(req.params.id);
+            if (!user) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
+            // Guardar datos del usuario antes de eliminarlo
+            const userData = {
+                id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                role: user.roles?.[0]?.name || 'user'
+            };
+
+            await user.destroy(); // Soft delete
+
+            // Disparar evento de usuario eliminado
+            try {
+                await automatedEventTriggers.triggerUserEvents('deleted', userData, {
+                    deleted_by: req.user?.id,
+                    ip_address: req.ip,
+                    deleted_at: new Date().toISOString()
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento user.deleted:', eventError);
+            }
+
+            res.json({ message: 'Usuario eliminado correctamente' });
+        } catch (error) {
+            res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
         }
     }
 

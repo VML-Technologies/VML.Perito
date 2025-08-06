@@ -11,6 +11,7 @@ import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op, Sequelize } from 'sequelize';
+import automatedEventTriggers from '../services/automatedEventTriggers.js';
 
 // Función para generar número de orden incremental
 const generateOrderNumber = async () => {
@@ -433,6 +434,31 @@ class InspectionOrderController extends BaseController {
                 ]
             });
 
+            // Disparar evento de orden de inspección creada
+            try {
+                await automatedEventTriggers.triggerInspectionOrderEvents('created', {
+                    id: fullOrder.id,
+                    numero: fullOrder.numero,
+                    nombre_cliente: fullOrder.nombre_cliente,
+                    correo_cliente: fullOrder.correo_cliente,
+                    celular_cliente: fullOrder.celular_cliente,
+                    placa: fullOrder.placa,
+                    marca: fullOrder.marca,
+                    linea: fullOrder.linea,
+                    modelo: fullOrder.modelo,
+                    tipo_vehiculo: fullOrder.tipo_vehiculo,
+                    status: fullOrder.InspectionOrderStatus?.name || 'Nueva',
+                    sede_name: fullOrder.sede?.name || 'No asignada',
+                    created_at: fullOrder.created_at,
+                    clave_intermediario: fullOrder.clave_intermediario
+                }, {
+                    created_by: req.user?.id,
+                    ip_address: req.ip
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento inspection_order.created:', eventError);
+            }
+
             res.status(201).json(fullOrder);
         } catch (error) {
             console.error('Error creating inspection order:', error.message);
@@ -513,6 +539,75 @@ class InspectionOrderController extends BaseController {
             res.json(orders);
         } catch (error) {
             res.status(500).json({ message: 'Error en la búsqueda', error: error.message });
+        }
+    }
+
+    // Asignar agente a orden de inspección
+    async assignAgent(req, res) {
+        try {
+            const { orderId } = req.params;
+            const { agentId } = req.body;
+
+            if (!agentId) {
+                return res.status(400).json({ message: 'ID del agente es requerido' });
+            }
+
+            const order = await this.model.findByPk(orderId, {
+                include: [
+                    {
+                        model: User,
+                        as: 'AssignedAgent',
+                        attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            if (!order) {
+                return res.status(404).json({ message: 'Orden de inspección no encontrada' });
+            }
+
+            const oldAgentId = order.assigned_agent_id;
+            await order.update({ assigned_agent_id: agentId });
+
+            // Obtener información del agente asignado
+            const agent = await User.findByPk(agentId, {
+                attributes: ['id', 'name', 'email', 'first_name', 'last_name']
+            });
+
+            // Disparar evento de asignación de agente
+            try {
+                await automatedEventTriggers.triggerInspectionOrderEvents('assigned', {
+                    id: order.id,
+                    numero: order.numero,
+                    nombre_cliente: order.nombre_cliente,
+                    tipo_vehiculo: order.tipo_vehiculo,
+                    assigned_agent_id: agentId,
+                    agent_name: agent.name,
+                    agent_email: agent.email
+                }, {
+                    assigned_by: req.user?.id,
+                    assigned_at: new Date().toISOString(),
+                    ip_address: req.ip
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento inspection_order.assigned:', eventError);
+            }
+
+            res.json({
+                message: 'Agente asignado exitosamente',
+                order: {
+                    id: order.id,
+                    assigned_agent_id: order.assigned_agent_id,
+                    agent: agent
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: 'Error al asignar agente', error: error.message });
         }
     }
 }

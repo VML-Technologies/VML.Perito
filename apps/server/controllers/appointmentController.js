@@ -8,6 +8,8 @@ import {
     Appointment
 } from '../models/index.js';
 import { Op } from 'sequelize';
+import EventRegistry from '../services/eventRegistry.js';
+import automatedEventTriggers from '../services/automatedEventTriggers.js';
 
 class AppointmentController {
     // Obtener modalidades disponibles por departamento y ciudad
@@ -287,6 +289,27 @@ class AppointmentController {
                     }
                 ]
             });
+
+            // Disparar evento de cita creada
+            try {
+                await automatedEventTriggers.triggerAppointmentEvents('created', {
+                    id: fullAppointment.id,
+                    date: fullAppointment.scheduled_date,
+                    time: fullAppointment.scheduled_time,
+                    status: fullAppointment.status,
+                    sede: fullAppointment.sede?.name || 'Sede no especificada',
+                    modality: fullAppointment.inspectionModality?.name || 'Modalidad no especificada',
+                    customer: fullAppointment.inspectionOrder?.nombre_cliente || 'Cliente',
+                    customer_email: fullAppointment.inspectionOrder?.email_cliente || 'email@ejemplo.com'
+                }, {
+                    created_by: req.user?.id,
+                    ip_address: req.ip,
+                    call_log_id: _callLogId,
+                    inspection_order_id: _inspectionOrderId
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento appointment.created:', eventError);
+            }
 
             res.status(201).json({
                 success: true,

@@ -2,6 +2,7 @@ import User from '../models/user.js';
 import Role from '../models/role.js';
 import PasswordService from '../services/passwordService.js';
 import jwt from 'jsonwebtoken';
+import automatedEventTriggers from '../services/automatedEventTriggers.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto';
 
@@ -26,14 +27,29 @@ export const login = async (req, res) => {
         if (!valid) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
-        
-        const token = jwt.sign({ 
-            id: user.id, 
-            email: user.email, 
+
+        const token = jwt.sign({
+            id: user.id,
+            email: user.email,
             name: user.name,
-            temporaryPassword: user.temporary_password 
+            temporaryPassword: user.temporary_password
         }, JWT_SECRET, { expiresIn: '2h' });
-        
+
+        // Disparar evento de login
+        try {
+            await automatedEventTriggers.triggerUserEvents('login', {
+                id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name
+            }, {
+                login_time: new Date().toISOString(),
+                ip_address: req.ip || req.connection.remoteAddress
+            });
+        } catch (eventError) {
+            console.error('Error disparando evento user.login:', eventError);
+        }
+
         res.json({
             token,
             user: {
@@ -77,7 +93,7 @@ export const changeTemporaryPassword = async (req, res) => {
         // Validar la nueva contraseña
         const passwordValidation = PasswordService.validatePassword(newPassword);
         if (!passwordValidation.isValid) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'La nueva contraseña no cumple con los requisitos de seguridad',
                 errors: passwordValidation.errors
             });
@@ -89,6 +105,20 @@ export const changeTemporaryPassword = async (req, res) => {
             password: hashedPassword,
             temporary_password: false
         });
+
+        // Disparar evento de cambio de contraseña
+        try {
+            await automatedEventTriggers.triggerUserEvents('password_changed', {
+                id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name
+            }, {
+                changed_at: new Date().toISOString()
+            });
+        } catch (eventError) {
+            console.error('Error disparando evento user.password_changed:', eventError);
+        }
 
         // Obtener el usuario actualizado con roles
         const updatedUser = await User.findByPk(userId, {
@@ -102,7 +132,7 @@ export const changeTemporaryPassword = async (req, res) => {
             ]
         });
 
-        res.json({ 
+        res.json({
             message: 'Contraseña cambiada exitosamente',
             user: {
                 id: updatedUser.id,
@@ -140,7 +170,7 @@ export const changePassword = async (req, res) => {
         // Validar la nueva contraseña
         const passwordValidation = PasswordService.validatePassword(newPassword);
         if (!passwordValidation.isValid) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'La nueva contraseña no cumple con los requisitos de seguridad',
                 errors: passwordValidation.errors
             });
@@ -152,6 +182,21 @@ export const changePassword = async (req, res) => {
             password: hashedPassword,
             temporary_password: false // Asegurar que no sea temporal
         });
+
+        // Disparar evento de cambio de contraseña
+        try {
+            await automatedEventTriggers.triggerUserEvents('password_changed', {
+                id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name
+            }, {
+                changed_at: new Date().toISOString(),
+                changed_by: req.user?.id
+            });
+        } catch (eventError) {
+            console.error('Error disparando evento user.password_changed:', eventError);
+        }
 
         // Obtener el usuario actualizado con roles
         const updatedUser = await User.findByPk(userId, {
@@ -165,7 +210,7 @@ export const changePassword = async (req, res) => {
             ]
         });
 
-        res.json({ 
+        res.json({
             message: 'Contraseña cambiada exitosamente',
             user: {
                 id: updatedUser.id,
@@ -219,4 +264,15 @@ export const verify = async (req, res) => {
 
 export const logout = (req, res) => {
     res.json({ message: 'Sesión cerrada' });
+};
+
+// Export por defecto para compatibilidad con el index.js
+export default {
+    login,
+    register: changeTemporaryPassword, // Alias para register
+    refreshToken: verify, // Alias para refreshToken
+    logout,
+    changeTemporaryPassword,
+    changePassword,
+    verify
 }; 
