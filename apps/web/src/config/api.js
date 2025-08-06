@@ -45,6 +45,7 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        ASSIGN_AGENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/assign-agent`,
     },
     // ===== RUTAS DE SEDES =====
     SEDES: {
@@ -88,6 +89,103 @@ export const API_ROUTES = {
         GET_USER_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/user`,
         MARK_AS_READ: (id) => `${API_BASE_URL}/api/notifications/${id}`,
         MARK_ALL_AS_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
+        STATS: `${API_BASE_URL}/api/notifications/stats`,
+    },
+    // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
+    NOTIFICATIONS_ADMIN: {
+        // Configuración general
+        CONFIG: `${API_BASE_URL}/api/notifications/admin/config`,
+        // Tipos de notificación
+        TYPES: `${API_BASE_URL}/api/notifications/admin/types`,
+        CREATE_TYPE: `${API_BASE_URL}/api/notifications/admin/types`,
+        UPDATE_TYPE: (id) => `${API_BASE_URL}/api/notifications/admin/types/${id}`,
+        DELETE_TYPE: (id) => `${API_BASE_URL}/api/notifications/admin/types/${id}`,
+        // Canales de notificación
+        CHANNELS: `${API_BASE_URL}/api/notifications/admin/channels`,
+        CREATE_CHANNEL: `${API_BASE_URL}/api/notifications/admin/channels`,
+        UPDATE_CHANNEL: (id) => `${API_BASE_URL}/api/notifications/admin/channels/${id}`,
+        DELETE_CHANNEL: (id) => `${API_BASE_URL}/api/notifications/admin/channels/${id}`,
+        // Configuraciones de notificación
+        CONFIGS: `${API_BASE_URL}/api/notifications/admin/configs`,
+        CREATE_CONFIG: `${API_BASE_URL}/api/notifications/admin/configs`,
+        UPDATE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/admin/configs/${id}`,
+        DELETE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/admin/configs/${id}`,
+        // Estadísticas y logs
+        ADMIN_STATS: `${API_BASE_URL}/api/notifications/admin/stats`,
+        LOGS: `${API_BASE_URL}/api/notifications/admin/logs`,
+        // Pruebas
+        TEST: `${API_BASE_URL}/api/notifications/admin/test`,
+    },
+    // ===== RUTAS DEL SISTEMA DE EVENTOS =====
+    EVENTS: {
+        // Gestión de eventos
+        LIST: `${API_BASE_URL}/api/events`,
+        STATS: `${API_BASE_URL}/api/events/stats`,
+        BY_CATEGORY: (category) => `${API_BASE_URL}/api/events/category/${category}`,
+        GET: (id) => `${API_BASE_URL}/api/events/${id}`,
+        CREATE: `${API_BASE_URL}/api/events`,
+        UPDATE: (id) => `${API_BASE_URL}/api/events/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/events/${id}`,
+        TRIGGER: (eventName) => `${API_BASE_URL}/api/events/${eventName}/trigger`,
+
+        // Gestión de listeners
+        LISTENERS: (eventId) => `${API_BASE_URL}/api/events/${eventId}/listeners`,
+        CREATE_LISTENER: (eventId) => `${API_BASE_URL}/api/events/${eventId}/listeners`,
+        UPDATE_LISTENER: (listenerId) => `${API_BASE_URL}/api/listeners/${listenerId}`,
+        DELETE_LISTENER: (listenerId) => `${API_BASE_URL}/api/listeners/${listenerId}`,
+    },
+    // ===== RUTAS DEL SISTEMA DE PLANTILLAS =====
+    TEMPLATES: {
+        // Gestión de plantillas
+        LIST: `${API_BASE_URL}/api/templates`,
+        STATS: `${API_BASE_URL}/api/templates/stats`,
+        VARIABLES: `${API_BASE_URL}/api/templates/variables`,
+        BY_CATEGORY: (category) => `${API_BASE_URL}/api/templates/category/${category}`,
+        GET: (id) => `${API_BASE_URL}/api/templates/${id}`,
+        CREATE: `${API_BASE_URL}/api/templates`,
+        UPDATE: (id) => `${API_BASE_URL}/api/templates/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/templates/${id}`,
+
+        // Operaciones especiales
+        VALIDATE: `${API_BASE_URL}/api/templates/validate`,
+        RENDER: `${API_BASE_URL}/api/templates/render`,
+        DUPLICATE: (id) => `${API_BASE_URL}/api/templates/${id}/duplicate`,
+    },
+
+    // ===== RUTAS DEL SISTEMA DE CONFIGURACIÓN DE CANALES =====
+    CHANNELS: {
+        // Gestión de configuraciones de canales
+        LIST: `${API_BASE_URL}/api/channels`,
+        STATS: `${API_BASE_URL}/api/channels/stats`,
+        SCHEMAS: `${API_BASE_URL}/api/channels/schemas`,
+        MEMORY: `${API_BASE_URL}/api/channels/memory`,
+        GET: (channelName) => `${API_BASE_URL}/api/channels/${channelName}`,
+        CREATE: `${API_BASE_URL}/api/channels`,
+        UPDATE: (channelName) => `${API_BASE_URL}/api/channels/${channelName}`,
+        DELETE: (channelName) => `${API_BASE_URL}/api/channels/${channelName}`,
+
+        // Operaciones especiales
+        TEST: (channelName) => `${API_BASE_URL}/api/channels/${channelName}/test`,
+        VALIDATE: `${API_BASE_URL}/api/channels/validate`,
+        RELOAD: `${API_BASE_URL}/api/channels/reload`,
+    },
+
+    // ===== RUTAS DE ADMINISTRACIÓN INTEGRADA =====
+    NOTIFICATION_ADMIN_INTEGRATED: {
+        // Dashboard y estadísticas
+        DASHBOARD: `${API_BASE_URL}/api/notifications/admin/dashboard`,
+        SYSTEM_STATS: `${API_BASE_URL}/api/notifications/admin/system-stats`,
+
+        // Gestión del sistema
+        TEST_SYSTEM: `${API_BASE_URL}/api/notifications/admin/test-system`,
+        PROCESS_EVENT: `${API_BASE_URL}/api/notifications/admin/process-event`,
+        CLEAR_CACHE: `${API_BASE_URL}/api/notifications/admin/clear-cache`,
+        REINITIALIZE: `${API_BASE_URL}/api/notifications/admin/reinitialize`,
+
+        // Logs y configuración
+        SYSTEM_LOGS: `${API_BASE_URL}/api/notifications/admin/logs`,
+        SYSTEM_CONFIG: `${API_BASE_URL}/api/notifications/admin/config`,
+        UPDATE_SYSTEM_CONFIG: `${API_BASE_URL}/api/notifications/admin/config`
     },
 };
 

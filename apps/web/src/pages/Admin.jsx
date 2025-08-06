@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { Users, Shield, Key, Save, RefreshCw, UserCheck, Settings } from 'lucide-react';
+import { Users, Shield, Key, Save, RefreshCw, UserCheck, Settings, Bell, Mail, MessageSquare, Smartphone, BarChart3, FileText, TestTube } from 'lucide-react';
 
 export default function Admin() {
     const [loading, setLoading] = useState(true);
@@ -39,6 +39,18 @@ export default function Admin() {
     const [selectedRole, setSelectedRole] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('assignments');
+
+    // Estados para notificaciones
+    const [notificationTypes, setNotificationTypes] = useState([]);
+    const [notificationChannels, setNotificationChannels] = useState([]);
+    const [notificationConfigs, setNotificationConfigs] = useState([]);
+    const [notificationStats, setNotificationStats] = useState(null);
+    const [notificationLogs, setNotificationLogs] = useState([]);
+
+    // Estados para eventos
+    const [events, setEvents] = useState([]);
+    const [eventListeners, setEventListeners] = useState([]);
+    const [eventStats, setEventStats] = useState(null);
 
     // Cargar datos iniciales
     const fetchData = async () => {
@@ -85,8 +97,74 @@ export default function Admin() {
         }
     };
 
+    // Cargar datos de notificaciones
+    const fetchNotificationData = async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            const [typesRes, channelsRes, configsRes, statsRes] = await Promise.all([
+                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.TYPES, { headers }),
+                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CHANNELS, { headers }),
+                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CONFIGS, { headers }),
+                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.ADMIN_STATS, { headers })
+            ]);
+
+            if (typesRes.ok) {
+                const typesData = await typesRes.json();
+                setNotificationTypes(typesData.data || []);
+            }
+
+            if (channelsRes.ok) {
+                const channelsData = await channelsRes.json();
+                setNotificationChannels(channelsData.data || []);
+            }
+
+            if (configsRes.ok) {
+                const configsData = await configsRes.json();
+                setNotificationConfigs(configsData.data || []);
+            }
+
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                setNotificationStats(statsData.data);
+            }
+
+        } catch (e) {
+            console.error('Error cargando datos de notificaciones:', e);
+        }
+    };
+
+    // Cargar datos de eventos
+    const fetchEventData = async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            const [eventsRes, statsRes] = await Promise.all([
+                fetch(API_ROUTES.EVENTS.LIST, { headers }),
+                fetch(API_ROUTES.EVENTS.STATS, { headers })
+            ]);
+
+            if (eventsRes.ok) {
+                const eventsData = await eventsRes.json();
+                setEvents(eventsData.data || []);
+            }
+
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                setEventStats(statsData.data);
+            }
+
+        } catch (e) {
+            console.error('Error cargando datos de eventos:', e);
+        }
+    };
+
     useEffect(() => {
         fetchData();
+        fetchNotificationData();
+        fetchEventData();
     }, []);
 
     // Detectar cambios
@@ -298,7 +376,7 @@ export default function Admin() {
                     )}
 
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-5">
                             <TabsTrigger value="assignments" className="flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" />
                                 Asignaciones
@@ -310,6 +388,14 @@ export default function Admin() {
                             <TabsTrigger value="permissions" className="flex items-center gap-2">
                                 <Key className="h-4 w-4" />
                                 Permisos
+                            </TabsTrigger>
+                            <TabsTrigger value="notifications" className="flex items-center gap-2">
+                                <Bell className="h-4 w-4" />
+                                Notificaciones
+                            </TabsTrigger>
+                            <TabsTrigger value="events" className="flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4" />
+                                Eventos
                             </TabsTrigger>
                         </TabsList>
 
@@ -602,6 +688,372 @@ export default function Admin() {
                                                 </div>
                                             </Card>
                                         ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* Tab de Notificaciones */}
+                        <TabsContent value="notifications" className="space-y-6">
+                            {/* Estadísticas Generales */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Notificaciones</CardTitle>
+                                        <Bell className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{notificationStats?.total || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Hoy: {notificationStats?.today || 0}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Configuraciones Activas</CardTitle>
+                                        <Settings className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{notificationStats?.active_configs || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Tipos y canales configurados
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Tipos de Notificación</CardTitle>
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{notificationTypes.length}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Plantillas disponibles
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Canales Activos</CardTitle>
+                                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{notificationChannels.length}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Email, SMS, WhatsApp, etc.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Configuraciones de Notificación */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Tipos de Notificación */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <FileText className="h-5 w-5" />
+                                            Tipos de Notificación
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Gestiona las plantillas y tipos de notificación
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {notificationTypes.map(type => (
+                                                <div key={type.id} className="p-3 border rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <h4 className="font-medium">{type.name}</h4>
+                                                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                                                        </div>
+                                                        <Badge variant="outline">{type.variables?.length || 0} variables</Badge>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {notificationTypes.length === 0 && (
+                                                <div className="text-center py-4 text-muted-foreground">
+                                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                    <p>No hay tipos de notificación configurados</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Canales de Notificación */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <MessageSquare className="h-5 w-5" />
+                                            Canales de Notificación
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Gestiona los canales de envío disponibles
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {notificationChannels.map(channel => (
+                                                <div key={channel.id} className="p-3 border rounded-lg">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <h4 className="font-medium">{channel.name}</h4>
+                                                            <p className="text-sm text-muted-foreground">{channel.description}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="secondary">{channel.provider}</Badge>
+                                                            <Badge variant="outline">
+                                                                {channel.config ? 'Configurado' : 'Sin configurar'}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {notificationChannels.length === 0 && (
+                                                <div className="text-center py-4 text-muted-foreground">
+                                                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                    <p>No hay canales de notificación configurados</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Configuraciones de Notificación */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Settings className="h-5 w-5" />
+                                        Configuraciones de Notificación
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Relaciones entre tipos de notificación y canales
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {notificationConfigs.map(config => (
+                                            <div key={config.id} className="p-3 border rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div>
+                                                            <h4 className="font-medium">{config.type?.name}</h4>
+                                                            <p className="text-sm text-muted-foreground">{config.type?.description}</p>
+                                                        </div>
+                                                        <div className="text-muted-foreground">→</div>
+                                                        <div>
+                                                            <h4 className="font-medium">{config.channel?.name}</h4>
+                                                            <p className="text-sm text-muted-foreground">{config.channel?.description}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant={config.enabled ? "default" : "secondary"}>
+                                                            {config.enabled ? 'Activo' : 'Inactivo'}
+                                                        </Badge>
+                                                        <Badge variant="outline">{config.priority}</Badge>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {notificationConfigs.length === 0 && (
+                                            <div className="text-center py-4 text-muted-foreground">
+                                                <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                <p>No hay configuraciones de notificación</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Acciones de Administración */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <BarChart3 className="h-5 w-5" />
+                                        Acciones de Administración
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Herramientas para gestionar el sistema de notificaciones
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Button variant="outline" className="flex items-center gap-2">
+                                            <RefreshCw className="h-4 w-4" />
+                                            Recargar Datos
+                                        </Button>
+                                        <Button variant="outline" className="flex items-center gap-2">
+                                            <BarChart3 className="h-4 w-4" />
+                                            Ver Estadísticas
+                                        </Button>
+                                        <Button variant="outline" className="flex items-center gap-2">
+                                            <TestTube className="h-4 w-4" />
+                                            Probar Notificación
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* Tab de Eventos */}
+                        <TabsContent value="events" className="space-y-6">
+                            {/* Estadísticas de Eventos */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Eventos</CardTitle>
+                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{eventStats?.total_events || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Eventos registrados
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Eventos Activos</CardTitle>
+                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{eventStats?.active_events || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Eventos habilitados
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Disparos</CardTitle>
+                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{eventStats?.total_triggers || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Veces disparados
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Categorías</CardTitle>
+                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{eventStats?.categories_count || 0}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Categorías únicas
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Lista de Eventos */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <BarChart3 className="h-5 w-5" />
+                                        Eventos del Sistema
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Eventos disponibles para configurar notificaciones automáticas
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {events.map(event => (
+                                            <div key={event.id} className="p-4 border rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <h4 className="font-medium text-lg">{event.name}</h4>
+                                                            <Badge variant="outline">{event.category}</Badge>
+                                                            <Badge variant={event.is_active ? "default" : "secondary"}>
+                                                                {event.is_active ? 'Activo' : 'Inactivo'}
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+                                                        
+                                                        {event.metadata?.variables && (
+                                                            <div className="mb-3">
+                                                                <p className="text-sm font-medium mb-1">Variables disponibles:</p>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {event.metadata.variables.map((variable, index) => (
+                                                                        <Badge key={index} variant="secondary" className="text-xs">
+                                                                            {variable}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                            <span>Disparos: {event.trigger_count}</span>
+                                                            <span>Versión: {event.version}</span>
+                                                            {event.last_triggered && (
+                                                                <span>Último: {new Date(event.last_triggered).toLocaleDateString()}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button variant="outline" size="sm">
+                                                            Ver Listeners
+                                                        </Button>
+                                                        <Button variant="outline" size="sm">
+                                                            Probar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {events.length === 0 && (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                                <p>No hay eventos configurados</p>
+                                                <p className="text-sm">Los eventos se crean automáticamente al ejecutar el seed</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Acciones de Eventos */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Settings className="h-5 w-5" />
+                                        Gestión de Eventos
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Acciones para administrar el sistema de eventos
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Button 
+                                            variant="outline" 
+                                            className="flex items-center gap-2"
+                                            onClick={fetchEventData}
+                                        >
+                                            <RefreshCw className="h-4 w-4" />
+                                            Recargar Eventos
+                                        </Button>
+                                        <Button variant="outline" className="flex items-center gap-2">
+                                            <BarChart3 className="h-4 w-4" />
+                                            Ver Estadísticas
+                                        </Button>
+                                        <Button variant="outline" className="flex items-center gap-2">
+                                            <TestTube className="h-4 w-4" />
+                                            Crear Evento
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>

@@ -19,6 +19,7 @@ import {
   Phone,
   ClipboardList,
   UserCog,
+  Bell,
 } from "lucide-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -128,6 +129,30 @@ export function AppSidebar({
                     <Link to="/admin">
                       <Shield />
                       <span>Gestion de acceso</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Plantillas de Notificación">
+                    <Link to="/notification-templates">
+                      <Bell />
+                      <span>Plantillas de Notificación</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Configuración de Canales">
+                    <Link to="/channel-configurations">
+                      <Settings />
+                      <span>Configuración de Canales</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Administración de Notificaciones">
+                    <Link to="/notification-admin">
+                      <BarChart3 />
+                      <span>Administración de Notificaciones</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

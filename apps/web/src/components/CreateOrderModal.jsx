@@ -123,15 +123,15 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
             // Información del cliente
             tipo_doc: 'CC',
-            num_doc: '1234567890',
-            nombre_cliente: 'Juan Andres Puentes Rosario',
-            celular_cliente: '3000000000',
-            correo_cliente: 'correocliente@example.com',
+            num_doc: '1122679592',
+            nombre_cliente: 'Simon Bolivar',
+            celular_cliente: '3043425127',
+            correo_cliente: 'simon.bolivar@holdingvml.net',
 
             // Información del contacto (se sincronizará si sameAsClient está marcado)
-            nombre_contacto: sameAsClient ? 'Juan Andres Puentes Rosario' : '',
-            celular_contacto: sameAsClient ? '3000000000' : '',
-            correo_contacto: sameAsClient ? 'correocliente@example.com' : '',
+            nombre_contacto: sameAsClient ? 'Simon Bolivar' : '',
+            celular_contacto: sameAsClient ? '3043425127' : '',
+            correo_contacto: sameAsClient ? 'simon.bolivar@holdingvml.net' : '',
 
             // Status inicial
             status: '1'
@@ -141,9 +141,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
         // Guardar datos del cliente por separado
         setClientData({
-            nombre_cliente: 'Juan Andres Puentes Rosario',
-            celular_cliente: '3000000000',
-            correo_cliente: 'correocliente@example.com'
+            nombre_cliente: 'Simon Bolivar',
+            celular_cliente: '3043425127',
+            correo_cliente: 'simon.bolivar@holdingvml.net'
         });
 
         setErrors({});
@@ -376,8 +376,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
 
         // Validación de clave_intermediario (máximo 10 caracteres)
-        if (formData.clave_intermediario && formData.clave_intermediario.length > 10) {
-            newErrors.clave_intermediario = 'La clave de intermediario no puede tener más de 10 caracteres';
+        if (formData.clave_intermediario && formData.clave_intermediario.length > 250) {
+            newErrors.clave_intermediario = 'La clave de intermediario no puede tener más de 250 caracteres';
         }
 
         // Validación de cod_oficina (máximo 10 caracteres) - solo si no está vacío
@@ -409,7 +409,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         if (formData.nombre_contacto && formData.nombre_contacto.length > 250) {
             newErrors.nombre_contacto = 'El nombre del contacto no puede tener más de 250 caracteres';
         }
-
+        console.error(newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };

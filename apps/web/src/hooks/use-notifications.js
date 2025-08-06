@@ -88,6 +88,11 @@ export function useNotifications() {
     // Mostrar toast
     const showToast = useCallback((message, type = 'info') => {
         setToast({ message, type });
+        
+        // Auto-hide después de 5 segundos
+        setTimeout(() => {
+            setToast(null);
+        }, 5000);
     }, []);
 
     // Ocultar toast

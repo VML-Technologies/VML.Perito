@@ -11,6 +11,9 @@ import ForcedPasswordChange from "@/pages/ForcedPasswordChange"
 import ComercialMundial from "@/pages/ComercialMundial"
 import AgenteContacto from "@/pages/AgenteContacto"
 import CoordinadorContacto from "@/pages/CoordinadorContacto"
+import NotificationTemplates from "@/pages/NotificationTemplates"
+import ChannelConfigurations from "@/pages/ChannelConfigurations"
+import NotificationAdmin from "@/pages/NotificationAdmin"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 
@@ -60,6 +63,42 @@ function AppContent() {
         <Route
           path="/admin"
           element={<Admin />}
+        />
+
+        {/* Ruta de plantillas de notificación */}
+        <Route
+          path="/notification-templates"
+          element={
+            <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
+              <AuthenticatedLayout>
+                <NotificationTemplates />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de configuración de canales */}
+        <Route
+          path="/channel-configurations"
+          element={
+            <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
+              <AuthenticatedLayout>
+                <ChannelConfigurations />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de administración de notificaciones */}
+        <Route
+          path="/notification-admin"
+          element={
+            <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
+              <AuthenticatedLayout>
+                <NotificationAdmin />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
         />
 
         {/* Ruta de perfil de usuario */}
