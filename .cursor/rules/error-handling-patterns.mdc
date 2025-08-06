@@ -1,0 +1,443 @@
+# Patrones de Manejo de Errores - VML.Perito
+
+## Backend - Try-Catch Pattern
+
+### Controladores
+
+```javascript
+// ✅ Correct: Manejo completo de errores
+async store(req, res) {
+  try {
+    // Validar datos de entrada
+    if (!req.body.name) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre es requerido'
+      });
+    }
+
+    // Lógica principal
+    const entity = await this.model.create(req.body);
+
+    // Respuesta exitosa
+    res.status(201).json({
+      success: true,
+      data: entity,
+      message: 'Entidad creada exitosamente'
+    });
+
+  } catch (error) {
+    // Log del error
+    console.error('Error en store:', error);
+
+    // Respuesta de error
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+```
+
+### Servicios
+
+```javascript
+// ✅ Correct: Manejo de errores en servicios
+class MyService {
+  async processData(data) {
+    try {
+      // Validar datos
+      this.validateData(data);
+
+      // Procesar datos
+      const result = await this.performOperation(data);
+
+      return {
+        success: true,
+        data: result
+      };
+
+    } catch (error) {
+      // Log específico del servicio
+      console.error('Error en MyService.processData:', error);
+
+      // Re-lanzar error para manejo superior
+      throw new Error(`Error procesando datos: ${error.message}`);
+    }
+  }
+
+  validateData(data) {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Datos inválidos');
+    }
+  }
+}
+```
+
+## Frontend - Manejo de Errores
+
+### Fetch con Manejo de Errores
+
+```javascript
+// ✅ Correct: Patrón completo para fetch
+const fetchData = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+
+  } catch (error) {
+    console.error('Error en fetchData:', error);
+    
+    // Mostrar error al usuario
+    showNotification({
+      type: 'error',
+      message: error.message
+    });
+
+    throw error;
+  }
+};
+```
+
+### Hooks con Manejo de Errores
+
+```javascript
+// ✅ Correct: Hook con manejo de errores
+export function useDataFetching(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const result = await fetch(url);
+        setData(result.data);
+        
+      } catch (error) {
+        setError(error.message);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data, loading, error };
+}
+```
+
+## Validación de Datos
+
+### Backend - Validación en Modelos
+
+```javascript
+// ✅ Correct: Validaciones de Sequelize
+const User = sequelize.define('User', {
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+      notEmpty: true,
+      len: [5, 255]
+    }
+  },
+  age: {
+    type: DataTypes.INTEGER,
+    validate: {
+      min: 0,
+      max: 120,
+      isInt: true
+    }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [8, 255],
+      notEmpty: true
+    }
+  }
+});
+```
+
+### Frontend - Validación en Formularios
+
+```javascript
+// ✅ Correct: Validación en React
+const [errors, setErrors] = useState({});
+const [formData, setFormData] = useState({});
+
+const validateForm = (data) => {
+  const newErrors = {};
+
+  // Validar nombre
+  if (!data.name?.trim()) {
+    newErrors.name = 'El nombre es requerido';
+  } else if (data.name.length < 2) {
+    newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+  }
+
+  // Validar email
+  if (!data.email?.includes('@')) {
+    newErrors.email = 'Email inválido';
+  }
+
+  // Validar contraseña
+  if (data.password && data.password.length < 8) {
+    newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm(formData)) {
+    return;
+  }
+
+  try {
+    await submitForm(formData);
+  } catch (error) {
+    console.error('Error submitting form:', error);
+  }
+};
+```
+
+## Logging de Errores
+
+### Backend - Logging Estructurado
+
+```javascript
+// ✅ Correct: Logging con contexto
+const logError = (error, context = {}) => {
+  console.error('Error:', {
+    message: error.message,
+    stack: error.stack,
+    timestamp: new Date().toISOString(),
+    context: {
+      userId: context.userId,
+      endpoint: context.endpoint,
+      method: context.method,
+      ...context
+    }
+  });
+};
+
+// Uso en controladores
+try {
+  // Lógica
+} catch (error) {
+  logError(error, {
+    userId: req.user?.id,
+    endpoint: req.path,
+    method: req.method,
+    body: req.body
+  });
+  
+  res.status(500).json({ success: false, message: 'Error interno' });
+}
+```
+
+### Frontend - Logging de Errores
+
+```javascript
+// ✅ Correct: Logging en frontend
+const logError = (error, context = {}) => {
+  console.error('Frontend Error:', {
+    message: error.message,
+    stack: error.stack,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+    context
+  });
+};
+
+// Uso en componentes
+try {
+  // Lógica del componente
+} catch (error) {
+  logError(error, {
+    component: 'MyComponent',
+    action: 'handleSubmit',
+    userId: user?.id
+  });
+}
+```
+
+## Respuestas de Error Estandarizadas
+
+### Backend - Respuestas HTTP
+
+```javascript
+// ✅ Correct: Respuestas estandarizadas
+const errorResponses = {
+  // 400 - Bad Request
+  validationError: (message) => ({
+    success: false,
+    message: message || 'Datos de entrada inválidos',
+    code: 'VALIDATION_ERROR'
+  }),
+
+  // 401 - Unauthorized
+  unauthorized: () => ({
+    success: false,
+    message: 'No autorizado',
+    code: 'UNAUTHORIZED'
+  }),
+
+  // 403 - Forbidden
+  forbidden: () => ({
+    success: false,
+    message: 'Acceso denegado',
+    code: 'FORBIDDEN'
+  }),
+
+  // 404 - Not Found
+  notFound: (resource) => ({
+    success: false,
+    message: `${resource || 'Recurso'} no encontrado`,
+    code: 'NOT_FOUND'
+  }),
+
+  // 500 - Internal Server Error
+  internalError: (error) => ({
+    success: false,
+    message: 'Error interno del servidor',
+    code: 'INTERNAL_ERROR',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  })
+};
+
+// Uso en controladores
+if (!user) {
+  return res.status(404).json(errorResponses.notFound('Usuario'));
+}
+```
+
+### Frontend - Manejo de Respuestas
+
+```javascript
+// ✅ Correct: Manejo de respuestas de error
+const handleApiResponse = async (response) => {
+  if (response.ok) {
+    return await response.json();
+  }
+
+  const errorData = await response.json();
+  
+  switch (response.status) {
+    case 400:
+      throw new Error(errorData.message || 'Datos inválidos');
+    case 401:
+      // Redirigir a login
+      window.location.href = '/login';
+      break;
+    case 403:
+      throw new Error('Acceso denegado');
+    case 404:
+      throw new Error('Recurso no encontrado');
+    case 500:
+      throw new Error('Error interno del servidor');
+    default:
+      throw new Error('Error desconocido');
+  }
+};
+```
+
+## Middleware de Manejo de Errores
+
+### Express Error Handler
+
+```javascript
+// ✅ Correct: Middleware global de errores
+const errorHandler = (error, req, res, next) => {
+  // Log del error
+  console.error('Unhandled Error:', {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    userId: req.user?.id,
+    timestamp: new Date().toISOString()
+  });
+
+  // Respuesta de error
+  res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    code: 'INTERNAL_ERROR'
+  });
+};
+
+// Uso en app.js
+app.use(errorHandler);
+```
+
+## Testing de Errores
+
+### Backend - Tests de Error
+
+```javascript
+// ✅ Correct: Tests de manejo de errores
+describe('UserController', () => {
+  it('should handle validation errors', async () => {
+    const response = await request(app)
+      .post('/api/users')
+      .send({ email: 'invalid-email' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toContain('Email');
+  });
+
+  it('should handle database errors', async () => {
+    // Mock database error
+    jest.spyOn(User, 'create').mockRejectedValue(new Error('DB Error'));
+
+    const response = await request(app)
+      .post('/api/users')
+      .send(validUserData);
+
+    expect(response.status).toBe(500);
+    expect(response.body.success).toBe(false);
+  });
+});
+```
+
+## Related Rules
+
+- [backend-development-patterns.mdc](mdc:.cursor/rules/backend-development-patterns.mdc) - Patrones backend
+- [frontend-development-patterns.mdc](mdc:.cursor/rules/frontend-development-patterns.mdc) - Patrones frontend
+- [debugging-and-troubleshooting.mdc](mdc:.cursor/rules/debugging-and-troubleshooting.mdc) - Debugging
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal
+description:
+globs:
+alwaysApply: false
+---

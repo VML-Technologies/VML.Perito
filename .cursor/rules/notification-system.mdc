@@ -1,448 +1,270 @@
----
-description: Sistema completo de notificaciones de VML.Perito, incluyendo arquitectura de eventos automatizados, sistema de plantillas con editor WYSIWYG, canales multi-medio (Email, SMS, WhatsApp, In-App, Push), orquestación de notificaciones, integración WebSocket en tiempo real, configuración de canales, variables dinámicas en plantillas, y patrones de seeding para eventos y templates.
+# Sistema de Notificaciones - VML.Perito
+
+## 🎯 Estado Actual: PRODUCCIÓN READY (2024)
+
+El sistema de notificaciones está **completamente implementado y validado**. Todas las funcionalidades están operativas y las notificaciones se envían automáticamente sin duplicaciones.
+
+### ✅ Funcionalidades Validadas
+- **Sistema de eventos automáticos** - Funcionando sin duplicados
+- **Múltiples canales** - Email, SMS, WhatsApp, In-App, Push
+- **Editor de plantillas** - WYSIWYG con Monaco Editor
+- **Sistema de permisos** - RBAC completo
+- **WebSocket** - Notificaciones en tiempo real
+- **Interfaz de administración** - Integrada en [Admin.jsx](mdc:apps/web/src/pages/Admin.jsx)
+
+### 🔧 Problemas Resueltos
+- **Duplicación de Notificaciones**: Solucionado con deduplicación en `notificationService.js`
+- **Listeners Antiguos**: Limpiados con `cleanupOldListeners.js`
+- **WebSocket Duplicación**: Identificado en `notificationHandler.js`
+- **Condiciones de Evaluación**: Simplificadas para frontend-friendly
+
+## 🏗️ Arquitectura Completa
+
+### **Backend (Node.js/Express)**
+```javascript
+// Servicios principales
+import eventService from './services/eventService.js';
+import notificationService from './services/notificationService.js';
+import templateService from './services/templateService.js';
+import automatedEventTriggers from './services/automatedEventTriggers.js';
+```
+
+### **Frontend (React)**
+```javascript
+// Componentes principales
+import { NotificationTemplateEditor } from '@/components/NotificationTemplateEditor';
+import { ChannelPreview } from '@/components/ChannelPreview';
+import { useNotificationContext } from '@/contexts/notification-context';
+```
+
+## 🔄 Flujo de Notificaciones
+
+### **1. Creación de Orden de Inspección**
+```javascript
+// En InspectionOrderController.store()
+await automatedEventTriggers.triggerInspectionOrderEvents('created', orderData, context);
+```
+
+### **2. Evento Disparado**
+- Evento: `inspection_order.created`
+- Listener: Busca tipo `order_created_commercial_email`
+- Canales: Email + In-App + Push
+
+### **3. Notificación Enviada**
+- Plantilla renderizada con variables
+- Envío por canales configurados
+- Logs de confirmación
+
+## 📋 Campos Estandarizados
+
+### **Backend (Primary)**
+```javascript
+{
+  title: "Título de notificación",
+  content: "Contenido principal",
+  metadata: {
+    channel_data: {
+      email: { subject: "...", body: "..." },
+      sms: { message: "..." },
+      whatsapp: { message: "...", title: "..." }
+    }
+  }
+}
+```
+
+### **Frontend (Editor)**
+```javascript
+{
+  channels: {
+    email: { template: "...", message: "...", body: "...", html: "...", text: "...", title: "..." },
+    sms: { template: "...", message: "..." },
+    whatsapp: { template: "...", message: "...", title: "..." }
+  }
+}
+```
+
+## 🛠️ Patrones Clave
+
+### **Find or Create (Prevención de Duplicados)**
+```javascript
+// ✅ Correct: Siempre usar find or create
+const result = await this.findOrCreateEvent(eventName, description, category);
+if (result.created) {
+  console.log('✅ Event created');
+} else {
+  console.log('⏭️ Event already exists');
+}
+```
+
+### **Event Triggering (Controladores)**
+```javascript
+// ✅ Correct: Usar AutomatedEventTriggers
+await automatedEventTriggers.triggerUserEvents('created', userData, context);
+await automatedEventTriggers.triggerInspectionOrderEvents('created', orderData, context);
+await automatedEventTriggers.triggerAppointmentEvents('created', appointmentData, context);
+```
+
+### **Method Binding (Controladores)**
+```javascript
+// ✅ Correct: Bind methods en constructor
+constructor() {
+  super(Model);
+  this.index = this.index.bind(this);
+  this.store = this.store.bind(this);
+  this.update = this.update.bind(this);
+  this.destroy = this.destroy.bind(this);
+}
+```
+
+## 📊 Configuración de Listeners
+
+### **Listeners Granulares (seedAdvancedListeners.js)**
+```javascript
+// Ejemplo: Email para comercial
+{
+  event_name: 'inspection_order.created',
+  notification_type_name: 'order_created_commercial_email',
+  conditions: { user_role: 'comercial_mundial' },
+  priority: 1,
+  delay_seconds: 0,
+  channels: ['email']
+}
+```
+
+### **Plantillas Específicas (seedAdvancedTemplates.js)**
+```javascript
+// Ejemplo: Plantilla de email para comercial
+{
+  name: 'order_created_commercial_email',
+  description: 'Email de notificación de orden creada para comercial',
+  channels: {
+    email: {
+      subject: 'Nueva Orden de Inspección Creada',
+      template: 'Hola {{user.name}}, se ha creado una nueva orden de inspección...'
+    }
+  }
+}
+```
+
+## 🔧 Debugging y Troubleshooting
+
+### **Verificar Estado del Sistema**
+```javascript
+// Obtener estadísticas del sistema
+const stats = await automatedEventTriggers.getStats();
+console.log('📊 System stats:', JSON.stringify(stats, null, 2));
+
+// Verificar listeners activos
+const listeners = await eventService.getEventListeners('inspection_order.created');
+console.log(`📊 Listeners for inspection_order.created: ${listeners.length}`);
+```
+
+### **Scripts de Limpieza**
+```bash
+# Limpiar listeners duplicados
+cd apps/server && node scripts/cleanupOldListeners.js
+
+# Probar sistema completo
+cd apps/server && node scripts/testNotificationSystem.js
+```
+
+### **Logs de Debugging**
+```javascript
+// ✅ Correct: Comprehensive logging
+console.log('🎯 Event triggered:', eventName);
+console.log('📬 Creating notification type:', notificationType);
+console.log('📤 Notification sent by listener:', listenerId);
+console.log('⚠️ No active configurations for:', notificationType);
+```
+
+## 🎨 Interfaz de Administración
+
+### **Integración en Admin.jsx**
+```javascript
+// Nueva pestaña de notificaciones
+<TabsTrigger value="notifications" className="flex items-center gap-2">
+  <Bell className="h-4 w-4" />
+  Notificaciones
+</TabsTrigger>
+
+// Contenido de la pestaña
+<TabsContent value="notifications" className="space-y-6">
+  {/* Estadísticas, Configuraciones, Logs */}
+</TabsContent>
+```
+
+### **Componentes Principales**
+- **NotificationTemplateEditor**: Editor WYSIWYG de plantillas
+- **ChannelPreview**: Vista previa por canal
+- **NotificationAdmin**: Gestión de configuraciones
+- **ChannelConfigurations**: Configuración de canales
+
+## 📁 Archivos Críticos
+
+### **Backend**
+- [apps/server/services/eventService.js](mdc:apps/server/services/eventService.js) - Evaluación de condiciones
+- [apps/server/services/notificationService.js](mdc:apps/server/services/notificationService.js) - Deduplicación
+- [apps/server/services/automatedEventTriggers.js](mdc:apps/server/services/automatedEventTriggers.js) - Disparo de eventos
+- [apps/server/scripts/seedAdvancedListeners.js](mdc:apps/server/scripts/seedAdvancedListeners.js) - Listeners granulares
+- [apps/server/scripts/seedAdvancedTemplates.js](mdc:apps/server/scripts/seedAdvancedTemplates.js) - Plantillas específicas
+
+### **Frontend**
+- [apps/web/src/pages/Admin.jsx](mdc:apps/web/src/pages/Admin.jsx) - Interfaz de administración
+- [apps/web/src/components/NotificationTemplateEditor.jsx](mdc:apps/web/src/components/NotificationTemplateEditor.jsx) - Editor de plantillas
+- [apps/web/src/contexts/notification-context.jsx](mdc:apps/web/src/contexts/notification-context.jsx) - Contexto de notificaciones
+
+### **Documentación**
+- [todo/seeders_adjustment.md](mdc:todo/seeders_adjustment.md) - Configuración de seeders
+- [docs/notification_standards.md](mdc:docs/notification_standards.md) - Estándares backend
+- [docs/frontend_notification_standards.md](mdc:docs/frontend_notification_standards.md) - Estándares frontend
+
+## 🔗 Integración con Otros Sistemas
+
+### **WebSockets**
+- Sistema de tiempo real para notificaciones in-app
+- Integración con `notificationHandler.js`
+- Eventos: `notification`, `newNotification`
+
+### **RBAC**
+- Permisos para gestión de notificaciones
+- Roles: `super_admin`, `admin`
+- Rutas protegidas en [App.jsx](mdc:apps/web/src/App.jsx)
+
+### **Webhooks** (Planificado)
+- Sistema de webhooks para plataformas externas
+- Integración con interfaz de administración
+- Documentación en [todo/webhook_notificaciones.md](mdc:todo/webhook_notificaciones.md)
+
+## 🚀 Mejores Prácticas
+
+### **1. Prevención de Duplicaciones**
+- Usar siempre patrón "find or create"
+- Implementar deduplicación en `notificationService.js`
+- Limpiar listeners antiguos regularmente
+
+### **2. Validación de Datos**
+- Validar plantillas antes de guardar
+- Verificar variables disponibles
+- Sanitizar contenido de notificaciones
+
+### **3. Performance**
+- Usar procesamiento asíncrono
+- Implementar rate limiting
+- Optimizar queries de base de datos
+
+### **4. Seguridad**
+- Validar permisos RBAC
+- Sanitizar datos de entrada
+- Logging de auditoría completo
+
+## Related Rules
+
+- [webhook-system.mdc](mdc:.cursor/rules/webhook-system.mdc) - Sistema de webhooks
+- [backend-development-patterns.mdc](mdc:.cursor/rules/backend-development-patterns.mdc) - Patrones backend
+- [frontend-development-patterns.mdc](mdc:.cursor/rules/frontend-development-patterns.mdc) - Patrones frontend
+- [debugging-and-troubleshooting.mdc](mdc:.cursor/rules/debugging-and-troubleshooting.mdc) - Debugging
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal
+description:
+globs:
 alwaysApply: false
 ---
-
-# Notification System Architecture
-
-## Core Components
-
-### Backend Structure
-
-- **Main Server**: [apps/server/index.js](mdc:apps/server/index.js) - Express server with security middleware and route definitions
-- **Controllers**: Located in `apps/server/controllers/` - Handle API endpoints for different modules
-- **Services**: Located in `apps/server/services/` - Business logic implementation
-- **Models**: Located in `apps/server/models/` - Sequelize ORM models with associations
-- **Middleware**: Located in `apps/server/middleware/` - Authentication and RBAC middleware
-
-### Frontend Structure
-
-- **Main App**: [apps/web/src/App.jsx](mdc:apps/web/src/App.jsx) - React application entry point
-- **Pages**: Located in `apps/web/src/pages/` - Main application pages
-- **Components**: Located in `apps/web/src/components/` - Reusable UI components
-- **Contexts**: Located in `apps/web/src/contexts/` - React context providers
-- **Hooks**: Located in `apps/web/src/hooks/` - Custom React hooks
-
-## Notification System Implementation
-
-### Key Files
-
-- **Template Management**: [apps/web/src/pages/NotificationTemplates.jsx](mdc:apps/web/src/pages/NotificationTemplates.jsx) - Main template editor interface
-- **Template Editor**: [apps/web/src/components/NotificationTemplateEditor.jsx](mdc:apps/web/src/components/NotificationTemplateEditor.jsx) - WYSIWYG editor component
-- **Variable Selector**: [apps/web/src/components/VariableSelector.jsx](mdc:apps/web/src/components/VariableSelector.jsx) - Variable insertion component
-- **Template Preview**: [apps/web/src/components/TemplatePreview.jsx](mdc:apps/web/src/components/TemplatePreview.jsx) - Real-time preview component
-- **Backend Service**: [apps/server/services/templateService.js](mdc:apps/server/services/templateService.js) - Template business logic
-- **Backend Controller**: [apps/server/controllers/templateController.js](mdc:apps/server/controllers/templateController.js) - Template API endpoints
-
-### Event System
-
-- **Event Service**: [apps/server/services/eventService.js](mdc:apps/server/services/eventService.js) - Core event management
-- **Event Registry**: [apps/server/services/eventRegistry.js](mdc:apps/server/services/eventRegistry.js) - Event registration and management
-- **Automated Triggers**: [apps/server/services/automatedEventTriggers.js](mdc:apps/server/services/automatedEventTriggers.js) - Automated event triggers
-- **Event Controller**: [apps/server/controllers/eventController.js](mdc:apps/server/controllers/eventController.js) - Event API endpoints
-
-### Channel System
-
-- **Channel Configurations**: [apps/web/src/pages/ChannelConfigurations.jsx](mdc:apps/web/src/pages/ChannelConfigurations.jsx) - Channel setup interface
-- **Channel Services**: Located in `apps/server/services/channels/` - Channel-specific implementations
-  - [apps/server/services/channels/emailService.js](mdc:apps/server/services/channels/emailService.js) - Email notifications
-  - [apps/server/services/channels/smsService.js](mdc:apps/server/services/channels/smsService.js) - SMS notifications
-  - [apps/server/services/channels/whatsappService.js](mdc:apps/server/services/channels/whatsappService.js) - WhatsApp notifications
-  - [apps/server/services/channels/inAppService.js](mdc:apps/server/services/channels/inAppService.js) - In-app notifications
-  - [apps/server/services/channels/pushService.js](mdc:apps/server/services/channels/pushService.js) - Push notifications
-
-## Development Patterns
-
-### Backend Patterns
-
-- Use ES Modules (`import/export`) consistently
-- Controllers should export default instances: `export default new ControllerName()`
-- Services should be singleton classes with proper initialization
-- Use Sequelize ORM for database operations
-- Implement proper error handling with try-catch blocks
-- Use middleware for authentication and permissions
-
-### Frontend Patterns
-
-- Use React functional components with hooks
-- Implement proper state management with `useState`, `useEffect`
-- Use `forwardRef` and `useImperativeHandle` for component communication
-- Implement proper data mapping between API and component formats
-- Use custom hooks for reusable logic
-- Implement proper error handling and loading states
-
-### Data Flow
-
-- API expects `template` field in request body
-- Editor uses `body`, `message`, `title` fields internally
-- Use mapping functions to convert between formats
-- Variables use `{{variable_name}}` syntax
-- Preview uses example data for rendering
-
-## Event-Driven Architecture
-
-### Automated Events
-
-The system includes 13 automated events that trigger notifications:
-
-1. **User Events**: `user.created`, `user.updated`, `user.deleted`
-2. **Order Events**: `inspection_order.created`, `inspection_order.status_changed`
-3. **Appointment Events**: `appointment.scheduled`, `appointment.cancelled`
-4. **Call Events**: `call_logged`, `call_follow_up`
-5. **System Events**: `system.maintenance`, `system.error`, `system.notification`
-
-### Event Triggers
-
-Events are automatically triggered by:
-
-- Database operations (create, update, delete)
-- Status changes in orders and appointments
-- System maintenance and errors
-- User actions (login, logout, password changes)
-
-### Notification Orchestration
-
-- **NotificationOrchestrator**: [apps/server/services/notificationOrchestrator.js](mdc:apps/server/services/notificationOrchestrator.js) - Coordinates notification delivery
-- **Channel Config Service**: [apps/server/services/channelConfigService.js](mdc:apps/server/services/channelConfigService.js) - Manages channel configurations
-- **Notification Service**: [apps/server/services/notificationService.js](mdc:apps/server/services/notificationService.js) - Core notification logic
-
-## Channel Configuration
-
-### Available Channels
-
-1. **Email**: SMTP-based email delivery
-2. **SMS**: Text message delivery via SMS gateway
-3. **WhatsApp**: WhatsApp Business API integration
-4. **In-App**: Real-time notifications within the application
-5. **Push**: Browser push notifications
-
-### Channel Setup
-
-Each channel requires specific configuration:
-
-- **Email**: SMTP server, credentials, templates
-- **SMS**: Gateway API, credentials, message templates
-- **WhatsApp**: Business API credentials, message templates
-- **In-App**: WebSocket connection, notification storage
-- **Push**: Service worker, browser permissions
-
-## Template System
-
-### Template Variables
-
-Templates support dynamic variables:
-
-- `{{user_name}}` - User's full name
-- `{{vehicle_plate}}` - Vehicle license plate
-- `{{appointment_date}}` - Appointment date
-- `{{appointment_time}}` - Appointment time
-- `{{sede_name}}` - Inspection center name
-- `{{order_number}}` - Order reference number
-
-### Template Categories
-
-Templates are organized by event category:
-
-- **Users**: Account-related notifications
-- **Orders**: Inspection order notifications
-- **Appointments**: Scheduling notifications
-- **Calls**: Call management notifications
-- **System**: System-wide notifications
-
-## WebSocket Integration
-
-### Real-time Notifications
-
-- **WebSocket Setup**: [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Socket.IO configuration
-- **Notification Handler**: [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js) - Real-time notification delivery
-- **Frontend Hook**: [apps/web/src/hooks/use-websocket.js](mdc:apps/web/src/hooks/use-websocket.js) - WebSocket connection management
-
-### Event Types
-
-- `notification.created` - New notification created
-- `notification.read` - Notification marked as read
-- `notification.deleted` - Notification deleted
-- `system.broadcast` - System-wide broadcast
-
-## Common Issues and Solutions
-
-### Backend Issues
-
-- **Missing default exports**: Ensure controllers export default instances
-- **Method not found**: Verify method names match between routes and controllers
-- **Database associations**: Import `./models/index.js` to establish relationships
-- **ES Module issues**: Use proper import/export syntax, avoid `require()`
-
-### Frontend Issues
-
-- **Component communication**: Use refs for direct method calls
-- **Data mapping**: Transform API data to component format in useEffect
-- **Variable insertion**: Use `insertVariable` method exposed via ref
-- **Preview content**: Ensure proper data structure for preview components
-
-### Channel Issues
-
-- **Email delivery**: Check SMTP configuration and credentials
-- **SMS delivery**: Verify gateway API credentials and quotas
-- **WhatsApp delivery**: Ensure Business API setup and message templates
-- **In-app delivery**: Check WebSocket connection and notification storage
-- **Push delivery**: Verify service worker and browser permissions
-
-## Security and Configuration
-
-- **Authentication**: JWT tokens stored in localStorage as 'authToken'
-- **RBAC**: Permission-based access control via middleware
-- **Rate Limiting**: Configured per endpoint type (auth, read, general)
-- **CORS**: Configured for allowed domains
-- **SQL Sanitization**: Custom middleware for injection prevention
-
-## Testing and Debugging
-
-- **Backend logs**: Check console for detailed request/response logging
-- **Frontend errors**: Use browser console for component debugging
-- **Database queries**: Use Sequelize logging for query debugging
-- **WebSocket**: Check WebSocket connection status and events
-- **Channel testing**: Use test endpoints for each channel type
-
-## Seeding and Setup
-
-### Notification Data Seeding
-
-- **Events**: [apps/server/scripts/seedEventSystem.js](mdc:apps/server/scripts/seedEventSystem.js) - Creates 13 system events
-- **Templates**: [apps/server/scripts/seedTemplates.js](mdc:apps/server/scripts/seedTemplates.js) - Creates 5 default templates
-- **Channels**: [apps/server/scripts/seedChannels.js](mdc:apps/server/scripts/seedChannels.js) - Configures 5 notification channels
-
-### Setup Commands
-
-```bash
-# Run complete seeding (includes notification system)
-cd apps/server
-node scripts/seedAll.js
-
-# Run specific notification seeding
-node scripts/seedEventSystem.js
-node scripts/seedTemplates.js
-node scripts/seedChannels.js
-```
-
-# Notification System Architecture
-
-## Core Components
-
-### Backend Structure
-
-- **Main Server**: [apps/server/index.js](mdc:apps/server/index.js) - Express server with security middleware and route definitions
-- **Controllers**: Located in `apps/server/controllers/` - Handle API endpoints for different modules
-- **Services**: Located in `apps/server/services/` - Business logic implementation
-- **Models**: Located in `apps/server/models/` - Sequelize ORM models with associations
-- **Middleware**: Located in `apps/server/middleware/` - Authentication and RBAC middleware
-
-### Frontend Structure
-
-- **Main App**: [apps/web/src/App.jsx](mdc:apps/web/src/App.jsx) - React application entry point
-- **Pages**: Located in `apps/web/src/pages/` - Main application pages
-- **Components**: Located in `apps/web/src/components/` - Reusable UI components
-- **Contexts**: Located in `apps/web/src/contexts/` - React context providers
-- **Hooks**: Located in `apps/web/src/hooks/` - Custom React hooks
-
-## Notification System Implementation
-
-### Key Files
-
-- **Template Management**: [apps/web/src/pages/NotificationTemplates.jsx](mdc:apps/web/src/pages/NotificationTemplates.jsx) - Main template editor interface
-- **Template Editor**: [apps/web/src/components/NotificationTemplateEditor.jsx](mdc:apps/web/src/components/NotificationTemplateEditor.jsx) - WYSIWYG editor component
-- **Variable Selector**: [apps/web/src/components/VariableSelector.jsx](mdc:apps/web/src/components/VariableSelector.jsx) - Variable insertion component
-- **Template Preview**: [apps/web/src/components/TemplatePreview.jsx](mdc:apps/web/src/components/TemplatePreview.jsx) - Real-time preview component
-- **Backend Service**: [apps/server/services/templateService.js](mdc:apps/server/services/templateService.js) - Template business logic
-- **Backend Controller**: [apps/server/controllers/templateController.js](mdc:apps/server/controllers/templateController.js) - Template API endpoints
-
-### Event System
-
-- **Event Service**: [apps/server/services/eventService.js](mdc:apps/server/services/eventService.js) - Core event management
-- **Event Registry**: [apps/server/services/eventRegistry.js](mdc:apps/server/services/eventRegistry.js) - Event registration and management
-- **Automated Triggers**: [apps/server/services/automatedEventTriggers.js](mdc:apps/server/services/automatedEventTriggers.js) - Automated event triggers
-- **Event Controller**: [apps/server/controllers/eventController.js](mdc:apps/server/controllers/eventController.js) - Event API endpoints
-
-### Channel System
-
-- **Channel Configurations**: [apps/web/src/pages/ChannelConfigurations.jsx](mdc:apps/web/src/pages/ChannelConfigurations.jsx) - Channel setup interface
-- **Channel Services**: Located in `apps/server/services/channels/` - Channel-specific implementations
-  - [apps/server/services/channels/emailService.js](mdc:apps/server/services/channels/emailService.js) - Email notifications
-  - [apps/server/services/channels/smsService.js](mdc:apps/server/services/channels/smsService.js) - SMS notifications
-  - [apps/server/services/channels/whatsappService.js](mdc:apps/server/services/channels/whatsappService.js) - WhatsApp notifications
-  - [apps/server/services/channels/inAppService.js](mdc:apps/server/services/channels/inAppService.js) - In-app notifications
-  - [apps/server/services/channels/pushService.js](mdc:apps/server/services/channels/pushService.js) - Push notifications
-
-## Development Patterns
-
-### Backend Patterns
-
-- Use ES Modules (`import/export`) consistently
-- Controllers should export default instances: `export default new ControllerName()`
-- Services should be singleton classes with proper initialization
-- Use Sequelize ORM for database operations
-- Implement proper error handling with try-catch blocks
-- Use middleware for authentication and permissions
-
-### Frontend Patterns
-
-- Use React functional components with hooks
-- Implement proper state management with `useState`, `useEffect`
-- Use `forwardRef` and `useImperativeHandle` for component communication
-- Implement proper data mapping between API and component formats
-- Use custom hooks for reusable logic
-- Implement proper error handling and loading states
-
-### Data Flow
-
-- API expects `template` field in request body
-- Editor uses `body`, `message`, `title` fields internally
-- Use mapping functions to convert between formats
-- Variables use `{{variable_name}}` syntax
-- Preview uses example data for rendering
-
-## Event-Driven Architecture
-
-### Automated Events
-
-The system includes 13 automated events that trigger notifications:
-
-1. **User Events**: `user.created`, `user.updated`, `user.deleted`
-2. **Order Events**: `inspection_order.created`, `inspection_order.status_changed`
-3. **Appointment Events**: `appointment.scheduled`, `appointment.cancelled`
-4. **Call Events**: `call_logged`, `call_follow_up`
-5. **System Events**: `system.maintenance`, `system.error`, `system.notification`
-
-### Event Triggers
-
-Events are automatically triggered by:
-
-- Database operations (create, update, delete)
-- Status changes in orders and appointments
-- System maintenance and errors
-- User actions (login, logout, password changes)
-
-### Notification Orchestration
-
-- **NotificationOrchestrator**: [apps/server/services/notificationOrchestrator.js](mdc:apps/server/services/notificationOrchestrator.js) - Coordinates notification delivery
-- **Channel Config Service**: [apps/server/services/channelConfigService.js](mdc:apps/server/services/channelConfigService.js) - Manages channel configurations
-- **Notification Service**: [apps/server/services/notificationService.js](mdc:apps/server/services/notificationService.js) - Core notification logic
-
-## Channel Configuration
-
-### Available Channels
-
-1. **Email**: SMTP-based email delivery
-2. **SMS**: Text message delivery via SMS gateway
-3. **WhatsApp**: WhatsApp Business API integration
-4. **In-App**: Real-time notifications within the application
-5. **Push**: Browser push notifications
-
-### Channel Setup
-
-Each channel requires specific configuration:
-
-- **Email**: SMTP server, credentials, templates
-- **SMS**: Gateway API, credentials, message templates
-- **WhatsApp**: Business API credentials, message templates
-- **In-App**: WebSocket connection, notification storage
-- **Push**: Service worker, browser permissions
-
-## Template System
-
-### Template Variables
-
-Templates support dynamic variables:
-
-- `{{user_name}}` - User's full name
-- `{{vehicle_plate}}` - Vehicle license plate
-- `{{appointment_date}}` - Appointment date
-- `{{appointment_time}}` - Appointment time
-- `{{sede_name}}` - Inspection center name
-- `{{order_number}}` - Order reference number
-
-### Template Categories
-
-Templates are organized by event category:
-
-- **Users**: Account-related notifications
-- **Orders**: Inspection order notifications
-- **Appointments**: Scheduling notifications
-- **Calls**: Call management notifications
-- **System**: System-wide notifications
-
-## WebSocket Integration
-
-### Real-time Notifications
-
-- **WebSocket Setup**: [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Socket.IO configuration
-- **Notification Handler**: [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js) - Real-time notification delivery
-- **Frontend Hook**: [apps/web/src/hooks/use-websocket.js](mdc:apps/web/src/hooks/use-websocket.js) - WebSocket connection management
-
-### Event Types
-
-- `notification.created` - New notification created
-- `notification.read` - Notification marked as read
-- `notification.deleted` - Notification deleted
-- `system.broadcast` - System-wide broadcast
-
-## Common Issues and Solutions
-
-### Backend Issues
-
-- **Missing default exports**: Ensure controllers export default instances
-- **Method not found**: Verify method names match between routes and controllers
-- **Database associations**: Import `./models/index.js` to establish relationships
-- **ES Module issues**: Use proper import/export syntax, avoid `require()`
-
-### Frontend Issues
-
-- **Component communication**: Use refs for direct method calls
-- **Data mapping**: Transform API data to component format in useEffect
-- **Variable insertion**: Use `insertVariable` method exposed via ref
-- **Preview content**: Ensure proper data structure for preview components
-
-### Channel Issues
-
-- **Email delivery**: Check SMTP configuration and credentials
-- **SMS delivery**: Verify gateway API credentials and quotas
-- **WhatsApp delivery**: Ensure Business API setup and message templates
-- **In-app delivery**: Check WebSocket connection and notification storage
-- **Push delivery**: Verify service worker and browser permissions
-
-## Security and Configuration
-
-- **Authentication**: JWT tokens stored in localStorage as 'authToken'
-- **RBAC**: Permission-based access control via middleware
-- **Rate Limiting**: Configured per endpoint type (auth, read, general)
-- **CORS**: Configured for allowed domains
-- **SQL Sanitization**: Custom middleware for injection prevention
-
-## Testing and Debugging
-
-- **Backend logs**: Check console for detailed request/response logging
-- **Frontend errors**: Use browser console for component debugging
-- **Database queries**: Use Sequelize logging for query debugging
-- **WebSocket**: Check WebSocket connection status and events
-- **Channel testing**: Use test endpoints for each channel type
-
-## Seeding and Setup
-
-### Notification Data Seeding
-
-- **Events**: [apps/server/scripts/seedEventSystem.js](mdc:apps/server/scripts/seedEventSystem.js) - Creates 13 system events
-- **Templates**: [apps/server/scripts/seedTemplates.js](mdc:apps/server/scripts/seedTemplates.js) - Creates 5 default templates
-- **Channels**: [apps/server/scripts/seedChannels.js](mdc:apps/server/scripts/seedChannels.js) - Configures 5 notification channels
-
-### Setup Commands
-
-```bash
-# Run complete seeding (includes notification system)
-cd apps/server
-node scripts/seedAll.js
-
-# Run specific notification seeding
-node scripts/seedEventSystem.js
-node scripts/seedTemplates.js
-node scripts/seedChannels.js
-```

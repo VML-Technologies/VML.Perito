@@ -1,0 +1,475 @@
+# Optimización de Rendimiento - VML.Perito
+
+## Backend - Optimizaciones
+
+### Consultas de Base de Datos
+
+```javascript
+// ✅ Correct: Consultas optimizadas
+// Evitar SELECT * - especificar columnas necesarias
+const users = await User.findAll({
+  attributes: ['id', 'name', 'email', 'created_at'],
+  where: { is_active: true },
+  limit: 50,
+  offset: 0
+});
+
+// Usar includes solo cuando sea necesario
+const orders = await InspectionOrder.findAll({
+  include: [
+    {
+      model: User,
+      as: 'assigned_agent',
+      attributes: ['id', 'name', 'email']
+    }
+  ],
+  where: { status: 'pending' }
+});
+```
+
+### Paginación
+
+```javascript
+// ✅ Correct: Paginación eficiente
+const getPaginatedResults = async (page = 1, limit = 20) => {
+  const offset = (page - 1) * limit;
+  
+  const { count, rows } = await Model.findAndCountAll({
+    limit,
+    offset,
+    order: [['created_at', 'DESC']]
+  });
+
+  return {
+    data: rows,
+    pagination: {
+      current_page: page,
+      total_pages: Math.ceil(count / limit),
+      total_items: count,
+      items_per_page: limit
+    }
+  };
+};
+```
+
+### Índices de Base de Datos
+
+```javascript
+// ✅ Correct: Definir índices en modelos
+const InspectionOrder = sequelize.define('InspectionOrder', {
+  // ... campos
+}, {
+  indexes: [
+    {
+      fields: ['status', 'created_at'],
+      name: 'idx_status_created_at'
+    },
+    {
+      fields: ['assigned_agent_id'],
+      name: 'idx_assigned_agent'
+    },
+    {
+      fields: ['sede_id', 'status'],
+      name: 'idx_sede_status'
+    }
+  ]
+});
+```
+
+### Caching
+
+```javascript
+// ✅ Correct: Implementar cache para datos estáticos
+const cache = new Map();
+
+const getCachedData = async (key, fetchFunction, ttl = 300000) => {
+  const cached = cache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data;
+  }
+
+  const data = await fetchFunction();
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+
+  return data;
+};
+
+// Uso
+const roles = await getCachedData('roles', () => Role.findAll());
+```
+
+## Frontend - Optimizaciones
+
+### Lazy Loading
+
+```javascript
+// ✅ Correct: Lazy loading de componentes
+import { lazy, Suspense } from 'react';
+
+const NotificationTemplateEditor = lazy(() => 
+  import('./components/NotificationTemplateEditor')
+);
+
+const Admin = () => {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <NotificationTemplateEditor />
+    </Suspense>
+  );
+};
+```
+
+### Memoización
+
+```javascript
+// ✅ Correct: Usar useMemo y useCallback
+import { useMemo, useCallback } from 'react';
+
+const MyComponent = ({ data, onUpdate }) => {
+  // Memoizar cálculos costosos
+  const processedData = useMemo(() => {
+    return data.map(item => ({
+      ...item,
+      calculated: expensiveCalculation(item)
+    }));
+  }, [data]);
+
+  // Memoizar funciones
+  const handleUpdate = useCallback((id, value) => {
+    onUpdate(id, value);
+  }, [onUpdate]);
+
+  return (
+    <div>
+      {processedData.map(item => (
+        <Item key={item.id} data={item} onUpdate={handleUpdate} />
+      ))}
+    </div>
+  );
+};
+```
+
+### Optimización de Re-renders
+
+```javascript
+// ✅ Correct: React.memo para componentes
+import React from 'react';
+
+const UserCard = React.memo(({ user, onSelect }) => {
+  return (
+    <div onClick={() => onSelect(user.id)}>
+      <h3>{user.name}</h3>
+      <p>{user.email}</p>
+    </div>
+  );
+});
+
+// Evitar crear objetos en render
+const MyComponent = ({ users }) => {
+  // ❌ Incorrect: Objeto creado en cada render
+  const style = { color: 'red' };
+
+  // ✅ Correct: Objeto memoizado
+  const style = useMemo(() => ({ color: 'red' }), []);
+
+  return (
+    <div style={style}>
+      {users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+};
+```
+
+### Optimización de Imágenes
+
+```javascript
+// ✅ Correct: Lazy loading de imágenes
+import { useState, useEffect } from 'react';
+
+const LazyImage = ({ src, alt, placeholder }) => {
+  const [imageSrc, setImageSrc] = useState(placeholder);
+  const [imageRef, setImageRef] = useState();
+
+  useEffect(() => {
+    let observer;
+    let didCancel = false;
+
+    if (imageRef && imageSrc === placeholder) {
+      if (IntersectionObserver) {
+        observer = new IntersectionObserver(
+          entries => {
+            entries.forEach(entry => {
+              if (
+                !didCancel &&
+                (entry.intersectionRatio > 0 || entry.isIntersecting)
+              ) {
+                setImageSrc(src);
+                observer.unobserve(imageRef);
+              }
+            });
+          },
+          {
+            threshold: 0.01,
+            rootMargin: '75%'
+          }
+        );
+        observer.observe(imageRef);
+      } else {
+        setImageSrc(src);
+      }
+    }
+    return () => {
+      didCancel = true;
+      if (observer && observer.unobserve) {
+        observer.unobserve(imageRef);
+      }
+    };
+  }, [src, imageSrc, imageRef]);
+
+  return (
+    <img
+      ref={setImageRef}
+      src={imageSrc}
+      alt={alt}
+      className="lazy-image"
+    />
+  );
+};
+```
+
+## Base de Datos - Optimizaciones
+
+### Queries Optimizadas
+
+```javascript
+// ✅ Correct: Queries con joins optimizados
+const getOrdersWithDetails = async () => {
+  return await InspectionOrder.findAll({
+    include: [
+      {
+        model: User,
+        as: 'assigned_agent',
+        attributes: ['id', 'name', 'email'],
+        required: false // LEFT JOIN
+      },
+      {
+        model: Sede,
+        as: 'sede',
+        attributes: ['id', 'name', 'address'],
+        required: true // INNER JOIN
+      }
+    ],
+    where: {
+      status: {
+        [Op.in]: ['pending', 'assigned']
+      }
+    },
+    order: [['created_at', 'DESC']],
+    limit: 100
+  });
+};
+```
+
+### Índices Compuestos
+
+```javascript
+// ✅ Correct: Índices para consultas frecuentes
+// En migración
+await queryInterface.addIndex('inspection_orders', ['status', 'created_at'], {
+  name: 'idx_orders_status_created'
+});
+
+await queryInterface.addIndex('users', ['role_id', 'is_active'], {
+  name: 'idx_users_role_active'
+});
+
+await queryInterface.addIndex('appointments', ['sede_id', 'date', 'time'], {
+  name: 'idx_appointments_sede_datetime'
+});
+```
+
+### Consultas con Subconsultas
+
+```javascript
+// ✅ Correct: Usar subconsultas para datos agregados
+const getOrdersWithStats = async () => {
+  return await InspectionOrder.findAll({
+    attributes: {
+      include: [
+        [
+          sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM call_logs
+            WHERE call_logs.inspection_order_id = InspectionOrder.id
+          )`),
+          'call_count'
+        ],
+        [
+          sequelize.literal(`(
+            SELECT MAX(created_at)
+            FROM call_logs
+            WHERE call_logs.inspection_order_id = InspectionOrder.id
+          )`),
+          'last_call_date'
+        ]
+      ]
+    }
+  });
+};
+```
+
+## Monitoreo de Performance
+
+### Backend - Métricas
+
+```javascript
+// ✅ Correct: Middleware de métricas
+const performanceMiddleware = (req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    console.log(`Performance: ${req.method} ${req.path} - ${duration}ms`);
+    
+    // Alertar si la respuesta es muy lenta
+    if (duration > 1000) {
+      console.warn(`Slow response: ${req.method} ${req.path} - ${duration}ms`);
+    }
+  });
+  
+  next();
+};
+
+// Uso en app.js
+app.use(performanceMiddleware);
+```
+
+### Frontend - Métricas
+
+```javascript
+// ✅ Correct: Medición de performance en React
+import { useEffect } from 'react';
+
+const usePerformanceMonitor = (componentName) => {
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      console.log(`Component ${componentName} render time: ${duration}ms`);
+    };
+  });
+};
+
+// Uso en componentes
+const MyComponent = () => {
+  usePerformanceMonitor('MyComponent');
+  
+  return <div>Content</div>;
+};
+```
+
+### Profiling de Base de Datos
+
+```javascript
+// ✅ Correct: Logging de queries lentas
+const sequelize = new Sequelize(config.database, config.username, config.password, {
+  ...config,
+  logging: (sql, duration) => {
+    if (duration > 100) {
+      console.warn(`Slow query (${duration}ms):`, sql);
+    }
+  }
+});
+```
+
+## Optimización de Assets
+
+### Bundle Splitting
+
+```javascript
+// ✅ Correct: Configuración de Vite para code splitting
+// vite.config.js
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@/components/ui'],
+          utils: ['@/lib/utils']
+        }
+      }
+    }
+  }
+};
+```
+
+### Compresión
+
+```javascript
+// ✅ Correct: Middleware de compresión
+import compression from 'compression';
+
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6
+}));
+```
+
+## Caching de API
+
+```javascript
+// ✅ Correct: Cache de respuestas API
+const cacheMiddleware = (duration = 300) => {
+  const cache = new Map();
+  
+  return (req, res, next) => {
+    const key = `${req.method}:${req.originalUrl}`;
+    const cached = cache.get(key);
+    
+    if (cached && Date.now() - cached.timestamp < duration * 1000) {
+      return res.json(cached.data);
+    }
+    
+    const originalSend = res.json;
+    res.json = function(data) {
+      cache.set(key, {
+        data,
+        timestamp: Date.now()
+      });
+      originalSend.call(this, data);
+    };
+    
+    next();
+  };
+};
+
+// Uso en rutas
+app.get('/api/static-data', cacheMiddleware(600), controller.getStaticData);
+```
+
+## Related Rules
+
+- [backend-development-patterns.mdc](mdc:.cursor/rules/backend-development-patterns.mdc) - Patrones backend
+- [frontend-development-patterns.mdc](mdc:.cursor/rules/frontend-development-patterns.mdc) - Patrones frontend
+- [error-handling-patterns.mdc](mdc:.cursor/rules/error-handling-patterns.mdc) - Manejo de errores
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal
+description:
+globs:
+alwaysApply: false
+---

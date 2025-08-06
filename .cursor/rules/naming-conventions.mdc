@@ -1,0 +1,194 @@
+# Convenciones de Nomenclatura - VML.Perito
+
+## Backend
+
+### Archivos y Directorios
+
+- **Modelos**: `camelCase.js` (ej: `user.js`, `rolePermission.js`)
+- **Controladores**: `camelCaseController.js` (ej: `userController.js`)
+- **Middleware**: `camelCase.js` (ej: `rbac.js`, `permissionRegistry.js`)
+- **Servicios**: `camelCaseService.js` (ej: `templateService.js`, `eventService.js`)
+- **Rutas**: Agrupadas en el archivo principal [apps/server/index.js](mdc:apps/server/index.js)
+
+### Variables y Funciones
+
+```javascript
+// camelCase para variables y funciones
+const userName = 'admin';
+const getUserById = async (id) => { ... };
+
+// PascalCase para clases y constructores
+class UserController extends BaseController { ... }
+
+// UPPER_SNAKE_CASE para constantes
+const JWT_SECRET = process.env.JWT_SECRET;
+```
+
+### Permisos RBAC
+
+```javascript
+// Patrón: recurso.accion
+'users.read'; // Ver usuarios
+'users.create'; // Crear usuarios
+'roles.update'; // Actualizar roles
+'system.read'; // Ver datos del sistema
+'coordinador_contacto.assign'; // Asignar agentes
+'agente_contacto.appointment'; // Crear agendamientos
+```
+
+## Frontend
+
+### Archivos y Componentes
+
+- **Componentes**: `PascalCase.jsx` (ej: `UserProfile.jsx`)
+- **Hooks**: `use-kebab-case.js` (ej: `use-permissions.js`)
+- **Contextos**: `kebab-case-context.jsx` (ej: `auth-context.jsx`)
+- **Páginas**: `PascalCase.jsx` (ej: `Dashboard.jsx`)
+
+### Variables y Funciones
+
+```javascript
+// camelCase para variables y funciones
+const [userData, setUserData] = useState(null);
+const handleSubmit = () => { ... };
+
+// PascalCase para componentes
+const UserProfile = () => { ... };
+
+// kebab-case para clases CSS
+className="user-profile-card"
+```
+
+## Base de Datos
+
+### Tablas y Columnas
+
+- **Tablas**: `snake_case` (ej: `inspection_orders`, `user_roles`)
+- **Columnas**: `snake_case` (ej: `created_at`, `updated_at`, `deleted_at`)
+- **Claves foráneas**: `table_name_id` (ej: `user_id`, `role_id`)
+
+### Modelos Sequelize
+
+```javascript
+// Definición de modelo
+const MyModel = sequelize.define('MyModel', {
+  // Columnas en snake_case
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at',
+});
+
+// Relaciones
+User.belongsToMany(Role, {
+  through: UserRole,
+  foreignKey: 'user_id',
+  otherKey: 'role_id',
+  as: 'roles',
+});
+```
+
+## API Endpoints
+
+### Rutas RESTful
+
+```javascript
+// Patrón: /api/resource
+GET    /api/users           // Listar usuarios
+GET    /api/users/:id       // Obtener usuario
+POST   /api/users           // Crear usuario
+PUT    /api/users/:id       // Actualizar usuario
+DELETE /api/users/:id       // Eliminar usuario
+
+// Rutas específicas
+GET    /api/users/:id/roles // Roles de usuario
+POST   /api/orders/:id/assign // Asignar orden
+```
+
+### Respuestas JSON
+
+```javascript
+// Respuesta exitosa
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operación exitosa"
+}
+
+// Respuesta de error
+{
+  "success": false,
+  "message": "Error descriptivo",
+  "error": "Detalles técnicos"
+}
+```
+
+## Variables de Entorno
+
+### Configuración
+
+```javascript
+// Patrón: UPPER_SNAKE_CASE
+const JWT_SECRET = process.env.JWT_SECRET;
+const DATABASE_URL = process.env.DATABASE_URL;
+const API_PORT = process.env.PORT || 3000;
+```
+
+### Scripts de Seeding
+
+```javascript
+// CRÍTICO: Cargar variables con ruta explícita
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// IMPORTANTE: Ruta explícita al archivo .env
+dotenv.config({ path: path.join(__dirname, '../.env') });
+```
+
+## Componentes React
+
+### Estructura de Archivos
+
+```
+src/
+├── components/
+│   ├── ui/           # Componentes base (shadcn/ui)
+│   ├── forms/        # Formularios específicos
+│   └── layout/       # Componentes de layout
+├── pages/            # Páginas principales
+├── hooks/            # Hooks personalizados
+├── contexts/         # Contextos de React
+└── lib/              # Utilidades y helpers
+```
+
+### Nomenclatura de Props
+
+```javascript
+// Props en camelCase
+const UserCard = ({ userName, userEmail, onUserClick }) => {
+  return (
+    <div onClick={onUserClick}>
+      <h3>{userName}</h3>
+      <p>{userEmail}</p>
+    </div>
+  );
+};
+
+// Event handlers con prefijo 'handle'
+const handleSubmit = () => { ... };
+const handleUserSelect = (user) => { ... };
+```
+
+## Related Rules
+
+- [backend-development-patterns.mdc](mdc:.cursor/rules/backend-development-patterns.mdc) - Patrones backend
+- [frontend-development-patterns.mdc](mdc:.cursor/rules/frontend-development-patterns.mdc) - Patrones frontend
+- [api-controllers.mdc](mdc:.cursor/rules/api-controllers.mdc) - Patrones de controladores
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal
+description:
+globs:
+alwaysApply: false
+---

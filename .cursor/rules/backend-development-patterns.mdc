@@ -1,0 +1,263 @@
+# Backend Development Patterns - VML.Perito
+
+## Estado Actual (2024)
+
+### ✅ Sistema Validado
+- **Sistema de Notificaciones**: Operativo sin duplicaciones
+- **Event Service**: Evaluación de condiciones simplificada
+- **Notification Service**: Deduplicación implementada
+- **Seeders**: Configuración granular de listeners y plantillas
+- **WebSockets**: Sistema de tiempo real funcionando
+
+### 🔧 Problemas Resueltos
+- Duplicación de notificaciones eliminada
+- Listeners antiguos limpiados
+- Condiciones de evaluación frontend-friendly
+- Sistema de deduplicación implementado
+
+## Service Layer Patterns
+
+### Event Service Pattern
+
+Always use the established service pattern for events:
+
+```javascript
+// ✅ Correct: Use AutomatedEventTriggers
+import automatedEventTriggers from '../services/automatedEventTriggers.js';
+
+// In controller methods
+await automatedEventTriggers.triggerUserEvents('created', userData, context);
+await automatedEventTriggers.triggerInspectionOrderEvents('created', orderData, context);
+await automatedEventTriggers.triggerAppointmentEvents('created', appointmentData, context);
+```
+
+### Find or Create Pattern
+
+Always implement find or create to prevent duplicates:
+
+```javascript
+// ✅ Correct: Use findOrCreate pattern
+const result = await this.eventRegistry.findOrCreateEvent(
+  eventName,
+  description,
+  category,
+  metadata
+);
+
+if (result.created) {
+  console.log('✅ Event created');
+} else {
+  console.log('⏭️ Event already exists');
+}
+```
+
+## Controller Integration
+
+### Method Binding
+
+Always bind methods in controller constructors:
+
+```javascript
+// ✅ Correct: Bind all methods
+constructor() {
+  super(Model);
+  this.index = this.index.bind(this);
+  this.store = this.store.bind(this);
+  this.update = this.update.bind(this);
+  this.destroy = this.destroy.bind(this);
+}
+```
+
+### Event Triggering in Controllers
+
+Integrate event triggers in controller methods:
+
+```javascript
+// ✅ Correct: Trigger events after successful operations
+async store(req, res) {
+  try {
+    const entity = await this.model.create(req.body);
+
+    // Trigger event after successful creation
+    await automatedEventTriggers.triggerEntityEvents('created', entity, {
+      created_by: req.user?.id,
+      ip_address: req.ip
+    });
+
+    res.status(201).json(entity);
+  } catch (error) {
+    res.status(400).json({ message: 'Error creating entity', error: error.message });
+  }
+}
+```
+
+## Data Standardization
+
+### Notification Data Structure
+
+Always use standardized notification data structure:
+
+```javascript
+// ✅ Correct: Use standardized fields
+const notificationData = {
+  title: 'Notification Title',
+  content: 'Notification content',
+  metadata: {
+    channel_data: {
+      email: {
+        subject: 'Email Subject',
+        body: 'Email body content',
+      },
+      sms: {
+        message: 'SMS message content',
+      },
+    },
+  },
+};
+```
+
+### Channel Service Pattern
+
+Implement channel services with standardized field access:
+
+```javascript
+// ✅ Correct: Access channel-specific data
+async send(notification) {
+  const channelData = notification.metadata?.channel_data?.email;
+  const subject = channelData?.subject || notification.title;
+  const body = channelData?.body || notification.content;
+
+  // Send email logic
+}
+```
+
+## Error Handling
+
+### Service Error Handling
+
+Implement proper error handling in services:
+
+```javascript
+// ✅ Correct: Comprehensive error handling
+async triggerEvent(eventName, data, context) {
+  try {
+    const result = await this.eventRegistry.triggerEvent(eventName, data, context);
+    console.log(`🎯 Event triggered: ${eventName}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ Error triggering event ${eventName}:`, error);
+    // Don't throw - log and continue
+  }
+}
+```
+
+### Database Error Handling
+
+Handle database errors gracefully:
+
+```javascript
+// ✅ Correct: Database error handling
+try {
+  const result = await Model.findOrCreate({
+    where: { name: data.name },
+    defaults: data,
+  });
+  return result;
+} catch (error) {
+  console.error('❌ Database error:', error);
+  throw new Error('Database operation failed');
+}
+```
+
+## Seeding Patterns
+
+### Seeder Structure
+
+Use consistent seeder structure:
+
+```javascript
+// ✅ Correct: Seeder pattern
+const seedData = async () => {
+  try {
+    console.log('🌱 Starting seed...');
+
+    for (const item of items) {
+      const [entity, created] = await Model.findOrCreate({
+        where: { name: item.name },
+        defaults: item,
+      });
+
+      if (created) {
+        console.log(`✅ Created: ${entity.name}`);
+      } else {
+        console.log(`ℹ️ Exists: ${entity.name}`);
+      }
+    }
+
+    console.log('✅ Seed completed');
+  } catch (error) {
+    console.error('❌ Seed error:', error);
+    process.exit(1);
+  }
+};
+```
+
+## Service Initialization
+
+### Service Initialization Pattern
+
+Follow the established initialization pattern:
+
+```javascript
+// ✅ Correct: Service initialization
+class Service {
+  constructor() {
+    this.isInitialized = false;
+  }
+
+  async initialize() {
+    try {
+      // Initialization logic
+      this.isInitialized = true;
+      console.log('✅ Service initialized');
+    } catch (error) {
+      console.error('❌ Service initialization failed:', error);
+      throw error;
+    }
+  }
+
+  async method() {
+    if (!this.isInitialized) {
+      console.warn('⚠️ Service not initialized');
+      return;
+    }
+    // Method logic
+  }
+}
+```
+
+## Logging Standards
+
+### Consistent Logging
+
+Use consistent logging patterns:
+
+```javascript
+// ✅ Correct: Consistent logging
+console.log('🎯 Event triggered:', eventName);
+console.log('✅ Operation completed');
+console.log('⚠️ Warning message');
+console.error('❌ Error occurred:', error);
+console.log('📊 Statistics:', stats);
+```
+
+## Key Files to Reference
+
+- **EventService** ([apps/server/services/eventService.js](mdc:apps/server/services/eventService.js))
+- **AutomatedEventTriggers** ([apps/server/services/automatedEventTriggers.js](mdc:apps/server/services/automatedEventTriggers.js))
+- **NotificationService** ([apps/server/services/notificationService.js](mdc:apps/server/services/notificationService.js))
+- **TemplateService** ([apps/server/services/templateService.js](mdc:apps/server/services/templateService.js))
+- **UserController** ([apps/server/controllers/userController.js](mdc:apps/server/controllers/userController.js))
+- **InspectionOrderController** ([apps/server/controllers/inspectionOrderController.js](mdc:apps/server/controllers/inspectionOrderController.js))
+
+---
