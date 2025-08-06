@@ -41,6 +41,15 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         },
         comment: 'ID del agente de contact center asignado a esta orden'
     },
+    commercial_user_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        },
+        comment: 'ID del usuario comercial que creó la orden (basado en clave_intermediario)'
+    },
     producto: {
         type: DataTypes.STRING(50),
         allowNull: false,
@@ -58,7 +67,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         allowNull: false,
     },
     clave_intermediario: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(255),
         allowNull: false,
     },
     sucursal: {
@@ -196,6 +205,55 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
 
+    hooks: {
+        beforeCreate: async (inspectionOrder, options) => {
+            // Auto-asignar commercial_user_id basado en clave_intermediario
+            if (inspectionOrder.clave_intermediario && !inspectionOrder.commercial_user_id) {
+                try {
+                    const { User } = await import('./index.js');
+                    const commercialUser = await User.findOne({
+                        where: {
+                            intermediary_key: inspectionOrder.clave_intermediario,
+                            is_active: true
+                        }
+                    });
+
+                    if (commercialUser) {
+                        inspectionOrder.commercial_user_id = commercialUser.id;
+                        console.log(`🔗 Auto-asignado commercial_user_id: ${commercialUser.id} para clave_intermediario: ${inspectionOrder.clave_intermediario}`);
+                    } else {
+                        console.log(`⚠️ No se encontró usuario comercial para clave_intermediario: ${inspectionOrder.clave_intermediario}`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error auto-asignando commercial_user_id:', error);
+                }
+            }
+        },
+        beforeUpdate: async (inspectionOrder, options) => {
+            // Si cambió clave_intermediario, actualizar commercial_user_id
+            if (inspectionOrder.changed('clave_intermediario')) {
+                try {
+                    const { User } = await import('./index.js');
+                    const commercialUser = await User.findOne({
+                        where: {
+                            intermediary_key: inspectionOrder.clave_intermediario,
+                            is_active: true
+                        }
+                    });
+
+                    if (commercialUser) {
+                        inspectionOrder.commercial_user_id = commercialUser.id;
+                        console.log(`🔄 Actualizado commercial_user_id: ${commercialUser.id} para clave_intermediario: ${inspectionOrder.clave_intermediario}`);
+                    } else {
+                        inspectionOrder.commercial_user_id = null;
+                        console.log(`⚠️ Removido commercial_user_id para clave_intermediario: ${inspectionOrder.clave_intermediario}`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error actualizando commercial_user_id:', error);
+                }
+            }
+        }
+    }
 });
 
 export default InspectionOrder; 

@@ -28,6 +28,17 @@ import VehicleType from './vehicleType.js';
 import SedeVehicleType from './sedeVehicleType.js';
 import ScheduleTemplate from './scheduleTemplate.js';
 
+// Nuevos modelos para sistema de eventos
+import Event from './event.js';
+import EventListener from './eventListener.js';
+
+// Nuevos modelos para sistema de plantillas
+import NotificationTemplate from './notificationTemplate.js';
+import TemplateVersion from './templateVersion.js';
+
+// Nuevos modelos para sistema de configuración de canales
+import ChannelConfig from './channelConfig.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -426,6 +437,92 @@ NotificationQueue.belongsTo(Notification, {
     as: 'notification'
 });
 
+// ===== RELACIONES SISTEMA DE EVENTOS =====
+
+// Event -> EventListener (1:N)
+Event.hasMany(EventListener, {
+    foreignKey: 'event_id',
+    as: 'listeners'
+});
+EventListener.belongsTo(Event, {
+    foreignKey: 'event_id',
+    as: 'Event'
+});
+
+// NotificationType -> EventListener (1:N)
+NotificationType.hasMany(EventListener, {
+    foreignKey: 'notification_type_id',
+    as: 'eventListeners'
+});
+EventListener.belongsTo(NotificationType, {
+    foreignKey: 'notification_type_id',
+    as: 'NotificationType'
+});
+
+// User -> Event (1:N) - Usuario que creó el evento
+User.hasMany(Event, {
+    foreignKey: 'created_by',
+    as: 'createdEvents'
+});
+Event.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
+// User -> EventListener (1:N) - Usuario que creó el listener
+User.hasMany(EventListener, {
+    foreignKey: 'created_by',
+    as: 'createdEventListeners'
+});
+EventListener.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
+// ===== RELACIONES SISTEMA DE PLANTILLAS =====
+
+// User -> NotificationTemplate (1:N) - Usuario que creó la plantilla
+User.hasMany(NotificationTemplate, {
+    foreignKey: 'created_by',
+    as: 'createdTemplates'
+});
+NotificationTemplate.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
+// NotificationTemplate -> TemplateVersion (1:N) - Historial de versiones
+NotificationTemplate.hasMany(TemplateVersion, {
+    foreignKey: 'template_id',
+    as: 'versions'
+});
+TemplateVersion.belongsTo(NotificationTemplate, {
+    foreignKey: 'template_id',
+    as: 'template'
+});
+
+// User -> TemplateVersion (1:N) - Usuario que creó la versión
+User.hasMany(TemplateVersion, {
+    foreignKey: 'created_by',
+    as: 'createdTemplateVersions'
+});
+TemplateVersion.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
+// ===== RELACIONES SISTEMA DE CONFIGURACIÓN DE CANALES =====
+
+// User -> ChannelConfig (1:N) - Usuario que creó la configuración
+User.hasMany(ChannelConfig, {
+    foreignKey: 'created_by',
+    as: 'createdChannelConfigs'
+});
+ChannelConfig.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator'
+});
+
 export {
     Department,
     City,
@@ -453,5 +550,13 @@ export {
     // Sistema avanzado
     VehicleType,
     SedeVehicleType,
-    ScheduleTemplate
+    ScheduleTemplate,
+    // Sistema de eventos
+    Event,
+    EventListener,
+    // Sistema de plantillas
+    NotificationTemplate,
+    TemplateVersion,
+    // Sistema de configuración de canales
+    ChannelConfig
 }; 
