@@ -5,33 +5,50 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+
 import sequelize from './config/database.js';
 import { login, verify, logout, changeTemporaryPassword, changePassword } from './controllers/authController.js';
 import userController from './controllers/userController.js';
-import departmentController from './controllers/departmentController.js';
-import cityController from './controllers/cityController.js';
+import roleController from './controllers/roleController.js';
+import permissionController from './controllers/permissionController.js';
+import templateController from './controllers/templateController.js';
+import notificationController from './controllers/notificationController.js';
+import eventController from './controllers/eventController.js';
+import appointmentController from './controllers/appointmentController.js';
+import InspectionOrderController from './controllers/inspectionOrderController.js';
 import companyController from './controllers/companyController.js';
 import sedeController from './controllers/sedeController.js';
+import departmentController from './controllers/departmentController.js';
+import cityController from './controllers/cityController.js';
+import channelController from './controllers/channelController.js';
 import { requirePermission } from './middleware/rbac.js';
 import { requireAuth } from './middleware/auth.js';
-import permissionController from './controllers/permissionController.js';
-import roleController from './controllers/roleController.js';
-import webSocketSystem from './websocket/index.js';
-import InspectionOrderController from './controllers/inspectionOrderController.js';
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
-import notificationController from './controllers/notificationController.js';
+
+// Los servicios se importarán e inicializarán después de crear las tablas
+
 import { Op } from 'sequelize';
 import { securityConfig, createCorsConfig } from './config/security.js';
 import { sqlSanitizerMiddleware } from './utils/sqlSanitizer.js';
 
-// Importar modelos para establecer relaciones
-import './models/index.js';
-
 // Cargar variables de entorno
 dotenv.config();
+
+// Importar modelos para establecer relaciones - DEBE SER DESPUÉS DE CARGAR VARIABLES DE ENTORNO
+import './models/index.js';
+
+// Importar servicios (pero NO inicializarlos automáticamente)
+import channelConfigService from './services/channelConfigService.js';
+import notificationService from './services/notificationService.js';
+import templateService from './services/templateService.js';
+import eventService from './services/eventService.js';
+import automatedEventTriggers from './services/automatedEventTriggers.js';
+import webSocketSystem from './websocket/index.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -62,6 +79,7 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(compression());
 // Configurar CORS usando configuración centralizada
 app.use(cors(createCorsConfig()));
 
@@ -75,6 +93,7 @@ const readLimiter = rateLimit(securityConfig.rateLimitConfig.read);
 
 // Aplicar rate limiting general
 app.use(limiter);
+app.use(morgan('combined'));
 
 // Middleware para logging de rate limiting
 app.use((req, res, next) => {
@@ -109,7 +128,7 @@ app.use((req, res, next) => {
     const start = Date.now();
 
     // Log de la solicitud con IP real
-    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path} - IP Real: ${req.realIP} - User-Agent: ${req.get('User-Agent')}`);
+
 
     // Interceptar la respuesta para logging
     const originalSend = res.send;
@@ -259,6 +278,65 @@ app.put('/api/notifications/mark-all-read', requireAuth, notificationController.
 app.get('/api/notifications/stats', requireAuth, notificationController.getStats);
 app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
 
+// ===== RUTAS DEL SISTEMA DE NOTIFICACIONES =====
+
+// Rutas para plantillas de notificación
+app.get('/api/templates', readLimiter, requirePermission('templates.read'), templateController.index);
+app.get('/api/templates/:id', readLimiter, requirePermission('templates.read'), templateController.show);
+app.post('/api/templates', requirePermission('templates.create'), templateController.store);
+app.put('/api/templates/:id', requirePermission('templates.update'), templateController.update);
+app.delete('/api/templates/:id', requirePermission('templates.delete'), templateController.destroy);
+app.post('/api/templates/:id/duplicate', requirePermission('templates.create'), templateController.duplicate);
+app.get('/api/templates/stats', readLimiter, requirePermission('templates.read'), templateController.stats);
+app.get('/api/templates/variables', readLimiter, requirePermission('templates.read'), templateController.variables);
+app.post('/api/templates/validate', requirePermission('templates.create'), templateController.validate);
+app.post('/api/templates/render', requirePermission('templates.read'), templateController.render);
+app.get('/api/templates/category/:category', readLimiter, requirePermission('templates.read'), templateController.byCategory);
+
+// Rutas para canales de notificación
+app.get('/api/channels', readLimiter, requirePermission('channels.read'), channelController.index);
+app.get('/api/channels/:channelName', readLimiter, requirePermission('channels.read'), channelController.show);
+app.post('/api/channels', requirePermission('channels.create'), channelController.store);
+app.put('/api/channels/:channelName', requirePermission('channels.update'), channelController.update);
+app.delete('/api/channels/:channelName', requirePermission('channels.delete'), channelController.destroy);
+app.post('/api/channels/:channelName/test', requirePermission('channels.test'), channelController.testChannel);
+app.get('/api/channels/schemas', readLimiter, requirePermission('channels.read'), channelController.getSchemas);
+app.post('/api/channels/validate', requirePermission('channels.create'), channelController.validateConfig);
+app.get('/api/channels/memory', readLimiter, requirePermission('channels.read'), channelController.getFromMemory);
+app.post('/api/channels/reload', requirePermission('channels.update'), channelController.reload);
+
+// Rutas para eventos del sistema
+app.get('/api/events', readLimiter, requirePermission('events.read'), eventController.getAllEvents);
+app.get('/api/events/:id', readLimiter, requirePermission('events.read'), eventController.getEventById);
+app.post('/api/events', requirePermission('events.create'), eventController.createEvent);
+app.put('/api/events/:id', requirePermission('events.update'), eventController.updateEvent);
+app.delete('/api/events/:id', requirePermission('events.delete'), eventController.deleteEvent);
+app.get('/api/events/stats', readLimiter, requirePermission('events.read'), eventController.getEventStats);
+app.post('/api/events/:id/trigger', requirePermission('events.trigger'), eventController.triggerEvent);
+app.get('/api/events/category/:category', readLimiter, requirePermission('events.read'), eventController.getEventsByCategory);
+app.get('/api/events/:id/listeners', readLimiter, requirePermission('events.read'), eventController.getEventListeners);
+app.post('/api/events/listeners', requirePermission('events.create'), eventController.createListener);
+app.put('/api/events/listeners/:id', requirePermission('events.update'), eventController.updateListener);
+app.delete('/api/events/listeners/:id', requirePermission('events.delete'), eventController.deleteListener);
+
+// Rutas para citas (appointments)
+app.get('/api/appointments/modalities', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableModalities);
+app.get('/api/appointments/modalities/:cityId', readLimiter, requirePermission('appointments.read'), appointmentController.getInspectionModalitiesByCity);
+app.get('/api/appointments/sedes', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableSedes);
+app.post('/api/appointments', requirePermission('appointments.create'), appointmentController.createAppointment);
+app.get('/api/appointments/time-slots', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableTimeSlots);
+
+// ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
+
+// Rutas para estadísticas administrativas de notificaciones
+app.get('/api/notifications/admin/stats', requirePermission('notifications.admin'), notificationController.getAdminStats);
+
+// Rutas para configuraciones de notificación
+app.get('/api/notifications/configs', requirePermission('notifications.admin'), notificationController.getNotificationConfigs);
+app.post('/api/notifications/configs', requirePermission('notifications.admin'), notificationController.createNotificationConfig);
+app.put('/api/notifications/configs/:id', requirePermission('notifications.admin'), notificationController.updateNotificationConfig);
+app.delete('/api/notifications/configs/:id', requirePermission('notifications.admin'), notificationController.deleteNotificationConfig);
+
 // Rutas de usuarios - IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
 // Endpoint de perfil sin restricciones de permisos (solo requiere autenticación)
 app.get('/api/users/profile', async (req, res) => {
@@ -365,6 +443,16 @@ app.get('/api/websocket/debug', requirePermission('system.read'), (req, res) => 
     } else {
         res.status(503).json({ message: 'Sistema de WebSockets no inicializado' });
     }
+});
+
+// Ruta de health check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
 });
 
 // Temp Path to return SMS to send (requiere permisos de sistema)
@@ -484,22 +572,195 @@ app.use((err, req, res, next) => {
 // Sincronizar base de datos y arrancar servidor
 const startServer = async () => {
     try {
+        console.log('🔄 Iniciando sincronización de base de datos...');
+
+        // PRIMERO: Autenticar conexión a la base de datos
         await sequelize.authenticate();
         console.log('✅ Conexión a la base de datos establecida correctamente.');
 
-        // Sincronizar modelos (crear tablas si no existen)
-        await sequelize.sync({ force: false });
-        console.log('✅ Modelos sincronizados con la base de datos.');
+        // SEGUNDO: Sincronizar modelos (crear tablas si no existen) - ESTO DEBE SER LO PRIMERO
+        console.log('🔄 Sincronizando modelos con la base de datos...');
 
-        // Inicializar sistema de WebSockets
+        // Verificar que los modelos estén registrados
+        const {
+            Department, City, Company, Sede, User, Role, Permission, RolePermission, UserRole,
+            InspectionOrderStatus, InspectionOrder, CallStatus, CallLog, Appointment,
+            NotificationChannel, NotificationType, NotificationConfig, Notification, NotificationQueue,
+            SedeType, InspectionModality, SedeModalityAvailability, VehicleType, SedeVehicleType,
+            ScheduleTemplate, Event, EventListener, NotificationTemplate, TemplateVersion, ChannelConfig
+        } = await import('./models/index.js');
+
+        // Crear tablas en secuencia para respetar dependencias
+        console.log('🔧 Creando tablas en secuencia...');
+
+        // Lista completa de modelos en orden de dependencias (sin dependencias primero)
+        const modelos = [
+            // 1. Tablas base sin dependencias
+            { nombre: 'Department', modelo: Department, tabla: 'departments' },
+            { nombre: 'SedeType', modelo: SedeType, tabla: 'sede_types' },
+            { nombre: 'InspectionOrderStatus', modelo: InspectionOrderStatus, tabla: 'inspection_orders_statuses' },
+            { nombre: 'CallStatus', modelo: CallStatus, tabla: 'call_statuses' },
+            { nombre: 'InspectionModality', modelo: InspectionModality, tabla: 'inspection_modalities' },
+            { nombre: 'VehicleType', modelo: VehicleType, tabla: 'vehicle_types' },
+            { nombre: 'NotificationType', modelo: NotificationType, tabla: 'notification_types' },
+            { nombre: 'NotificationChannel', modelo: NotificationChannel, tabla: 'notification_channels' },
+
+            // 2. Tablas con dependencias de nivel 1
+            { nombre: 'City', modelo: City, tabla: 'cities' },
+            { nombre: 'Role', modelo: Role, tabla: 'roles' },
+            { nombre: 'Permission', modelo: Permission, tabla: 'permissions' },
+
+            // 3. Tablas con dependencias de nivel 2
+            { nombre: 'Company', modelo: Company, tabla: 'companies' },
+            { nombre: 'Sede', modelo: Sede, tabla: 'sedes' },
+            { nombre: 'User', modelo: User, tabla: 'users' },
+            { nombre: 'NotificationConfig', modelo: NotificationConfig, tabla: 'notification_config' },
+
+            // 4. Tablas que dependen de User
+            { nombre: 'Event', modelo: Event, tabla: 'events' },
+            { nombre: 'ChannelConfig', modelo: ChannelConfig, tabla: 'channel_configs' },
+            { nombre: 'NotificationTemplate', modelo: NotificationTemplate, tabla: 'notification_templates' },
+            { nombre: 'TemplateVersion', modelo: TemplateVersion, tabla: 'template_versions' },
+
+            // 5. Tablas de relaciones N:N
+            { nombre: 'RolePermission', modelo: RolePermission, tabla: 'role_permissions' },
+            { nombre: 'UserRole', modelo: UserRole, tabla: 'user_roles' },
+            { nombre: 'SedeVehicleType', modelo: SedeVehicleType, tabla: 'sede_vehicle_types' },
+
+            // 6. Tablas con dependencias de nivel 3
+            { nombre: 'InspectionOrder', modelo: InspectionOrder, tabla: 'inspection_orders' },
+            { nombre: 'CallLog', modelo: CallLog, tabla: 'call_logs' },
+            { nombre: 'SedeModalityAvailability', modelo: SedeModalityAvailability, tabla: 'sede_modality_availability' },
+            { nombre: 'ScheduleTemplate', modelo: ScheduleTemplate, tabla: 'schedule_templates' },
+
+            // 7. Tablas con dependencias de nivel 4
+            { nombre: 'Appointment', modelo: Appointment, tabla: 'appointments' },
+            { nombre: 'Notification', modelo: Notification, tabla: 'notifications' },
+            { nombre: 'EventListener', modelo: EventListener, tabla: 'event_listeners' },
+
+            // 8. Tablas finales
+            { nombre: 'NotificationQueue', modelo: NotificationQueue, tabla: 'notification_queue' }
+        ];
+
+        let contador = 0;
+        const maxIntentos = 50; // Máximo 5 segundos por tabla (50 * 100ms)
+
+        // Loop principal para crear tablas secuencialmente
+        while (contador < modelos.length) {
+            const modeloActual = modelos[contador];
+            console.log(`📋 [${contador + 1}/${modelos.length}] Creando tabla ${modeloActual.nombre}...`);
+
+            try {
+                // Ejecutar sync del modelo actual
+                await modeloActual.modelo.sync({ force: false });
+                console.log(`✅ Sync de ${modeloActual.nombre} ejecutado.`);
+
+                // Loop de verificación - esperar hasta que la tabla esté disponible
+                let tablaCreada = false;
+                let intentos = 0;
+
+                while (!tablaCreada && intentos < maxIntentos) {
+                    try {
+                        await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
+                        tablaCreada = true;
+                        console.log(`✅ Tabla ${modeloActual.tabla} verificada y disponible.`);
+                    } catch (error) {
+                        intentos++;
+                        console.log(`⏳ [${intentos}/${maxIntentos}] Esperando que ${modeloActual.tabla} esté disponible... (${intentos * 100}ms)`);
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 100ms
+                    }
+                }
+
+                if (tablaCreada) {
+                    console.log(`✅ Tabla ${modeloActual.nombre} creada y verificada exitosamente.`);
+                    contador++; // Pasar al siguiente modelo
+                } else {
+                    console.error(`❌ Error: No se pudo verificar la tabla ${modeloActual.tabla} después de ${maxIntentos} intentos.`);
+                    throw new Error(`Fallo al crear tabla ${modeloActual.tabla}`);
+                }
+
+            } catch (error) {
+                console.error(`❌ Error creando tabla ${modeloActual.nombre}:`, error.message);
+                console.log('🔄 Intentando sincronización general como último recurso...');
+                await sequelize.sync({ force: false });
+                console.log('✅ Sincronización general completada.');
+                break; // Salir del loop principal
+            }
+        }
+
+        console.log(`✅ Proceso de creación de tablas completado. ${contador}/${modelos.length} tablas creadas.`);
+
+        // VERIFICAR que las tablas críticas existan antes de continuar
+
+        let tablesReady = false;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (!tablesReady && attempts < maxAttempts) {
+            try {
+                await sequelize.query('SELECT 1 FROM events LIMIT 1');
+                await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
+                await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
+                await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
+                await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
+                console.log('✅ Todas las tablas críticas están disponibles.');
+                tablesReady = true;
+            } catch (error) {
+                attempts++;
+                console.log(`⚠️ Intento ${attempts}/${maxAttempts}: Error verificando tablas:`, error.message);
+                if (attempts < maxAttempts) {
+                    console.log('⏳ Esperando 2 segundos antes del siguiente intento...');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    console.log('❌ No se pudieron verificar las tablas después de múltiples intentos.');
+                    throw new Error('Las tablas críticas no están disponibles');
+                }
+            }
+        }
+
+        // TERCERO: Inicializar servicios (DESPUÉS de que todas las tablas estén creadas)
+        console.log('📦 Inicializando servicios...');
+
+        // CUARTO: Inicializar servicios en orden correcto
+        console.log('🎯 Inicializando ChannelConfigService...');
+        await channelConfigService.initialize();
+
+        console.log('🎯 Inicializando NotificationService...');
+        await notificationService.initialize();
+
+        console.log('🎯 Inicializando EventService...');
+        const eventServiceInstance = new eventService();
+        // Configurar el notificationService en el eventService
+        eventServiceInstance.notificationService = notificationService;
+        await eventServiceInstance.initialize();
+
+        // QUINTO: Inicializar triggers automáticos
+        console.log('🎯 Inicializando triggers automáticos...');
+        automatedEventTriggers.initialize(eventServiceInstance);
+
+        // SEXTO: Registrar eventos del sistema
+        console.log('🎯 Registrando eventos del sistema...');
+        await automatedEventTriggers.registerSystemEvents();
+
+        // SÉPTIMO: Crear listeners predefinidos
+        console.log('🎯 Creando listeners predefinidos...');
+        await automatedEventTriggers.createDefaultListeners();
+
+        // OCTAVO: Inicializar WebSocket
+        console.log('🎯 Inicializando WebSocket...');
         await webSocketSystem.initialize(server);
 
-        // Hacer disponible el sistema WebSocket en la app
+        // NOVENO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
+        console.log('✅ Sistema completamente inicializado');
 
+        // DÉCIMO: Mostrar estadísticas iniciales
+        const stats = await automatedEventTriggers.getStats();
+
+        // UNDÉCIMO: Iniciar el servidor HTTP
         server.listen(port, '0.0.0.0', () => {
             console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);
-            console.log(`📊 Base de datos: ${process.env.DATABASE_DRIVER || 'mysql'}`);
+
             console.log(`🔌 WebSockets disponibles en ws://localhost:${port}`);
             console.log(`🛡️ Seguridad habilitada:`);
             console.log(`   - CORS configurado para dominios permitidos`);
@@ -509,9 +770,21 @@ const startServer = async () => {
             console.log(`   - Sanitización SQL personalizada activada`);
             console.log(`   - Logging de seguridad habilitado`);
             console.log(`   - Endpoint de prueba: /api/test-rate-limit`);
+        }).on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                console.error(`❌ Error: El puerto ${port} ya está en uso.`);
+                console.error(`💡 Solución: Detén el proceso que está usando el puerto ${port} o cambia el puerto en las variables de entorno.`);
+                console.error(`🔍 Para ver qué proceso está usando el puerto: netstat -ano | findstr :${port}`);
+                process.exit(1);
+            } else {
+                console.error('❌ Error iniciando el servidor:', error);
+                process.exit(1);
+            }
         });
     } catch (error) {
-        console.error('❌ Error al conectar con la base de datos:', error);
+        console.error('❌ Error durante la inicialización del servidor:', error);
+        console.error('📍 Detalles del error:', error.message);
+        console.error('📍 Stack trace:', error.stack);
         process.exit(1);
     }
 };
