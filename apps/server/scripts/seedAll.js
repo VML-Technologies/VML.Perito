@@ -44,11 +44,11 @@ const seedAll = async () => {
         await seedModalitySystem();
         console.log('✅ Sistema de modalidades avanzado configurado correctamente.');
 
-        // 5. Crear usuario administrador
-        console.log('\n👤 Paso 4: Creando usuario administrador...');
-        const { default: createAdminUser } = await import('./seedUser.js');
-        await createAdminUser();
-        console.log('✅ Usuario administrador creado correctamente.');
+        // 5. Crear usuarios (administrador y usuarios con roles)
+        console.log('\n👥 Paso 4: Creando usuarios...');
+        const { default: seedUsers } = await import('./seedUsers.js');
+        await seedUsers();
+        console.log('✅ Usuarios creados correctamente.');
 
         // 6. Ejecutar seed de datos de inspección
         console.log('\n🏭 Paso 5: Cargando datos de inspección...');
@@ -68,11 +68,35 @@ const seedAll = async () => {
         await seedSedeModalityAvailability();
         console.log('✅ Disponibilidad de modalidades configurada correctamente.');
 
-        // 9. Crear usuarios con nuevos roles
-        console.log('\n👥 Paso 8: Creando usuarios con roles específicos...');
-        const { default: seedUsers } = await import('./seedUsers.js');
-        await seedUsers();
-        console.log('✅ Usuarios con roles específicos creados correctamente.');
+        // 9. Configurar sistema de eventos dinámico
+        console.log('\n🎯 Paso 8: Configurando sistema de eventos dinámico...');
+        const { default: seedEventSystem } = await import('./seedEventSystem.js');
+        await seedEventSystem();
+        console.log('✅ Sistema de eventos dinámico configurado correctamente.');
+
+        // 10. Configurar plantillas básicas
+        console.log('\n📝 Paso 9: Configurando plantillas básicas...');
+        const { default: seedTemplates } = await import('./seedTemplates.js');
+        await seedTemplates();
+        console.log('✅ Plantillas básicas configuradas correctamente.');
+
+        // 11. Configurar plantillas avanzadas específicas
+        console.log('\n📝 Paso 10: Configurando plantillas avanzadas...');
+        const { default: seedAdvancedTemplates } = await import('./seedAdvancedTemplates.js');
+        await seedAdvancedTemplates();
+        console.log('✅ Plantillas avanzadas configuradas correctamente.');
+
+        // 12. Configurar configuraciones de canales
+        console.log('\n🌐 Paso 11: Configurando configuraciones de canales...');
+        const { default: seedChannels } = await import('./seedChannels.js');
+        await seedChannels();
+        console.log('✅ Configuraciones de canales configuradas correctamente.');
+
+        // 13. Configurar listeners avanzados con condiciones granulares
+        console.log('\n🎯 Paso 12: Configurando listeners avanzados...');
+        const { default: seedAdvancedListeners } = await import('./seedAdvancedListeners.js');
+        await seedAdvancedListeners();
+        console.log('✅ Listeners avanzados configurados correctamente.');
 
         console.log('\n🎉 ¡Proceso de seed completado exitosamente!');
         console.log('\n📋 Resumen de lo que se creó:');
@@ -92,24 +116,30 @@ const seedAll = async () => {
         console.log('   - Horarios flexibles con intervalos de 1 hora y capacidad de 5 cupos');
         console.log('   - Configuración de tipos de vehículos por sede');
         console.log('   - Sistema de notificaciones configurado');
-        console.log('   - Usuario administrador: admin@vmlperito.com (contraseña: 123456)');
-        console.log('   - Usuario comercial: comercial@vmlperito.com (contraseña: 123456)');
-        console.log('   - Usuario coordinadora: coordinadora@vmlperito.com (contraseña: 123456)');
-        console.log('   - 5 Agentes de contacto: agente1@vmlperito.com a agente5@vmlperito.com (contraseña: 123456)');
-        console.log('   - Usuario supervisora: supervisora@vmlperito.com (contraseña: 123456)');
+        console.log('   - Sistema de eventos dinámico con 13 eventos del sistema');
+        console.log('   - Plantillas de notificación: 5 plantillas por defecto');
+        console.log('   - Sistema de eventos dinámico: 21 eventos del sistema');
+        console.log('   - Plantillas básicas: 2 plantillas del sistema (alertas, mantenimiento)');
+        console.log('   - Plantillas avanzadas: 17 plantillas específicas por tipo de notificación');
+        console.log('   - Configuraciones de canales: 5 canales configurados (Email, SMS, WhatsApp, In-App, Push)');
+        console.log('   - Listeners avanzados: 18 listeners granulares con condiciones específicas y configuraciones integradas');
+        console.log('   - Usuario administrador: admin@vmltechnologies.com (contraseña: 123456)');
+        console.log('   - Usuario comercial: comercial@vmltechnologies.com (contraseña: 123456)');
+        console.log('   - Usuario coordinadora: coordinador_cc@vmltechnologies.com (contraseña: 123456)');
+        console.log('   - 5 Agentes de contacto: agente_cc_1@vmltechnologies.com a agente_cc_5@vmltechnologies.com (contraseña: 123456)');
 
         console.log('\n🔑 Credenciales de acceso principales:');
         console.log('\n👨‍💼 ADMINISTRADOR (Todos los permisos):');
-        console.log('   Email: admin@vmlperito.com');
+        console.log('   Email: admin@vmltechnologies.com');
         console.log('   Contraseña: 123456');
         console.log('\n👩‍💼 COMERCIAL MUNDIAL (Crear órdenes de inspección):');
-        console.log('   Email: comercial@vmlperito.com');
+        console.log('   Email: comercial@vmltechnologies.com');
         console.log('   Contraseña: 123456');
         console.log('\n👩‍💼 COORDINADORA DE CONTACTO (Asignar agentes):');
-        console.log('   Email: coordinadora@vmlperito.com');
+        console.log('   Email: coordinador_cc@vmltechnologies.com');
         console.log('   Contraseña: 123456');
         console.log('\n👨‍💼 AGENTE DE CONTACT CENTER (Gestionar llamadas):');
-        console.log('   Email: agente1@vmlperito.com');
+        console.log('   Email: agente_cc_1@vmltechnologies.com');
         console.log('   Contraseña: 123456');
 
     } catch (error) {

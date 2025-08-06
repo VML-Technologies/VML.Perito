@@ -70,9 +70,9 @@ const seedData = async () => {
 
         for (const cityDataItem of cityData) {
             const [city, created] = await City.findOrCreate({
-                where: { 
+                where: {
                     name: cityDataItem.name,
-                    department_id: cityDataItem.department_id 
+                    department_id: cityDataItem.department_id
                 },
                 defaults: cityDataItem
             });
@@ -101,7 +101,7 @@ const seedData = async () => {
                 nit: '800987654-3',
                 city_id: 7, // Medellín
                 address: 'Calle 10 # 20-30, Medellín',
-                email: 'info@vmlperito.com',
+                email: 'info@vmltechnologies.com',
                 phone: '604-1234567'
             },
             {

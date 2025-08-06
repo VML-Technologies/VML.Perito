@@ -17,18 +17,134 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 // Importar modelos para establecer relaciones
 import '../models/index.js';
 
-const seedUsers = async () => {
+/**
+ * Crear usuario administrador
+ */
+const createAdminUser = async () => {
     try {
-        console.log('👥 Iniciando seed de usuarios con nuevos roles...');
+        console.log('👤 Creando usuario administrador...');
+
+        // Verificar si el usuario administrador ya existe
+        const existingUser = await User.findOne({
+            where: { email: 'admin@vmltechnologies.com' }
+        });
+
+        if (existingUser) {
+            console.log('⚠️ El usuario administrador ya existe.');
+            return existingUser;
+        }
+
+        // Buscar una sede existente o crear una temporal
+        const { Sede } = await import('../models/index.js');
+        let sedeId = null;
+
+        // Intentar encontrar una sede existente
+        const existingSede = await Sede.findOne();
+        if (existingSede) {
+            sedeId = existingSede.id;
+            console.log(`✅ Usando sede existente: ${existingSede.name} (ID: ${sedeId})`);
+        } else {
+            // Si no hay sedes, crear una temporal para el administrador
+            console.log('⚠️ No se encontraron sedes. Creando sede temporal para administrador...');
+            const { City, Company, SedeType } = await import('../models/index.js');
+
+            // Buscar ciudad de Bogotá
+            const bogota = await City.findOne({ where: { name: 'Bogotá' } });
+            if (!bogota) {
+                throw new Error('No se encontró la ciudad de Bogotá. Ejecuta primero el seed de datos básicos.');
+            }
+
+            // Buscar empresa Previcar
+            const previcar = await Company.findOne({ where: { name: 'Previcar' } });
+            if (!previcar) {
+                throw new Error('No se encontró la empresa Previcar. Ejecuta primero el seed de datos básicos.');
+            }
+
+            // Buscar tipo de sede Comercial (o crear si no existe)
+            let sedeType = await SedeType.findOne({ where: { code: 'COMERCIAL' } });
+            if (!sedeType) {
+                // Si no existe, crear el tipo de sede Comercial
+                sedeType = await SedeType.create({
+                    name: 'Comercial',
+                    code: 'COMERCIAL',
+                    description: 'Sede comercial y administrativa',
+                    active: true
+                });
+                console.log('✅ Tipo de sede Comercial creado para sede temporal');
+            }
+
+            // Crear sede temporal
+            const tempSede = await Sede.create({
+                name: 'Sede Administrativa Temporal',
+                address: 'Sede temporal para administrador',
+                phone: '601-000-0000',
+                email: 'admin@vmltechnologies.com',
+                city_id: bogota.id,
+                company_id: previcar.id,
+                sede_type_id: sedeType.id,
+                active: true
+            });
+
+            sedeId = tempSede.id;
+            console.log(`✅ Sede temporal creada: ${tempSede.name} (ID: ${sedeId})`);
+        }
+
+        // Crear usuario administrador
+        const hashedPassword = await bcrypt.hash('123456', 10);
+
+        const adminUser = await User.create({
+            sede_id: sedeId,
+            name: 'Administrador del Sistema',
+            email: 'admin@vmltechnologies.com',
+            phone: '123456789',
+            password: hashedPassword,
+            is_active: true,
+            notification_channel_in_app_enabled: true,
+            notification_channel_sms_enabled: true,
+            notification_channel_email_enabled: true,
+            notification_channel_whatsapp_enabled: true,
+            notification_channel_push_enabled: true
+        });
+
+        // Buscar rol de super_admin
+        const superAdminRole = await Role.findOne({ where: { name: 'super_admin' } });
+        if (!superAdminRole) {
+            throw new Error('No se encontró el rol super_admin. Ejecuta primero el seed de RBAC.');
+        }
+
+        // Asignar rol al usuario
+        await UserRole.create({
+            user_id: adminUser.id,
+            role_id: superAdminRole.id
+        });
+
+        console.log('✅ Usuario administrador creado exitosamente');
+        console.log(`   - Email: ${adminUser.email}`);
+        console.log(`   - Contraseña: 123456`);
+        console.log(`   - Rol: ${superAdminRole.name}`);
+
+        return adminUser;
+
+    } catch (error) {
+        console.error('❌ Error creando usuario administrador:', error);
+        throw error;
+    }
+};
+
+/**
+ * Crear usuarios con roles específicos
+ */
+const createUsersWithRoles = async () => {
+    try {
+        console.log('👥 Creando usuarios con roles específicos...');
 
         // Verificar que los roles existan
         const comercialRole = await Role.findOne({ where: { name: 'comercial_mundial' } });
         const agenteRole = await Role.findOne({ where: { name: 'agente_contacto' } });
         const coordinadorRole = await Role.findOne({ where: { name: 'coordinador_contacto' } });
-        const adminRole = await Role.findOne({ where: { name: 'super_admin' } });
 
         if (!comercialRole || !agenteRole || !coordinadorRole) {
-            console.log('⚠️  Los roles comercial_mundial, agente_contacto o coordinador_contacto no existen. Ejecuta primero el seed de RBAC.');
+            console.log('⚠️ Los roles comercial_mundial, agente_contacto o coordinador_contacto no existen. Ejecuta primero el seed de RBAC.');
             return;
         }
 
@@ -41,8 +157,8 @@ const seedUsers = async () => {
                 userData: {
                     sede_id: 1,
                     name: 'María Comercial',
-                    email: 'comercial@vmlperito.com',
-                    phone: '300-7654321',
+                    email: 'comercial@vmltechnologies.com',
+                    phone: '3043425127',
                     password: hashedPassword,
                     is_active: true,
                     intermediary_key: 'COMERCIAL001',
@@ -59,8 +175,8 @@ const seedUsers = async () => {
                 userData: {
                     sede_id: 1,
                     name: 'Ana Coordinadora',
-                    email: 'coordinadora@vmlperito.com',
-                    phone: '300-1111111',
+                    email: 'coordinador_cc@vmltechnologies.com',
+                    phone: '3043425127',
                     password: hashedPassword,
                     is_active: true,
                     notification_channel_in_app_enabled: true,
@@ -76,8 +192,8 @@ const seedUsers = async () => {
                 userData: {
                     sede_id: 1,
                     name: 'Carlos Agente',
-                    email: 'agente1@vmlperito.com',
-                    phone: '300-1357924',
+                    email: 'agente_cc_1@vmltechnologies.com',
+                    phone: '3043425127',
                     password: hashedPassword,
                     is_active: true,
                     notification_channel_in_app_enabled: true,
@@ -91,38 +207,8 @@ const seedUsers = async () => {
                 userData: {
                     sede_id: 1,
                     name: 'Laura Agente',
-                    email: 'agente2@vmlperito.com',
-                    phone: '300-2222222',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['agente_contacto']
-            },
-            {
-                userData: {
-                    sede_id: 1,
-                    name: 'Diego Agente',
-                    email: 'agente3@vmlperito.com',
-                    phone: '300-3333333',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['agente_contacto']
-            },
-            {
-                userData: {
-                    sede_id: 1,
-                    name: 'Sofia Agente',
-                    email: 'agente4@vmlperito.com',
-                    phone: '300-4444444',
+                    email: 'agente_cc_2@vmltechnologies.com',
+                    phone: '3043425127',
                     password: hashedPassword,
                     is_active: true,
                     notification_channel_in_app_enabled: true,
@@ -136,8 +222,38 @@ const seedUsers = async () => {
                 userData: {
                     sede_id: 1,
                     name: 'Roberto Agente',
-                    email: 'agente5@vmlperito.com',
-                    phone: '300-5555555',
+                    email: 'agente_cc_3@vmltechnologies.com',
+                    phone: '3043425127',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Sofia Agente',
+                    email: 'agente_cc_4@vmltechnologies.com',
+                    phone: '3043425127',
+                    password: hashedPassword,
+                    is_active: true,
+                    notification_channel_in_app_enabled: true,
+                    notification_channel_sms_enabled: true,
+                    notification_channel_email_enabled: true,
+                    notification_channel_whatsapp_enabled: true,
+                },
+                roles: ['agente_contacto']
+            },
+            {
+                userData: {
+                    sede_id: 1,
+                    name: 'Diego Agente',
+                    email: 'agente_cc_5@vmltechnologies.com',
+                    phone: '3043425127',
                     password: hashedPassword,
                     is_active: true,
                     notification_channel_in_app_enabled: true,
@@ -149,74 +265,74 @@ const seedUsers = async () => {
             }
         ];
 
-        console.log('👤 Creando usuarios...');
-        for (const { userData, roles } of users) {
-            // Verificar si el usuario ya existe
-            const existingUser = await User.findOne({
-                where: { email: userData.email }
-            });
+        let createdCount = 0;
+        let skippedCount = 0;
 
-            if (existingUser) {
-                console.log(`⚠️  El usuario ${userData.email} ya existe.`);
-                continue;
-            }
+        for (const userConfig of users) {
+            try {
+                // Verificar si el usuario ya existe
+                const existingUser = await User.findOne({
+                    where: { email: userConfig.userData.email }
+                });
 
-            // Crear usuario
-            const user = await User.create(userData);
-            console.log(`✅ Usuario creado: ${user.name} (${user.email})`);
+                if (existingUser) {
+                    console.log(`⚠️ Usuario ya existe: ${userConfig.userData.email}`);
+                    skippedCount++;
+                    continue;
+                }
 
-            // Asignar roles
-            for (const roleName of roles) {
-                const role = await Role.findOne({ where: { name: roleName } });
-                if (role) {
-                    await UserRole.findOrCreate({
-                        where: {
+                // Crear usuario
+                const user = await User.create(userConfig.userData);
+
+                // Asignar roles
+                for (const roleName of userConfig.roles) {
+                    const role = await Role.findOne({ where: { name: roleName } });
+                    if (role) {
+                        await UserRole.create({
                             user_id: user.id,
                             role_id: role.id
-                        }
-                    });
-                    console.log(`   🔗 Rol "${roleName}" asignado a ${user.name}`);
-                } else {
-                    console.log(`   ⚠️  Rol "${roleName}" no encontrado`);
+                        });
+                    }
                 }
+
+                console.log(`✅ Usuario creado: ${user.name} (${user.email})`);
+                createdCount++;
+
+            } catch (error) {
+                console.error(`❌ Error creando usuario ${userConfig.userData.email}:`, error.message);
             }
         }
 
-        console.log('🎉 Seed de usuarios completado exitosamente!');
-        console.log('\n📋 Credenciales de acceso:');
-        console.log('\n👩‍💼 COMERCIAL MUNDIAL:');
-        console.log('   Email: comercial@vmlperito.com');
-        console.log('   Contraseña: 123456');
-        console.log('\n👩‍💼 COORDINADORA DE CONTACTO:');
-        console.log('   Email: coordinadora@vmlperito.com');
-        console.log('   Contraseña: 123456');
-        console.log('\n👨‍💼 AGENTES DE CONTACTO:');
-        console.log('   Email: agente1@vmlperito.com - Contraseña: 123456');
-        console.log('   Email: agente2@vmlperito.com - Contraseña: 123456');
-        console.log('   Email: agente3@vmlperito.com - Contraseña: 123456');
-        console.log('   Email: agente4@vmlperito.com - Contraseña: 123456');
-        console.log('   Email: agente5@vmlperito.com - Contraseña: 123456');
-        console.log('\n👩‍💼 SUPERVISORA (TODOS LOS ROLES):');
-        console.log('   Email: supervisora@vmlperito.com');
-        console.log('   Contraseña: 123456');
+        console.log(`\n📊 Resumen de usuarios:`);
+        console.log(`   - ${createdCount} usuarios creados`);
+        console.log(`   - ${skippedCount} usuarios existentes`);
 
     } catch (error) {
-        console.error('❌ Error al crear usuarios:', error);
+        console.error('❌ Error creando usuarios con roles:', error);
         throw error;
     }
 };
 
-// Ejecutar si se llama directamente
-if (import.meta.url === `file://${process.argv[1]}`) {
-    seedUsers()
-        .then(() => {
-            console.log('✅ Seed de usuarios completado');
-            process.exit(0);
-        })
-        .catch((error) => {
-            console.error('❌ Error:', error);
-            process.exit(1);
-        });
-}
+/**
+ * Función principal que ejecuta ambos procesos
+ */
+const seedUsers = async () => {
+    try {
+        console.log('👥 Iniciando seed de usuarios...');
 
-export default seedUsers; 
+        // 1. Crear usuario administrador
+        await createAdminUser();
+
+        // 2. Crear usuarios con roles específicos
+        await createUsersWithRoles();
+
+        console.log('✅ Seed de usuarios completado exitosamente');
+
+    } catch (error) {
+        console.error('❌ Error en seed de usuarios:', error);
+        throw error;
+    }
+};
+
+export default seedUsers;
+export { createAdminUser, createUsersWithRoles }; 

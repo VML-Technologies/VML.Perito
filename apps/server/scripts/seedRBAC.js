@@ -340,6 +340,186 @@ const seedRBAC = async () => {
                 action: 'stats',
                 endpoint: '/api/coordinador-contacto/stats',
                 method: 'GET'
+            },
+            // ===== NUEVOS PERMISOS - SISTEMA DE NOTIFICACIONES =====
+            {
+                name: 'notifications.read',
+                description: 'Ver notificaciones del sistema',
+                resource: 'notifications',
+                action: 'read',
+                endpoint: '/api/notifications',
+                method: 'GET'
+            },
+            {
+                name: 'notifications.create',
+                description: 'Crear notificaciones',
+                resource: 'notifications',
+                action: 'create',
+                endpoint: '/api/notifications',
+                method: 'POST'
+            },
+            {
+                name: 'notifications.update',
+                description: 'Actualizar notificaciones',
+                resource: 'notifications',
+                action: 'update',
+                endpoint: '/api/notifications/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'notifications.delete',
+                description: 'Eliminar notificaciones',
+                resource: 'notifications',
+                action: 'delete',
+                endpoint: '/api/notifications/:id',
+                method: 'DELETE'
+            },
+            {
+                name: 'notifications.admin',
+                description: 'Administrar configuración de notificaciones',
+                resource: 'notifications',
+                action: 'admin',
+                endpoint: '/api/notifications/admin',
+                method: 'GET'
+            },
+            {
+                name: 'notifications.templates',
+                description: 'Gestionar plantillas de notificaciones',
+                resource: 'notifications',
+                action: 'templates',
+                endpoint: '/api/notifications/templates',
+                method: 'GET'
+            },
+            {
+                name: 'notifications.channels',
+                description: 'Gestionar canales de notificaciones',
+                resource: 'notifications',
+                action: 'channels',
+                endpoint: '/api/notifications/channels',
+                method: 'GET'
+            },
+            {
+                name: 'notifications.stats',
+                description: 'Ver estadísticas de notificaciones',
+                resource: 'notifications',
+                action: 'stats',
+                endpoint: '/api/notifications/stats',
+                method: 'GET'
+            },
+            // ===== PERMISOS DE PLANTILLAS DE NOTIFICACIÓN =====
+            {
+                name: 'templates.read',
+                description: 'Ver plantillas de notificación',
+                resource: 'templates',
+                action: 'read',
+                endpoint: '/api/templates',
+                method: 'GET'
+            },
+            {
+                name: 'templates.create',
+                description: 'Crear plantillas de notificación',
+                resource: 'templates',
+                action: 'create',
+                endpoint: '/api/templates',
+                method: 'POST'
+            },
+            {
+                name: 'templates.update',
+                description: 'Actualizar plantillas de notificación',
+                resource: 'templates',
+                action: 'update',
+                endpoint: '/api/templates/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'templates.delete',
+                description: 'Eliminar plantillas de notificación',
+                resource: 'templates',
+                action: 'delete',
+                endpoint: '/api/templates/:id',
+                method: 'DELETE'
+            },
+            // ===== PERMISOS DE CANALES DE NOTIFICACIÓN =====
+            {
+                name: 'channels.read',
+                description: 'Ver canales de notificación',
+                resource: 'channels',
+                action: 'read',
+                endpoint: '/api/channels',
+                method: 'GET'
+            },
+            {
+                name: 'channels.create',
+                description: 'Crear canales de notificación',
+                resource: 'channels',
+                action: 'create',
+                endpoint: '/api/channels',
+                method: 'POST'
+            },
+            {
+                name: 'channels.update',
+                description: 'Actualizar canales de notificación',
+                resource: 'channels',
+                action: 'update',
+                endpoint: '/api/channels/:channelName',
+                method: 'PUT'
+            },
+            {
+                name: 'channels.delete',
+                description: 'Eliminar canales de notificación',
+                resource: 'channels',
+                action: 'delete',
+                endpoint: '/api/channels/:channelName',
+                method: 'DELETE'
+            },
+            {
+                name: 'channels.test',
+                description: 'Probar canales de notificación',
+                resource: 'channels',
+                action: 'test',
+                endpoint: '/api/channels/:channelName/test',
+                method: 'POST'
+            },
+            // ===== PERMISOS DE EVENTOS DEL SISTEMA =====
+            {
+                name: 'events.read',
+                description: 'Ver eventos del sistema',
+                resource: 'events',
+                action: 'read',
+                endpoint: '/api/events',
+                method: 'GET'
+            },
+            {
+                name: 'events.create',
+                description: 'Crear eventos del sistema',
+                resource: 'events',
+                action: 'create',
+                endpoint: '/api/events',
+                method: 'POST'
+            },
+            {
+                name: 'events.update',
+                description: 'Actualizar eventos del sistema',
+                resource: 'events',
+                action: 'update',
+                endpoint: '/api/events/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'events.delete',
+                description: 'Eliminar eventos del sistema',
+                resource: 'events',
+                action: 'delete',
+                endpoint: '/api/events/:id',
+                method: 'DELETE'
+            },
+            {
+                name: 'events.trigger',
+                description: 'Disparar eventos del sistema',
+                resource: 'events',
+                action: 'trigger',
+                endpoint: '/api/events/:id/trigger',
+                method: 'POST'
             }
         ];
 
@@ -564,4 +744,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         });
 }
 
-export default seedRBAC; 
+export default seedRBAC;
