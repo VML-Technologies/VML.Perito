@@ -13,18 +13,76 @@ import PushService from './channels/pushService.js';
 class NotificationService {
     constructor() {
         this.channels = {
-            email: EmailService,
-            whatsapp: WhatsAppService,
-            sms: SMSService,
-            in_app: InAppService,
-            push: PushService
+            email: null,
+            whatsapp: null,
+            sms: null,
+            in_app: null,
+            push: null
         };
 
         this.isProcessing = false;
         this.processingInterval = null;
+        // NO inicializar automáticamente - se hará manualmente después de crear las tablas
+    }
 
-        // Inicializar procesamiento automático
-        this.startQueueProcessor();
+    /**
+     * Inicializar el servicio de notificaciones
+     */
+    async initialize() {
+        try {
+            console.log('🔔 Inicializando NotificationService...');
+
+            // Configurar servicios de canales desde variables de entorno
+            this.configureChannels();
+
+            // Inicializar procesamiento automático
+            this.startQueueProcessor();
+
+            console.log('✅ NotificationService inicializado correctamente');
+        } catch (error) {
+            console.error('❌ Error inicializando NotificationService:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Configurar servicios de canales desde variables de entorno
+     */
+    configureChannels() {
+        console.log('🔧 Configurando servicios de canales...');
+
+        // Usar las instancias exportadas directamente
+        this.channels.email = EmailService;
+        this.channels.whatsapp = WhatsAppService;
+        this.channels.sms = SMSService;
+        this.channels.in_app = InAppService;
+        this.channels.push = PushService;
+
+        // Configurar Email Service
+        if (this.channels.email.configureFromEnv) {
+            const emailConfigured = this.channels.email.configureFromEnv();
+            if (emailConfigured) {
+                console.log('✅ Servicio de Email configurado');
+            }
+        }
+
+        // Configurar SMS Service
+        if (this.channels.sms.configureFromEnv) {
+            const smsConfigured = this.channels.sms.configureFromEnv();
+            if (smsConfigured) {
+                console.log('✅ Servicio de SMS configurado');
+            }
+        }
+
+        // Configurar WhatsApp Service (pendiente implementación)
+        if (this.channels.whatsapp.configureFromEnv) {
+            const whatsappConfigured = this.channels.whatsapp.configureFromEnv();
+            if (whatsappConfigured) {
+                console.log('✅ Servicio de WhatsApp configurado');
+            }
+        }
+
+        console.log('🔧 Configuración de canales completada');
     }
 
     /**
@@ -98,12 +156,35 @@ class NotificationService {
      */
     async createNotificationForRecipient(config, data, recipient, options) {
         try {
+            console.log(`📝 Creando notificación para destinatario:`, {
+                type: recipient.type,
+                name: recipient.name,
+                email: recipient.email,
+                phone: recipient.phone,
+                user_id: recipient.user_id
+            });
+
             // Procesar plantillas
             const title = this.processTemplate(config.template_title, data);
             const content = this.processTemplate(config.template_content, data);
 
             // Determinar cuándo enviar
             const scheduledAt = this.calculateScheduledTime(config, options);
+
+            // Preparar metadata con datos específicos del canal
+            const metadata = {
+                channel: config.channel.name,
+                original_data: data,
+                config_id: config.id,
+                channel_data: {
+                    // Datos específicos por canal si están disponibles en la configuración
+                    email: config.channel_config?.email || {},
+                    sms: config.channel_config?.sms || {},
+                    whatsapp: config.channel_config?.whatsapp || {},
+                    in_app: config.channel_config?.in_app || {},
+                    push: config.channel_config?.push || {}
+                }
+            };
 
             // Crear registro de notificación
             const notification = await Notification.create({
@@ -121,11 +202,7 @@ class NotificationService {
                 scheduled_at: scheduledAt,
                 status: scheduledAt > new Date() ? 'scheduled' : 'pending',
                 max_retries: config.retry_attempts,
-                metadata: {
-                    channel: config.channel.name,
-                    original_data: data,
-                    config_id: config.id
-                }
+                metadata: metadata
             });
 
             // Si es inmediata, enviar ahora
@@ -148,6 +225,7 @@ class NotificationService {
      */
     async getRecipients(config, data, options) {
         const recipients = [];
+        const addedUserIds = new Set(); // Para evitar duplicados
 
         try {
             // Destinatarios por roles
@@ -165,13 +243,26 @@ class NotificationService {
                 });
 
                 for (const user of users) {
-                    recipients.push({
-                        type: 'user',
-                        user_id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone || null
-                    });
+                    // Evitar duplicados
+                    if (addedUserIds.has(user.id)) {
+                        continue;
+                    }
+
+                    // Verificar que el usuario tenga los datos necesarios para el canal
+                    const hasRequiredData = this.validateUserForChannel(user, config.channel.name);
+
+                    if (hasRequiredData) {
+                        recipients.push({
+                            type: 'user',
+                            user_id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            phone: user.phone || null
+                        });
+                        addedUserIds.add(user.id);
+                    } else {
+                        console.warn(`⚠️ Usuario ${user.name} (${user.id}) no tiene datos requeridos para canal ${config.channel.name}`);
+                    }
                 }
             }
 
@@ -185,39 +276,140 @@ class NotificationService {
                 });
 
                 for (const user of users) {
-                    recipients.push({
-                        type: 'user',
-                        user_id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone || null
-                    });
+                    // Evitar duplicados
+                    if (addedUserIds.has(user.id)) {
+                        continue;
+                    }
+
+                    // Verificar que el usuario tenga los datos necesarios para el canal
+                    const hasRequiredData = this.validateUserForChannel(user, config.channel.name);
+
+                    if (hasRequiredData) {
+                        recipients.push({
+                            type: 'user',
+                            user_id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            phone: user.phone || null
+                        });
+                        addedUserIds.add(user.id);
+                    } else {
+                        console.warn(`⚠️ Usuario ${user.name} (${user.id}) no tiene datos requeridos para canal ${config.channel.name}`);
+                    }
                 }
             }
 
             // Destinatario específico pasado en options
             if (options.recipient_user_id) {
-                const user = await User.findByPk(options.recipient_user_id);
-                if (user) {
-                    recipients.push({
-                        type: 'user',
-                        user_id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone || null
-                    });
+                // Evitar duplicados
+                if (!addedUserIds.has(options.recipient_user_id)) {
+                    const user = await User.findByPk(options.recipient_user_id);
+                    if (user) {
+                        // Verificar que el usuario tenga los datos necesarios para el canal
+                        const hasRequiredData = this.validateUserForChannel(user, config.channel.name);
+
+                        if (hasRequiredData) {
+                            recipients.push({
+                                type: 'user',
+                                user_id: user.id,
+                                name: user.name,
+                                email: user.email,
+                                phone: user.phone || null
+                            });
+                            addedUserIds.add(user.id);
+                        } else {
+                            console.warn(`⚠️ Usuario ${user.name} (${user.id}) no tiene datos requeridos para canal ${config.channel.name}`);
+                        }
+                    }
                 }
             }
 
-            // Destinatarios clientes (desde datos de la orden)
-            if (config.for_clients && data.client) {
-                recipients.push({
+            // Destinatarios clientes desde inspection_order
+            if (config.for_clients && data.inspection_order) {
+                console.log(`👤 Procesando cliente desde inspection_order:`, {
+                    nombre: data.inspection_order.nombre_cliente,
+                    email: data.inspection_order.correo_cliente,
+                    phone: data.inspection_order.celular_cliente
+                });
+
+                const clientRecipient = {
+                    type: 'client',
+                    name: data.inspection_order.nombre_cliente,
+                    email: data.inspection_order.correo_cliente,
+                    phone: data.inspection_order.celular_cliente
+                };
+
+                // Verificar que el cliente tenga los datos necesarios para el canal
+                const hasRequiredData = this.validateRecipientForChannel(clientRecipient, config.channel.name);
+
+                if (hasRequiredData) {
+                    recipients.push(clientRecipient);
+                    console.log(`✅ Cliente agregado como destinatario: ${clientRecipient.name}`);
+                } else {
+                    console.warn(`⚠️ Cliente ${clientRecipient.name} no tiene datos requeridos para canal ${config.channel.name} - Email: ${clientRecipient.email}, Phone: ${clientRecipient.phone}`);
+                }
+            }
+
+            // Destinatarios clientes (desde datos de la orden) - formato legacy
+            if (config.for_clients && data.client && !data.inspection_order) {
+                const clientRecipient = {
                     type: 'client',
                     name: data.client.name,
                     email: data.client.email,
                     phone: data.client.phone
-                });
+                };
+
+                // Verificar que el cliente tenga los datos necesarios para el canal
+                const hasRequiredData = this.validateRecipientForChannel(clientRecipient, config.channel.name);
+
+                if (hasRequiredData) {
+                    recipients.push(clientRecipient);
+                } else {
+                    console.warn(`⚠️ Cliente ${clientRecipient.name} no tiene datos requeridos para canal ${config.channel.name}`);
+                }
             }
+
+            // Destinatarios usuarios comerciales desde inspection_order
+            if (config.for_users && data.inspection_order && config.target_roles && config.target_roles.includes('comercial_mundial')) {
+                // Buscar usuario comercial por clave_intermediario
+                const commercialUser = await User.findOne({
+                    where: {
+                        intermediary_key: data.inspection_order.clave_intermediario,
+                        is_active: true
+                    },
+                    include: [
+                        {
+                            model: Role,
+                            as: 'roles',
+                            where: { name: 'comercial_mundial' },
+                            through: { attributes: [] }
+                        }
+                    ]
+                });
+
+                if (commercialUser) {
+                    // Evitar duplicados
+                    if (!addedUserIds.has(commercialUser.id)) {
+                        // Verificar que el usuario tenga los datos necesarios para el canal
+                        const hasRequiredData = this.validateUserForChannel(commercialUser, config.channel.name);
+
+                        if (hasRequiredData) {
+                            recipients.push({
+                                type: 'user',
+                                user_id: commercialUser.id,
+                                name: commercialUser.name,
+                                email: commercialUser.email,
+                                phone: commercialUser.phone || null
+                            });
+                            addedUserIds.add(commercialUser.id);
+                        } else {
+                            console.warn(`⚠️ Usuario comercial ${commercialUser.name} (${commercialUser.id}) no tiene datos requeridos para canal ${config.channel.name}`);
+                        }
+                    }
+                }
+            }
+
+
 
             return recipients;
 
@@ -243,7 +435,6 @@ class NotificationService {
                 processed = processed.replace(variable, value);
             }
         }
-
         return processed;
     }
 
@@ -285,6 +476,17 @@ class NotificationService {
 
             if (!channel) {
                 throw new Error(`Canal no soportado: ${channelName}`);
+            }
+
+            // Validar datos necesarios según el canal
+            if (channelName === 'sms' || channelName === 'whatsapp') {
+                if (!notification.recipient_phone) {
+                    throw new Error(`Número de teléfono requerido para canal ${channelName}`);
+                }
+            } else if (channelName === 'email') {
+                if (!notification.recipient_email) {
+                    throw new Error('Dirección de email requerida para canal email');
+                }
             }
 
             // Actualizar estado
@@ -343,15 +545,18 @@ class NotificationService {
      * Programar reintento de notificación fallida
      */
     async scheduleRetry(notification) {
+        console.log("Retrying notification", notification.id);
         const retryDelay = Math.pow(2, notification.retry_count) * 60 * 1000; // Exponential backoff
         const nextAttempt = new Date(Date.now() + retryDelay);
 
-        await NotificationQueue.create({
-            notification_id: notification.id,
-            scheduled_at: nextAttempt,
-            priority: notification.priority,
-            attempts: notification.retry_count
-        });
+
+
+        // await NotificationQueue.create({
+        //     notification_id: notification.id,
+        //     scheduled_at: nextAttempt,
+        //     priority: notification.priority,
+        //     attempts: notification.retry_count
+        // });
     }
 
     /**
@@ -417,6 +622,42 @@ class NotificationService {
             console.error('❌ Error procesando cola:', error);
         } finally {
             this.isProcessing = false;
+        }
+    }
+
+    /**
+     * Validar que un usuario o cliente tenga los datos necesarios para un canal específico
+     */
+    validateUserForChannel(user, channelName) {
+        switch (channelName) {
+            case 'email':
+                return user.email && user.email.trim() !== '';
+            case 'sms':
+            case 'whatsapp':
+                return user.phone && user.phone.trim() !== '';
+            case 'in_app':
+            case 'push':
+                return true; // Siempre válido para notificaciones in-app
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Validar que un destinatario tenga los datos necesarios para un canal específico
+     */
+    validateRecipientForChannel(recipient, channelName) {
+        switch (channelName) {
+            case 'email':
+                return recipient.email && recipient.email.trim() !== '';
+            case 'sms':
+            case 'whatsapp':
+                return recipient.phone && recipient.phone.trim() !== '';
+            case 'in_app':
+            case 'push':
+                return true; // Siempre válido para notificaciones in-app
+            default:
+                return true;
         }
     }
 
@@ -497,6 +738,21 @@ class NotificationService {
                 }
             }
         );
+    }
+
+    /**
+     * Obtener tipo de notificación por nombre
+     */
+    async getNotificationTypeByName(name) {
+        try {
+            const notificationType = await NotificationType.findOne({
+                where: { name: name }
+            });
+            return notificationType;
+        } catch (error) {
+            console.error(`❌ Error obteniendo tipo de notificación por nombre ${name}:`, error);
+            return null;
+        }
     }
 }
 
