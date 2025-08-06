@@ -1,84 +1,290 @@
-# Turborepo starter
+# VML.Perito - Sistema de Inspecciones de Asegurabilidad
 
-This Turborepo starter is maintained by the Turborepo core team.
+## 🎯 Descripción General
 
-## Using this example
+VML.Perito es un sistema integral para la gestión de inspecciones de asegurabilidad vehicular, que incluye agendamiento avanzado, gestión de contact center, sistema de notificaciones multicanal, y administración completa de usuarios y permisos.
 
-Run the following command:
+## 🏗️ Arquitectura del Sistema
 
-```sh
-npx create-turbo@latest
-```
+### **Stack Tecnológico**
 
-## What's inside?
+- **Backend**: Node.js + Express.js + Sequelize ORM
+- **Frontend**: React + Vite + shadcn/ui
+- **Base de Datos**: MySQL/PostgreSQL
+- **WebSockets**: Socket.IO para notificaciones en tiempo real
+- **Autenticación**: JWT + RBAC (Role-Based Access Control)
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+### **Estructura del Proyecto**
 
 ```
-cd my-turborepo
-pnpm build
+VML.Perito/
+├── apps/
+│   ├── server/          # Backend API
+│   └── web/             # Frontend React
+├── docs/                # Documentación técnica
+├── .cursor/rules/       # Reglas de desarrollo
+└── todo/                # Planes y tareas pendientes
 ```
 
-### Develop
+## 🚀 Características Principales
 
-To develop all apps and packages, run the following command:
+### **✅ Sistema de Agendamiento Avanzado**
 
+- Horarios flexibles con intervalos configurables
+- Tipos de vehículos (Livianos, Pesados, Motos)
+- Sedes reales con direcciones actuales
+- Modalidades de inspección (En Sede, A Domicilio, Virtual)
+- Validación de capacidad en tiempo real
+
+### **✅ Sistema de Notificaciones Multicanal**
+
+- **Email**: SMTP con plantillas HTML personalizables
+- **SMS**: Integración con Hablame API (Colombia)
+- **In-App**: Notificaciones en tiempo real via WebSocket
+- **Push**: Notificaciones push móviles
+- **WhatsApp**: Integración con WhatsApp Business API
+
+### **✅ Gestión de Contact Center**
+
+- **Agentes de Contacto**: Gestión de llamadas y seguimientos
+- **Coordinadores**: Asignación y supervisión de agentes
+- **Comercial Mundial**: Creación y gestión de órdenes
+- **Sistema de Roles RBAC**: Permisos granulares
+
+### **✅ Sistema de Eventos y Webhooks**
+
+- Arquitectura basada en eventos
+- Webhooks para integración con plataformas externas
+- Sistema de condiciones simplificado y frontend-friendly
+- Plantillas de notificación específicas por tipo
+
+## 📚 Documentación
+
+### **📋 Guías de Desarrollo**
+
+- [**Sistema Principal**](docs/vml-perito-system.md) - Arquitectura y componentes principales
+- [**Patrones de Desarrollo**](docs/development-patterns.md) - Convenciones y mejores prácticas
+- [**Sistema de Notificaciones**](docs/notification-system.md) - Documentación completa del sistema de notificaciones
+- [**WebSockets**](docs/websockets-system.md) - Sistema de comunicación en tiempo real
+
+### **🔧 Configuración y Setup**
+
+- [**Base de Datos y Seeding**](docs/database-seeding.md) - Configuración inicial y datos de prueba
+- [**Sistema de Agendamiento**](docs/advanced-scheduling-system.md) - Configuración de horarios y sedes
+- [**Contact Center**](docs/contact-center-terminology.md) - Terminología y flujos del contact center
+
+### **📱 Frontend y UI**
+
+- [**Patrones de Componentes**](docs/ui-component-patterns.md) - Componentes React y shadcn/ui
+- [**Estándares Frontend**](docs/frontend-notification-standards.md) - Convenciones para el frontend
+- [**Texto en Español**](docs/spanish-ui-text.md) - Guías para textos de interfaz
+
+### **🎯 Flujos de Negocio**
+
+- [**Flujo de Órdenes**](docs/inspection-order-flow.md) - Proceso completo de inspecciones
+- [**Patrones de Agentes**](docs/agent-contact-patterns.md) - Patrones para agentes de contacto
+- [**Patrones de Coordinadores**](docs/coordinator-patterns.md) - Patrones para coordinadores
+
+### **⚙️ API y Backend**
+
+- [**Controladores API**](docs/api-controllers.md) - Patrones para endpoints
+- [**Formato de Respuestas**](docs/api-response-format.md) - Estándares de respuestas JSON
+- [**Sistema de Webhooks**](docs/webhook-system.md) - Integración con plataformas externas
+
+### **🔍 Debugging y Troubleshooting**
+
+- [**Debugging y Solución de Problemas**](docs/debugging-and-troubleshooting.md) - Guías para resolver problemas
+- [**Patrones Backend**](docs/backend-development-patterns.md) - Patrones específicos del backend
+- [**Patrones Frontend**](docs/frontend-development-patterns.md) - Patrones específicos del frontend
+
+## 🛠️ Instalación y Configuración
+
+### **Prerrequisitos**
+
+- Node.js 18+
+- MySQL 8.0+ o PostgreSQL 13+
+- npm o yarn
+
+### **Configuración Inicial**
+
+```bash
+# 1. Clonar el repositorio
+git clone <repository-url>
+cd VML.Perito
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar variables de entorno
+cp apps/server/.env.example apps/server/.env
+cp apps/web/.env.example apps/web/.env
+
+# 4. Configurar base de datos
+npm run db:setup
+
+# 5. Ejecutar seeders
+npm run seed:all
+
+# 6. Iniciar desarrollo
+npm run dev
 ```
-cd my-turborepo
-pnpm dev
+
+### **Variables de Entorno Críticas**
+
+```bash
+# Base de Datos
+DATABASE_URL=mysql://user:password@localhost:3306/vmlperito
+
+# JWT
+JWT_SECRET=your_jwt_secret_here
+
+# Email (SMTP)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=notifications@vmlperito.com
+EMAIL_PASS=your_app_password
+
+# SMS (Hablame API)
+HABLAME_KEY=your_hablame_api_key
+SMS_FROM=VMLPerito
+
+# WebSocket
+WS_PORT=3001
 ```
 
-### Remote Caching
+## 🎮 Uso del Sistema
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### **Credenciales de Prueba**
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+| Rol                   | Email                       | Contraseña       | Descripción                |
+| --------------------- | --------------------------- | ---------------- | -------------------------- |
+| **Admin**             | `admin@vmlperito.com`       | `admin123`       | Acceso completo al sistema |
+| **Comercial Mundial** | `comercial@vmlperito.com`   | `comercial123`   | Creación de órdenes        |
+| **Coordinador**       | `coordinador@vmlperito.com` | `coordinador123` | Gestión de agentes         |
+| **Agente Contacto**   | `agente@vmlperito.com`      | `agente123`      | Gestión de llamadas        |
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+### **Flujos Principales**
 
+1. **Creación de Orden**: Comercial Mundial crea orden de inspección
+2. **Asignación**: Coordinador asigna agente a la orden
+3. **Contacto**: Agente realiza llamadas y seguimientos
+4. **Agendamiento**: Cliente agenda cita de inspección
+5. **Notificaciones**: Sistema envía confirmaciones automáticas
+6. **Inspección**: Se realiza la inspección (presencial o virtual)
+
+## 📊 Estado del Proyecto
+
+### **✅ Implementado y Funcional**
+
+- ✅ Sistema de autenticación RBAC
+- ✅ Gestión de usuarios y roles
+- ✅ Sistema de notificaciones multicanal
+- ✅ Agendamiento avanzado
+- ✅ Contact center management
+- ✅ WebSockets en tiempo real
+- ✅ API REST completa
+- ✅ Frontend React con shadcn/ui
+
+### **🔄 En Desarrollo**
+
+- 🔄 Sistema de webhooks para integración externa
+- 🔄 Dashboard de métricas y reportes
+- 🔄 Optimizaciones de performance
+
+### **📋 Pendiente**
+
+- 📋 Integración WhatsApp Business API
+- 📋 Notificaciones push móviles
+- 📋 Sistema de archivos adjuntos
+- 📋 Reportes avanzados
+
+## 🧪 Testing
+
+### **Scripts de Prueba**
+
+```bash
+# Probar sistema de notificaciones
+npm run test:notifications
+
+# Probar sistema de eventos
+npm run test:events
+
+# Probar WebSockets
+npm run test:websockets
+
+# Probar API endpoints
+npm run test:api
 ```
-cd my-turborepo
-npx turbo login
+
+### **Datos de Prueba**
+
+El sistema incluye datos de prueba completos:
+
+- 5 sedes reales con direcciones
+- 3 tipos de vehículos
+- 3 modalidades de inspección
+- Usuarios con todos los roles
+- Plantillas de notificación completas
+
+## 🔧 Comandos Útiles
+
+```bash
+# Desarrollo
+npm run dev              # Iniciar desarrollo
+npm run build            # Build de producción
+npm run preview          # Preview de build
+
+# Base de datos
+npm run db:setup         # Configurar base de datos
+npm run db:seed          # Ejecutar seeders
+npm run db:reset         # Resetear base de datos
+
+# Testing
+npm run test             # Ejecutar tests
+npm run test:watch       # Tests en modo watch
+
+# Linting
+npm run lint             # Lint del código
+npm run lint:fix         # Auto-fix de linting
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## 🤝 Contribución
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### **Reglas de Desarrollo**
 
-```
-npx turbo link
-```
+- Seguir las [convenciones de nomenclatura](docs/naming-conventions.md)
+- Usar los [patrones de desarrollo](docs/development-patterns.md)
+- Implementar [manejo de errores](docs/error-handling-patterns.md)
+- Optimizar [performance](docs/performance-optimization.md)
 
-## Useful Links
+### **Proceso de Desarrollo**
 
-Learn more about the power of Turborepo:
+1. Crear rama desde `main`
+2. Implementar cambios siguiendo las reglas
+3. Ejecutar tests y linting
+4. Crear Pull Request con descripción detallada
+5. Revisión y merge
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## 📞 Soporte
+
+### **Documentación Técnica**
+
+- [**Troubleshooting**](docs/debugging-and-troubleshooting.md) - Solución de problemas comunes
+- [**FAQ**](docs/faq.md) - Preguntas frecuentes
+- [**Changelog**](docs/changelog.md) - Historial de cambios
+
+### **Contacto**
+
+- **Email**: soporte@vmlperito.com
+- **Documentación**: [docs/](docs/)
+- **Issues**: [GitHub Issues](https://github.com/vmlperito/issues)
+
+## 📄 Licencia
+
+Este proyecto es propiedad de VML.Perito. Todos los derechos reservados.
+
+---
+
+**Última actualización**: Enero 2025  
+**Versión**: 1.0.0  
+**Estado**: ✅ Producción
