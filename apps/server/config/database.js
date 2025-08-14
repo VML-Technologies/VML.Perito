@@ -30,7 +30,7 @@ if (driver === 'mysql') {
             logging: false,
             dialectOptions: {
                 options: {
-                    encrypt: false,
+                    encrypt: true,
                 },
             },
         }
