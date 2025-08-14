@@ -95,11 +95,16 @@ class EventRegistry {
             });
 
             if (event) {
-                // Actualizar metadatos si es necesario
-                if (JSON.stringify(event.metadata) !== JSON.stringify(metadata)) {
-                    event.metadata = { ...event.metadata, ...metadata };
+                // SOLUCIÓN PERMANENTE: Merge seguro de metadata
+                const updatedMetadata = this.safeMergeMetadata(event.metadata, metadata);
+
+                // Solo actualizar si realmente hay cambios
+                if (JSON.stringify(event.metadata) !== JSON.stringify(updatedMetadata)) {
+                    event.metadata = updatedMetadata;
                     await event.save();
+                    console.log(`🔄 Metadata actualizado para evento: ${name}`);
                 }
+
                 return event;
             }
 
@@ -137,11 +142,16 @@ class EventRegistry {
             });
 
             if (event) {
-                // Actualizar metadatos si es necesario
-                if (JSON.stringify(event.metadata) !== JSON.stringify(metadata)) {
-                    event.metadata = { ...event.metadata, ...metadata };
+                // SOLUCIÓN PERMANENTE: Merge seguro de metadata
+                const updatedMetadata = this.safeMergeMetadata(event.metadata, metadata);
+
+                // Solo actualizar si realmente hay cambios
+                if (JSON.stringify(event.metadata) !== JSON.stringify(updatedMetadata)) {
+                    event.metadata = updatedMetadata;
                     await event.save();
+                    console.log(`🔄 Metadata actualizado para evento: ${name}`);
                 }
+
                 return { event, created: false };
             }
 
@@ -161,6 +171,156 @@ class EventRegistry {
             console.error(`❌ Error en findOrCreateEvent ${name}:`, error.message);
             throw error;
         }
+    }
+
+    /**
+     * Merge seguro de metadata que evita corrupción
+     * @param {Object} existingMetadata - Metadata existente
+     * @param {Object} newMetadata - Nuevo metadata a agregar
+     * @returns {Object} Metadata fusionado de forma segura
+     */
+    safeMergeMetadata(existingMetadata, newMetadata) {
+        try {
+            // Validar que ambos sean objetos válidos
+            const existing = this.validateAndParseMetadata(existingMetadata);
+            const newMeta = this.validateAndParseMetadata(newMetadata);
+
+            // Realizar merge profundo de forma segura
+            const merged = this.deepMerge(existing, newMeta);
+
+            // Validar el resultado final
+            if (!this.isValidMetadata(merged)) {
+                console.warn(`⚠️ Metadata inválido detectado, usando metadata por defecto`);
+                return { auto_registered: true, error: 'metadata_corrupted' };
+            }
+
+            return merged;
+        } catch (error) {
+            console.error(`❌ Error en safeMergeMetadata:`, error.message);
+            return { auto_registered: true, error: 'merge_failed' };
+        }
+    }
+
+    /**
+     * Validar y parsear metadata de forma segura
+     * @param {any} metadata - Metadata a validar
+     * @returns {Object} Metadata validado
+     */
+    validateAndParseMetadata(metadata) {
+        try {
+            // Si es null, undefined o string vacío, retornar objeto vacío
+            if (!metadata || metadata === '') {
+                return {};
+            }
+
+            // Si es string, intentar parsear como JSON
+            if (typeof metadata === 'string') {
+                try {
+                    const parsed = JSON.parse(metadata);
+                    return this.isValidMetadata(parsed) ? parsed : {};
+                } catch (parseError) {
+                    console.warn(`⚠️ Error parseando metadata string:`, parseError.message);
+                    return {};
+                }
+            }
+
+            // Si es objeto, validar que sea válido
+            if (typeof metadata === 'object' && metadata !== null) {
+                return this.isValidMetadata(metadata) ? metadata : {};
+            }
+
+            // Si no es ninguno de los anteriores, retornar objeto vacío
+            return {};
+        } catch (error) {
+            console.error(`❌ Error validando metadata:`, error.message);
+            return {};
+        }
+    }
+
+    /**
+     * Verificar si el metadata es válido
+     * @param {any} metadata - Metadata a verificar
+     * @returns {boolean} True si es válido
+     */
+    isValidMetadata(metadata) {
+        try {
+            // Debe ser un objeto
+            if (typeof metadata !== 'object' || metadata === null) {
+                return false;
+            }
+
+            // No debe ser un array
+            if (Array.isArray(metadata)) {
+                return false;
+            }
+
+            // Verificar que no tenga referencias circulares
+            const seen = new WeakSet();
+            const checkCircular = (obj) => {
+                if (typeof obj === 'object' && obj !== null) {
+                    if (seen.has(obj)) {
+                        return false; // Referencia circular detectada
+                    }
+                    seen.add(obj);
+
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            if (!checkCircular(obj[key])) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            };
+
+            if (!checkCircular(metadata)) {
+                return false;
+            }
+
+            // Verificar que se pueda serializar correctamente
+            JSON.stringify(metadata);
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Merge profundo de objetos de forma segura
+     * @param {Object} target - Objeto destino
+     * @param {Object} source - Objeto fuente
+     * @returns {Object} Objeto fusionado
+     */
+    deepMerge(target, source) {
+        const result = { ...target };
+
+        for (const key in source) {
+            if (source.hasOwnProperty(key)) {
+                const sourceValue = source[key];
+                const targetValue = result[key];
+
+                // Si ambos valores son objetos (no arrays), hacer merge profundo
+                if (this.isPlainObject(sourceValue) && this.isPlainObject(targetValue)) {
+                    result[key] = this.deepMerge(targetValue, sourceValue);
+                } else {
+                    // Si no, el valor fuente sobrescribe el destino
+                    result[key] = sourceValue;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Verificar si un valor es un objeto plano (no array, no null)
+     * @param {any} value - Valor a verificar
+     * @returns {boolean} True si es objeto plano
+     */
+    isPlainObject(value) {
+        return typeof value === 'object' && value !== null && !Array.isArray(value);
     }
 
     /**
