@@ -64,31 +64,43 @@ Company.belongsTo(City, {
 // City -> Sedes (1:N)
 City.hasMany(Sede, {
     foreignKey: 'city_id',
-    as: 'sedes'
+    as: 'sedes',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 Sede.belongsTo(City, {
     foreignKey: 'city_id',
-    as: 'city'
+    as: 'city',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 
 // Company -> Sedes (1:N)
 Company.hasMany(Sede, {
     foreignKey: 'company_id',
-    as: 'sedes'
+    as: 'sedes',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 Sede.belongsTo(Company, {
     foreignKey: 'company_id',
-    as: 'company'
+    as: 'company',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 
 // Sede -> Users (1:N)
 Sede.hasMany(User, {
     foreignKey: 'sede_id',
-    as: 'users'
+    as: 'users',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
 });
 User.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'sede',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
 });
 
 // ===== RELACIONES RBAC =====
@@ -199,107 +211,152 @@ InspectionOrder.belongsTo(InspectionOrderStatus, {
 // Sede -> InspectionOrders (1:N)
 Sede.hasMany(InspectionOrder, {
     foreignKey: 'sede_id',
-    as: 'inspectionOrders'
+    as: 'inspectionOrders',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
 });
 InspectionOrder.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'Sede'
+    as: 'Sede',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
 });
 
 // InspectionOrder -> CallLogs (1:N)
 InspectionOrder.hasMany(CallLog, {
     foreignKey: 'inspection_order_id',
-    as: 'callLogs'
+    as: 'callLogs',
+    onDelete: 'NO ACTION', // Cambiado de CASCADE a NO ACTION
+    onUpdate: 'CASCADE'
 });
 CallLog.belongsTo(InspectionOrder, {
     foreignKey: 'inspection_order_id',
-    as: 'inspectionOrder'
+    as: 'inspectionOrder',
+    onDelete: 'NO ACTION', // Cambiado de CASCADE a NO ACTION
+    onUpdate: 'CASCADE'
 });
 
 // CallStatus -> CallLogs (1:N)
 CallStatus.hasMany(CallLog, {
     foreignKey: 'status_id',
-    as: 'callLogs'
+    as: 'callLogs',
+    onDelete: 'NO ACTION', // Ya estaba en NO ACTION
+    onUpdate: 'CASCADE'
 });
 CallLog.belongsTo(CallStatus, {
     foreignKey: 'status_id',
-    as: 'status'
+    as: 'status',
+    onDelete: 'NO ACTION', // Ya estaba en NO ACTION
+    onUpdate: 'CASCADE'
 });
 
 // User -> CallLogs como agente que realiza la llamada (1:N)
 User.hasMany(CallLog, {
     foreignKey: 'agent_id',
-    as: 'callLogs'
+    as: 'callLogs',
+    onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION
+    onUpdate: 'CASCADE'
 });
 CallLog.belongsTo(User, {
     foreignKey: 'agent_id',
-    as: 'Agent'
+    as: 'Agent',
+    onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION
+    onUpdate: 'CASCADE'
 });
 
 // InspectionModality -> Appointments (1:N)
 InspectionModality.hasMany(Appointment, {
     foreignKey: 'inspection_modality_id',
-    as: 'appointments'
+    as: 'appointments',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 Appointment.belongsTo(InspectionModality, {
     foreignKey: 'inspection_modality_id',
-    as: 'inspectionModality'
+    as: 'inspectionModality',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 
 // Sede -> Appointments (1:N)
 Sede.hasMany(Appointment, {
     foreignKey: 'sede_id',
-    as: 'appointments'
+    as: 'appointments',
+    onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION porque sede_id es NOT NULL
+    onUpdate: 'CASCADE'
 });
 Appointment.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'sede',
+    onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION porque sede_id es NOT NULL
+    onUpdate: 'CASCADE'
 });
 
 // User -> Appointments (1:N)
 User.hasMany(Appointment, {
     foreignKey: 'user_id',
-    as: 'appointments'
+    as: 'appointments',
+    onDelete: 'SET NULL', // Revertido a SET NULL porque user_id es allowNull: true
+    onUpdate: 'CASCADE'
 });
 Appointment.belongsTo(User, {
     foreignKey: 'user_id',
-    as: 'user'
+    as: 'user',
+    onDelete: 'SET NULL', // Revertido a SET NULL porque user_id es allowNull: true
+    onUpdate: 'CASCADE'
 });
 
 // InspectionOrder -> Appointments (1:N)
 InspectionOrder.hasMany(Appointment, {
     foreignKey: 'inspection_order_id',
-    as: 'appointments'
+    as: 'appointments',
+    onDelete: 'NO ACTION', // Cambiado de CASCADE a NO ACTION
+    onUpdate: 'CASCADE'
 });
 Appointment.belongsTo(InspectionOrder, {
     foreignKey: 'inspection_order_id',
-    as: 'inspectionOrder'
+    as: 'inspectionOrder',
+    onDelete: 'NO ACTION', // Cambiado de CASCADE a NO ACTION
+    onUpdate: 'CASCADE'
 });
 
-// Relación Appointment <-> CallLog
-Appointment.belongsTo(CallLog, { as: 'callLog', foreignKey: 'call_log_id' });
-CallLog.hasOne(Appointment, { as: 'appointment', foreignKey: 'call_log_id' });
+// RELACIÓN UNIDIRECCIONAL: CallLog -> Appointment (sin crear dependencia circular)
+// Solo CallLog puede acceder a Appointment, no al revés
+CallLog.hasOne(Appointment, {
+    as: 'appointment',
+    foreignKey: 'call_log_id',
+    onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION
+    onUpdate: 'CASCADE'
+});
 
 // ===== NUEVAS RELACIONES MODALIDADES =====
 
 // SedeType -> Sedes (1:N)
 SedeType.hasMany(Sede, {
     foreignKey: 'sede_type_id',
-    as: 'sedes'
+    as: 'sedes',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 Sede.belongsTo(SedeType, {
     foreignKey: 'sede_type_id',
-    as: 'sedeType'
+    as: 'sedeType',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
 });
 
 // SedeModalityAvailability relaciones
 Sede.hasMany(SedeModalityAvailability, {
     foreignKey: 'sede_id',
-    as: 'modalityAvailabilities'
+    as: 'modalityAvailabilities',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 SedeModalityAvailability.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'sede',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 
 InspectionModality.hasMany(SedeModalityAvailability, {
@@ -330,11 +387,15 @@ VehicleType.belongsToMany(Sede, {
 // Relaciones directas para SedeVehicleType
 Sede.hasMany(SedeVehicleType, {
     foreignKey: 'sede_id',
-    as: 'sedeVehicleTypes'
+    as: 'sedeVehicleTypes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 SedeVehicleType.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'sede',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 
 VehicleType.hasMany(SedeVehicleType, {
@@ -349,11 +410,15 @@ SedeVehicleType.belongsTo(VehicleType, {
 // ScheduleTemplate relaciones
 Sede.hasMany(ScheduleTemplate, {
     foreignKey: 'sede_id',
-    as: 'scheduleTemplates'
+    as: 'scheduleTemplates',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 ScheduleTemplate.belongsTo(Sede, {
     foreignKey: 'sede_id',
-    as: 'sede'
+    as: 'sede',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 
 InspectionModality.hasMany(ScheduleTemplate, {
@@ -390,41 +455,57 @@ NotificationConfig.belongsTo(NotificationChannel, {
 // NotificationConfig -> Notifications (1:N)
 NotificationConfig.hasMany(Notification, {
     foreignKey: 'notification_config_id',
-    as: 'notifications'
+    as: 'notifications',
+    onDelete: 'NO ACTION', // Mantiene NO ACTION porque notification_config_id es NOT NULL
+    onUpdate: 'CASCADE'
 });
 Notification.belongsTo(NotificationConfig, {
     foreignKey: 'notification_config_id',
-    as: 'config'
+    as: 'config',
+    onDelete: 'NO ACTION', // Mantiene NO ACTION porque notification_config_id es NOT NULL
+    onUpdate: 'CASCADE'
 });
 
 // Appointment -> Notifications (1:N)
 Appointment.hasMany(Notification, {
     foreignKey: 'appointment_id',
-    as: 'notifications'
+    as: 'notifications',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 Notification.belongsTo(Appointment, {
     foreignKey: 'appointment_id',
-    as: 'appointment'
+    as: 'appointment',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 
 // InspectionOrder -> Notifications (1:N)
 InspectionOrder.hasMany(Notification, {
     foreignKey: 'inspection_order_id',
-    as: 'notifications'
+    as: 'notifications',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 Notification.belongsTo(InspectionOrder, {
     foreignKey: 'inspection_order_id',
-    as: 'inspectionOrder'
+    as: 'inspectionOrder',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 
 // User -> Notifications (1:N)
 User.hasMany(Notification, {
     foreignKey: 'recipient_user_id',
-    as: 'notifications'
+    as: 'notifications',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 Notification.belongsTo(User, {
     foreignKey: 'recipient_user_id',
-    as: 'recipientUser'
+    as: 'recipientUser',
+    onDelete: 'NO ACTION', // Cambiado a NO ACTION para evitar caminos múltiples
+    onUpdate: 'CASCADE'
 });
 
 // Notification -> NotificationQueue (1:1)

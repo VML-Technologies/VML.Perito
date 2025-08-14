@@ -661,7 +661,12 @@ const startServer = async () => {
 
                 while (!tablaCreada && intentos < maxIntentos) {
                     try {
-                        await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
+                        const driver = sequelize.getDialect();
+                        if (driver === 'mssql') {
+                            await sequelize.query(`SELECT TOP 1 * FROM ${modeloActual.tabla}`);
+                        } else {
+                            await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
+                        }
                         tablaCreada = true;
                         console.log(`✅ Tabla ${modeloActual.tabla} verificada y disponible.`);
                     } catch (error) {
@@ -698,11 +703,20 @@ const startServer = async () => {
 
         while (!tablesReady && attempts < maxAttempts) {
             try {
-                await sequelize.query('SELECT 1 FROM events LIMIT 1');
-                await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
-                await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
-                await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
-                await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
+                const driver = sequelize.getDialect();
+                if (driver === 'mssql') {
+                    await sequelize.query('SELECT TOP 1 * FROM events');
+                    await sequelize.query('SELECT TOP 1 * FROM channel_configs');
+                    await sequelize.query('SELECT TOP 1 * FROM event_listeners');
+                    await sequelize.query('SELECT TOP 1 * FROM notification_queue');
+                    await sequelize.query('SELECT TOP 1 * FROM notification_types');
+                } else {
+                    await sequelize.query('SELECT 1 FROM events LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
+                }
                 console.log('✅ Todas las tablas críticas están disponibles.');
                 tablesReady = true;
             } catch (error) {

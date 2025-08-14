@@ -28,7 +28,7 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
     },
     user_id: {
         type: DataTypes.BIGINT,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: 'users',
             key: 'id'
