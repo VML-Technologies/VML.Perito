@@ -646,91 +646,91 @@ const startServer = async () => {
         const maxIntentos = 50; // Máximo 5 segundos por tabla (50 * 100ms)
 
         // Loop principal para crear tablas secuencialmente
-        while (contador < modelos.length) {
-            const modeloActual = modelos[contador];
-            console.log(`📋 [${contador + 1}/${modelos.length}] Creando tabla ${modeloActual.nombre}...`);
+        // while (contador < modelos.length) {
+        //     const modeloActual = modelos[contador];
+        //     console.log(`📋 [${contador + 1}/${modelos.length}] Creando tabla ${modeloActual.nombre}...`);
 
-            try {
-                // Ejecutar sync del modelo actual
-                await modeloActual.modelo.sync({ force: false });
-                console.log(`✅ Sync de ${modeloActual.nombre} ejecutado.`);
+        //     try {
+        //         // Ejecutar sync del modelo actual
+        //         await modeloActual.modelo.sync({ force: false });
+        //         console.log(`✅ Sync de ${modeloActual.nombre} ejecutado.`);
 
-                // Loop de verificación - esperar hasta que la tabla esté disponible
-                let tablaCreada = false;
-                let intentos = 0;
+        //         // Loop de verificación - esperar hasta que la tabla esté disponible
+        //         let tablaCreada = false;
+        //         let intentos = 0;
 
-                while (!tablaCreada && intentos < maxIntentos) {
-                    try {
-                        const driver = sequelize.getDialect();
-                        if (driver == 'mssql') {
-                            await sequelize.query(`SELECT TOP 1 * FROM ${modeloActual.tabla}`);
-                        } else {
-                            await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
-                        }
-                        tablaCreada = true;
-                        console.log(`✅ Tabla ${modeloActual.tabla} verificada y disponible.`);
-                    } catch (error) {
-                        intentos++;
-                        console.log(`⏳ [${intentos}/${maxIntentos}] Esperando que ${modeloActual.tabla} esté disponible... (${intentos * 100}ms)`);
-                        await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 100ms
-                    }
-                }
+        //         while (!tablaCreada && intentos < maxIntentos) {
+        //             try {
+        //                 const driver = sequelize.getDialect();
+        //                 if (driver == 'mssql') {
+        //                     await sequelize.query(`SELECT TOP 1 * FROM ${modeloActual.tabla}`);
+        //                 } else {
+        //                     await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
+        //                 }
+        //                 tablaCreada = true;
+        //                 console.log(`✅ Tabla ${modeloActual.tabla} verificada y disponible.`);
+        //             } catch (error) {
+        //                 intentos++;
+        //                 console.log(`⏳ [${intentos}/${maxIntentos}] Esperando que ${modeloActual.tabla} esté disponible... (${intentos * 100}ms)`);
+        //                 await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 100ms
+        //             }
+        //         }
 
-                if (tablaCreada) {
-                    console.log(`✅ Tabla ${modeloActual.nombre} creada y verificada exitosamente.`);
-                    contador++; // Pasar al siguiente modelo
-                } else {
-                    console.error(`❌ Error: No se pudo verificar la tabla ${modeloActual.tabla} después de ${maxIntentos} intentos.`);
-                    throw new Error(`Fallo al crear tabla ${modeloActual.tabla}`);
-                }
+        //         if (tablaCreada) {
+        //             console.log(`✅ Tabla ${modeloActual.nombre} creada y verificada exitosamente.`);
+        //             contador++; // Pasar al siguiente modelo
+        //         } else {
+        //             console.error(`❌ Error: No se pudo verificar la tabla ${modeloActual.tabla} después de ${maxIntentos} intentos.`);
+        //             throw new Error(`Fallo al crear tabla ${modeloActual.tabla}`);
+        //         }
 
-            } catch (error) {
-                console.error(`❌ Error creando tabla ${modeloActual.nombre}:`, error.message);
-                console.log('🔄 Intentando sincronización general como último recurso...');
-                await sequelize.sync({ force: false });
-                console.log('✅ Sincronización general completada.');
-                break; // Salir del loop principal
-            }
-        }
+        //     } catch (error) {
+        //         console.error(`❌ Error creando tabla ${modeloActual.nombre}:`, error.message);
+        //         console.log('🔄 Intentando sincronización general como último recurso...');
+        //         await sequelize.sync({ force: false });
+        //         console.log('✅ Sincronización general completada.');
+        //         break; // Salir del loop principal
+        //     }
+        // }
 
-        console.log(`✅ Proceso de creación de tablas completado. ${contador}/${modelos.length} tablas creadas.`);
+        // console.log(`✅ Proceso de creación de tablas completado. ${contador}/${modelos.length} tablas creadas.`);
 
         // VERIFICAR que las tablas críticas existan antes de continuar
 
-        let tablesReady = false;
-        let attempts = 0;
-        const maxAttempts = 10;
+        // let tablesReady = false;
+        // let attempts = 0;
+        // const maxAttempts = 10;
 
-        while (!tablesReady && attempts < maxAttempts) {
-            try {
-                const driver = sequelize.getDialect();
-                if (driver == 'mssql') {
-                    await sequelize.query('SELECT TOP 1 * FROM events');
-                    await sequelize.query('SELECT TOP 1 * FROM channel_configs');
-                    await sequelize.query('SELECT TOP 1 * FROM event_listeners');
-                    await sequelize.query('SELECT TOP 1 * FROM notification_queue');
-                    await sequelize.query('SELECT TOP 1 * FROM notification_types');
-                } else {
-                    await sequelize.query('SELECT 1 FROM events LIMIT 1');
-                    await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
-                    await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
-                    await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
-                    await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
-                }
-                console.log('✅ Todas las tablas críticas están disponibles.');
-                tablesReady = true;
-            } catch (error) {
-                attempts++;
-                console.log(`⚠️ Intento ${attempts}/${maxAttempts}: Error verificando tablas:`, error.message);
-                if (attempts < maxAttempts) {
-                    console.log('⏳ Esperando 2 segundos antes del siguiente intento...');
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                } else {
-                    console.log('❌ No se pudieron verificar las tablas después de múltiples intentos.');
-                    throw new Error('Las tablas críticas no están disponibles');
-                }
-            }
-        }
+        // while (!tablesReady && attempts < maxAttempts) {
+        //     try {
+        //         const driver = sequelize.getDialect();
+        //         if (driver == 'mssql') {
+        //             await sequelize.query('SELECT TOP 1 * FROM events');
+        //             await sequelize.query('SELECT TOP 1 * FROM channel_configs');
+        //             await sequelize.query('SELECT TOP 1 * FROM event_listeners');
+        //             await sequelize.query('SELECT TOP 1 * FROM notification_queue');
+        //             await sequelize.query('SELECT TOP 1 * FROM notification_types');
+        //         } else {
+        //             await sequelize.query('SELECT 1 FROM events LIMIT 1');
+        //             await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
+        //             await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
+        //             await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
+        //             await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
+        //         }
+        //         console.log('✅ Todas las tablas críticas están disponibles.');
+        //         tablesReady = true;
+        //     } catch (error) {
+        //         attempts++;
+        //         console.log(`⚠️ Intento ${attempts}/${maxAttempts}: Error verificando tablas:`, error.message);
+        //         if (attempts < maxAttempts) {
+        //             console.log('⏳ Esperando 2 segundos antes del siguiente intento...');
+        //             await new Promise(resolve => setTimeout(resolve, 2000));
+        //         } else {
+        //             console.log('❌ No se pudieron verificar las tablas después de múltiples intentos.');
+        //             throw new Error('Las tablas críticas no están disponibles');
+        //         }
+        //     }
+        // }
 
         // TERCERO: Inicializar servicios (DESPUÉS de que todas las tablas estén creadas)
         console.log('📦 Inicializando servicios...');
