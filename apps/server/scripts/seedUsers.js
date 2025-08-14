@@ -94,6 +94,7 @@ const createAdminUser = async () => {
 
         const adminUser = await User.create({
             sede_id: sedeId,
+            identification: 'ADMIN001',
             name: 'Administrador del Sistema',
             email: 'admin@vmltechnologies.com',
             phone: '123456789',
@@ -102,8 +103,7 @@ const createAdminUser = async () => {
             notification_channel_in_app_enabled: true,
             notification_channel_sms_enabled: true,
             notification_channel_email_enabled: true,
-            notification_channel_whatsapp_enabled: true,
-            notification_channel_push_enabled: true
+            notification_channel_whatsapp_enabled: true
         });
 
         // Buscar rol de super_admin
@@ -126,7 +126,12 @@ const createAdminUser = async () => {
         return adminUser;
 
     } catch (error) {
-        console.error('❌ Error creando usuario administrador:', error);
+        console.error('❌ Error creando usuario administrador:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
         throw error;
     }
 };
@@ -156,6 +161,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'COMERCIAL001',
                     name: 'María Comercial',
                     email: 'comercial@vmltechnologies.com',
                     phone: '3043425127',
@@ -174,6 +180,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'COORD001',
                     name: 'Ana Coordinadora',
                     email: 'coordinador_cc@vmltechnologies.com',
                     phone: '3043425127',
@@ -191,6 +198,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'AGENTE001',
                     name: 'Carlos Agente',
                     email: 'agente_cc_1@vmltechnologies.com',
                     phone: '3043425127',
@@ -206,6 +214,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'AGENTE002',
                     name: 'Laura Agente',
                     email: 'agente_cc_2@vmltechnologies.com',
                     phone: '3043425127',
@@ -221,6 +230,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'AGENTE003',
                     name: 'Roberto Agente',
                     email: 'agente_cc_3@vmltechnologies.com',
                     phone: '3043425127',
@@ -236,6 +246,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'AGENTE004',
                     name: 'Sofia Agente',
                     email: 'agente_cc_4@vmltechnologies.com',
                     phone: '3043425127',
@@ -251,6 +262,7 @@ const createUsersWithRoles = async () => {
             {
                 userData: {
                     sede_id: 1,
+                    identification: 'AGENTE005',
                     name: 'Diego Agente',
                     email: 'agente_cc_5@vmltechnologies.com',
                     phone: '3043425127',
@@ -300,6 +312,11 @@ const createUsersWithRoles = async () => {
 
             } catch (error) {
                 console.error(`❌ Error creando usuario ${userConfig.userData.email}:`, error.message);
+                if (error.errors) {
+                    error.errors.forEach(err => {
+                        console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+                    });
+                }
             }
         }
 
@@ -308,7 +325,12 @@ const createUsersWithRoles = async () => {
         console.log(`   - ${skippedCount} usuarios existentes`);
 
     } catch (error) {
-        console.error('❌ Error creando usuarios con roles:', error);
+        console.error('❌ Error creando usuarios con roles:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
         throw error;
     }
 };

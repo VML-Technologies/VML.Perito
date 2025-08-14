@@ -168,6 +168,11 @@ const seedInspectionData = async () => {
                 name: 'whatsapp',
                 description: 'Notificaciones por WhatsApp',
                 active: true
+            },
+            {
+                name: 'push',
+                description: 'Notificaciones push del navegador',
+                active: true
             }
         ];
 

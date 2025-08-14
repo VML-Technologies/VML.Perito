@@ -487,8 +487,7 @@ Equipo VML Perito
                 const [listener, created] = await EventListener.findOrCreate({
                     where: {
                         event_id: event.id,
-                        notification_type_id: notificationType.id,
-                        channels: config.channels
+                        notification_type_id: notificationType.id
                     },
                     defaults: {
                         conditions: config.conditions,
