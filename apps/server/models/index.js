@@ -320,12 +320,17 @@ Appointment.belongsTo(InspectionOrder, {
     onUpdate: 'CASCADE'
 });
 
-// RELACIÓN UNIDIRECCIONAL: CallLog -> Appointment (sin crear dependencia circular)
-// Solo CallLog puede acceder a Appointment, no al revés
+// RELACIÓN BIDIRECCIONAL: CallLog <-> Appointment
 CallLog.hasOne(Appointment, {
     as: 'appointment',
     foreignKey: 'call_log_id',
     onDelete: 'NO ACTION', // Cambiado de SET NULL a NO ACTION
+    onUpdate: 'CASCADE'
+});
+Appointment.belongsTo(CallLog, {
+    foreignKey: 'call_log_id',
+    as: 'callLog',
+    onDelete: 'NO ACTION',
     onUpdate: 'CASCADE'
 });
 

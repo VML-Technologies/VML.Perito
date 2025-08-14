@@ -351,8 +351,14 @@ class ContactAgentController {
                 });
             }
 
+            // Generar session_id único si no se proporciona
+            const appointmentData = {
+                ...req.body,
+                session_id: req.body.session_id || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            };
+
             // Crear el agendamiento
-            const appointment = await Appointment.create(req.body);
+            const appointment = await Appointment.create(appointmentData);
 
             // Actualizar el estado de la orden a "Agendado" (id: 3)
             await order.update({
@@ -421,7 +427,7 @@ class ContactAgentController {
                     order_number: order.numero,
                     agent_id: req.user.id,
                     agent_name: req.user.name,
-                    call_log_id: appointment.call_log_id,
+                    call_log_id: appointmentData.call_log_id,
                     message: `Llamada registrada para la orden #${order.numero}`,
                     timestamp: new Date().toISOString()
                 };
