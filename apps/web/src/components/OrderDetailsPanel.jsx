@@ -91,7 +91,7 @@ const OrderDetailsPanel = ({
                         {orderInfo.map((info, index) => (
                             <div key={index}>
                                 <span className="font-medium">{info.label}:</span>
-                                {typeof info.value === 'string' ? (
+                                {typeof info.value == 'string' ? (
                                     <p className={info.className || ''}>{info.value}</p>
                                 ) : (
                                     info.value
@@ -100,7 +100,7 @@ const OrderDetailsPanel = ({
                         ))}
                         <div>
                             <span className="font-medium">Estado:</span>
-                            {order.inspection_result === 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
+                            {order.inspection_result == 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
                                 <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
                                     {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
                                 </Badge>

@@ -66,7 +66,7 @@ export function NavUser() {
           <AvatarImage src={user.avatar} alt={user.name} />
           <AvatarFallback className="rounded-lg">
             {
-              user.roles && user.roles.find(role => role.name === 'agente_contacto') ?
+              user.roles && user.roles.find(role => role.name == 'agente_contacto') ?
                 <HeadsetIcon className="size-4" /> : <>
                   {getUserInitials(user.name)}
                 </>

@@ -33,7 +33,7 @@ class ScheduleController {
 
             // Obtener día de la semana (1=Lunes, 7=Domingo)
             const selectedDate = new Date(date);
-            const dayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
+            const dayOfWeek = selectedDate.getDay() == 0 ? 7 : selectedDate.getDay();
 
             // Buscar plantillas de horarios que apliquen para este día
             const scheduleTemplates = await ScheduleTemplate.findAll({
@@ -211,7 +211,7 @@ class ScheduleController {
 
                 // Verificar capacidad disponible
                 const slots = await this.generateTimeSlots(template, scheduledDate);
-                const requestedSlot = slots.find(slot => slot.start_time === scheduledTime);
+                const requestedSlot = slots.find(slot => slot.start_time == scheduledTime);
 
                 if (!requestedSlot || requestedSlot.available_capacity <= 0) {
                     return res.status(400).json({

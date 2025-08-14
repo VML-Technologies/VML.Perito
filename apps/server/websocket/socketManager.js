@@ -160,7 +160,7 @@ class SocketManager {
         // Limpiar salas
         this.rooms.forEach((socketIds, roomName) => {
             socketIds.delete(socket.id);
-            if (socketIds.size === 0) {
+            if (socketIds.size == 0) {
                 this.rooms.delete(roomName);
             }
         });
@@ -287,7 +287,7 @@ class SocketManager {
                 // Limpiar del mapa de salas
                 if (this.rooms.has(roomName)) {
                     this.rooms.get(roomName).delete(socketId);
-                    if (this.rooms.get(roomName).size === 0) {
+                    if (this.rooms.get(roomName).size == 0) {
                         this.rooms.delete(roomName);
                     }
                 }
@@ -342,7 +342,7 @@ class SocketManager {
         // Evento para unirse a salas personalizadas
         this.registerEventHandler('join_room', (socket, data) => {
             const { roomName } = data;
-            if (roomName && typeof roomName === 'string') {
+            if (roomName && typeof roomName == 'string') {
                 socket.join(roomName);
                 socket.emit('joined_room', { roomName, timestamp: new Date().toISOString() });
             }
@@ -351,7 +351,7 @@ class SocketManager {
         // Evento para salir de salas
         this.registerEventHandler('leave_room', (socket, data) => {
             const { roomName } = data;
-            if (roomName && typeof roomName === 'string') {
+            if (roomName && typeof roomName == 'string') {
                 socket.leave(roomName);
                 socket.emit('left_room', { roomName, timestamp: new Date().toISOString() });
             }

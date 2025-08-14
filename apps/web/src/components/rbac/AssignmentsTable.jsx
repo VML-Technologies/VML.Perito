@@ -111,7 +111,7 @@ export function AssignmentsTable() {
                     <h4 className="font-medium mb-2">Permisos para: {selectedRole.name}</h4>
                     <div className="grid grid-cols-2 gap-2 mb-4">
                         {permissions.map(permission => {
-                            const isAssigned = selectedRole.Permissions?.some(p => p.id === permission.id);
+                            const isAssigned = selectedRole.Permissions?.some(p => p.id == permission.id);
                             return (
                                 <label key={permission.id} className="flex items-center space-x-2">
                                     <input
@@ -161,7 +161,7 @@ export function AssignmentsTable() {
                     <h4 className="font-medium mb-2">Roles para: {selectedUser.name}</h4>
                     <div className="grid grid-cols-2 gap-2 mb-4">
                         {roles.map(role => {
-                            const isAssigned = selectedUser.Roles?.some(r => r.id === role.id);
+                            const isAssigned = selectedUser.Roles?.some(r => r.id == role.id);
                             return (
                                 <label key={role.id} className="flex items-center space-x-2">
                                     <input

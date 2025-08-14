@@ -61,7 +61,7 @@ export default function Profile() {
 
     // Detectar hash para abrir automáticamente la sección de cambio de contraseña
     useEffect(() => {
-        if (location.hash === '#changePassword') {
+        if (location.hash == '#changePassword') {
             setActiveTab('security');
             setIsPasswordOpen(true);
             // Limpiar el hash de la URL después de un breve delay

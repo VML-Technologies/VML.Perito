@@ -255,7 +255,7 @@ const seedRealSedes = async () => {
                 }
 
                 // Crear horarios para CDA
-                if (sedeData.sede_type_id === cdaType.id) {
+                if (sedeData.sede_type_id == cdaType.id) {
                     for (const scheduleData of sedeData.schedules) {
                         // Modalidad En Sede
                         await ScheduleTemplate.findOrCreate({

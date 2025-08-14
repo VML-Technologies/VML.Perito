@@ -24,7 +24,7 @@ const PredefinedTemplates = ({ onSelectTemplate, className = '' }) => {
     ];
 
     const getTemplates = () => {
-        if (activeCategory === 'all') {
+        if (activeCategory == 'all') {
             return getAllPredefinedTemplates();
         }
         return getTemplatesByCategory(activeCategory);
@@ -137,7 +137,7 @@ const PredefinedTemplates = ({ onSelectTemplate, className = '' }) => {
                                 ))}
                             </div>
 
-                            {getTemplates().length === 0 && (
+                            {getTemplates().length == 0 && (
                                 <div className="text-center py-8 text-muted-foreground">
                                     <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                     <p>No hay plantillas predefinidas en esta categoría</p>

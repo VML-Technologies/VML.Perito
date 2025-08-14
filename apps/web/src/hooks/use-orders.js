@@ -115,7 +115,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
     };
 
     const handleFilterChange = (key, value) => {
-        const backendValue = (value === 'all') ? '' : value;
+        const backendValue = (value == 'all') ? '' : value;
         setFilters(prev => ({
             ...prev,
             [key]: backendValue
@@ -124,7 +124,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
     };
 
     const handleSort = (field) => {
-        const newOrder = filters.sortBy === field && filters.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+        const newOrder = filters.sortBy == field && filters.sortOrder == 'ASC' ? 'DESC' : 'ASC';
         setFilters(prev => ({
             ...prev,
             sortBy: field,

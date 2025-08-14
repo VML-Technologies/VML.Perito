@@ -174,7 +174,7 @@ export const predefinedTemplates = {
 // Función para obtener plantillas por categoría
 export const getTemplatesByCategory = (category) => {
     return Object.entries(predefinedTemplates)
-        .filter(([key, template]) => template.category === category)
+        .filter(([key, template]) => template.category == category)
         .map(([key, template]) => ({
             id: key,
             ...template

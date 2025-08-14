@@ -407,8 +407,8 @@ class ChannelConfigService {
                 active: stats.filter(s => s.is_active).length,
                 inactive: stats.filter(s => !s.is_active).length,
                 tested: stats.filter(s => s.test_status !== 'pending').length,
-                successful: stats.filter(s => s.test_status === 'success').length,
-                failed: stats.filter(s => s.test_status === 'failed').length,
+                successful: stats.filter(s => s.test_status == 'success').length,
+                failed: stats.filter(s => s.test_status == 'failed').length,
                 channels: stats
             };
 

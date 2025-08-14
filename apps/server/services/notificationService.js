@@ -206,7 +206,7 @@ class NotificationService {
             });
 
             // Si es inmediata, enviar ahora
-            if (config.schedule_type === 'immediate') {
+            if (config.schedule_type == 'immediate') {
                 await this.sendNotification(notification);
             } else {
                 // Agregar a cola de procesamiento
@@ -451,11 +451,11 @@ class NotificationService {
     calculateScheduledTime(config, options) {
         const now = new Date();
 
-        if (config.schedule_type === 'immediate') {
+        if (config.schedule_type == 'immediate') {
             return now;
         }
 
-        if (config.schedule_type === 'delayed' && config.schedule_delay_minutes) {
+        if (config.schedule_type == 'delayed' && config.schedule_delay_minutes) {
             return new Date(now.getTime() + (config.schedule_delay_minutes * 60 * 1000));
         }
 
@@ -479,11 +479,11 @@ class NotificationService {
             }
 
             // Validar datos necesarios según el canal
-            if (channelName === 'sms' || channelName === 'whatsapp') {
+            if (channelName == 'sms' || channelName == 'whatsapp') {
                 if (!notification.recipient_phone) {
                     throw new Error(`Número de teléfono requerido para canal ${channelName}`);
                 }
-            } else if (channelName === 'email') {
+            } else if (channelName == 'email') {
                 if (!notification.recipient_email) {
                     throw new Error('Dirección de email requerida para canal email');
                 }

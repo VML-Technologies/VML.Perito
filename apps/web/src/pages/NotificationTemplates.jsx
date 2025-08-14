@@ -289,7 +289,7 @@ const NotificationTemplates = () => {
   // Manejar validación
   const handleValidation = (errors) => {
     setValidationErrors(errors);
-    if (Object.keys(errors).length === 0) {
+    if (Object.keys(errors).length == 0) {
       showToast('Plantilla válida', 'success');
     } else {
       showToast('Plantilla tiene errores de validación', 'error');
@@ -300,7 +300,7 @@ const NotificationTemplates = () => {
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       template.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    const matchesCategory = selectedCategory == 'all' || template.category == selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -657,7 +657,7 @@ const NotificationTemplates = () => {
       )}
 
       {/* Mensaje cuando no hay plantillas */}
-      {!loading && filteredTemplates.length === 0 && (
+      {!loading && filteredTemplates.length == 0 && (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -669,7 +669,7 @@ const NotificationTemplates = () => {
                   : 'Crea tu primera plantilla de notificación'
                 }
               </p>
-              {!searchTerm && selectedCategory === 'all' && (
+              {!searchTerm && selectedCategory == 'all' && (
                 <Button onClick={() => setIsEditorOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Plantilla

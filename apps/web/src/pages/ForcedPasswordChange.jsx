@@ -47,7 +47,7 @@ const ForcedPasswordChange = () => {
         }));
 
         // Limpiar errores cuando el usuario empiece a escribir
-        if (field === 'newPassword' && validationErrors.length > 0) {
+        if (field == 'newPassword' && validationErrors.length > 0) {
             setValidationErrors([]);
         }
     };

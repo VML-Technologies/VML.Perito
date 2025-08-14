@@ -10,7 +10,7 @@ const setupDatabase = async () => {
         console.log('✅ Conexión a la base de datos establecida.');
 
         // Opción 1: Forzar recreación (CUIDADO: elimina todos los datos)
-        if (process.env.FORCE_DB === 'true') {
+        if (process.env.FORCE_DB == 'true') {
             console.log('⚠️  Forzando recreación de la base de datos...');
             await sequelize.sync({ force: true });
             console.log('✅ Base de datos recreada.');
@@ -40,13 +40,13 @@ const setupDatabase = async () => {
         console.log(`   Roles: ${roleCount}`);
         console.log(`   Permisos: ${permissionCount}`);
 
-        if (userCount === 0 && sedeCount === 0 && roleCount === 0) {
+        if (userCount == 0 && sedeCount == 0 && roleCount == 0) {
             console.log('\n💡 La base de datos está vacía. Ejecuta "npm run seed:all" para crear datos de prueba.');
             console.log('💡 Luego ejecuta "npm run seed:rbac" para configurar el sistema de permisos.');
-        } else if (userCount > 0 && sedeCount === 0) {
+        } else if (userCount > 0 && sedeCount == 0) {
             console.log('\n⚠️  Hay usuarios pero no hay sedes. Esto puede causar problemas de foreign key.');
             console.log('💡 Considera ejecutar "npm run seed:all" para crear la estructura completa.');
-        } else if (userCount > 0 && roleCount === 0) {
+        } else if (userCount > 0 && roleCount == 0) {
             console.log('\n⚠️  Hay usuarios pero no hay roles configurados.');
             console.log('💡 Ejecuta "npm run seed:rbac" para configurar el sistema de permisos.');
         } else {
@@ -56,7 +56,7 @@ const setupDatabase = async () => {
     } catch (error) {
         console.error('❌ Error al configurar la base de datos:', error.message);
 
-        if (error.name === 'SequelizeForeignKeyConstraintError') {
+        if (error.name == 'SequelizeForeignKeyConstraintError') {
             console.log('\n💡 Solución:');
             console.log('   1. Ejecuta: FORCE_DB=true npm run setup:db');
             console.log('   2. Luego ejecuta: npm run seed:all');

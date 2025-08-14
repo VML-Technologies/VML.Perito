@@ -42,13 +42,13 @@ class NotificationOrchestrator {
     async initialize(eventService, templateService, channelConfigService, notificationService) {
         try {
             console.log('🎯 Inicializando NotificationOrchestrator...');
-            
+
             this.eventService = eventService;
             this.templateService = templateService;
             this.channelConfigService = channelConfigService;
             this.notificationService = notificationService;
             this.eventRegistry = EventRegistry.getInstance();
-            
+
             console.log('✅ NotificationOrchestrator inicializado correctamente');
         } catch (error) {
             console.error('❌ Error inicializando NotificationOrchestrator:', error);
@@ -66,7 +66,7 @@ class NotificationOrchestrator {
             // 1. Buscar listeners del evento
             const listeners = await this.eventService.getEventListeners(eventName);
 
-            if (!listeners || listeners.length === 0) {
+            if (!listeners || listeners.length == 0) {
                 console.log(`📭 No hay listeners para el evento: ${eventName}`);
                 return { processed: 0, sent: 0 };
             }

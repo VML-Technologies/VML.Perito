@@ -28,7 +28,7 @@ const seedAll = async () => {
         console.log('\n📊 Paso 2: Cargando datos básicos...');
         try {
             const { default: seedData } = await import('./seedData.js');
-            if (seedData && typeof seedData === 'function') {
+            if (seedData && typeof seedData == 'function') {
                 await seedData();
                 console.log('✅ Datos básicos cargados correctamente.');
             } else {
@@ -150,7 +150,7 @@ const seedAll = async () => {
 };
 
 // Ejecutar si se llama directamente
-// if (import.meta.url === `file://${process.argv[1]}`) {
+// if (import.meta.url == `file://${process.argv[1]}`) {
 seedAll()
     .then(() => {
         console.log('\n✅ Proceso de seed completado exitosamente');

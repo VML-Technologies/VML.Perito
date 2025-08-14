@@ -98,7 +98,7 @@ const StatsCards = ({ stats = {}, variant = "simple" }) => {
                         <CardContent>
                             <div className={cn("text-2xl font-bold", card.valueColor)}>{stats[card.key] || 0}</div>
                             <CardDescription className="text-xs text-muted-foreground mt-1">
-                                {typeof card.description === "function" ? card.description(stats) : card.description}
+                                {typeof card.description == "function" ? card.description(stats) : card.description}
                             </CardDescription>
                         </CardContent>
                     </Card>

@@ -17,7 +17,7 @@ class SMSService {
         this.provider = provider;
         this.config = config;
 
-        if (provider === 'hablame') {
+        if (provider == 'hablame') {
             this.apiKey = config.apiKey;
             this.from = config.from;
             console.log(`📱 Proveedor SMS Hablame configurado`);
@@ -80,7 +80,7 @@ class SMSService {
             const response = await fetch('https://www.hablame.co/api/sms/v5/send', options);
             const result = await response.json();
 
-            if (response && result.statusMessage === 'OK') {
+            if (response && result.statusMessage == 'OK') {
                 console.log(`✅ SMS enviado exitosamente: ${result.message_id}`);
                 return {
                     success: true,
@@ -178,7 +178,7 @@ class SMSService {
             // TODO: Implementar procesamiento real del webhook
             const result = {
                 success: true,
-                delivered: webhookData.status === 'delivered',
+                delivered: webhookData.status == 'delivered',
                 external_id: webhookData.message_id,
                 response: webhookData
             };

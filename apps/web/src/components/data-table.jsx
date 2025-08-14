@@ -177,7 +177,7 @@ const columns = [
     header: "Status",
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
+        {row.original.status == "Done" ? (
           <CheckCircle className="fill-green-500 dark:fill-green-400" />
         ) : (
           <Loader2 />

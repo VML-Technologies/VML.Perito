@@ -403,7 +403,7 @@ function generateTimeSlots(startTime, endTime, existingAppointments, maxCapacity
     while (current < end) {
         const timeString = current.toTimeString().substring(0, 5);
         const conflictingAppointments = existingAppointments.filter(
-            apt => apt.scheduled_time === timeString
+            apt => apt.scheduled_time == timeString
         );
 
         if (conflictingAppointments.length < maxCapacity) {

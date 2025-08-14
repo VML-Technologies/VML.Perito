@@ -144,7 +144,7 @@ const seedData = async () => {
 };
 
 // Ejecutar si se llama directamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url == `file://${process.argv[1]}`) {
     seedData()
         .then(() => {
             console.log('✅ Seed de datos básicos completado');

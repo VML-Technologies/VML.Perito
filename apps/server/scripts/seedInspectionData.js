@@ -483,8 +483,8 @@ Equipo VML Perito
 
         console.log('⚙️ Creando configuraciones de notificación...');
         for (const configData of notificationConfigs) {
-            const notificationType = createdNotificationTypes.find(t => t.name === configData.notification_type);
-            const notificationChannel = createdChannels.find(c => c.name === configData.notification_channel);
+            const notificationType = createdNotificationTypes.find(t => t.name == configData.notification_type);
+            const notificationChannel = createdChannels.find(c => c.name == configData.notification_channel);
 
             if (notificationType && notificationChannel) {
                 const [config, created] = await NotificationConfig.findOrCreate({
@@ -539,7 +539,7 @@ Equipo VML Perito
 };
 
 // Ejecutar si se llama directamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url == `file://${process.argv[1]}`) {
     seedInspectionData()
         .then(() => {
             console.log('✅ Seed de datos de inspección completado');

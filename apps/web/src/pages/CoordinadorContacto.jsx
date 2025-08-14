@@ -90,7 +90,7 @@ export default function CoordinadorContacto() {
 
     const handleAssignAgent = async (orderId, agentId) => {
         // Si es 'reassign', no hacer nada (solo mostrar el dropdown)
-        if (agentId === 'reassign') {
+        if (agentId == 'reassign') {
             return;
         }
 
@@ -98,7 +98,7 @@ export default function CoordinadorContacto() {
         try {
             const token = localStorage.getItem('authToken');
             // Convertir 'unassign' a null para quitar asignación
-            const finalAgentId = (agentId === 'unassign') ? null : agentId;
+            const finalAgentId = (agentId == 'unassign') ? null : agentId;
 
             const response = await fetch(API_ROUTES.COORDINADOR_CONTACTO.ASSIGN, {
                 method: 'POST',
@@ -118,7 +118,7 @@ export default function CoordinadorContacto() {
                 await Promise.all([loadOrders(), loadStats()]);
 
                 // Si estamos viendo los detalles de esta orden, actualizarlos
-                if (selectedOrder && selectedOrder.id === orderId) {
+                if (selectedOrder && selectedOrder.id == orderId) {
                     await loadOrderDetails(orderId);
                 }
             } else {
@@ -410,18 +410,18 @@ const TemporalTrends = ({ orders }) => {
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Tendencia de la semana:</span>
                         <div className="flex items-center gap-2">
-                            {trend === 'up' ? (
+                            {trend == 'up' ? (
                                 <TrendingUp className="h-4 w-4 text-green-600" />
-                            ) : trend === 'down' ? (
+                            ) : trend == 'down' ? (
                                 <TrendingDown className="h-4 w-4 text-red-600" />
                             ) : (
                                 <Minus className="h-4 w-4 text-gray-600" />
                             )}
-                            <span className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' :
-                                trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                            <span className={`text-sm font-medium ${trend == 'up' ? 'text-green-600' :
+                                trend == 'down' ? 'text-red-600' : 'text-gray-600'
                                 }`}>
-                                {trend === 'up' ? 'En aumento' :
-                                    trend === 'down' ? 'En descenso' : 'Estable'}
+                                {trend == 'up' ? 'En aumento' :
+                                    trend == 'down' ? 'En descenso' : 'Estable'}
                             </span>
                         </div>
                     </div>
@@ -435,8 +435,8 @@ const TemporalTrends = ({ orders }) => {
                             weekday: 'short',
                             day: 'numeric'
                         });
-                        const isToday = index === 6;
-                        const isYesterday = index === 5;
+                        const isToday = index == 6;
+                        const isYesterday = index == 5;
 
                         return (
                             <Card key={date} className={`hover:shadow-md transition-shadow ${isToday ? 'ring-2 ring-blue-500' : ''
@@ -491,8 +491,8 @@ const PerformanceMetrics = ({ orders, agents }) => {
     const totalOrders = orders.length;
     // Considerar "agendada" como gestión completa para el agente
     const completedOrders = orders.filter(o =>
-        o.InspectionOrderStatus?.name === 'Finalizada' ||
-        o.InspectionOrderStatus?.name === 'Agendado'
+        o.InspectionOrderStatus?.name == 'Finalizada' ||
+        o.InspectionOrderStatus?.name == 'Agendado'
     ).length;
     const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
@@ -537,11 +537,11 @@ const PerformanceMetrics = ({ orders, agents }) => {
 // Componente de Análisis de Productividad
 const ProductivityAnalysis = ({ orders, agents }) => {
     const agentProductivity = agents.map(agent => {
-        const agentOrders = orders.filter(o => o.AssignedAgent?.id === agent.id);
+        const agentOrders = orders.filter(o => o.AssignedAgent?.id == agent.id);
         // Considerar "agendada" como gestión completa para el agente
         const completed = agentOrders.filter(o =>
-            o.InspectionOrderStatus?.name === 'Finalizada' ||
-            o.InspectionOrderStatus?.name === 'Agendado'
+            o.InspectionOrderStatus?.name == 'Finalizada' ||
+            o.InspectionOrderStatus?.name == 'Agendado'
         ).length;
         const productivity = agentOrders.length > 0 ? (completed / agentOrders.length) * 100 : 0;
 
@@ -624,7 +624,7 @@ const ProductivityAnalysis = ({ orders, agents }) => {
 const QualityIndicators = ({ orders }) => {
     const totalOrders = orders.length;
     const ordersWithCalls = orders.filter(o => o.callLogsCount > 0).length;
-    const ordersWithAppointments = orders.filter(o => o.InspectionOrderStatus?.name === 'Agendado').length;
+    const ordersWithAppointments = orders.filter(o => o.InspectionOrderStatus?.name == 'Agendado').length;
 
     const callRate = totalOrders > 0 ? (ordersWithCalls / totalOrders) * 100 : 0;
     const appointmentRate = totalOrders > 0 ? (ordersWithAppointments / totalOrders) * 100 : 0;

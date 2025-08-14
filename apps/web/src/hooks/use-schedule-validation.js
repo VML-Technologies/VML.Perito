@@ -43,7 +43,7 @@ const useScheduleValidation = () => {
             let availableCapacity = 0;
 
             for (const templateData of slots) {
-                const slot = templateData.slots.find(s => s.start_time === selectedTime);
+                const slot = templateData.slots.find(s => s.start_time == selectedTime);
                 if (slot) {
                     slotFound = true;
                     availableCapacity = slot.available_capacity;
@@ -60,7 +60,7 @@ const useScheduleValidation = () => {
                 errors: isValid ? {} : {
                     slot: slotFound ? 'No hay capacidad disponible' : 'Horario no disponible'
                 },
-                warnings: availableCapacity === 1 ? {
+                warnings: availableCapacity == 1 ? {
                     capacity: 'Último cupo disponible'
                 } : {}
             }));
@@ -105,7 +105,7 @@ const useScheduleValidation = () => {
             const data = await response.json();
             const availableSedes = data.data || [];
 
-            const isCompatible = availableSedes.some(sede => sede.id.toString() === sedeId.toString());
+            const isCompatible = availableSedes.some(sede => sede.id.toString() == sedeId.toString());
 
             setValidationState(prev => ({
                 ...prev,

@@ -41,7 +41,7 @@ const seedSedeModalityAvailability = async () => {
         for (const sede of allSedes) {
             console.log(`\n🏢 Configurando: ${sede.name} (${sede.sedeType.code})`);
 
-            if (sede.sedeType.code === 'CDA') {
+            if (sede.sedeType.code == 'CDA') {
                 // Para todas las sedes CDA: Solo En Sede
                 await SedeModalityAvailability.findOrCreate({
                     where: {
@@ -56,11 +56,11 @@ const seedSedeModalityAvailability = async () => {
                 });
                 console.log(`   ✅ Configurado: Solo En Sede`);
 
-            } else if (sede.sedeType.code === 'COMERCIAL') {
+            } else if (sede.sedeType.code == 'COMERCIAL') {
                 // Para sedes comerciales: NO tienen agendamiento
                 console.log(`   ℹ️  Sin agendamiento (solo administrativa)`);
 
-            } else if (sede.sedeType.code === 'SOPORTE') {
+            } else if (sede.sedeType.code == 'SOPORTE') {
                 // Para sedes de soporte: NO tienen agendamiento
                 console.log(`   ℹ️  Sin agendamiento (solo administrativa)`);
             }

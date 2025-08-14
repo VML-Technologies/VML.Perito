@@ -45,7 +45,7 @@ class RoleController {
 
             // Asignar permisos si se proporcionan
             if (permissions && permissions.length > 0) {
-                const permissionIds = permissions.map(p => typeof p === 'object' ? p.id : p);
+                const permissionIds = permissions.map(p => typeof p == 'object' ? p.id : p);
                 await role.setPermissions(permissionIds);
             }
 
@@ -69,7 +69,7 @@ class RoleController {
 
             // Actualizar permisos si se proporcionan
             if (permissions !== undefined) {
-                const permissionIds = permissions.map(p => typeof p === 'object' ? p.id : p);
+                const permissionIds = permissions.map(p => typeof p == 'object' ? p.id : p);
                 await role.setPermissions(permissionIds);
             }
 
@@ -102,7 +102,7 @@ class RoleController {
             const role = await Role.findByPk(id);
             if (!role) return res.status(404).json({ message: 'Rol no encontrado' });
 
-            const permissionIds = permissions.map(p => typeof p === 'object' ? p.id : p);
+            const permissionIds = permissions.map(p => typeof p == 'object' ? p.id : p);
             await role.setPermissions(permissionIds);
 
             res.json({ message: 'Permisos asignados al rol' });
@@ -142,7 +142,7 @@ class RoleController {
             const user = await User.findByPk(userId);
             if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-            const roleIds = roles.map(r => typeof r === 'object' ? r.id : r);
+            const roleIds = roles.map(r => typeof r == 'object' ? r.id : r);
             await user.setRoles(roleIds);
 
             res.json({ message: 'Roles asignados al usuario' });
@@ -196,7 +196,7 @@ class RoleController {
     async updateBulkAssignments(req, res) {
         try {
             const { assignments } = req.body;
-            
+
             if (!Array.isArray(assignments)) {
                 return res.status(400).json({ message: 'Las asignaciones deben ser un array' });
             }
@@ -206,27 +206,27 @@ class RoleController {
             for (const assignment of assignments) {
                 const { type, id, permissions, roles } = assignment;
 
-                if (type === 'role' && permissions) {
+                if (type == 'role' && permissions) {
                     // Actualizar permisos de un rol
                     const role = await Role.findByPk(id);
                     if (role) {
-                        const permissionIds = permissions.map(p => typeof p === 'object' ? p.id : p);
+                        const permissionIds = permissions.map(p => typeof p == 'object' ? p.id : p);
                         await role.setPermissions(permissionIds);
                         results.push({ type: 'role', id, action: 'permissions_updated', count: permissionIds.length });
                     }
-                } else if (type === 'user' && roles) {
+                } else if (type == 'user' && roles) {
                     // Actualizar roles de un usuario
                     const user = await User.findByPk(id);
                     if (user) {
-                        const roleIds = roles.map(r => typeof r === 'object' ? r.id : r);
+                        const roleIds = roles.map(r => typeof r == 'object' ? r.id : r);
                         await user.setRoles(roleIds);
                         results.push({ type: 'user', id, action: 'roles_updated', count: roleIds.length });
                     }
                 }
             }
 
-            res.json({ 
-                message: 'Asignaciones actualizadas exitosamente', 
+            res.json({
+                message: 'Asignaciones actualizadas exitosamente',
                 results,
                 timestamp: new Date().toISOString()
             });

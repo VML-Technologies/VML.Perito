@@ -115,9 +115,9 @@ export const useWebSocket = () => {
             // Evento para capturar TODOS los mensajes (debugging)
             socketRef.current.onAny((eventName, ...args) => {
                 console.log(`📨 Evento WebSocket recibido: ${eventName}`, args);
-                if (eventName === 'order_assigned') {
+                if (eventName == 'order_assigned') {
                     console.log('🎯 ¡Evento order_assigned detectado!', args);
-                } else if (eventName === 'order_removed') {
+                } else if (eventName == 'order_removed') {
                     console.log('🗑️ ¡Evento order_removed detectado!', args);
                 } else if (eventName.includes('order')) {
                     console.log('📋 Evento relacionado con orden:', eventName, args);
@@ -147,10 +147,10 @@ export const useWebSocket = () => {
         let toastType = 'success';
         let toastMessage = message || 'Nueva orden asignada';
 
-        if (type === 'reasignacion_orden') {
+        if (type == 'reasignacion_orden') {
             toastType = 'info';
             toastMessage = message || 'Orden reasignada';
-        } else if (type === 'asignacion_orden') {
+        } else if (type == 'asignacion_orden') {
             toastType = 'success';
             toastMessage = message || 'Nueva orden asignada';
         }

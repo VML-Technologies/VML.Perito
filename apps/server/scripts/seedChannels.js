@@ -17,7 +17,7 @@ const seedChannels = async () => {
                 config: {
                     host: process.env.SMTP_HOST || 'smtp.gmail.com',
                     port: parseInt(process.env.SMTP_PORT) || 587,
-                    secure: process.env.SMTP_SECURE === 'true' || false,
+                    secure: process.env.SMTP_SECURE == 'true' || false,
                     user: process.env.SMTP_USER || '',
                     pass: process.env.SMTP_PASS || '',
                     from: process.env.SMTP_FROM || 'noreply@vmltechnologies.com',

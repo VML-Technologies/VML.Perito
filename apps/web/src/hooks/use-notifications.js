@@ -88,7 +88,7 @@ export function useNotifications() {
     // Mostrar toast
     const showToast = useCallback((message, type = 'info') => {
         setToast({ message, type });
-        
+
         // Auto-hide después de 5 segundos
         setTimeout(() => {
             setToast(null);
@@ -157,7 +157,7 @@ export function useNotifications() {
             if (response.ok) {
                 setNotifications(prev =>
                     prev.map(notification =>
-                        notification.id === notificationId
+                        notification.id == notificationId
                             ? { ...notification, read: true }
                             : notification
                     )

@@ -46,7 +46,7 @@ class EventController {
             }
 
             if (active !== undefined) {
-                where.is_active = active === 'true';
+                where.is_active = active == 'true';
             }
 
             const events = await Event.findAndCountAll({

@@ -245,7 +245,7 @@ Equipo VML Perito
             const notificationType = await NotificationType.findOne({
                 where: { name: configData.notification_type_name }
             });
-            const channel = channels.find(c => c.name === configData.channel_name);
+            const channel = channels.find(c => c.name == configData.channel_name);
 
             if (!notificationType || !channel) {
                 console.log(`⚠️ Tipo o canal no encontrado: ${configData.notification_type_name} -> ${configData.channel_name}`);
@@ -473,7 +473,7 @@ Equipo VML Perito
         for (const config of listenersConfig) {
             try {
                 // Buscar evento y tipo de notificación
-                const event = events.find(e => e.name === config.event_name);
+                const event = events.find(e => e.name == config.event_name);
                 const notificationType = await NotificationType.findOne({
                     where: { name: config.notification_type_name }
                 });

@@ -49,7 +49,7 @@ const CalendarioAgendamiento = ({
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
             const today = new Date();
-            const isToday = date.toDateString() === today.toDateString();
+            const isToday = date.toDateString() == today.toDateString();
             const isSelectable = date >= today; // Solo fechas de hoy en adelante
 
             days.push({
@@ -86,7 +86,7 @@ const CalendarioAgendamiento = ({
             day.setDate(startOfWeek.getDate() + i);
 
             const today = new Date();
-            const isToday = day.toDateString() === today.toDateString();
+            const isToday = day.toDateString() == today.toDateString();
             const isSelectable = day >= today;
 
             weekDays.push({
@@ -123,7 +123,7 @@ const CalendarioAgendamiento = ({
     }, [disabled, onDateChange]);
 
     const isDateSelected = useCallback((date) => {
-        return date.date.toISOString().split('T')[0] === selectedDate;
+        return date.date.toISOString().split('T')[0] == selectedDate;
     }, [selectedDate]);
 
     const formatMonthYear = useCallback((date) => {
@@ -144,7 +144,7 @@ const CalendarioAgendamiento = ({
         const startMonth = startOfWeek.toLocaleDateString('es-ES', { month: 'short' });
         const endMonth = endOfWeek.toLocaleDateString('es-ES', { month: 'short' });
 
-        if (startMonth === endMonth) {
+        if (startMonth == endMonth) {
             return `${startOfWeek.getDate()}-${endOfWeek.getDate()} ${startMonth} ${startOfWeek.getFullYear()}`;
         } else {
             return `${startOfWeek.getDate()} ${startMonth} - ${endOfWeek.getDate()} ${endMonth} ${startOfWeek.getFullYear()}`;
@@ -162,7 +162,7 @@ const CalendarioAgendamiento = ({
 
     // Memoizar días para evitar recálculos innecesarios
     const days = useMemo(() => {
-        return viewMode === 'calendar' ? getDaysInMonth(currentMonth) : getWeekDays(currentMonth);
+        return viewMode == 'calendar' ? getDaysInMonth(currentMonth) : getWeekDays(currentMonth);
     }, [viewMode, currentMonth, getDaysInMonth, getWeekDays]);
 
     const weekDays = useMemo(() => ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], []);
@@ -179,7 +179,7 @@ const CalendarioAgendamiento = ({
                         </CardTitle>
                         <div className="flex gap-2">
                             <Button
-                                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                                variant={viewMode == 'calendar' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setViewMode('calendar')}
                             >
@@ -187,7 +187,7 @@ const CalendarioAgendamiento = ({
                                 Mes
                             </Button>
                             <Button
-                                variant={viewMode === 'week' ? 'default' : 'outline'}
+                                variant={viewMode == 'week' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setViewMode('week')}
                             >
@@ -203,14 +203,14 @@ const CalendarioAgendamiento = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => viewMode === 'calendar' ? navigateMonth(-1) : navigateWeek(-1)}
+                            onClick={() => viewMode == 'calendar' ? navigateMonth(-1) : navigateWeek(-1)}
                             disabled={disabled}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
 
                         <h3 className="font-semibold text-lg capitalize">
-                            {viewMode === 'calendar'
+                            {viewMode == 'calendar'
                                 ? formatMonthYear(currentMonth)
                                 : formatWeekRange(currentMonth)
                             }
@@ -219,7 +219,7 @@ const CalendarioAgendamiento = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => viewMode === 'calendar' ? navigateMonth(1) : navigateWeek(1)}
+                            onClick={() => viewMode == 'calendar' ? navigateMonth(1) : navigateWeek(1)}
                             disabled={disabled}
                         >
                             <ChevronRight className="h-4 w-4" />
@@ -236,7 +236,7 @@ const CalendarioAgendamiento = ({
                     </div>
 
                     {/* Calendario */}
-                    <div className={`grid grid-cols-7 gap-1 ${viewMode === 'week' ? 'mb-0' : ''}`}>
+                    <div className={`grid grid-cols-7 gap-1 ${viewMode == 'week' ? 'mb-0' : ''}`}>
                         {days.map((day) => (
                             <Button
                                 key={`${day.date.toISOString().split('T')[0]}-${day.isCurrentMonth ? 'current' : 'other'}`}

@@ -35,7 +35,7 @@ const NotificationTemplateEditor = forwardRef(({
     insertVariable: (variable) => {
       // Buscar el editor del campo activo en el canal actual
       const channelConfig = getChannelConfig(activeChannel);
-      const activeField = channelConfig.fields.find(field => field.type === 'editor');
+      const activeField = channelConfig.fields.find(field => field.type == 'editor');
 
       if (activeField) {
         const editorKey = `${activeChannel}_${activeField.id}`;
@@ -150,7 +150,7 @@ const NotificationTemplateEditor = forwardRef(({
 
         if (channelConfig) {
           Object.entries(channelConfig).forEach(([field, content]) => {
-            if (content && typeof content === 'string') {
+            if (content && typeof content == 'string') {
               // Buscar variables no cerradas
               const openBraces = (content.match(/{{/g) || []).length;
               const closeBraces = (content.match(/}}/g) || []).length;
@@ -370,7 +370,7 @@ const NotificationTemplateEditor = forwardRef(({
                         {field.label}:
                       </Label>
 
-                      {field.type === 'input' ? (
+                      {field.type == 'input' ? (
                         <Input
                           value={template.channels?.[channel.id]?.[field.id] || ''}
                           onChange={(e) => handleFieldChange(channel.id, field.id, e.target.value)}

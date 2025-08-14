@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 const PasswordValidationErrors = ({ errors }) => {
-    if (!errors || errors.length === 0) {
+    if (!errors || errors.length == 0) {
         return null;
     }
 

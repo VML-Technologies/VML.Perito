@@ -89,7 +89,7 @@ class PasswordService {
         // Prevenir caracteres repetidos (aaa, 111, etc.)
         if (this.PASSWORD_POLICY.preventRepeatedChars) {
             for (let i = 0; i < password.length - 2; i++) {
-                if (password[i] === password[i + 1] && password[i] === password[i + 2]) {
+                if (password[i] == password[i + 1] && password[i] == password[i + 2]) {
                     errors.push('No contener el mismo carácter repetido más de 2 veces');
                     break;
                 }
@@ -97,7 +97,7 @@ class PasswordService {
         }
 
         return {
-            isValid: errors.length === 0,
+            isValid: errors.length == 0,
             errors
         };
     }

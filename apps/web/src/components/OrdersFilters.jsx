@@ -25,7 +25,7 @@ const OrdersFilters = ({
      */
     const handleFilterChange = (key, value) => {
         // Convert special 'all' value to an empty string for backend compatibility
-        const backendValue = (value === 'all') ? '' : value;
+        const backendValue = (value == 'all') ? '' : value;
         onFilterChange(key, backendValue);
     };
 

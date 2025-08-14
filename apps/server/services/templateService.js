@@ -111,7 +111,7 @@ class TemplateService {
 
 
         return {
-            isValid: errors.length === 0,
+            isValid: errors.length == 0,
             errors,
             warnings,
             variables: templateVariables
@@ -262,7 +262,7 @@ class TemplateService {
         }
 
         return {
-            isValid: errors.length === 0,
+            isValid: errors.length == 0,
             errors,
             warnings
         };

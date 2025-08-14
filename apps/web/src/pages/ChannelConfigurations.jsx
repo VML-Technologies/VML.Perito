@@ -198,7 +198,7 @@ const ChannelConfigurations = () => {
     };
 
     const handleTestChannel = async (channelName) => {
-        setSelectedChannel(channels.find(c => c.channel_name === channelName));
+        setSelectedChannel(channels.find(c => c.channel_name == channelName));
         setTestData({
             to: '',
             subject: 'Prueba de canal',
@@ -265,9 +265,9 @@ const ChannelConfigurations = () => {
     const filteredChannels = channels.filter(channel => {
         const matchesSearch = channel.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             channel.channel_name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterStatus === 'all' ||
-            (filterStatus === 'active' && channel.is_active) ||
-            (filterStatus === 'inactive' && !channel.is_active);
+        const matchesFilter = filterStatus == 'all' ||
+            (filterStatus == 'active' && channel.is_active) ||
+            (filterStatus == 'inactive' && !channel.is_active);
         return matchesSearch && matchesFilter;
     });
 
@@ -293,8 +293,8 @@ const ChannelConfigurations = () => {
                                 {channel.is_active ? 'Activo' : 'Inactivo'}
                             </Badge>
                             <Badge className={testStatusColors[channel.test_status] || testStatusColors.pending}>
-                                {channel.test_status === 'success' ? 'OK' :
-                                    channel.test_status === 'failed' ? 'Error' : 'Pendiente'}
+                                {channel.test_status == 'success' ? 'OK' :
+                                    channel.test_status == 'failed' ? 'Error' : 'Pendiente'}
                             </Badge>
                         </div>
                     </div>
@@ -458,7 +458,7 @@ const ChannelConfigurations = () => {
                 {filteredChannels.map(renderChannelCard)}
             </div>
 
-            {filteredChannels.length === 0 && (
+            {filteredChannels.length == 0 && (
                 <div className="text-center py-12">
                     <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron canales</h3>

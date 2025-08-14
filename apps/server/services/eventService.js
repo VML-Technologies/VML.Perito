@@ -182,7 +182,7 @@ class EventService {
 
             // Obtener listeners del evento
             const eventListeners = this.listeners.get(name) || [];
-            if (eventListeners.length === 0) {
+            if (eventListeners.length == 0) {
                 console.log(`ℹ️ No hay listeners configurados para el evento: ${name}`);
                 return true;
             } else {
@@ -300,12 +300,12 @@ class EventService {
      * @returns {boolean}
      */
     async evaluateConditions(conditions, data, context) {
-        if (!conditions || Object.keys(conditions).length === 0) return true;
+        if (!conditions || Object.keys(conditions).length == 0) return true;
 
         try {
             // Si las condiciones son un string JSON, parsearlo
             let conditionsObj = conditions;
-            if (typeof conditions === 'string') {
+            if (typeof conditions == 'string') {
                 conditionsObj = JSON.parse(conditions);
             }
 
@@ -373,9 +373,9 @@ class EventService {
             'event_category': data.event_category || context.event_category,
 
             // Valores booleanos simples
-            'is_urgent': data.inspection_order?.priority === 'urgent',
-            'is_commercial_creator': data.inspection_order?.commercial_user_id === data.user?.id,
-            'is_client': data.inspection_order?.correo_cliente === data.user?.email,
+            'is_urgent': data.inspection_order?.priority == 'urgent',
+            'is_commercial_creator': data.inspection_order?.commercial_user_id == data.user?.id,
+            'is_client': data.inspection_order?.correo_cliente == data.user?.email,
             'not_same_day': !this.isToday(data.appointment?.scheduled_date)
         };
 
@@ -390,10 +390,10 @@ class EventService {
      */
     compareValues(actual, expected) {
         // Si el valor esperado es null/undefined, siempre es true
-        if (expected === null || expected === undefined) return true;
+        if (expected == null || expected == undefined) return true;
 
         // Si el valor actual es null/undefined, solo es true si el esperado también lo es
-        if (actual === null || actual === undefined) return expected === null || expected === undefined;
+        if (actual == null || actual == undefined) return expected == null || expected == undefined;
 
         // Comparación de arrays
         if (Array.isArray(expected)) {
@@ -407,17 +407,17 @@ class EventService {
         }
 
         // Comparación de booleanos
-        if (typeof expected === 'boolean') {
-            return actual === expected;
+        if (typeof expected == 'boolean') {
+            return actual == expected;
         }
 
         // Comparación de strings (case insensitive)
-        if (typeof expected === 'string' && typeof actual === 'string') {
-            return actual.toLowerCase() === expected.toLowerCase();
+        if (typeof expected == 'string' && typeof actual == 'string') {
+            return actual.toLowerCase() == expected.toLowerCase();
         }
 
         // Comparación directa
-        return actual === expected;
+        return actual == expected;
     }
 
     /**
@@ -429,7 +429,7 @@ class EventService {
         if (!date) return false;
         const dateObj = new Date(date);
         const today = new Date();
-        return dateObj.toDateString() === today.toDateString();
+        return dateObj.toDateString() == today.toDateString();
     }
 
     /**
@@ -579,7 +579,7 @@ class EventService {
      * @returns {Array}
      */
     getEventsByCategory(category) {
-        return Array.from(this.registry.values()).filter(event => event.category === category);
+        return Array.from(this.registry.values()).filter(event => event.category == category);
     }
 
     /**

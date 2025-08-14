@@ -32,7 +32,7 @@ export function RBACProvider({ children }) {
                     setPermissions(data.permissions || []);
                     // Extraer solo los nombres de los roles
                     const roleNames = (data.roles || []).map(role =>
-                        typeof role === 'string' ? role : role.name
+                        typeof role == 'string' ? role : role.name
                     );
                     setRoles(roleNames);
                     console.log("ROLES CARGADOS:", roleNames);

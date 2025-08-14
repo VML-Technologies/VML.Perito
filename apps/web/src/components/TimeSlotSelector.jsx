@@ -92,7 +92,7 @@ const TimeSlotSelector = ({
     }, [disabled, onSlotSelect]);
 
     const isSlotSelected = useCallback((templateId, startTime) => {
-        return selectedSlot?.templateId === templateId && selectedSlot?.startTime === startTime;
+        return selectedSlot?.templateId == templateId && selectedSlot?.startTime == startTime;
     }, [selectedSlot]);
 
     const getCapacityColor = useCallback((available, total) => {

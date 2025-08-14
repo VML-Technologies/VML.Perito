@@ -188,7 +188,7 @@ export default function Admin() {
 
             // Comparar roles y sus permisos
             roles.forEach(role => {
-                const originalRole = originalData.roles.find(r => r.id === role.id);
+                const originalRole = originalData.roles.find(r => r.id == role.id);
                 if (originalRole) {
                     const originalPermissions = originalRole.permissions?.map(p => p.id).sort() || [];
                     const currentPermissions = role.permissions?.map(p => p.id).sort() || [];
@@ -205,7 +205,7 @@ export default function Admin() {
 
             // Comparar usuarios y sus roles
             users.forEach(user => {
-                const originalUser = originalData.users.find(u => u.id === user.id);
+                const originalUser = originalData.users.find(u => u.id == user.id);
                 if (originalUser) {
                     const originalRoles = originalUser.roles?.map(r => r.id).sort() || [];
                     const currentRoles = user.roles?.map(r => r.id).sort() || [];
@@ -255,10 +255,10 @@ export default function Admin() {
     const handleRolePermissionChange = (roleId, permissionId, checked) => {
         setRoles(prevRoles =>
             prevRoles.map(role => {
-                if (role.id === roleId) {
+                if (role.id == roleId) {
                     const currentPermissions = role.permissions || [];
                     const updatedPermissions = checked
-                        ? [...currentPermissions, permissions.find(p => p.id === permissionId)]
+                        ? [...currentPermissions, permissions.find(p => p.id == permissionId)]
                         : currentPermissions.filter(p => p.id !== permissionId);
 
                     return { ...role, permissions: updatedPermissions };
@@ -273,10 +273,10 @@ export default function Admin() {
     const handleUserRoleChange = (userId, roleId, checked) => {
         setUsers(prevUsers =>
             prevUsers.map(user => {
-                if (user.id === userId) {
+                if (user.id == userId) {
                     const currentRoles = user.roles || [];
                     const updatedRoles = checked
-                        ? [...currentRoles, roles.find(r => r.id === roleId)]
+                        ? [...currentRoles, roles.find(r => r.id == roleId)]
                         : currentRoles.filter(r => r.id !== roleId);
 
                     return { ...user, roles: updatedRoles };
@@ -285,11 +285,11 @@ export default function Admin() {
             })
         );
         // Actualizar también el usuario seleccionado para feedback visual inmediato
-        if (selectedUser && selectedUser.id === userId) {
+        if (selectedUser && selectedUser.id == userId) {
             setSelectedUser(prevSelectedUser => {
                 const currentRoles = prevSelectedUser.roles || [];
                 const updatedRoles = checked
-                    ? [...currentRoles, roles.find(r => r.id === roleId)]
+                    ? [...currentRoles, roles.find(r => r.id == roleId)]
                     : currentRoles.filter(r => r.id !== roleId);
 
                 return { ...prevSelectedUser, roles: updatedRoles };
@@ -303,7 +303,7 @@ export default function Admin() {
         if (!user.roles) return [];
         const userPermissions = new Set();
         user.roles.forEach(role => {
-            const roleData = roles.find(r => r.id === role.id);
+            const roleData = roles.find(r => r.id == role.id);
             if (roleData && roleData.permissions) {
                 roleData.permissions.forEach(permission => {
                     userPermissions.add(permission.id);
@@ -429,7 +429,7 @@ export default function Admin() {
                                                 {filteredUsers.map(user => (
                                                     <div
                                                         key={user.id}
-                                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedUser?.id === user.id
+                                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedUser?.id == user.id
                                                             ? 'border-blue-500 bg-blue-50'
                                                             : 'border-gray-200 hover:border-gray-300'
                                                             }`}
@@ -448,7 +448,7 @@ export default function Admin() {
                                                                         {role.name}
                                                                     </Badge>
                                                                 ))}
-                                                                {user.roles?.length === 0 && (
+                                                                {user.roles?.length == 0 && (
                                                                     <Badge variant="outline" className="text-xs text-muted-foreground">
                                                                         Sin roles
                                                                     </Badge>
@@ -484,7 +484,7 @@ export default function Admin() {
                                                     <Label className="text-base font-medium">Roles Asignados</Label>
                                                     <div className="mt-2 space-y-2">
                                                         {roles.map(role => {
-                                                            const isAssigned = selectedUser.roles?.some(r => r.id === role.id);
+                                                            const isAssigned = selectedUser.roles?.some(r => r.id == role.id);
                                                             return (
                                                                 <div key={role.id} className="flex items-center space-x-2">
                                                                     <Checkbox
@@ -534,7 +534,7 @@ export default function Admin() {
                                                         {getUserPermissions(selectedUser).length > 0 ? (
                                                             <div className="flex flex-wrap gap-2">
                                                                 {getUserPermissions(selectedUser).map(permissionId => {
-                                                                    const permission = permissions.find(p => p.id === permissionId);
+                                                                    const permission = permissions.find(p => p.id == permissionId);
                                                                     return permission ? (
                                                                         <Badge
                                                                             key={permission.id}
@@ -582,7 +582,7 @@ export default function Admin() {
                                             {roles.map(role => (
                                                 <div
                                                     key={role.id}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedRole?.id === role.id
+                                                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedRole?.id == role.id
                                                         ? 'border-blue-500 bg-blue-50'
                                                         : 'border-gray-200 hover:border-gray-300'
                                                         }`}
@@ -623,7 +623,7 @@ export default function Admin() {
                                             <div className="space-y-4">
                                                 <div className="max-h-96 overflow-y-auto space-y-2">
                                                     {permissions.map(permission => {
-                                                        const isAssigned = selectedRole.permissions?.some(p => p.id === permission.id);
+                                                        const isAssigned = selectedRole.permissions?.some(p => p.id == permission.id);
                                                         return (
                                                             <div key={permission.id} className="flex items-center space-x-2">
                                                                 <Checkbox
@@ -776,7 +776,7 @@ export default function Admin() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {notificationTypes.length === 0 && (
+                                            {notificationTypes.length == 0 && (
                                                 <div className="text-center py-4 text-muted-foreground">
                                                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                                     <p>No hay tipos de notificación configurados</p>
@@ -815,7 +815,7 @@ export default function Admin() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {notificationChannels.length === 0 && (
+                                            {notificationChannels.length == 0 && (
                                                 <div className="text-center py-4 text-muted-foreground">
                                                     <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                                     <p>No hay canales de notificación configurados</p>
@@ -862,7 +862,7 @@ export default function Admin() {
                                                 </div>
                                             </div>
                                         ))}
-                                        {notificationConfigs.length === 0 && (
+                                        {notificationConfigs.length == 0 && (
                                             <div className="text-center py-4 text-muted-foreground">
                                                 <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                                 <p>No hay configuraciones de notificación</p>
@@ -981,7 +981,7 @@ export default function Admin() {
                                                             </Badge>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
-                                                        
+
                                                         {event.metadata?.variables && (
                                                             <div className="mb-3">
                                                                 <p className="text-sm font-medium mb-1">Variables disponibles:</p>
@@ -994,7 +994,7 @@ export default function Admin() {
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        
+
                                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                             <span>Disparos: {event.trigger_count}</span>
                                                             <span>Versión: {event.version}</span>
@@ -1014,7 +1014,7 @@ export default function Admin() {
                                                 </div>
                                             </div>
                                         ))}
-                                        {events.length === 0 && (
+                                        {events.length == 0 && (
                                             <div className="text-center py-8 text-muted-foreground">
                                                 <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                                 <p>No hay eventos configurados</p>
@@ -1038,8 +1038,8 @@ export default function Admin() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Button 
-                                            variant="outline" 
+                                        <Button
+                                            variant="outline"
                                             className="flex items-center gap-2"
                                             onClick={fetchEventData}
                                         >

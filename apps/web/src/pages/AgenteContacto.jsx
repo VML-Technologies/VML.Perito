@@ -38,10 +38,10 @@ export default function AgenteContacto() {
             let notificationMessage = '¡Nueva orden asignada! Actualizando lista...';
             let notificationType = 'info';
 
-            if (type === 'reasignacion_orden') {
+            if (type == 'reasignacion_orden') {
                 notificationMessage = `¡Orden reasignada! ${order?.numero || ''} - Actualizando lista...`;
                 notificationType = 'info';
-            } else if (type === 'asignacion_orden') {
+            } else if (type == 'asignacion_orden') {
                 notificationMessage = `¡Nueva orden asignada! ${order?.numero || ''} - Actualizando lista...`;
                 notificationType = 'success';
             }
@@ -82,7 +82,7 @@ export default function AgenteContacto() {
     useEffect(() => {
         const handleCallLogged = (event) => {
             const { order_number, message, agent_id } = event.detail;
-            if (user && String(agent_id) === String(user.id)) {
+            if (user && String(agent_id) == String(user.id)) {
                 showToast(message || `Llamada registrada para la orden #${order_number}`, 'success');
                 loadOrders();
             }

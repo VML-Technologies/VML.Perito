@@ -209,12 +209,12 @@ class EventRegistry {
     validateAndParseMetadata(metadata) {
         try {
             // Si es null, undefined o string vacío, retornar objeto vacío
-            if (!metadata || metadata === '') {
+            if (!metadata || metadata == '') {
                 return {};
             }
 
             // Si es string, intentar parsear como JSON
-            if (typeof metadata === 'string') {
+            if (typeof metadata == 'string') {
                 try {
                     const parsed = JSON.parse(metadata);
                     return this.isValidMetadata(parsed) ? parsed : {};
@@ -225,7 +225,7 @@ class EventRegistry {
             }
 
             // Si es objeto, validar que sea válido
-            if (typeof metadata === 'object' && metadata !== null) {
+            if (typeof metadata == 'object' && metadata !== null) {
                 return this.isValidMetadata(metadata) ? metadata : {};
             }
 
@@ -245,7 +245,7 @@ class EventRegistry {
     isValidMetadata(metadata) {
         try {
             // Debe ser un objeto
-            if (typeof metadata !== 'object' || metadata === null) {
+            if (typeof metadata !== 'object' || metadata == null) {
                 return false;
             }
 
@@ -257,7 +257,7 @@ class EventRegistry {
             // Verificar que no tenga referencias circulares
             const seen = new WeakSet();
             const checkCircular = (obj) => {
-                if (typeof obj === 'object' && obj !== null) {
+                if (typeof obj == 'object' && obj !== null) {
                     if (seen.has(obj)) {
                         return false; // Referencia circular detectada
                     }
@@ -320,7 +320,7 @@ class EventRegistry {
      * @returns {boolean} True si es objeto plano
      */
     isPlainObject(value) {
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
+        return typeof value == 'object' && value !== null && !Array.isArray(value);
     }
 
     /**

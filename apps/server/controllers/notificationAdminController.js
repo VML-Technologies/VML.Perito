@@ -224,11 +224,11 @@ class NotificationAdminController extends BaseController {
                 },
                 templates: {
                     cacheTTL: process.env.TEMPLATE_CACHE_TTL || 3600,
-                    validationStrict: process.env.TEMPLATE_VALIDATION_STRICT === 'true'
+                    validationStrict: process.env.TEMPLATE_VALIDATION_STRICT == 'true'
                 },
                 channels: {
                     rateLimitDefault: process.env.CHANNEL_RATE_LIMIT_DEFAULT || 100,
-                    fallbackEnabled: process.env.CHANNEL_FALLBACK_ENABLED === 'true'
+                    fallbackEnabled: process.env.CHANNEL_FALLBACK_ENABLED == 'true'
                 },
                 notifications: {
                     queueEnabled: true,

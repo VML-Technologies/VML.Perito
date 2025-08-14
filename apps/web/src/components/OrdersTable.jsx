@@ -93,7 +93,7 @@ const OrdersTable = ({
      */
     const getSortIcon = (field) => {
         if (sortBy !== field) return null;
-        return sortOrder === 'ASC' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+        return sortOrder == 'ASC' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
     };
 
     /**
@@ -107,7 +107,7 @@ const OrdersTable = ({
     };
 
     // Determine table configuration based on tableType
-    const isContactTable = tableType === 'contact';
+    const isContactTable = tableType == 'contact';
 
     // Get appropriate title and description based on table type
     const getTableTitle = () => {
@@ -219,7 +219,7 @@ const OrdersTable = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.length === 0 ? (
+                            {orders.length == 0 ? (
                                 <tr>
                                     <td colSpan={
                                         isContactTable
@@ -266,7 +266,7 @@ const OrdersTable = ({
                                         <td className="p-2">
                                             <div className="flex items-center gap-2">
                                                 <Phone className="h-4 w-4 text-muted-foreground" />
-                                                <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) === 0
+                                                <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) == 0
                                                     ? 'bg-gray-100 text-gray-600'
                                                     : getCallLogsCount(order) <= 2
                                                         ? 'bg-blue-100 text-blue-700'
@@ -334,12 +334,12 @@ const OrdersTable = ({
 
                                                             {onAssignAgent && agents.length > 0 && (
                                                                 <Select
-                                                                    value={assigningOrder === order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
+                                                                    value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
                                                                     onValueChange={(value) => {
                                                                         onAgentChange(value); // Update local state for the select
                                                                         onAssignAgent(order.id, value); // Trigger assignment action
                                                                     }}
-                                                                    disabled={assigningOrder === order.id}
+                                                                    disabled={assigningOrder == order.id}
                                                                 >
                                                                     <SelectTrigger className="w-[120px] text-xs h-9"> {/* Adjusted width and height */}
                                                                         <SelectValue placeholder={order.AssignedAgent ? "Reasignar" : "Asignar"} />
@@ -356,7 +356,7 @@ const OrdersTable = ({
                                                                 </Select>
                                                             )}
 
-                                                            {assigningOrder === order.id && (
+                                                            {assigningOrder == order.id && (
                                                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                                                             )}
                                                         </>
@@ -373,7 +373,7 @@ const OrdersTable = ({
 
                 {/* Card view for small screens */}
                 <div className="md:hidden grid grid-cols-1 gap-4">
-                    {orders.length === 0 ? (
+                    {orders.length == 0 ? (
                         <div className="text-center p-8">
                             <div className="text-muted-foreground">
                                 {isContactTable ? (
@@ -425,7 +425,7 @@ const OrdersTable = ({
                                         <strong>Intentos:</strong>
                                         <div className="flex items-center gap-2">
                                             <Phone className="h-4 w-4 text-muted-foreground" />
-                                            <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) === 0
+                                            <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) == 0
                                                 ? 'bg-gray-100 text-gray-600'
                                                 : getCallLogsCount(order) <= 2
                                                     ? 'bg-blue-100 text-blue-700'
@@ -487,12 +487,12 @@ const OrdersTable = ({
 
                                                     {onAssignAgent && agents.length > 0 && (
                                                         <Select
-                                                            value={assigningOrder === order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
+                                                            value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
                                                             onValueChange={(value) => {
                                                                 onAgentChange(value);
                                                                 onAssignAgent(order.id, value);
                                                             }}
-                                                            disabled={assigningOrder === order.id}
+                                                            disabled={assigningOrder == order.id}
                                                         >
                                                             <SelectTrigger className="w-full text-xs h-9">
                                                                 <SelectValue placeholder={order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"} />
@@ -508,7 +508,7 @@ const OrdersTable = ({
                                                             </SelectContent>
                                                         </Select>
                                                     )}
-                                                    {assigningOrder === order.id && (
+                                                    {assigningOrder == order.id && (
                                                         <div className="flex justify-center items-center mt-2">
                                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                                                         </div>

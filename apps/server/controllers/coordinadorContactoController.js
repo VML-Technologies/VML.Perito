@@ -106,7 +106,7 @@ class CoordinadorContactoController {
 
             // Filtro por agente asignado
             if (assigned_agent_id) {
-                if (assigned_agent_id === 'unassigned') {
+                if (assigned_agent_id == 'unassigned') {
                     whereConditions.assigned_agent_id = null;
                 } else {
                     whereConditions.assigned_agent_id = assigned_agent_id;
@@ -723,8 +723,8 @@ class CoordinadorContactoController {
             // Crear notificación directamente en la base de datos
             const notificationData = {
                 notification_config_id: notificationConfig.id,
-                title: type === 'reasignacion' ? 'Orden Reasignada' : 'Nueva Orden Asignada',
-                content: type === 'reasignacion'
+                title: type == 'reasignacion' ? 'Orden Reasignada' : 'Nueva Orden Asignada',
+                content: type == 'reasignacion'
                     ? `Te han reasignado la orden #${order.numero} - ${order.nombre_cliente} (${order.placa})`
                     : `Te han asignado una nueva orden #${order.numero} - ${order.nombre_cliente} (${order.placa})`,
                 recipient_user_id: agentId,

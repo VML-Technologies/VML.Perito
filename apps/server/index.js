@@ -100,7 +100,7 @@ app.use((req, res, next) => {
     // Interceptar respuestas de rate limiting
     const originalSend = res.send;
     res.send = function (data) {
-        if (res.statusCode === 429) {
+        if (res.statusCode == 429) {
             console.warn(`🚫 RATE LIMIT EXCEEDED: IP ${req.realIP} - ${req.method} ${req.path} - Headers: ${JSON.stringify(res.getHeaders())}`);
         }
         originalSend.call(this, data);
@@ -496,11 +496,11 @@ app.get('/sms', requirePermission('system.read'), async (req, res) => {
             const code = a.inspectionModality?.code || '';
             const sede_nombre = a.sede?.name || '';
             let body = '';
-            if (code === 'DOMICILIO') {
+            if (code == 'DOMICILIO') {
                 body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} es el ${scheduled_date} a las ${scheduled_time}`;
-            } else if (code === 'SEDE') {
+            } else if (code == 'SEDE') {
                 body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa}, es en ${sede_nombre} el ${scheduled_date} a las ${scheduled_time}`;
-            } else if (code === 'VIRTUAL') {
+            } else if (code == 'VIRTUAL') {
                 body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} será en este enlace: https://qa-inspectya.vmltechnologies.com:8017/inspection/${id}`;
             } else {
                 body = `Hola ${primerNombre}, la inspección de tu vehículo ${placa} está programada para el ${scheduled_date} a las ${scheduled_time}`;
@@ -529,7 +529,7 @@ app.get('/{*name}', (req, res) => {
 
 // Middleware para capturar errores de CORS
 app.use((err, req, res, next) => {
-    if (err.message === 'No permitido por CORS') {
+    if (err.message == 'No permitido por CORS') {
         console.error(`🚫 CORS Error: ${req.method} ${req.path} desde ${req.get('Origin')}`);
         return res.status(403).json({
             error: 'Acceso denegado por política de CORS',
@@ -541,7 +541,7 @@ app.use((err, req, res, next) => {
 
 // Middleware para capturar errores de rate limiting
 app.use((err, req, res, next) => {
-    if (err.status === 429) {
+    if (err.status == 429) {
         console.warn(`⏰ Rate Limit Exceeded: IP ${req.realIP} - ${req.method} ${req.path} - Retry-After: ${err.headers?.['retry-after'] || 'unknown'}`);
         return res.status(429).json({
             error: 'Demasiadas solicitudes',
@@ -560,7 +560,7 @@ app.use((err, req, res, next) => {
     console.error(`📍 Stack: ${err.stack}`);
 
     // No exponer detalles del error en producción
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = process.env.NODE_ENV == 'development';
 
     res.status(err.status || 500).json({
         error: 'Error interno del servidor',
@@ -662,7 +662,7 @@ const startServer = async () => {
                 while (!tablaCreada && intentos < maxIntentos) {
                     try {
                         const driver = sequelize.getDialect();
-                        if (driver === 'mssql') {
+                        if (driver == 'mssql') {
                             await sequelize.query(`SELECT TOP 1 * FROM ${modeloActual.tabla}`);
                         } else {
                             await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
@@ -704,7 +704,7 @@ const startServer = async () => {
         while (!tablesReady && attempts < maxAttempts) {
             try {
                 const driver = sequelize.getDialect();
-                if (driver === 'mssql') {
+                if (driver == 'mssql') {
                     await sequelize.query('SELECT TOP 1 * FROM events');
                     await sequelize.query('SELECT TOP 1 * FROM channel_configs');
                     await sequelize.query('SELECT TOP 1 * FROM event_listeners');
@@ -785,7 +785,7 @@ const startServer = async () => {
             console.log(`   - Logging de seguridad habilitado`);
             console.log(`   - Endpoint de prueba: /api/test-rate-limit`);
         }).on('error', (error) => {
-            if (error.code === 'EADDRINUSE') {
+            if (error.code == 'EADDRINUSE') {
                 console.error(`❌ Error: El puerto ${port} ya está en uso.`);
                 console.error(`💡 Solución: Detén el proceso que está usando el puerto ${port} o cambia el puerto en las variables de entorno.`);
                 console.error(`🔍 Para ver qué proceso está usando el puerto: netstat -ano | findstr :${port}`);

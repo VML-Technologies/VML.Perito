@@ -10,7 +10,7 @@ export const getDefaultRouteForUser = (userRoles) => {
 
     // Extraer nombres de roles
     const roleNames = userRoles.map(role =>
-        typeof role === 'string' ? role : role.name
+        typeof role == 'string' ? role : role.name
     );
 
     // Prioridad de roles (el más específico primero)
@@ -49,7 +49,7 @@ export const getPrimaryRoleName = (userRoles) => {
     }
 
     const roleNames = userRoles.map(role =>
-        typeof role === 'string' ? role : role.name
+        typeof role == 'string' ? role : role.name
     );
 
     const roleDisplayNames = {

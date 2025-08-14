@@ -74,7 +74,7 @@ const AgentAssignmentStats = () => {
     };
 
     const getStatusColor = (status, value) => {
-        if (value === 0) return 'text-muted-foreground';
+        if (value == 0) return 'text-muted-foreground';
 
         const colors = {
             total: 'text-blue-600',
@@ -118,7 +118,7 @@ const AgentAssignmentStats = () => {
     };
 
     const getAverageOrders = () => {
-        if (agentStats.length === 0) return 0;
+        if (agentStats.length == 0) return 0;
         return Math.round(getTotalOrders() / agentStats.length);
     };
 
@@ -143,7 +143,7 @@ const AgentAssignmentStats = () => {
         );
     }
 
-    if (agentStats.length === 0) {
+    if (agentStats.length == 0) {
         return (
             <Card>
                 <CardHeader>

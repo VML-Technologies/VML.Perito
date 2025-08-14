@@ -591,7 +591,7 @@ const seedRBAC = async () => {
         console.log('🔗 Asignando permisos a roles...');
 
         // Super Admin: Todos los permisos
-        const superAdminRole = createdRoles.find(r => r.name === 'super_admin');
+        const superAdminRole = createdRoles.find(r => r.name == 'super_admin');
         if (superAdminRole) {
             for (const permission of createdPermissions) {
                 await RolePermission.findOrCreate({
@@ -605,7 +605,7 @@ const seedRBAC = async () => {
         }
 
         // Admin: Todos excepto administración de roles/permisos
-        const adminRole = createdRoles.find(r => r.name === 'admin');
+        const adminRole = createdRoles.find(r => r.name == 'admin');
         if (adminRole) {
             const adminPermissions = createdPermissions.filter(p =>
                 !p.name.includes('roles.') && !p.name.includes('permissions.')
@@ -622,11 +622,11 @@ const seedRBAC = async () => {
         }
 
         // Manager: Permisos de lectura y escritura básicos
-        const managerRole = createdRoles.find(r => r.name === 'manager');
+        const managerRole = createdRoles.find(r => r.name == 'manager');
         if (managerRole) {
             const managerPermissions = createdPermissions.filter(p =>
-                p.action === 'read' ||
-                (p.action === 'create' && !p.name.includes('roles.') && !p.name.includes('permissions.'))
+                p.action == 'read' ||
+                (p.action == 'create' && !p.name.includes('roles.') && !p.name.includes('permissions.'))
             );
             for (const permission of managerPermissions) {
                 await RolePermission.findOrCreate({
@@ -640,9 +640,9 @@ const seedRBAC = async () => {
         }
 
         // User: Solo permisos de lectura
-        const userRole = createdRoles.find(r => r.name === 'user');
+        const userRole = createdRoles.find(r => r.name == 'user');
         if (userRole) {
-            const userPermissions = createdPermissions.filter(p => p.action === 'read');
+            const userPermissions = createdPermissions.filter(p => p.action == 'read');
             for (const permission of userPermissions) {
                 await RolePermission.findOrCreate({
                     where: {
@@ -657,14 +657,14 @@ const seedRBAC = async () => {
         // ===== NUEVOS ROLES =====
 
         // Comercial Mundial: Permisos para órdenes de inspección
-        const comercialRole = createdRoles.find(r => r.name === 'comercial_mundial');
+        const comercialRole = createdRoles.find(r => r.name == 'comercial_mundial');
         if (comercialRole) {
             const comercialPermissions = createdPermissions.filter(p =>
                 p.name.startsWith('inspection_orders.') ||
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
-                p.name === 'users.read' // Necesario para acceder al perfil
+                p.name == 'users.read' // Necesario para acceder al perfil
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({
@@ -678,14 +678,14 @@ const seedRBAC = async () => {
         }
 
         // Agente de Contact Center: Permisos para gestión de llamadas y agendamientos
-        const agenteRole = createdRoles.find(r => r.name === 'agente_contacto');
+        const agenteRole = createdRoles.find(r => r.name == 'agente_contacto');
         if (agenteRole) {
             const agentePermissions = createdPermissions.filter(p =>
                 p.name.startsWith('contact_agent.') ||
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
-                p.name === 'inspection_orders.read'
+                p.name == 'inspection_orders.read'
             );
             for (const permission of agentePermissions) {
                 await RolePermission.findOrCreate({
@@ -699,15 +699,15 @@ const seedRBAC = async () => {
         }
 
         // Coordinador de Contact Center: Permisos para supervisión y asignación
-        const coordinadorRole = createdRoles.find(r => r.name === 'coordinador_contacto');
+        const coordinadorRole = createdRoles.find(r => r.name == 'coordinador_contacto');
         if (coordinadorRole) {
             const coordinadorPermissions = createdPermissions.filter(p =>
                 p.name.startsWith('coordinador_contacto.') ||
                 p.name.startsWith('contact_agent.read') ||
                 p.name.startsWith('contact_agent.assign') ||
                 p.name.startsWith('contact_agent.stats') ||
-                p.name === 'inspection_orders.read' ||
-                p.name === 'users.read' // Necesario para acceder al perfil
+                p.name == 'inspection_orders.read' ||
+                p.name == 'users.read' // Necesario para acceder al perfil
             );
             for (const permission of coordinadorPermissions) {
                 await RolePermission.findOrCreate({
@@ -732,7 +732,7 @@ const seedRBAC = async () => {
 };
 
 // Ejecutar si se llama directamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url == `file://${process.argv[1]}`) {
     seedRBAC()
         .then(() => {
             console.log('✅ Seed de RBAC completado');

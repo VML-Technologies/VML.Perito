@@ -60,9 +60,9 @@ export const securityConfig = {
             // Función para saltar ciertas rutas del rate limiting
             skip: (req) => {
                 // Saltar health checks y endpoints de monitoreo
-                return req.path === '/health' ||
-                    req.path === '/api/health' ||
-                    req.path === '/api/websocket/stats';
+                return req.path == '/health' ||
+                    req.path == '/api/health' ||
+                    req.path == '/api/websocket/stats';
             }
         },
         auth: {

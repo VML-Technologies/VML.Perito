@@ -71,7 +71,7 @@ export function NotificationMenu() {
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             Cargando notificaciones...
                         </div>
-                    ) : notifications.length === 0 ? (
+                    ) : notifications.length == 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                             No hay notificaciones
                         </div>

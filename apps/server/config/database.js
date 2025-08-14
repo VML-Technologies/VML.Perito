@@ -6,7 +6,7 @@ const driver = process.env.DATABASE_DRIVER || 'mysql';
 
 let sequelize;
 
-if (driver === 'mysql') {
+if (driver == 'mysql') {
     sequelize = new Sequelize(
         process.env.DB_DATABASE,
         process.env.DB_USERNAME,
@@ -18,7 +18,7 @@ if (driver === 'mysql') {
             logging: false,
         }
     );
-} else if (driver === 'mssql') {
+} else if (driver == 'mssql') {
     sequelize = new Sequelize(
         process.env.DB_DATABASE,
         process.env.DB_USERNAME,
@@ -35,7 +35,7 @@ if (driver === 'mysql') {
             },
         }
     );
-} else if (driver === 'sqlite') {
+} else if (driver == 'sqlite') {
     sequelize = new Sequelize({
         dialect: 'sqlite',
         storage: process.env.DB_STORAGE || './database.sqlite',

@@ -37,7 +37,7 @@ class RealtimeHandler {
             // Obtener datos en tiempo real
             'get_realtime_data': async (socket, data) => {
                 const { channel, filters } = data;
-                
+
                 // Verificar permisos para el canal
                 if (this.hasChannelPermission(socket, channel)) {
                     const realtimeData = await this.getChannelData(channel, filters);
@@ -50,7 +50,7 @@ class RealtimeHandler {
             // Enviar actualización de datos
             'send_data_update': async (socket, data) => {
                 const { channel, updateData, targetUsers } = data;
-                
+
                 // Verificar permisos para enviar actualizaciones
                 if (this.hasUpdatePermission(socket, channel)) {
                     if (targetUsers && Array.isArray(targetUsers)) {
@@ -71,17 +71,17 @@ class RealtimeHandler {
             // Sincronizar datos
             'sync_data': async (socket, data) => {
                 const { channels, lastSyncTime } = data;
-                
+
                 const syncData = {};
                 for (const channel of channels) {
                     if (this.hasChannelPermission(socket, channel)) {
                         syncData[channel] = await this.getSyncData(channel, lastSyncTime);
                     }
                 }
-                
-                socket.emit('data_synced', { 
-                    syncData, 
-                    syncTime: new Date().toISOString() 
+
+                socket.emit('data_synced', {
+                    syncData,
+                    syncTime: new Date().toISOString()
                 });
             }
         };
@@ -115,7 +115,7 @@ class RealtimeHandler {
         // Remover de suscripciones del usuario
         if (this.subscriptions.has(userId)) {
             this.subscriptions.get(userId).delete(channel);
-            if (this.subscriptions.get(userId).size === 0) {
+            if (this.subscriptions.get(userId).size == 0) {
                 this.subscriptions.delete(userId);
             }
         }
@@ -123,7 +123,7 @@ class RealtimeHandler {
         // Remover de canal de datos
         if (this.dataChannels.has(channel)) {
             this.dataChannels.get(channel).delete(userId);
-            if (this.dataChannels.get(channel).size === 0) {
+            if (this.dataChannels.get(channel).size == 0) {
                 this.dataChannels.delete(channel);
             }
         }
@@ -145,7 +145,7 @@ class RealtimeHandler {
         };
 
         const requiredPermissions = channelPermissions[channel] || [];
-        return requiredPermissions.every(permission => 
+        return requiredPermissions.every(permission =>
             socket.userPermissions.includes(permission)
         );
     }
@@ -164,7 +164,7 @@ class RealtimeHandler {
         };
 
         const requiredPermissions = updatePermissions[channel] || [];
-        return requiredPermissions.every(permission => 
+        return requiredPermissions.every(permission =>
             socket.userPermissions.includes(permission)
         );
     }
@@ -196,14 +196,14 @@ class RealtimeHandler {
     async getSyncData(channel, lastSyncTime) {
         // Implementar lógica para obtener solo datos modificados después de lastSyncTime
         const allData = await this.getChannelData(channel);
-        
+
         // Filtrar por fecha de modificación (esto depende de tu modelo de datos)
         if (lastSyncTime) {
             const syncTime = new Date(lastSyncTime);
             // Filtrar datos modificados después de syncTime
             // return allData.filter(item => new Date(item.updated_at) > syncTime);
         }
-        
+
         return allData;
     }
 
@@ -260,16 +260,16 @@ class RealtimeHandler {
 
     async getSystemData(filters) {
         // Implementar datos del sistema
-        return { 
+        return {
             stats: socketManager.getStats(),
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
         };
     }
 
     /**
      * Métodos de conveniencia para tipos específicos de actualizaciones
      */
-    
+
     // Notificar cambio en usuario
     async notifyUserChange(userId, changeType, userData) {
         this.broadcastDataUpdate('users', {

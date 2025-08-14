@@ -33,7 +33,7 @@ export const sanitizeObject = (obj) => {
     const sanitized = Array.isArray(obj) ? [] : {};
 
     for (const [key, value] of Object.entries(obj)) {
-        if (typeof value === 'object' && value !== null) {
+        if (typeof value == 'object' && value !== null) {
             sanitized[key] = sanitizeObject(value);
         } else {
             sanitized[key] = sanitizeString(value);
@@ -85,7 +85,7 @@ export const sqlSanitizerMiddleware = (req, res, next) => {
         // Log de posibles intentos de inyección SQL
         const checkForInjection = (obj, source) => {
             Object.values(obj).forEach(value => {
-                if (typeof value === 'string' && hasDangerousChars(value)) {
+                if (typeof value == 'string' && hasDangerousChars(value)) {
                     logSqlInjectionAttempt(value, source, req.ip);
                 }
             });

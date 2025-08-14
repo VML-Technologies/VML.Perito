@@ -238,7 +238,7 @@ const ChannelPreview = ({ template, variables = {}, className = '' }) => {
                       )}
                       className="h-7"
                     >
-                      {copiedChannel === channel.id ? (
+                      {copiedChannel == channel.id ? (
                         <Check className="h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />

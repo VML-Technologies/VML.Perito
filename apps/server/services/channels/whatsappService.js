@@ -66,7 +66,7 @@ class WhatsAppService {
 
             return {
                 success: true,
-                delivered: result.status === 'sent',
+                delivered: result.status == 'sent',
                 external_id: result.id,
                 response: result
             };
@@ -88,7 +88,7 @@ class WhatsAppService {
         message += content;
 
         // Agregar footer si es necesario
-        if (notification.priority === 'urgent') {
+        if (notification.priority == 'urgent') {
             message += '\n\n🚨 *URGENTE*';
         }
 

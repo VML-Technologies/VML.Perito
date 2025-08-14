@@ -88,7 +88,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const [errors, setErrors] = useState({});
 
     // Verificar si el usuario es super_admin
-    const isSuperAdmin = user?.roles?.some(role => role.name === 'super_admin');
+    const isSuperAdmin = user?.roles?.some(role => role.name == 'super_admin');
 
     // Función para llenar datos de prueba
     const fillTestData = () => {
@@ -320,7 +320,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
         requiredFields.forEach(field => {
             const value = formData[field];
-            const isEmpty = !value || value.toString().trim() === '';
+            const isEmpty = !value || value.toString().trim() == '';
 
             if (isEmpty) {
                 newErrors[field] = `Este campo es obligatorio`;
@@ -411,7 +411,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
         console.error(newErrors);
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return Object.keys(newErrors).length == 0;
     };
 
     const handleSubmit = async (e) => {

@@ -14,7 +14,7 @@ class NotificationController {
         this.registerPushToken = this.registerPushToken.bind(this);
         this.handleDeliveryWebhook = this.handleDeliveryWebhook.bind(this);
         this.formatTimeAgo = this.formatTimeAgo.bind(this);
-        
+
         // Métodos de administración
         this.getAdminConfig = this.getAdminConfig.bind(this);
         this.updateAdminConfig = this.updateAdminConfig.bind(this);
@@ -52,7 +52,7 @@ class NotificationController {
             const result = await notificationService.getUserNotifications(userId, {
                 limit: parseInt(limit),
                 offset: parseInt(offset),
-                unreadOnly: unread_only === 'true'
+                unreadOnly: unread_only == 'true'
             });
 
             // Formatear notificaciones para el frontend
@@ -389,7 +389,7 @@ class NotificationController {
                     enabled: !!process.env.EMAIL_HOST,
                     host: process.env.EMAIL_HOST,
                     port: process.env.EMAIL_PORT,
-                    secure: process.env.EMAIL_SECURE === 'true',
+                    secure: process.env.EMAIL_SECURE == 'true',
                     from: process.env.EMAIL_FROM,
                     fromName: process.env.EMAIL_FROM_NAME
                 },
@@ -455,7 +455,7 @@ class NotificationController {
     async getNotificationTypes(req, res) {
         try {
             const { NotificationType } = await import('../models/index.js');
-            
+
             const types = await NotificationType.findAll({
                 order: [['name', 'ASC']]
             });
@@ -581,7 +581,7 @@ class NotificationController {
     async getNotificationChannels(req, res) {
         try {
             const { NotificationChannel } = await import('../models/index.js');
-            
+
             const channels = await NotificationChannel.findAll({
                 order: [['name', 'ASC']]
             });
@@ -706,7 +706,7 @@ class NotificationController {
     async getNotificationConfigs(req, res) {
         try {
             const { NotificationConfig, NotificationType, NotificationChannel } = await import('../models/index.js');
-            
+
             const configs = await NotificationConfig.findAll({
                 include: [
                     {
@@ -744,9 +744,9 @@ class NotificationController {
     async createNotificationConfig(req, res) {
         try {
             const { NotificationConfig } = await import('../models/index.js');
-            const { 
-                notification_type_id, 
-                notification_channel_id, 
+            const {
+                notification_type_id,
+                notification_channel_id,
                 name,
                 template_title,
                 template_content,

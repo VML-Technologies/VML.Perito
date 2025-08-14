@@ -153,7 +153,7 @@ const AgentOrderPanel = ({
             if (!callResponse.ok) throw new Error('Error al registrar la llamada');
             const callData = await callResponse.json();
             // 2. Si requiere agendamiento, registrar agendamiento
-            const selectedStatus = callStatuses.find(status => status.id.toString() === callForm.call_status_id);
+            const selectedStatus = callStatuses.find(status => status.id.toString() == callForm.call_status_id);
 
             if (selectedStatus?.creates_schedule) {
                 if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
@@ -226,7 +226,7 @@ const AgentOrderPanel = ({
         }));
 
         // Verificar si el estado requiere agendamiento
-        const selectedStatus = callStatuses.find(status => status.id.toString() === statusId);
+        const selectedStatus = callStatuses.find(status => status.id.toString() == statusId);
         const needsScheduling = selectedStatus?.creates_schedule;
 
         setShowAppointmentForm(needsScheduling);
@@ -281,7 +281,7 @@ const AgentOrderPanel = ({
         const cities = [];
         const cityIds = new Set();
         availableSedesByModality.forEach(sede => {
-            if (sede.department_id === parseInt(departmentId) && sede.city_id && !cityIds.has(sede.city_id)) {
+            if (sede.department_id == parseInt(departmentId) && sede.city_id && !cityIds.has(sede.city_id)) {
                 cities.push({ id: sede.city_id, name: sede.city });
                 cityIds.add(sede.city_id);
             }
@@ -298,13 +298,13 @@ const AgentOrderPanel = ({
         setSelectedSlot(null);
         setCalendarSelectedDate('');
         // Filtrar sedes posibles
-        const sedes = availableSedesByModality.filter(sede => sede.city_id === parseInt(cityId));
+        const sedes = availableSedesByModality.filter(sede => sede.city_id == parseInt(cityId));
         setFilteredSedes(sedes);
     };
 
     // Nueva función para manejar la selección de sede
     const handleSedeChange = (sedeId) => {
-        const selectedSedeData = filteredSedes.find(sede => sede.id.toString() === sedeId);
+        const selectedSedeData = filteredSedes.find(sede => sede.id.toString() == sedeId);
         setSelectedSede(selectedSedeData);
         setAppointmentForm(prev => ({
             ...prev,
@@ -334,7 +334,7 @@ const AgentOrderPanel = ({
     }, []);
 
     // Cargar modalidades cuando se abre el panel
-    if (isOpen && allModalities.length === 0) {
+    if (isOpen && allModalities.length == 0) {
         loadAllModalities();
     }
 
@@ -373,7 +373,7 @@ const AgentOrderPanel = ({
                                         <span className="font-medium">Intentos de contacto:</span>
                                         <span className="flex items-center gap-2">
                                             <Phone className="h-4 w-4 text-muted-foreground" />
-                                            <span className={`font-medium text-sm px-2 py-1 rounded-full ${(selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) === 0
+                                            <span className={`font-medium text-sm px-2 py-1 rounded-full ${(selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) == 0
                                                 ? 'bg-gray-100 text-gray-600'
                                                 : (selectedOrder.callLogsCount || selectedOrder.callLogs?.length || 0) <= 2
                                                     ? 'bg-blue-100 text-blue-700'
@@ -515,7 +515,7 @@ const AgentOrderPanel = ({
                                                                     <SelectTrigger className="w-full">
                                                                         <SelectValue
                                                                             placeholder="Selecciona modalidad de inspección"
-                                                                            value={allModalities.find(m => m.id.toString() === selectedModality)?.name || ''}
+                                                                            value={allModalities.find(m => m.id.toString() == selectedModality)?.name || ''}
                                                                         />
                                                                     </SelectTrigger>
                                                                     <SelectContent className="w-full">
@@ -547,7 +547,7 @@ const AgentOrderPanel = ({
                                                                         <SelectTrigger className="w-full">
                                                                             <SelectValue
                                                                                 placeholder="Selecciona un departamento"
-                                                                                value={filteredDepartments.find(d => d.id.toString() === selectedDepartment)?.name || ''}
+                                                                                value={filteredDepartments.find(d => d.id.toString() == selectedDepartment)?.name || ''}
                                                                             />
                                                                         </SelectTrigger>
                                                                         <SelectContent className="w-full">
@@ -579,7 +579,7 @@ const AgentOrderPanel = ({
                                                                         <SelectTrigger className="w-full">
                                                                             <SelectValue
                                                                                 placeholder="Selecciona una ciudad"
-                                                                                value={filteredCities.find(c => c.id.toString() === selectedCity)?.name || ''}
+                                                                                value={filteredCities.find(c => c.id.toString() == selectedCity)?.name || ''}
                                                                             />
                                                                         </SelectTrigger>
                                                                         <SelectContent className="w-full">
@@ -612,7 +612,7 @@ const AgentOrderPanel = ({
                                                                             <SelectValue
                                                                                 placeholder="Selecciona un CDA"
                                                                                 // Solo muestra el nombre de la sede seleccionada
-                                                                                value={filteredSedes.find(s => s.id.toString() === appointmentForm.sede_id)?.name || ''}
+                                                                                value={filteredSedes.find(s => s.id.toString() == appointmentForm.sede_id)?.name || ''}
                                                                             />
                                                                         </SelectTrigger>
                                                                         <SelectContent className="w-full">
@@ -672,7 +672,7 @@ const AgentOrderPanel = ({
                                                             }
 
                                                             {/* Dirección (solo si es modalidad domicilio) */}
-                                                            {selectedModality && allModalities.find(m => m.id.toString() === selectedModality)?.code === 'DOMICILIO' && (
+                                                            {selectedModality && allModalities.find(m => m.id.toString() == selectedModality)?.code == 'DOMICILIO' && (
                                                                 <div>
                                                                     <Label htmlFor="direccion_inspeccion">Dirección de Inspección *</Label>
                                                                     <Input

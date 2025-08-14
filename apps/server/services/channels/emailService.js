@@ -14,7 +14,7 @@ class EmailService {
         this.provider = provider;
         this.config = config;
 
-        if (provider === 'smtp') {
+        if (provider == 'smtp') {
             this.transporter = nodemailer.createTransport({
                 host: config.host,
                 port: config.port,
@@ -36,7 +36,7 @@ class EmailService {
         const config = {
             host: process.env.EMAIL_HOST,
             port: parseInt(process.env.EMAIL_PORT) || 587,
-            secure: process.env.EMAIL_SECURE === 'true',
+            secure: process.env.EMAIL_SECURE == 'true',
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
             from: process.env.EMAIL_FROM,

@@ -145,10 +145,10 @@ const TemplatePreview = ({ template, className = '' }) => {
                             {channels.map((channel) => {
                                 const channelData = template.channels?.[channel.id];
                                 const hasConfig = channelData && (
-                                    (channel.id === 'email' && (channelData.body || channelData.template)) ||
-                                    (channel.id === 'sms' && (channelData.message || channelData.template)) ||
-                                    (channel.id === 'whatsapp' && (channelData.message || channelData.template)) ||
-                                    (channel.id === 'in_app' && (channelData.message || channelData.template))
+                                    (channel.id == 'email' && (channelData.body || channelData.template)) ||
+                                    (channel.id == 'sms' && (channelData.message || channelData.template)) ||
+                                    (channel.id == 'whatsapp' && (channelData.message || channelData.template)) ||
+                                    (channel.id == 'in_app' && (channelData.message || channelData.template))
                                 );
                                 return (
                                     <TabsTrigger
@@ -182,7 +182,7 @@ const TemplatePreview = ({ template, className = '' }) => {
                                         {/* Preview del canal */}
                                         <div className="border rounded-lg p-3 bg-background">
                                             <div className="space-y-2">
-                                                {channel.id === 'email' && (
+                                                {channel.id == 'email' && (
                                                     <div className="border-b pb-2">
                                                         <div className="text-xs text-muted-foreground">Asunto:</div>
                                                         <div className="font-medium text-sm">{preview.title}</div>
@@ -192,7 +192,7 @@ const TemplatePreview = ({ template, className = '' }) => {
                                                 <div>
                                                     <div className="text-xs text-muted-foreground mb-1">Contenido:</div>
                                                     <div className="whitespace-pre-wrap text-xs max-h-32 overflow-y-auto">
-                                                        {channel.id === 'email' ? (
+                                                        {channel.id == 'email' ? (
                                                             <div dangerouslySetInnerHTML={{ __html: preview.content }} />
                                                         ) : (
                                                             preview.content

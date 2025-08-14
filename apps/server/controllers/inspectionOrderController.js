@@ -138,12 +138,12 @@ class InspectionOrderController extends BaseController {
                 }]
             });
 
-            if (user.roles.some(role => role.name === 'agente_contacto')) {
+            if (user.roles.some(role => role.name == 'agente_contacto')) {
                 whereConditions.assigned_agent_id = req.user.id;
             }
 
             // Contexto específico para Comercial Mundial
-            if (user.roles.some(role => role.name === 'comercial_mundial') && req.user.intermediary_key) {
+            if (user.roles.some(role => role.name == 'comercial_mundial') && req.user.intermediary_key) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
@@ -180,11 +180,11 @@ class InspectionOrderController extends BaseController {
             }
 
             // Filtro por agente asignado (solo para coordinador)
-            if (user.roles.some(role => role.name === 'coordinador_contacto') && assigned_agent_id) {
+            if (user.roles.some(role => role.name == 'coordinador_contacto') && assigned_agent_id) {
                 console.log(assigned_agent_id)
-                if (assigned_agent_id === 'unassigned') {
+                if (assigned_agent_id == 'unassigned') {
                     whereConditions.assigned_agent_id = null;
-                } else if (assigned_agent_id === 'assigned') {
+                } else if (assigned_agent_id == 'assigned') {
                     whereConditions.assigned_agent_id = { [Op.not]: null };
                 } else {
                     whereConditions.assigned_agent_id = assigned_agent_id;
@@ -464,7 +464,7 @@ class InspectionOrderController extends BaseController {
             console.error('Error creating inspection order:', error.message);
 
             // Log specific validation errors if they exist
-            if (error.name === 'SequelizeValidationError') {
+            if (error.name == 'SequelizeValidationError') {
                 console.error('Validation errors:', error.errors.map(e => `${e.path}: ${e.message}`));
             }
 
