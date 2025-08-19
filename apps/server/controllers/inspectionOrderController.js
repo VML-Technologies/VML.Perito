@@ -20,7 +20,7 @@ const generateOrderNumber = async () => {
         const lastOrder = await InspectionOrder.findOne({
             where: {
                 numero: {
-                    [Op.like]: 'MAN-%'
+                    [Op.like]: '9991%'
                 }
             },
             order: [['numero', 'DESC']],
@@ -30,22 +30,22 @@ const generateOrderNumber = async () => {
         let nextNumber = 1;
 
         if (lastOrder && lastOrder.numero) {
-            // Extraer el número de la última orden (ej: "MAN-00001" -> 1)
-            const lastNumberMatch = lastOrder.numero.match(/MAN-(\d+)/);
+            // Extraer el número de la última orden (ej: "999100001" -> 1)
+            const lastNumberMatch = lastOrder.numero.match(/9991(\d+)/);
             if (lastNumberMatch) {
                 nextNumber = parseInt(lastNumberMatch[1]) + 1;
             }
         }
 
         // Formatear el número con ceros a la izquierda (5 dígitos)
-        const formattedNumber = `MAN-${nextNumber.toString().padStart(5, '0')}`;
+        const formattedNumber = `9991${nextNumber.toString().padStart(5, '0')}`;
 
         return formattedNumber;
     } catch (error) {
         console.error('Error generating order number:', error);
         // Fallback: usar timestamp como número
         const timestamp = Date.now();
-        return `MAN-${timestamp.toString().slice(-5)}`;
+        return `9991${timestamp.toString().slice(-5)}`;
     }
 };
 
