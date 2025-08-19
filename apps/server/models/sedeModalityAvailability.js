@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { createModelWithSoftDeletes } from './baseModel.js';
+import { createModelWithSoftDeletes, createTimeFieldGetter } from './baseModel.js';
 
 const SedeModalityAvailability = createModelWithSoftDeletes('SedeModalityAvailability', {
     sede_id: {
@@ -31,12 +31,14 @@ const SedeModalityAvailability = createModelWithSoftDeletes('SedeModalityAvailab
     working_hours_start: {
         type: DataTypes.TIME,
         allowNull: true,
-        comment: 'Hora de inicio de atención'
+        comment: 'Hora de inicio de atención',
+        get: createTimeFieldGetter('working_hours_start')
     },
     working_hours_end: {
         type: DataTypes.TIME,
         allowNull: true,
-        comment: 'Hora de fin de atención'
+        comment: 'Hora de fin de atención',
+        get: createTimeFieldGetter('working_hours_end')
     },
     working_days: {
         type: DataTypes.STRING(20),

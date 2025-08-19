@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { createModelWithSoftDeletes } from './baseModel.js';
+import { createModelWithSoftDeletes, createTimeFieldGetter } from './baseModel.js';
 
 const ScheduleTemplate = createModelWithSoftDeletes('ScheduleTemplate', {
     sede_id: {
@@ -32,47 +32,13 @@ const ScheduleTemplate = createModelWithSoftDeletes('ScheduleTemplate', {
         type: DataTypes.TIME,
         allowNull: false,
         comment: 'Hora de inicio del bloque',
-        get() {
-            const value = this.getDataValue('start_time');
-            if (value) {
-                // Convertir a string en formato hh:mm:ss
-                if (typeof value === 'string') return value;
-                if (value instanceof Date) {
-                    return value.toTimeString().slice(0, 8);
-                }
-                // Si es un objeto con propiedades de tiempo
-                if (typeof value === 'object' && value.hours !== undefined) {
-                    const hours = String(value.hours).padStart(2, '0');
-                    const minutes = String(value.minutes || 0).padStart(2, '0');
-                    const seconds = String(value.seconds || 0).padStart(2, '0');
-                    return `${hours}:${minutes}:${seconds}`;
-                }
-            }
-            return value;
-        }
+        get: createTimeFieldGetter('start_time')
     },
     end_time: {
         type: DataTypes.TIME,
         allowNull: false,
         comment: 'Hora de fin del bloque',
-        get() {
-            const value = this.getDataValue('end_time');
-            if (value) {
-                // Convertir a string en formato hh:mm:ss
-                if (typeof value === 'string') return value;
-                if (value instanceof Date) {
-                    return value.toTimeString().slice(0, 8);
-                }
-                // Si es un objeto con propiedades de tiempo
-                if (typeof value === 'object' && value.hours !== undefined) {
-                    const hours = String(value.hours).padStart(2, '0');
-                    const minutes = String(value.minutes || 0).padStart(2, '0');
-                    const seconds = String(value.seconds || 0).padStart(2, '0');
-                    return `${hours}:${minutes}:${seconds}`;
-                }
-            }
-            return value;
-        }
+        get: createTimeFieldGetter('end_time')
     },
     interval_minutes: {
         type: DataTypes.INTEGER,

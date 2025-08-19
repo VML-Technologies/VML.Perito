@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { createModelWithSoftDeletes } from './baseModel.js';
+import { createModelWithSoftDeletes, createTimeFieldGetter } from './baseModel.js';
 
 const Appointment = createModelWithSoftDeletes('Appointment', {
     sede_id: {
@@ -50,7 +50,8 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
     },
     scheduled_time: {
         type: DataTypes.TIME,
-        allowNull: false
+        allowNull: false,
+        get: createTimeFieldGetter('scheduled_time')
     },
     status: {
         type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed', 'revision_supervisor'),

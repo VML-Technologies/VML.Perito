@@ -60,6 +60,8 @@ class ScheduleController {
                 order: [['priority', 'DESC'], ['start_time', 'ASC']]
             });
 
+
+
             // Generar intervalos disponibles para cada plantilla
             const availableSlots = await Promise.all(
                 scheduleTemplates.map(async (template) => { // Using an arrow function here
@@ -95,6 +97,17 @@ class ScheduleController {
     // Generar slots de tiempo para una plantilla específica
     async generateTimeSlots(template, date) {
         const slots = [];
+
+        // Validar que los campos de tiempo estén disponibles
+        if (!template.start_time || !template.end_time) {
+            console.error('Campos de tiempo faltantes en template:', {
+                id: template.id,
+                name: template.name,
+                start_time: template.start_time,
+                end_time: template.end_time
+            });
+            return [];
+        }
 
         // Convertir horas a minutos para facilitar cálculos
         const startMinutes = this.timeToMinutes(template.start_time);
@@ -285,8 +298,19 @@ class ScheduleController {
 
     // Funciones auxiliares
     timeToMinutes(timeString) {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        return hours * 60 + minutes;
+        if (!timeString) {
+            return 0;
+        }
+
+        try {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            if (isNaN(hours) || isNaN(minutes)) {
+                return 0;
+            }
+            return hours * 60 + minutes;
+        } catch (error) {
+            return 0;
+        }
     }
 
     minutesToTime(minutes) {
