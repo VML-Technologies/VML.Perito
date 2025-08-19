@@ -41,6 +41,10 @@ export const useOrders = (apiEndpoint, options = {}) => {
                 ...filters
             });
 
+            if (options.context) {
+                params.append('context', options.context);
+            }
+
             const finalUrl = `${apiEndpoint}?${params}`;
             console.log('🔍 URL construida:', finalUrl);
             console.log('🔍 apiEndpoint original:', apiEndpoint);

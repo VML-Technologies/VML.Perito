@@ -5,26 +5,31 @@ import { useAuth } from '@/contexts/auth-context';
 import OrdersFilters from '@/components/OrdersFilters';
 import OrdersTable from '@/components/OrdersTable';
 import AgentOrderPanel from '@/components/AgentOrderPanel';
+import { useOrders } from '@/hooks/use-orders';
 
 export default function AgenteContacto() {
-    const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({
-        search: '',
-        status: '',
-        date_from: '',
-        date_to: '',
-        assigned_agent_id: ''
-    });
     const [callStatuses, setCallStatuses] = useState([]);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
 
+    const {
+        orders,
+        loading,
+        filters,
+        loadOrders,
+        loadInitialData,
+        handleFilterChange,
+        handleClearFilters
+    } = useOrders(API_ROUTES.INSPECTION_ORDERS.LIST, {
+        context: 'agent'
+    });
+
     // Cargar datos iniciales
     useEffect(() => {
         loadInitialData();
+        loadCallStatuses();
     }, []);
 
     // Escuchar eventos de asignación de órdenes
@@ -93,70 +98,6 @@ export default function AgenteContacto() {
         };
     }, [showToast, user]);
 
-    // Recargar órdenes cuando cambien los filtros
-    useEffect(() => {
-        if (!loading) {
-            loadOrders();
-        }
-    }, [filters]);
-
-    const loadInitialData = async () => {
-        setLoading(true);
-        try {
-            await Promise.all([
-                loadOrders(),
-                loadCallStatuses()
-            ]);
-        } catch (error) {
-            console.error('Error loading initial data:', error);
-            showToast('Error al cargar los datos iniciales', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadOrders = async () => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem('authToken');
-            const url = new URL(API_ROUTES.INSPECTION_ORDERS.LIST);
-
-            // Agregar filtros a la URL
-            Object.entries(filters).forEach(([key, value]) => {
-                if (value && value !== '') {
-                    url.searchParams.append(key, value);
-                }
-            });
-
-            // Agregar contexto de agente
-            url.searchParams.append('context', 'agent');
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.data && data.data.orders) {
-                setOrders(data.data.orders);
-            } else {
-                setOrders([]);
-            }
-        } catch (error) {
-            console.error('Error al cargar órdenes:', error);
-            // setError('Error al cargar las órdenes'); // This line was not in the original file, so it's removed.
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const loadCallStatuses = async () => {
         try {
             const token = localStorage.getItem('authToken');
@@ -180,37 +121,9 @@ export default function AgenteContacto() {
         setIsPanelOpen(true);
     };
 
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [key]: value
-        }));
-    };
-
-    const handleClearFilters = () => {
-        setFilters({
-            search: '',
-            status: '',
-            date_from: '',
-            date_to: '',
-            assigned_agent_id: ''
-        });
-    };
-
     const handleOrderUpdate = () => {
         loadOrders();
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-4 text-muted-foreground">Cargando órdenes...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">
@@ -244,6 +157,7 @@ export default function AgenteContacto() {
                 showActions={true}
                 emptyMessage="No se encontraron órdenes"
                 emptyDescription="Todas las órdenes han sido contactadas"
+                loading={loading}
             />
 
             {/* Agent Order Panel */}
