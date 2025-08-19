@@ -50,7 +50,7 @@ const CalendarioAgendamiento = ({
             const date = new Date(year, month, day);
             const today = new Date();
             const isToday = date.toDateString() == today.toDateString();
-            const isSelectable = date >= today; // Solo fechas de hoy en adelante
+            const isSelectable = true //date >= today; // Solo fechas de hoy en adelante
 
             days.push({
                 date,
