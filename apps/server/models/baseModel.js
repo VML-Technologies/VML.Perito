@@ -42,6 +42,7 @@ export const createModelWithSoftDeletes = (modelName, attributes, options = {}) 
 /**
  * Factory function to create TIME field getters
  * This ensures consistent behavior across different databases (MySQL vs SQL Server)
+ * and maintains correct timezone handling
  */
 export const createTimeFieldGetter = (fieldName) => {
     return function () {
@@ -51,7 +52,11 @@ export const createTimeFieldGetter = (fieldName) => {
             // Convertir a string en formato hh:mm:ss
             if (typeof value === 'string') return value;
             if (value instanceof Date) {
-                return value.toTimeString().slice(0, 8);
+                // Usar UTC para mantener la hora original de la base de datos
+                const hours = value.getUTCHours();
+                const minutes = value.getUTCMinutes();
+                const seconds = value.getUTCSeconds();
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
             // Si es un objeto con propiedades de tiempo
             if (typeof value === 'object' && value.hours !== undefined) {

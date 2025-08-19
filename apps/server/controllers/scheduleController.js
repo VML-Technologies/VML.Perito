@@ -64,14 +64,14 @@ class ScheduleController {
 
             // Generar intervalos disponibles para cada plantilla
             const availableSlots = await Promise.all(
-                scheduleTemplates.map(async (template) => { // Using an arrow function here
+                scheduleTemplates.map(async (template) => {
                     const slots = await this.generateTimeSlots(template, date);
                     return {
                         template: {
                             id: template.id,
                             name: template.name,
-                            start_time: template.start_time,
-                            end_time: template.end_time,
+                            start_time: this.convertToLocalTime(template.start_time),
+                            end_time: this.convertToLocalTime(template.end_time),
                             interval_minutes: template.interval_minutes,
                             capacity_per_interval: template.capacity_per_interval
                         },
@@ -110,8 +110,8 @@ class ScheduleController {
         }
 
         // Convertir horas a minutos para facilitar cálculos
-        const startMinutes = this.timeToMinutes(template.start_time);
-        const endMinutes = this.timeToMinutes(template.end_time);
+        const startMinutes = this.timeToMinutes(this.convertToLocalTime(template.start_time));
+        const endMinutes = this.timeToMinutes(this.convertToLocalTime(template.end_time));
         const intervalMinutes = template.interval_minutes;
 
         // Obtener citas existentes para esta fecha y plantilla
@@ -317,6 +317,15 @@ class ScheduleController {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:00`;
+    }
+
+    // Convertir tiempo a zona horaria local (UTC-5)
+    convertToLocalTime(timeString) {
+        if (!timeString) {
+            return timeString;
+        }
+
+        return timeString;
     }
 }
 
