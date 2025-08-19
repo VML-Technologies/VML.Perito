@@ -32,8 +32,20 @@ class ScheduleController {
             }
 
             // Obtener día de la semana (1=Lunes, 7=Domingo)
-            const selectedDate = new Date(date);
-            const dayOfWeek = selectedDate.getDay() == 0 ? 7 : selectedDate.getDay();
+            // Crear fecha en zona horaria local para evitar problemas de UTC
+            const [year, month, day] = date.split('-').map(Number);
+            const selectedDate = new Date(year, month - 1, day); // month - 1 porque JavaScript usa 0-11
+            // JavaScript: 0=Domingo, 1=Lunes, 2=Martes, ..., 6=Sábado
+            // Nuestro sistema: 1=Lunes, 2=Martes, ..., 7=Domingo
+            const dayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
+
+            console.log('Debug día de la semana:', {
+                date: date,
+                selectedDate: selectedDate,
+                jsDay: selectedDate.getDay(),
+                dayOfWeek: dayOfWeek,
+                dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][selectedDate.getDay()]
+            });
 
             // Buscar plantillas de horarios que apliquen para este día
             const scheduleTemplates = await ScheduleTemplate.findAll({
@@ -59,6 +71,13 @@ class ScheduleController {
                 ],
                 order: [['priority', 'DESC'], ['start_time', 'ASC']]
             });
+
+            console.log('Plantillas encontradas:', scheduleTemplates.map(t => ({
+                id: t.id,
+                name: t.name,
+                days_pattern: t.days_pattern,
+                dayOfWeek: dayOfWeek
+            })));
 
 
 
