@@ -18,9 +18,12 @@ export default function AgenteContacto() {
         orders,
         loading,
         filters,
+        pagination,
         loadOrders,
         loadInitialData,
         handleFilterChange,
+        handleSort,
+        handlePageChange,
         handleClearFilters
     } = useOrders(API_ROUTES.INSPECTION_ORDERS.LIST, {
         context: 'agent'
@@ -151,6 +154,11 @@ export default function AgenteContacto() {
             {/* Orders List */}
             <OrdersTable
                 orders={orders}
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onSort={handleSort}
+                sortBy={filters.sortBy}
+                sortOrder={filters.sortOrder}
                 tableType="contact"
                 onContactOrder={handleOrderSelect}
                 showAgentColumn={false}
