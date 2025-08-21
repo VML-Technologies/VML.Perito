@@ -39,6 +39,9 @@ import TemplateVersion from './templateVersion.js';
 // Nuevos modelos para sistema de configuración de canales
 import ChannelConfig from './channelConfig.js';
 
+// Nuevos modelos para consultas de placas
+import PlateQuery from './plateQuery.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -609,6 +612,18 @@ ChannelConfig.belongsTo(User, {
     as: 'creator'
 });
 
+// ===== RELACIONES SISTEMA DE CONSULTAS DE PLACAS =====
+
+// InspectionOrder -> PlateQuery (1:N) - Consultas realizadas sobre una orden
+InspectionOrder.hasMany(PlateQuery, {
+    foreignKey: 'order_id',
+    as: 'plateQueries'
+});
+PlateQuery.belongsTo(InspectionOrder, {
+    foreignKey: 'order_id',
+    as: 'order'
+});
+
 export {
     Department,
     City,
@@ -644,5 +659,7 @@ export {
     NotificationTemplate,
     TemplateVersion,
     // Sistema de configuración de canales
-    ChannelConfig
+    ChannelConfig,
+    // Sistema de consultas de placas
+    PlateQuery
 }; 

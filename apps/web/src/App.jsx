@@ -14,6 +14,7 @@ import CoordinadorContacto from "@/pages/CoordinadorContacto"
 import NotificationTemplates from "@/pages/NotificationTemplates"
 import ChannelConfigurations from "@/pages/ChannelConfigurations"
 import NotificationAdmin from "@/pages/NotificationAdmin"
+import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 
@@ -47,6 +48,12 @@ function AppContent() {
         <Route
           path="/login"
           element={<GuestLayout />}
+        />
+
+        {/* Ruta pública para consulta de placas */}
+        <Route
+          path="/checkinspectionorder"
+          element={<CheckInspectionOrder />}
         />
 
         {/* Rutas protegidas */}
