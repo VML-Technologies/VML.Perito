@@ -44,6 +44,31 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         },
         comment: 'ID del registro de llamada asociado a este agendamiento'
     },
+    inspection_type_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'vehicle_types',
+            key: 'id'
+        },
+        comment: 'ID del tipo de vehículo para la inspección'
+    },
+    inspection_address: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Dirección donde se realizará la inspección'
+    },
+    // Campos adicionales del formulario que pueden venir
+    fecha_inspeccion: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+        comment: 'Fecha de inspección (alias de scheduled_date)'
+    },
+    hora_inspeccion: {
+        type: DataTypes.TIME,
+        allowNull: true,
+        comment: 'Hora de inspección (alias de scheduled_time)'
+    },
     scheduled_date: {
         type: DataTypes.DATEONLY,
         allowNull: false

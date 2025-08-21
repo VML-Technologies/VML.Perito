@@ -337,6 +337,20 @@ Appointment.belongsTo(CallLog, {
     onUpdate: 'CASCADE'
 });
 
+// VehicleType -> Appointments (1:N)
+VehicleType.hasMany(Appointment, {
+    foreignKey: 'inspection_type_id',
+    as: 'appointments',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
+});
+Appointment.belongsTo(VehicleType, {
+    foreignKey: 'inspection_type_id',
+    as: 'vehicleType',
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE'
+});
+
 // ===== NUEVAS RELACIONES MODALIDADES =====
 
 // SedeType -> Sedes (1:N)

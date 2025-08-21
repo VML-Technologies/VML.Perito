@@ -153,31 +153,45 @@ const createUsersWithRoles = async () => {
             return;
         }
 
-        const hashedPassword = await bcrypt.hash('123456', 10);
+        const hashedPassword = await bcrypt.hash('ComercialMundial#132', 10);
 
         // Crear usuarios con los nuevos roles
         const users = [
             // Comercial Mundial
-            {
-                userData: {
-                    sede_id: 1,
-                    identification: 'COMERCIAL001',
-                    name: 'María Comercial',
-                    email: 'comercial@vmltechnologies.com',
-                    phone: '3043425127',
-                    password: hashedPassword,
-                    is_active: true,
-                    intermediary_key: 'COMERCIAL001',
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['comercial_mundial']
-            },
-
             // Coordinador de Contact Center
-            {
+            
+  {
+    "userData": {
+      "sede_id": 1,
+      "identification": "23589377",
+      "name": "COVA MARCANO FLOREIVIS DEL VALLE",
+      "email": "floreivis.cova@holdingvml.com",
+      "phone": "3202699048",
+      "password": hashedPassword,
+      "is_active": true,
+      "notification_channel_in_app_enabled": true,
+      "notification_channel_sms_enabled": true,
+      "notification_channel_email_enabled": true,
+      "notification_channel_whatsapp_enabled": true
+    },
+    "roles": ["agente_contacto"]
+  },
+  {
+    "userData": {
+      "sede_id": 1,
+      "identification": "1000381352",
+      "name": "MARTINEZ MATEUS NATALIA",
+      "email": "natalia.martinez@holdingvml.com",
+      "phone": "3208628214",
+      "password": hashedPassword,
+      "is_active": true,
+      "notification_channel_in_app_enabled": true,
+      "notification_channel_sms_enabled": true,
+      "notification_channel_email_enabled": true,
+      "notification_channel_whatsapp_enabled": true
+    },
+    "roles": ["agente_contacto"]
+  },{
                 userData: {
                     sede_id: 1,
                     identification: 'COORD001',

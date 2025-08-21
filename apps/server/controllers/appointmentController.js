@@ -5,7 +5,8 @@ import {
     City,
     Department,
     SedeType,
-    Appointment
+    Appointment,
+    VehicleType
 } from '../models/index.js';
 import { Op } from 'sequelize';
 import EventRegistry from '../services/eventRegistry.js';
@@ -202,6 +203,7 @@ class AppointmentController {
     async createAppointment(req, res) {
         try {
             const {
+                // Campos principales
                 callLogId,
                 call_log_id, // aceptar ambos
                 inspectionOrderId,
@@ -219,7 +221,13 @@ class AppointmentController {
                 notes,
                 observaciones, // aceptar ambos
                 userId,
-                user_id // aceptar ambos
+                user_id, // aceptar ambos
+
+                // Campos adicionales del formulario
+                fecha_inspeccion,
+                hora_inspeccion,
+                inspection_type_id,
+                inspectionTypeId
             } = req.body;
 
             // Normalizar los campos para soportar ambos nombres
@@ -227,17 +235,29 @@ class AppointmentController {
             const _inspectionOrderId = inspection_order_id || inspectionOrderId;
             const _inspectionModalityId = inspection_modality_id || inspectionModalityId;
             const _sedeId = sede_id || sedeId;
-            const _scheduledDate = scheduled_date || scheduledDate;
-            const _scheduledTime = scheduled_time || scheduledTime;
-            const _inspectionAddress = direccion_inspeccion || inspectionAddress;
+            const _scheduledDate = scheduled_date || scheduledDate || fecha_inspeccion;
+            const _scheduledTime = scheduled_time || scheduledTime || hora_inspeccion;
             const _notes = observaciones || notes;
             const _userId = user_id || userId;
+            const _inspectionTypeId = inspection_type_id || inspectionTypeId;
+
+            // Manejar campos opcionales de manera apropiada
+            const _inspectionAddress = direccion_inspeccion || inspectionAddress || null;
 
             // Validaciones básicas
             if (!_callLogId || !_inspectionOrderId || !_inspectionModalityId || !_userId || !_scheduledDate || !_scheduledTime) {
                 return res.status(400).json({
                     success: false,
                     message: 'Campos requeridos faltantes'
+                });
+            }
+
+            // Validar que el inspection_type_id esté presente si se requiere
+            // Nota: Este campo es opcional, solo validar si se envía
+            if (_inspectionTypeId && _inspectionTypeId.trim() === '') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Si se proporciona el tipo de inspección, no puede estar vacío'
                 });
             }
 
@@ -259,18 +279,47 @@ class AppointmentController {
                 }
             }
 
-            // Crear el agendamiento
-            const appointment = await Appointment.create({
+            // Preparar datos para crear el agendamiento
+            const appointmentData = {
                 call_log_id: _callLogId,
                 inspection_order_id: _inspectionOrderId,
                 inspection_modality_id: _inspectionModalityId,
                 sede_id: _sedeId,
                 scheduled_date: _scheduledDate,
                 scheduled_time: _scheduledTime,
-                inspection_address: _inspectionAddress,
-                notes: _notes,
-                status: 'PROGRAMADA'
+                user_id: _userId,
+                status: 'pending'
+            };
+
+            // Agregar campos opcionales solo si tienen valor
+            if (_inspectionTypeId && _inspectionTypeId.trim() !== '') {
+                appointmentData.inspection_type_id = _inspectionTypeId;
+            }
+
+            if (_inspectionAddress && _inspectionAddress.trim() !== '') {
+                appointmentData.inspection_address = _inspectionAddress;
+            }
+
+            if (_notes && _notes.trim() !== '') {
+                appointmentData.notes = _notes;
+            }
+
+            // Log para debugging
+            console.log('📋 Datos del agendamiento a crear:', {
+                call_log_id: _callLogId,
+                inspection_order_id: _inspectionOrderId,
+                inspection_modality_id: _inspectionModalityId,
+                inspection_type_id: _inspectionTypeId || 'No proporcionado',
+                sede_id: _sedeId,
+                scheduled_date: _scheduledDate,
+                scheduled_time: _scheduledTime,
+                inspection_address: _inspectionAddress || 'No proporcionado',
+                notes: _notes || 'No proporcionado',
+                user_id: _userId
             });
+
+            // Crear el agendamiento
+            const appointment = await Appointment.create(appointmentData);
 
             // Obtener el agendamiento completo con relaciones
             const fullAppointment = await Appointment.findByPk(appointment.id, {
@@ -286,6 +335,10 @@ class AppointmentController {
                             model: City,
                             as: 'city'
                         }]
+                    },
+                    {
+                        model: VehicleType,
+                        as: 'vehicleType'
                     }
                 ]
             });
