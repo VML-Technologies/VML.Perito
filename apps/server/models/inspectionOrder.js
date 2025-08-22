@@ -100,51 +100,51 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
     },
     marca: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     linea: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     clase: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     modelo: {
         type: DataTypes.STRING(4),
-        allowNull: false,
+        allowNull: true,
     },
     cilindraje: {
         type: DataTypes.STRING(10),
-        allowNull: false,
+        allowNull: true,
     },
     color: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
     },
     servicio: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     motor: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     chasis: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     vin: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     carroceria: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     combustible: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
     },
     cod_fasecolda: {
         type: DataTypes.STRING(8),

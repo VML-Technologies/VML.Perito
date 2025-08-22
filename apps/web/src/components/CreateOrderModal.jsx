@@ -303,12 +303,11 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const validateForm = () => {
         const newErrors = {};
 
-        // Validaciones obligatorias - solo campos esenciales según el test data
+        // Validaciones obligatorias - solo campos esenciales según el modelo actualizado
         const requiredFields = [
             'producto', 'callback_url', 'intermediario', 'clave_intermediario',
             'fecha', 'vlr_accesorios',
-            'placa', 'marca', 'linea', 'clase', 'modelo', 'cilindraje', 'color',
-            'servicio', 'motor', 'chasis', 'vin', 'carroceria', 'combustible',
+            'placa', // Solo la placa es obligatoria de los datos del vehículo
             'cod_fasecolda', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
@@ -375,9 +374,46 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             newErrors.cod_fasecolda = 'El código FASECOLDA no puede tener más de 8 caracteres';
         }
 
-        // Validación de clave_intermediario (máximo 10 caracteres)
+        // Validación de clave_intermediario (máximo 250 caracteres)
         if (formData.clave_intermediario && formData.clave_intermediario.length > 250) {
             newErrors.clave_intermediario = 'La clave de intermediario no puede tener más de 250 caracteres';
+        }
+
+        // Validaciones para campos opcionales del vehículo (solo si tienen valor)
+        if (formData.marca && formData.marca.length > 50) {
+            newErrors.marca = 'La marca no puede tener más de 50 caracteres';
+        }
+
+        if (formData.linea && formData.linea.length > 50) {
+            newErrors.linea = 'La línea no puede tener más de 50 caracteres';
+        }
+
+        if (formData.clase && formData.clase.length > 50) {
+            newErrors.clase = 'La clase no puede tener más de 50 caracteres';
+        }
+
+        if (formData.servicio && formData.servicio.length > 50) {
+            newErrors.servicio = 'El servicio no puede tener más de 50 caracteres';
+        }
+
+        if (formData.motor && formData.motor.length > 50) {
+            newErrors.motor = 'El motor no puede tener más de 50 caracteres';
+        }
+
+        if (formData.chasis && formData.chasis.length > 50) {
+            newErrors.chasis = 'El chasis no puede tener más de 50 caracteres';
+        }
+
+        if (formData.vin && formData.vin.length > 50) {
+            newErrors.vin = 'El VIN no puede tener más de 50 caracteres';
+        }
+
+        if (formData.carroceria && formData.carroceria.length > 50) {
+            newErrors.carroceria = 'La carrocería no puede tener más de 50 caracteres';
+        }
+
+        if (formData.combustible && formData.combustible.length > 50) {
+            newErrors.combustible = 'El combustible no puede tener más de 50 caracteres';
         }
 
         // Validación de cod_oficina (máximo 10 caracteres) - solo si no está vacío
@@ -409,6 +445,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         if (formData.nombre_contacto && formData.nombre_contacto.length > 250) {
             newErrors.nombre_contacto = 'El nombre del contacto no puede tener más de 250 caracteres';
         }
+
         console.error(newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length == 0;
@@ -470,26 +507,26 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="w-full sm:max-w-6xl overflow-y-auto">
+            <SheetContent className="w-full sm:max-w-6xl overflow-y-auto px-4">
                 <SheetHeader>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Car className="h-5 w-5" />
                             <SheetTitle>Nueva Orden de Inspección</SheetTitle>
                         </div>
-                        {/* {isSuperAdmin && ( */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={fillTestData}
-                            disabled={loading}
-                            className="flex items-center gap-2"
-                        >
-                            <TestTube className="h-4 w-4" />
-                            Datos de Prueba
-                        </Button>
-                        {/* )} */}
+                        {isSuperAdmin && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={fillTestData}
+                                disabled={loading}
+                                className="flex items-center gap-2"
+                            >
+                                <TestTube className="h-4 w-4" />
+                                Datos de Prueba
+                            </Button>
+                        )}
                     </div>
                     <SheetDescription>
                         Completa todos los datos requeridos para crear una nueva orden de inspección
@@ -504,7 +541,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 Información General
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-1 gap-4">
+
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
                                 <Select
@@ -528,18 +566,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </p>
                                 )}
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Información del Vehículo */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <Car className="h-4 w-4" />
-                                Datos del Vehículo
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <Label htmlFor="placa">Placa *</Label>
                                 <Input
@@ -557,9 +583,37 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </p>
                                 )}
                             </div>
-
                             <div>
-                                <Label htmlFor="marca">Marca *</Label>
+                                <Label htmlFor="cod_fasecolda">Código FASECOLDA *</Label>
+                                <Input
+                                    id="cod_fasecolda"
+                                    placeholder="12345678"
+                                    maxLength={8}
+                                    value={formData.cod_fasecolda}
+                                    onChange={(e) => handleInputChange('cod_fasecolda', e.target.value)}
+                                    className={errors.cod_fasecolda ? 'border-red-500' : ''}
+                                />
+                                {errors.cod_fasecolda && (
+                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        {errors.cod_fasecolda}
+                                    </p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Información del Vehículo */}
+                    <Card className="hidden">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <Car className="h-4 w-4" />
+                                Datos del Vehículo
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <Label htmlFor="marca">Marca</Label>
                                 <Input
                                     id="marca"
                                     placeholder="Toyota, Chevrolet, etc."
@@ -576,7 +630,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="linea">Línea *</Label>
+                                <Label htmlFor="linea">Línea</Label>
                                 <Input
                                     id="linea"
                                     placeholder="Corolla, Spark, etc."
@@ -593,7 +647,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="clase">Clase *</Label>
+                                <Label htmlFor="clase">Clase</Label>
                                 <Select
                                     value={formData.clase}
                                     onValueChange={(value) => handleInputChange('clase', value)}
@@ -619,7 +673,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="modelo">Modelo (Año) *</Label>
+                                <Label htmlFor="modelo">Modelo (Año)</Label>
                                 <Input
                                     id="modelo"
                                     type="number"
@@ -640,7 +694,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="color">Color *</Label>
+                                <Label htmlFor="color">Color</Label>
                                 <Input
                                     id="color"
                                     placeholder="Blanco, Rojo, etc."
@@ -657,7 +711,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="cilindraje">Cilindraje *</Label>
+                                <Label htmlFor="cilindraje">Cilindraje</Label>
                                 <Input
                                     id="cilindraje"
                                     placeholder="1600, 2000, etc."
@@ -675,7 +729,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="servicio">Servicio *</Label>
+                                <Label htmlFor="servicio">Servicio</Label>
                                 <Select
                                     value={formData.servicio}
                                     onValueChange={(value) => handleInputChange('servicio', value)}
@@ -699,7 +753,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="combustible">Combustible *</Label>
+                                <Label htmlFor="combustible">Combustible</Label>
                                 <Select
                                     value={formData.combustible}
                                     onValueChange={(value) => handleInputChange('combustible', value)}
@@ -724,7 +778,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="motor">Número de Motor *</Label>
+                                <Label htmlFor="motor">Número de Motor</Label>
                                 <Input
                                     id="motor"
                                     placeholder="Número del motor"
@@ -741,7 +795,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="chasis">Número de Chasis *</Label>
+                                <Label htmlFor="chasis">Número de Chasis</Label>
                                 <Input
                                     id="chasis"
                                     placeholder="Número del chasis"
@@ -758,7 +812,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="vin">VIN *</Label>
+                                <Label htmlFor="vin">VIN</Label>
                                 <Input
                                     id="vin"
                                     placeholder="Número VIN"
@@ -775,7 +829,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             <div>
-                                <Label htmlFor="carroceria">Carrocería *</Label>
+                                <Label htmlFor="carroceria">Carrocería</Label>
                                 <Input
                                     id="carroceria"
                                     placeholder="Tipo de carrocería"
@@ -791,23 +845,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="cod_fasecolda">Código FASECOLDA *</Label>
-                                <Input
-                                    id="cod_fasecolda"
-                                    placeholder="12345678"
-                                    maxLength={8}
-                                    value={formData.cod_fasecolda}
-                                    onChange={(e) => handleInputChange('cod_fasecolda', e.target.value)}
-                                    className={errors.cod_fasecolda ? 'border-red-500' : ''}
-                                />
-                                {errors.cod_fasecolda && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.cod_fasecolda}
-                                    </p>
-                                )}
-                            </div>
+
                         </CardContent>
                     </Card>
 

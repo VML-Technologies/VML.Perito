@@ -94,6 +94,22 @@ El sistema usa `config/database-cli.cjs` para la configuración de Sequelize CLI
   - `direccion_inspeccion` (STRING(1000)) - Dirección para inspección a domicilio
   - `observaciones` (STRING(1000)) - Observaciones del agendamiento
 
+### 20250822175918-modify-inspection-order-fields.cjs
+- **Propósito**: Modificar campos de vehículo en `inspection_orders` para permitir valores nulos
+- **Campos modificados**:
+  - `marca` (STRING(50)) - Marca del vehículo
+  - `linea` (STRING(50)) - Línea del vehículo
+  - `clase` (STRING(50)) - Clase del vehículo
+  - `modelo` (STRING(4)) - Modelo del vehículo
+  - `cilindraje` (STRING(10)) - Cilindraje del vehículo
+  - `color` (STRING(100)) - Color del vehículo
+  - `servicio` (STRING(50)) - Tipo de servicio
+  - `motor` (STRING(50)) - Número de motor
+  - `chasis` (STRING(50)) - Número de chasis
+  - `vin` (STRING(50)) - Número VIN
+  - `carroceria` (STRING(50)) - Tipo de carrocería
+  - `combustible` (STRING(50)) - Tipo de combustible
+
 ## 🎯 Ventajas de Sequelize CLI
 
 1. **✅ Estándar de la industria**: Herramienta oficial de Sequelize
