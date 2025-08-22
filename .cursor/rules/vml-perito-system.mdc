@@ -1,13 +1,13 @@
 ---
-description: Regla principal del sistema VML.Perito que define la arquitectura completa, incluyendo backend Express.js, frontend React, sistema RBAC, agendamiento avanzado, sistema de notificaciones, contact center management, WebSockets en tiempo real, y patrones de desarrollo. Contiene credenciales de prueba, estructura de archivos, roles y permisos, y guías para agregar nuevas funcionalidades.
+description: Regla principal del sistema Movilidad Mundial que define la arquitectura completa, incluyendo backend Express.js, frontend React, sistema RBAC, agendamiento avanzado, sistema de notificaciones, contact center management, WebSockets en tiempo real, y patrones de desarrollo. Contiene credenciales de prueba, estructura de archivos, roles y permisos, y guías para agregar nuevas funcionalidades.
 alwaysApply: false
 ---
 
-# VML.Perito System Architecture Guide
+# Movilidad Mundial System Architecture Guide
 
 ## Project Overview
 
-VML.Perito is a monorepo application for managing vehicle inspection orders with role-based access control (RBAC). The system includes backend Express.js API and frontend React application with advanced scheduling, notification system, and contact center management.
+Movilidad Mundial is a monorepo application for managing vehicle inspection orders with role-based access control (RBAC). The system includes backend Express.js API and frontend React application with advanced scheduling, notification system, and contact center management.
 
 ## Project Structure
 

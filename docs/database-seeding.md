@@ -1,5 +1,5 @@
 ---
-description: Sistema completo de seeding de base de datos para VML.Perito, incluyendo el proceso de 12 pasos orquestado por seedAll.js, patrones para RBAC, usuarios, sedes reales, sistema de eventos, plantillas de notificación, canales de notificación, y troubleshooting para errores comunes de foreign keys, constraints y orden de ejecución.
+description: Sistema completo de seeding de base de datos para Movilidad Mundial, incluyendo el proceso de 12 pasos orquestado por seedAll.js, patrones para RBAC, usuarios, sedes reales, sistema de eventos, plantillas de notificación, canales de notificación, y troubleshooting para errores comunes de foreign keys, constraints y orden de ejecución.
 alwaysApply: false
 ---
 

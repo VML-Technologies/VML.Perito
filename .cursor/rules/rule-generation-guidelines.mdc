@@ -1,5 +1,5 @@
 ---
-description: Instrucciones para generar reglas de Cursor para VML.Perito, incluyendo estructura de reglas, contenido requerido, patrones comunes, validación de calidad, mantenimiento regular, integración con reglas existentes, y ejemplos específicos del proyecto.
+description: Instrucciones para generar reglas de Cursor para Movilidad Mundial, incluyendo estructura de reglas, contenido requerido, patrones comunes, validación de calidad, mantenimiento regular, integración con reglas existentes, y ejemplos específicos del proyecto.
 alwaysApply: false
 ---
 
@@ -95,7 +95,7 @@ alwaysApply: false
 
 - ✅ **Actionable guidance** - Commands, examples, patterns
 - ✅ **File references** - Links to actual codebase files
-- ✅ **Project context** - VML.Perito specific information
+- ✅ **Project context** - Movilidad Mundial specific information
 - ✅ **Error handling** - Common issues and solutions
 - ✅ **Cross-references** - Links to related rules
 
@@ -129,7 +129,7 @@ alwaysApply: false
 - [ ] Rule provides actionable guidance
 - [ ] Content is project-specific where appropriate
 - [ ] Error handling and troubleshooting included
-- [ ] Examples are relevant to VML.Perito
+- [ ] Examples are relevant to Movilidad Mundial
 
 ## Rule Maintenance
 
@@ -178,11 +178,11 @@ grep -r "deprecated\|outdated\|old" .cursor/rules/
 
 ```markdown
 ---
-description: Sistema de reportes avanzados de VML.Perito, incluyendo generación de reportes PDF, exportación a Excel, filtros dinámicos, programación automática de reportes, integración con sistema de notificaciones, dashboard de métricas, y patrones de implementación para nuevos tipos de reportes.
+description: Sistema de reportes avanzados de Movilidad Mundial, incluyendo generación de reportes PDF, exportación a Excel, filtros dinámicos, programación automática de reportes, integración con sistema de notificaciones, dashboard de métricas, y patrones de implementación para nuevos tipos de reportes.
 alwaysApply: false
 ---
 
-# Sistema de Reportes Avanzados - VML.Perito
+# Sistema de Reportes Avanzados - Movilidad Mundial
 
 ## Quick Reference
 

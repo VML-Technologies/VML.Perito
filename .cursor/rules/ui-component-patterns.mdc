@@ -1,5 +1,5 @@
 ---
-description: Patrones de diseño de componentes UI para VML.Perito, incluyendo sistema de diseño basado en shadcn/ui y Lucide React, layout autenticado con sidebar, estructura de páginas estándar, patrones de modales/Sheet, formularios con validación, tablas responsivas, estados de carga, badges de estado, integración de notificaciones, guías de iconos, y diseño responsive.
+description: Patrones de diseño de componentes UI para Movilidad Mundial, incluyendo sistema de diseño basado en shadcn/ui y Lucide React, layout autenticado con sidebar, estructura de páginas estándar, patrones de modales/Sheet, formularios con validación, tablas responsivas, estados de carga, badges de estado, integración de notificaciones, guías de iconos, y diseño responsive.
 alwaysApply: false
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: Sistema de agendamiento avanzado de VML.Perito, incluyendo horarios flexibles con intervalos configurables, tipos de vehículos (Livianos, Pesados, Motos), sedes reales con direcciones actuales, modalidades de inspección (En Sede, A Domicilio, Virtual), validación de capacidad, integración con contact center, sistema de notificaciones automatizadas, eventos WebSocket en tiempo real, y configuración por defecto del sistema.
+description: Sistema de agendamiento avanzado de Movilidad Mundial, incluyendo horarios flexibles con intervalos configurables, tipos de vehículos (Livianos, Pesados, Motos), sedes reales con direcciones actuales, modalidades de inspección (En Sede, A Domicilio, Virtual), validación de capacidad, integración con contact center, sistema de notificaciones automatizadas, eventos WebSocket en tiempo real, y configuración por defecto del sistema.
 alwaysApply: false
 ---
 

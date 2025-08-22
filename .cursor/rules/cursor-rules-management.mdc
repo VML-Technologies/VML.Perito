@@ -1,5 +1,5 @@
 ---
-description: Gestión y consolidación de reglas de Cursor para VML.Perito, incluyendo mejores prácticas para crear nuevas reglas, proceso de consolidación para eliminar duplicaciones, auditoría de reglas existentes, estrategias de fusión, convenciones de nomenclatura, organización de contenido, y ejemplos específicos del proyecto.
+description: Gestión y consolidación de reglas de Cursor para Movilidad Mundial, incluyendo mejores prácticas para crear nuevas reglas, proceso de consolidación para eliminar duplicaciones, auditoría de reglas existentes, estrategias de fusión, convenciones de nomenclatura, organización de contenido, y ejemplos específicos del proyecto.
 alwaysApply: false
 ---
 
@@ -201,5 +201,5 @@ find .cursor/rules -name "*.mdc" -exec grep -l "similar topic" {} \;
 grep -r "mdc:" .cursor/rules/
 
 # Validate rule relevance
-grep -r "VML.Perito\|vml-perito" .cursor/rules/
+grep -r "Movilidad Mundial\|vml-perito" .cursor/rules/
 ```

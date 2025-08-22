@@ -8,9 +8,10 @@ Este documento describe la implementación y uso del webhook para el evento `ins
 
 El webhook `inspection_order.started` está diseñado para:
 
-- **Integración externa**: Permitir que plataformas de videoconferencia (Google Meet, Zoom, Teams) notifiquen cuando una inspección virtual ha iniciado
+- **Integración externa**: Permitir que aplicaciones externas de inspección virtual notifiquen cuando una inspección ha iniciado
 - **Notificación automática**: Enviar SMS al cliente con el enlace de la sesión virtual
 - **Trazabilidad**: Registrar el evento en el sistema para auditoría y seguimiento
+- **Separación de responsabilidades**: Movilidad Mundial solo recibe notificaciones, NO gestiona el estado de las inspecciones
 
 ## 🔧 Implementación Técnica
 
@@ -276,6 +277,22 @@ Los logs incluyen información detallada sobre el procesamiento de variables:
 
 ## 🔄 Flujo Completo
 
+### **Arquitectura de Responsabilidades**
+
+#### **InspectYa**
+- ✅ Inicia la inspección virtual
+- ✅ Gestiona el estado de la sesión
+- ✅ Actualiza su propia base de datos
+- ✅ Envía webhook a Movilidad Mundial
+
+#### **Movilidad Mundial (Responsable de Notificaciones)**
+- ✅ Recibe webhook de la aplicación externa
+- ✅ Procesa el evento `inspection_order.started`
+- ✅ Envía SMS automático al cliente
+- ✅ Registra el evento para auditoría
+- ❌ NO gestiona estados de inspección
+- ❌ NO actualiza datos de la aplicación externa
+
 ### **Proceso de Implementación (Lado Cliente)**
 
 #### **1. Preparación**
@@ -297,7 +314,7 @@ Enviar petición HTTP → Esperar respuesta → Procesar resultado
 
 #### **1. Recepción del Webhook**
 ```
-Sistema Externo → POST /api/webhooks/events → VML.Perito
+Aplicación Externa → POST /api/webhooks/events → Movilidad Mundial
 ```
 
 #### **2. Autenticación**
@@ -373,6 +390,27 @@ WHERE notification_type_id = (
 - [Plantillas de Notificación](./templates_reference.md) - Referencia de plantillas
 - [Patrones de Desarrollo](./development-patterns.md) - Convenciones del proyecto
 
+## 🔧 Nota de Limpieza del Sistema
+
+### **Endpoint Eliminado**
+- ❌ **`POST /api/appointments/:appointment_id/start-virtual`** - Eliminado para mantener separación de responsabilidades
+- ❌ **`appointmentController.startVirtualInspection`** - Método eliminado del controlador
+- ❌ **`API_ROUTES.APPOINTMENTS.START_VIRTUAL`** - Ruta eliminada del frontend
+
+### **Razón de la Eliminación**
+El endpoint `startVirtualInspection` fue eliminado porque:
+- **Confundía responsabilidades**: Movilidad Mundial no debe gestionar estados de inspección
+- **Duplicaba funcionalidad**: La aplicación externa ya maneja el inicio de inspecciones
+- **Creaba dependencias innecesarias**: Movilidad Mundial debe ser independiente de la gestión de inspecciones
+- **No se usaba**: No había interfaz que consumiera este endpoint
+
+### **Arquitectura Correcta**
+```
+Aplicación Externa → Webhook → Movilidad Mundial → SMS al Cliente
+```
+
+**Movilidad Mundial solo recibe notificaciones y envía SMS, NO gestiona inspecciones.**
+
 ## 🆘 Soporte
 
 ### **Problemas Comunes**
@@ -386,7 +424,7 @@ WHERE notification_type_id = (
 
 - **Email**: soporte@vmlperito.com
 - **Documentación**: [Índice Principal](./README.md)
-- **Sistema Principal**: [VML.Perito](../README.md)
+- **Sistema Principal**: [Movilidad Mundial](../README.md)
 
 ---
 

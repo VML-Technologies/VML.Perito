@@ -1,5 +1,5 @@
 ---
-description: Interfaz de administración RBAC moderna de VML.Perito, incluyendo el flujo de cambios y feedback en tiempo real, política de notificaciones (solo al guardar cambios), experiencia de usuario con indicadores visuales inmediatos, badge de cambios pendientes, y referencia a la implementación en Admin.jsx.
+description: Interfaz de administración RBAC moderna de Movilidad Mundial, incluyendo el flujo de cambios y feedback en tiempo real, política de notificaciones (solo al guardar cambios), experiencia de usuario con indicadores visuales inmediatos, badge de cambios pendientes, y referencia a la implementación en Admin.jsx.
 alwaysApply: false
 ---
 

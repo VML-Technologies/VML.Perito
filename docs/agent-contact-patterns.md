@@ -1,5 +1,5 @@
 ---
-description: Patrones específicos de agentes de contacto de VML.Perito, incluyendo arquitectura de roles de agentes, estructura de página AgenteContacto, integración WebSocket con eventos en tiempo real, controlador ContactAgentController, patrones de registro de llamadas, agendamiento de citas, manejo de formularios, componentes UI, indicador de estado de conexión, y permisos RBAC requeridos.
+description: Patrones específicos de agentes de contacto de Movilidad Mundial, incluyendo arquitectura de roles de agentes, estructura de página AgenteContacto, integración WebSocket con eventos en tiempo real, controlador ContactAgentController, patrones de registro de llamadas, agendamiento de citas, manejo de formularios, componentes UI, indicador de estado de conexión, y permisos RBAC requeridos.
 alwaysApply: false
 ---
 

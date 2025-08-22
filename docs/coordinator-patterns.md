@@ -1,5 +1,5 @@
 ---
-description: Patrones específicos de coordinadores de contact center de VML.Perito, incluyendo arquitectura basada en roles RBAC, controlador CoordinadorContactoController, patrones de asignación de agentes con notificaciones duales, página frontend del coordinador, manejo de estado, patrones de base de datos, rutas API, permisos RBAC, componentes UI/UX, y manejo de errores.
+description: Patrones específicos de coordinadores de contact center de Movilidad Mundial, incluyendo arquitectura basada en roles RBAC, controlador CoordinadorContactoController, patrones de asignación de agentes con notificaciones duales, página frontend del coordinador, manejo de estado, patrones de base de datos, rutas API, permisos RBAC, componentes UI/UX, y manejo de errores.
 alwaysApply: false
 ---
 

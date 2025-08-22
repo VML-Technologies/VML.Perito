@@ -1,5 +1,5 @@
 ---
-description: Flujo de trabajo de órdenes de inspección de VML.Perito, incluyendo proceso de creación de órdenes (Comercial Mundial), gestión de contactos (Agente Contacto), progresión de estados, relaciones de base de datos, patrones de endpoints API, validación de formularios, manejo de estado, integración de notificaciones, eventos WebSocket, y seguridad con RBAC.
+description: Flujo de trabajo de órdenes de inspección de Movilidad Mundial, incluyendo proceso de creación de órdenes (Comercial Mundial), gestión de contactos (Agente Contacto), progresión de estados, relaciones de base de datos, patrones de endpoints API, validación de formularios, manejo de estado, integración de notificaciones, eventos WebSocket, y seguridad con RBAC.
 alwaysApply: false
 ---
 

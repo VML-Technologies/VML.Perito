@@ -1,9 +1,9 @@
 ---
-description: Sistema completo de WebSockets de VML.Perito, incluyendo integración con Socket.IO, autenticación JWT, salas personalizadas por usuario y rol, eventos específicos del contact center (orderAssigned, orderRemoved, appointmentScheduled, orderStatusChanged), integración frontend con hooks personalizados, indicadores de estado de conexión, debugging detallado, seguridad con rate limiting, y optimización de rendimiento.
+description: Sistema completo de WebSockets de Movilidad Mundial, incluyendo integración con Socket.IO, autenticación JWT, salas personalizadas por usuario y rol, eventos específicos del contact center (orderAssigned, orderRemoved, appointmentScheduled, orderStatusChanged), integración frontend con hooks personalizados, indicadores de estado de conexión, debugging detallado, seguridad con rate limiting, y optimización de rendimiento.
 alwaysApply: false
 ---
 
-# Sistema de WebSockets - VML.Perito
+# Sistema de WebSockets - Movilidad Mundial
 
 ## Arquitectura del Sistema
 

@@ -1,8 +1,8 @@
-# 📚 Documentación VML.Perito
+# 📚 Documentación Movilidad Mundial
 
 ## 🎯 Descripción General
 
-Esta carpeta contiene toda la documentación técnica del sistema VML.Perito, organizada de manera simple y fácil de navegar.
+Esta carpeta contiene toda la documentación técnica del sistema Movilidad Mundial, organizada de manera simple y fácil de navegar.
 
 ## 📋 Índice Principal
 
@@ -122,5 +122,5 @@ Esta carpeta contiene toda la documentación técnica del sistema VML.Perito, or
 ---
 
 **Última actualización**: Enero 2025  
-**Responsable**: Equipo de Desarrollo VML.Perito  
+**Responsable**: Equipo de Desarrollo Movilidad Mundial  
 **Estado**: ✅ Mantenido y Actualizado 

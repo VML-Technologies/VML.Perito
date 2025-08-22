@@ -1,8 +1,8 @@
-# Guías de Texto en Español - VML.Perito
+# Guías de Texto en Español - Movilidad Mundial
 
 ## 📋 Descripción
 
-Guías para texto de interfaz de usuario en español para VML.Perito, incluyendo mensajes de notificación, errores descriptivos, etiquetas de formularios, placeholders, mensajes de éxito, y ejemplos de implementación correcta usando el sistema de notificaciones en lugar de alerts del navegador.
+Guías para texto de interfaz de usuario en español para Movilidad Mundial, incluyendo mensajes de notificación, errores descriptivos, etiquetas de formularios, placeholders, mensajes de éxito, y ejemplos de implementación correcta usando el sistema de notificaciones en lugar de alerts del navegador.
 
 ## Textos Dirigidos al Usuario en Español
 

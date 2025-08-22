@@ -1,5 +1,5 @@
 ---
-description: Define la terminología específica del contact center de VML.Perito, incluyendo roles de usuario (Comercial Mundial, Agente de Contact Center, Coordinador), tipos de sede (CDA, Comercial, Soporte), modalidades de inspección, tipos de vehículos, sedes reales configuradas con direcciones, sistema de notificaciones, eventos WebSocket en tiempo real, y credenciales de prueba para todos los roles del sistema.
+description: Define la terminología específica del contact center de Movilidad Mundial, incluyendo roles de usuario (Comercial Mundial, Agente de Contact Center, Coordinador), tipos de sede (CDA, Comercial, Soporte), modalidades de inspección, tipos de vehículos, sedes reales configuradas con direcciones, sistema de notificaciones, eventos WebSocket en tiempo real, y credenciales de prueba para todos los roles del sistema.
 alwaysApply: false
 ---
 

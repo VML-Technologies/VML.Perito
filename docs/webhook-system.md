@@ -1,4 +1,4 @@
-# Sistema de Webhooks - VML.Perito
+# Sistema de Webhooks - Movilidad Mundial
 
 ## Quick Reference
 
@@ -297,7 +297,7 @@ curl -X POST http://localhost:3000/api/webhooks/trigger \
 
 ## Related Rules
 
-- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal de VML.Perito
+- [vml-perito-system.mdc](mdc:.cursor/rules/vml-perito-system.mdc) - Sistema principal de Movilidad Mundial
 - [api-controllers.mdc](mdc:.cursor/rules/api-controllers.mdc) - Patrones de controladores API
 - [notification-system.mdc](mdc:.cursor/rules/notification-system.mdc) - Sistema de notificaciones
 - [rbac-admin-ui.mdc](mdc:.cursor/rules/rbac-admin-ui.mdc) - Interfaz de administración RBAC

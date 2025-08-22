@@ -2,7 +2,7 @@
 
 ## 📋 Descripción
 
-Patrones y convenciones para controladores API de VML.Perito, incluyendo estructura de clases con métodos async, manejo de errores consistente, respuestas JSON estandarizadas, validaciones de parámetros, paginación y filtros, relaciones en consultas Sequelize, integración con notificaciones y WebSocket, y verificación de permisos RBAC.
+Patrones y convenciones para controladores API de Movilidad Mundial, incluyendo estructura de clases con métodos async, manejo de errores consistente, respuestas JSON estandarizadas, validaciones de parámetros, paginación y filtros, relaciones en consultas Sequelize, integración con notificaciones y WebSocket, y verificación de permisos RBAC.
 
 ## Estructura de Controladores
 
