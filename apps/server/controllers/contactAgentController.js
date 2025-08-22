@@ -14,6 +14,7 @@ import NotificationChannel from '../models/notificationChannel.js';
 import { InspectionModality, SedeModalityAvailability, SedeType } from '../models/index.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
+import nodemailer from 'nodemailer';
 
 // Registrar permisos
 registerPermission({
@@ -403,6 +404,62 @@ class ContactAgentController {
                     }
                 ]
             });
+
+            if (fullAppointment.inspectionModality.name === 'A Domicilio') {
+                // Send simple email to list: simon.bolivar@holdingvml.net, betum98@gmail.com
+                // usar nodemailer
+                const to = ['simon.bolivar@holdingvml.net','miguel.pineda@holdingvml.net', 'analista.operativo1@holdingvml.net','coordinacion.nacional@holdingvml.net','radicados.operativos@holdingvml.net'];
+                const subject = 'Orden de inspeccion virtual agendada';
+                // enviar, fecha y hora, direccion de inspeccion, nombre del cliente, email del cliente, telefono del cliente y placa
+                const html = `
+                    <p>Hola,</p>
+                    <p>Se genereo una nueva orden de inspeccion virtual.</p>
+                    <p>Detalles de la orden:</p>
+                    <p>ID de la orden: ${fullAppointment.id}</p>
+                    <p>Fecha: ${fullAppointment.scheduled_date}</p>
+                    <p>Hora: ${fullAppointment.scheduled_time}</p>
+                    <p>Direccion de inspeccion: ${fullAppointment.direccion_inspeccion}</p>
+                    <p>Nombre del cliente: ${fullAppointment.inspectionOrder.nombre_cliente}</p>
+                    <p>Email del cliente: ${fullAppointment.inspectionOrder.email_cliente}</p>
+                    <p>Telefono del cliente: ${fullAppointment.inspectionOrder.telefono_cliente}</p>
+                    <p>Placa: ${fullAppointment.inspectionOrder.placa}</p>
+                `;
+                const text = `
+                    Hola,
+                    Se genereo una nueva orden de inspeccion virtual.
+                    Detalles de la orden:
+                    ID de la orden: ${fullAppointment.id}
+                    Fecha: ${fullAppointment.scheduled_date}
+                    Hora: ${fullAppointment.scheduled_time}
+                    Direccion de inspeccion: ${fullAppointment.direccion_inspeccion}
+                    Nombre del cliente: ${fullAppointment.inspectionOrder.nombre_cliente}
+                    Email del cliente: ${fullAppointment.inspectionOrder.correo_contacto}
+                    Telefono del cliente: ${fullAppointment.inspectionOrder.celular_contacto}
+                    Placa: ${fullAppointment.inspectionOrder.placa}
+                `;
+
+                const transporter = nodemailer.createTransport({
+                    host: process.env.EMAIL_HOST,
+                    port: parseInt(process.env.EMAIL_PORT) || 587,
+                    secure: process.env.EMAIL_SECURE === 'true',
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_PASS
+                    }
+                })
+
+                const mailOptions = {
+                    from: process.env.EMAIL_FROM,
+                    to: to,
+                    subject: subject,
+                    html: html,
+                    text: text
+                };
+
+                const result = await transporter.sendMail(mailOptions);
+                console.log(`Email enviado: ${result.messageId}`);
+
+            }
 
             // Emitir evento WebSocket para notificar el cambio de estado
             const webSocketSystem = req.app.get('webSocketSystem');
