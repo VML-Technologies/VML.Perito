@@ -66,6 +66,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         vin: '',
         carroceria: '',
         combustible: '',
+        metodo_inspeccion_recomendado: 'Virtual',
         cod_fasecolda: '',
 
         // Información del cliente
@@ -119,6 +120,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             vin: 'Vin del vehiculo',
             carroceria: 'Carroceria del vehiculo',
             combustible: 'GASOLINA',
+            metodo_inspeccion_recomendado: 'Virtual',
             cod_fasecolda: 'CodigoXX',
 
             // Información del cliente
@@ -217,6 +219,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             vin: '',
             carroceria: '',
             combustible: '',
+            metodo_inspeccion_recomendado: 'Virtual',
             cod_fasecolda: '',
 
             // Información del cliente
@@ -308,7 +311,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             'producto', 'callback_url', 'intermediario', 'clave_intermediario',
             'fecha', 'vlr_accesorios',
             'placa', // Solo la placa es obligatoria de los datos del vehículo
-            'cod_fasecolda', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
+            'metodo_inspeccion_recomendado', 'cod_fasecolda', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
 
@@ -542,7 +545,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
                                 <Select
@@ -597,6 +600,28 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.cod_fasecolda}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <Label htmlFor="metodo_inspeccion_recomendado">Método de Inspección *</Label>
+                                <Select
+                                    value={formData.metodo_inspeccion_recomendado}
+                                    onValueChange={(value) => handleInputChange('metodo_inspeccion_recomendado', value)}
+                                >
+                                    <SelectTrigger className={`w-full ${errors.metodo_inspeccion_recomendado ? 'border-red-500' : ''}`}>
+                                        <SelectValue placeholder="Seleccionar método" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Virtual">Virtual</SelectItem>
+                                        <SelectItem value="Presencial">Presencial</SelectItem>
+                                        <SelectItem value="A Domicilio">A Domicilio</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.metodo_inspeccion_recomendado && (
+                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        {errors.metodo_inspeccion_recomendado}
                                     </p>
                                 )}
                             </div>
