@@ -143,7 +143,7 @@ class InspectionOrderController extends BaseController {
             }
 
             // Contexto específico para Comercial Mundial
-            if (user.roles.some(role => role.name == 'comercial_mundial') && req.user.intermediary_key) {
+            if (user.roles.some(role => role.name == 'comercial_mundial' && !req.user.email.includes('segurosmundial.com.co')) && req.user.intermediary_key) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
@@ -325,7 +325,7 @@ class InspectionOrderController extends BaseController {
             const whereConditions = {};
 
             // Filtrar por intermediary_key del usuario logueado
-            if (req.user.intermediary_key) {
+            if (req.user.intermediary_key && !req.user.email.includes('segurosmundial.com.co')) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
