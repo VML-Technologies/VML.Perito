@@ -45,7 +45,6 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
-        ASSIGN_AGENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/assign-agent`,
     },
     // ===== RUTAS DE SEDES =====
     SEDES: {
@@ -93,28 +92,13 @@ export const API_ROUTES = {
     },
     // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
     NOTIFICATIONS_ADMIN: {
-        // Configuración general
-        CONFIG: `${API_BASE_URL}/api/notifications/admin/config`,
-        // Tipos de notificación
-        TYPES: `${API_BASE_URL}/api/notifications/admin/types`,
-        CREATE_TYPE: `${API_BASE_URL}/api/notifications/admin/types`,
-        UPDATE_TYPE: (id) => `${API_BASE_URL}/api/notifications/admin/types/${id}`,
-        DELETE_TYPE: (id) => `${API_BASE_URL}/api/notifications/admin/types/${id}`,
-        // Canales de notificación
-        CHANNELS: `${API_BASE_URL}/api/notifications/admin/channels`,
-        CREATE_CHANNEL: `${API_BASE_URL}/api/notifications/admin/channels`,
-        UPDATE_CHANNEL: (id) => `${API_BASE_URL}/api/notifications/admin/channels/${id}`,
-        DELETE_CHANNEL: (id) => `${API_BASE_URL}/api/notifications/admin/channels/${id}`,
+        // Estadísticas administrativas
+        STATS: `${API_BASE_URL}/api/notifications/admin/stats`,
         // Configuraciones de notificación
-        CONFIGS: `${API_BASE_URL}/api/notifications/admin/configs`,
-        CREATE_CONFIG: `${API_BASE_URL}/api/notifications/admin/configs`,
-        UPDATE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/admin/configs/${id}`,
-        DELETE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/admin/configs/${id}`,
-        // Estadísticas y logs
-        ADMIN_STATS: `${API_BASE_URL}/api/notifications/admin/stats`,
-        LOGS: `${API_BASE_URL}/api/notifications/admin/logs`,
-        // Pruebas
-        TEST: `${API_BASE_URL}/api/notifications/admin/test`,
+        CONFIGS: `${API_BASE_URL}/api/notifications/configs`,
+        CREATE_CONFIG: `${API_BASE_URL}/api/notifications/configs`,
+        UPDATE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/configs/${id}`,
+        DELETE_CONFIG: (id) => `${API_BASE_URL}/api/notifications/configs/${id}`,
     },
     // ===== RUTAS DEL SISTEMA DE EVENTOS =====
     EVENTS: {
@@ -126,13 +110,13 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/events`,
         UPDATE: (id) => `${API_BASE_URL}/api/events/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/events/${id}`,
-        TRIGGER: (eventName) => `${API_BASE_URL}/api/events/${eventName}/trigger`,
+        TRIGGER: (id) => `${API_BASE_URL}/api/events/${id}/trigger`,
 
         // Gestión de listeners
         LISTENERS: (eventId) => `${API_BASE_URL}/api/events/${eventId}/listeners`,
-        CREATE_LISTENER: (eventId) => `${API_BASE_URL}/api/events/${eventId}/listeners`,
-        UPDATE_LISTENER: (listenerId) => `${API_BASE_URL}/api/listeners/${listenerId}`,
-        DELETE_LISTENER: (listenerId) => `${API_BASE_URL}/api/listeners/${listenerId}`,
+        CREATE_LISTENER: `${API_BASE_URL}/api/events/listeners`,
+        UPDATE_LISTENER: (listenerId) => `${API_BASE_URL}/api/events/listeners/${listenerId}`,
+        DELETE_LISTENER: (listenerId) => `${API_BASE_URL}/api/events/listeners/${listenerId}`,
     },
     // ===== RUTAS DEL SISTEMA DE PLANTILLAS =====
     TEMPLATES: {
@@ -156,7 +140,6 @@ export const API_ROUTES = {
     CHANNELS: {
         // Gestión de configuraciones de canales
         LIST: `${API_BASE_URL}/api/channels`,
-        STATS: `${API_BASE_URL}/api/channels/stats`,
         SCHEMAS: `${API_BASE_URL}/api/channels/schemas`,
         MEMORY: `${API_BASE_URL}/api/channels/memory`,
         GET: (channelName) => `${API_BASE_URL}/api/channels/${channelName}`,
@@ -170,22 +153,36 @@ export const API_ROUTES = {
         RELOAD: `${API_BASE_URL}/api/channels/reload`,
     },
 
-    // ===== RUTAS DE ADMINISTRACIÓN INTEGRADA =====
-    NOTIFICATION_ADMIN_INTEGRATED: {
-        // Dashboard y estadísticas
-        DASHBOARD: `${API_BASE_URL}/api/notifications/admin/dashboard`,
-        SYSTEM_STATS: `${API_BASE_URL}/api/notifications/admin/system-stats`,
 
-        // Gestión del sistema
-        TEST_SYSTEM: `${API_BASE_URL}/api/notifications/admin/test-system`,
-        PROCESS_EVENT: `${API_BASE_URL}/api/notifications/admin/process-event`,
-        CLEAR_CACHE: `${API_BASE_URL}/api/notifications/admin/clear-cache`,
-        REINITIALIZE: `${API_BASE_URL}/api/notifications/admin/reinitialize`,
 
-        // Logs y configuración
-        SYSTEM_LOGS: `${API_BASE_URL}/api/notifications/admin/logs`,
-        SYSTEM_CONFIG: `${API_BASE_URL}/api/notifications/admin/config`,
-        UPDATE_SYSTEM_CONFIG: `${API_BASE_URL}/api/notifications/admin/config`
+    // ===== RUTAS DE AGENDAMIENTOS =====
+    APPOINTMENTS: {
+        // Gestión de agendamientos
+        LIST: `${API_BASE_URL}/api/appointments`,
+        GET: (id) => `${API_BASE_URL}/api/appointments/${id}`,
+        CREATE: `${API_BASE_URL}/api/appointments`,
+
+        // Modalidades y sedes
+        MODALITIES: `${API_BASE_URL}/api/appointments/modalities`,
+        MODALITIES_BY_CITY: (cityId) => `${API_BASE_URL}/api/appointments/modalities/${cityId}`,
+        SEDES: `${API_BASE_URL}/api/appointments/sedes`,
+        TIME_SLOTS: `${API_BASE_URL}/api/appointments/time-slots`,
+    },
+
+    // ===== RUTAS DEL SISTEMA DE WEBHOOKS =====
+    WEBHOOKS: {
+        // Endpoints de webhooks
+        EVENTS: `${API_BASE_URL}/api/webhooks/events`,
+        APPOINTMENT: `${API_BASE_URL}/api/webhooks/appointment`,
+        
+        // Gestión de API Keys
+        API_KEYS: `${API_BASE_URL}/api/webhooks/api-keys`,
+        CREATE_API_KEY: `${API_BASE_URL}/api/webhooks/api-keys`,
+        UPDATE_API_KEY: (id) => `${API_BASE_URL}/api/webhooks/api-keys/${id}`,
+        DELETE_API_KEY: (id) => `${API_BASE_URL}/api/webhooks/api-keys/${id}`,
+        
+        // Logs
+        LOGS: `${API_BASE_URL}/api/webhooks/logs`,
     },
 };
 

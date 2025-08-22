@@ -214,11 +214,10 @@ class ChannelConfigService {
     async testEmailChannel(config, testData) {
         try {
             // Importar dinámicamente para evitar dependencias circulares
-            const { default: EmailService } = await import('./channels/emailService.js');
-            const emailService = new EmailService();
+            const emailService = await import('./channels/emailService.js');
 
             // Configurar con los datos de prueba
-            await emailService.configureFromEnv();
+            emailService.default.configureFromEnv();
 
             // Enviar email de prueba
             const testEmail = {
@@ -236,7 +235,7 @@ class ChannelConfigService {
                 }
             };
 
-            const result = await emailService.send(testEmail);
+            const result = await emailService.default.send(testEmail);
 
             return {
                 success: true,
@@ -258,11 +257,10 @@ class ChannelConfigService {
     async testSMSChannel(config, testData) {
         try {
             // Importar dinámicamente para evitar dependencias circulares
-            const { default: SMSService } = await import('./channels/smsService.js');
-            const smsService = new SMSService();
+            const smsService = await import('./channels/smsService.js');
 
             // Configurar con los datos de prueba
-            await smsService.configureFromConfig(config.config);
+            smsService.default.configureFromEnv();
 
             // Enviar SMS de prueba
             const testSMS = {
@@ -278,7 +276,7 @@ class ChannelConfigService {
                 }
             };
 
-            const result = await smsService.send(testSMS);
+            const result = await smsService.default.send(testSMS);
 
             return {
                 success: true,
@@ -300,11 +298,10 @@ class ChannelConfigService {
     async testWhatsAppChannel(config, testData) {
         try {
             // Importar dinámicamente para evitar dependencias circulares
-            const { default: WhatsAppService } = await import('./channels/whatsappService.js');
-            const whatsappService = new WhatsAppService();
+            const whatsappService = await import('./channels/whatsappService.js');
 
             // Configurar con los datos de prueba
-            await whatsappService.configureFromConfig(config.config);
+            whatsappService.default.configureFromEnv();
 
             // Enviar mensaje de prueba
             const testMessage = {
@@ -321,7 +318,7 @@ class ChannelConfigService {
                 }
             };
 
-            const result = await whatsappService.send(testMessage);
+            const result = await whatsappService.default.send(testMessage);
 
             return {
                 success: true,

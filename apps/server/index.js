@@ -26,11 +26,12 @@ import cityController from './controllers/cityController.js';
 import channelController from './controllers/channelController.js';
 import { requirePermission } from './middleware/rbac.js';
 import { requireAuth } from './middleware/auth.js';
+import { authenticateWebhook, webhookRateLimit, captureRawBody } from './middleware/webhookAuth.js';
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
+import webhookController from './controllers/webhookController.js';
 import plateQueryController from './controllers/plateQueryController.js';
-import PlateQuery from './models/plateQuery.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -336,6 +337,11 @@ app.get('/api/appointments/sedes', readLimiter, requirePermission('appointments.
 app.post('/api/appointments', requirePermission('appointments.create'), appointmentController.createAppointment);
 app.get('/api/appointments/time-slots', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableTimeSlots);
 
+// Rutas para gestión de agendamientos
+app.get('/api/appointments', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointments);
+app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
+
+
 // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
 
 // Rutas para estadísticas administrativas de notificaciones
@@ -402,7 +408,40 @@ app.post('/api/users', requirePermission('users.create'), userController.store);
 app.put('/api/users/:id', requirePermission('users.update'), userController.update);
 app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
-app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore)
+app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore);
+
+// ===== RUTAS DE WEBHOOKS =====
+
+// Middleware condicional para captura de body raw
+const webhookBodyMiddleware = (req, res, next) => {
+    const signatureVerificationEnabled = process.env.WEBHOOK_SIGNATURE_VERIFICATION !== 'false';
+    console.log('🔐 Verificación de firma HMAC:', signatureVerificationEnabled ? 'HABILITADA' : 'DESHABILITADA');
+    
+    if (signatureVerificationEnabled) {
+        console.log('⚠️ Verificación de firma habilitada - usando body ya parseado');
+        // Para ahora, usar el body ya parseado por express.json()
+        req.rawBody = JSON.stringify(req.body);
+        return next();
+    } else {
+        console.log('✅ Verificación de firma deshabilitada - saltando captura de body raw');
+        return next();
+    }
+};
+
+// Endpoint principal para webhooks
+app.post('/api/webhooks/events', webhookBodyMiddleware, authenticateWebhook, webhookRateLimit, webhookController.processEvent);
+
+// Endpoint específico para agendamientos
+app.post('/api/webhooks/appointment', webhookBodyMiddleware, authenticateWebhook, webhookRateLimit, webhookController.processEvent);
+
+// Gestión de API Keys (Admin)
+app.get('/api/webhooks/api-keys', requirePermission('webhooks.admin'), webhookController.getApiKeys);
+app.post('/api/webhooks/api-keys', requirePermission('webhooks.admin'), webhookController.createApiKey);
+app.put('/api/webhooks/api-keys/:id', requirePermission('webhooks.admin'), webhookController.updateApiKey);
+app.delete('/api/webhooks/api-keys/:id', requirePermission('webhooks.admin'), webhookController.deleteApiKey);
+
+// Logs de webhooks
+app.get('/api/webhooks/logs', requirePermission('webhooks.admin'), webhookController.getLogs);
 
 // Rutas WebSocket para pruebas y administración
 app.get('/api/websocket/stats', requirePermission('system.read'), (req, res) => {
@@ -598,7 +637,7 @@ const startServer = async () => {
             NotificationChannel, NotificationType, NotificationConfig, Notification, NotificationQueue,
             SedeType, InspectionModality, SedeModalityAvailability, VehicleType, SedeVehicleType,
             ScheduleTemplate, Event, EventListener, NotificationTemplate, TemplateVersion, ChannelConfig,
-            PlateQuery
+            PlateQuery, WebhookApiKey, WebhookLog
         } = await import('./models/index.js');
 
         // Crear tablas en secuencia para respetar dependencias
@@ -651,8 +690,11 @@ const startServer = async () => {
 
             // 8. Tablas finales
             { nombre: 'NotificationQueue', modelo: NotificationQueue, tabla: 'notification_queue' },
-            { nombre: 'PlateQuery', modelo: PlateQuery, tabla: 'plate_queries' }
+            { nombre: 'PlateQuery', modelo: PlateQuery, tabla: 'plate_queries' },
 
+            // 9. Tablas de webhooks
+            { nombre: 'WebhookApiKey', modelo: WebhookApiKey, tabla: 'webhook_api_keys' },
+            { nombre: 'WebhookLog', modelo: WebhookLog, tabla: 'webhook_logs' },
         ];
 
         let contador = 0;
@@ -724,6 +766,8 @@ const startServer = async () => {
                     await sequelize.query('SELECT TOP 1 * FROM notification_queue');
                     await sequelize.query('SELECT TOP 1 * FROM notification_types');
                     await sequelize.query('SELECT TOP 1 * FROM plate_queries');
+                    await sequelize.query('SELECT TOP 1 * FROM webhook_api_keys');
+                    await sequelize.query('SELECT TOP 1 * FROM webhook_logs');
                 } else {
                     await sequelize.query('SELECT 1 FROM events LIMIT 1');
                     await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
@@ -731,6 +775,8 @@ const startServer = async () => {
                     await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
                     await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
                     await sequelize.query('SELECT 1 FROM plate_queries LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM webhook_api_keys LIMIT 1');
+                    await sequelize.query('SELECT 1 FROM webhook_logs LIMIT 1');
                 }
                 console.log('✅ Todas las tablas críticas están disponibles.');
                 tablesReady = true;

@@ -326,7 +326,11 @@ class ContactAgentController {
     // Crear agendamiento
     async createAppointment(req, res) {
         try {
-            const { inspection_order_id } = req.body;
+            const { 
+                inspection_order_id,
+                direccion_inspeccion,
+                observaciones
+            } = req.body;
 
             // Validar que se proporcione el ID de la orden
             if (!inspection_order_id) {
@@ -360,7 +364,7 @@ class ContactAgentController {
             // Crear el agendamiento
             const appointment = await Appointment.create(appointmentData);
 
-            // Actualizar el estado de la orden a "Agendado" (id: 3)
+            // Actualizar la orden con el estado
             await order.update({
                 status: 3, // ID del estado "Agendado"
                 updated_at: new Date()

@@ -5,7 +5,8 @@ import {
     City,
     Department,
     SedeType,
-    Appointment
+    Appointment,
+    InspectionOrder
 } from '../models/index.js';
 import { Op } from 'sequelize';
 import EventRegistry from '../services/eventRegistry.js';
@@ -267,8 +268,8 @@ class AppointmentController {
                 sede_id: _sedeId,
                 scheduled_date: _scheduledDate,
                 scheduled_time: _scheduledTime,
-                inspection_address: _inspectionAddress,
-                notes: _notes,
+                direccion_inspeccion: _inspectionAddress,
+                observaciones: _notes,
                 status: 'PROGRAMADA'
             });
 
@@ -388,6 +389,116 @@ class AppointmentController {
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor'
+            });
+        }
+    }
+
+    // Obtener agendamientos
+    async getAppointments(req, res) {
+        try {
+            const { page = 1, limit = 10, status = '', inspection_order_id = '' } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            const whereConditions = {};
+
+            if (status) {
+                whereConditions.status = status;
+            }
+
+            if (inspection_order_id) {
+                whereConditions.inspection_order_id = inspection_order_id;
+            }
+
+            const appointments = await Appointment.findAndCountAll({
+                where: whereConditions,
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder'
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [{
+                            model: City,
+                            as: 'city'
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality'
+                    }
+                ],
+                limit: parseInt(limit),
+                offset: offset,
+                order: [['created_at', 'DESC']]
+            });
+
+            res.json({
+                success: true,
+                data: appointments.rows,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total: appointments.count,
+                    pages: Math.ceil(appointments.count / parseInt(limit))
+                }
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo agendamientos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Obtener agendamiento por ID
+    async getAppointment(req, res) {
+        try {
+            const { id } = req.params;
+
+            const appointment = await Appointment.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder'
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [{
+                            model: City,
+                            as: 'city'
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality'
+                    }
+                ]
+            });
+
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Agendamiento no encontrado'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: appointment
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo agendamiento:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
             });
         }
     }

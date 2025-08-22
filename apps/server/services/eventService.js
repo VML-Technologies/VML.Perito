@@ -375,7 +375,7 @@ class EventService {
             // Valores booleanos simples
             'is_urgent': data.inspection_order?.priority == 'urgent',
             'is_commercial_creator': data.inspection_order?.commercial_user_id == data.user?.id,
-            'is_client': data.inspection_order?.correo_cliente == data.user?.email,
+            'is_client': context.is_client || data.inspection_order?.correo_cliente == data.user?.email,
             'not_same_day': !this.isToday(data.appointment?.scheduled_date)
         };
 

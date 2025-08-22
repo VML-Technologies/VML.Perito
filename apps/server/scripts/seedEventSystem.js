@@ -64,6 +64,28 @@ const seedEventSystem = async () => {
                 }
             },
             {
+                name: 'inspection_order.started',
+                description: 'Se dispara cuando se inicia una inspección virtual',
+                category: 'inspection_order',
+                metadata: {
+                    variables: [
+                        'inspection_order.id',
+                        'inspection_order.numero',
+                        'inspection_order.nombre_cliente',
+                        'inspection_order.celular_cliente',
+                        'inspection_order.correo_cliente',
+                        'inspection_order.placa',
+                        'appointment.session_id',
+                        'appointment.scheduled_date',
+                        'appointment.scheduled_time',
+                        'appointment.session_url',
+                        'sede.name',
+                        'sede.address'
+                    ],
+                    description: 'Evento para notificar al cliente que la inspección virtual ha comenzado'
+                }
+            },
+            {
                 name: 'inspection_order.completed',
                 description: 'Se dispara cuando se completa una orden de inspección',
                 category: 'inspection_order',

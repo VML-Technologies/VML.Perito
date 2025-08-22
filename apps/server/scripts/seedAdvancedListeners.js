@@ -22,7 +22,8 @@ const seedAdvancedListeners = async () => {
                         'user.created',
                         'inspection_order.created',
                         'inspection_order.assigned',
-                        'inspection_order.scheduled'
+                        'inspection_order.scheduled',
+                        'inspection_order.started'
                     ]
                 }
             }
@@ -61,7 +62,10 @@ const seedAdvancedListeners = async () => {
             'appointment_scheduled_commercial_inapp',
             'appointment_scheduled_commercial_push',
             'appointment_reminder_client_email',
-            'appointment_reminder_client_sms'
+            'appointment_reminder_client_sms',
+
+            // inspection_order.started
+            'inspection_started_client_sms'
         ];
 
         console.log('📝 Creando tipos de notificación específicos...');
@@ -464,6 +468,18 @@ Equipo VML Perito
                 delay_seconds: 86400, // 1 día
                 channels: ['sms'],
                 description: 'Recordatorio por SMS al cliente (1 día antes)'
+            },
+
+            // ===== INSPECTION_ORDER.STARTED =====
+            // SMS al cliente cuando inicia la inspección virtual
+            {
+                event_name: 'inspection_order.started',
+                notification_type_name: 'inspection_started_client_sms',
+                conditions: { is_client: true },
+                priority: 1,
+                delay_seconds: 0,
+                channels: ['sms'],
+                description: 'SMS al cliente cuando inicia la inspección virtual'
             }
         ];
 

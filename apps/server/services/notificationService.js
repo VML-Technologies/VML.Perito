@@ -164,16 +164,37 @@ class NotificationService {
                 user_id: recipient.user_id
             });
 
+            // Debug: verificar datos para plantilla
+            console.log(`🔍 Debug processTemplate:`, {
+                templateTitle: config.template_title,
+                templateContent: config.template_content,
+                data: data,
+                dataKeys: Object.keys(data || {})
+            });
+
             // Procesar plantillas
             const title = this.processTemplate(config.template_title, data);
             const content = this.processTemplate(config.template_content, data);
 
+            console.log(`🔍 Debug processed templates:`, {
+                title,
+                content
+            });
+
             // Determinar cuándo enviar
             const scheduledAt = this.calculateScheduledTime(config, options);
 
+            // Debug: verificar qué está llegando en config.channel
+            console.log(`🔍 Debug config.channel:`, {
+                channel: config.channel,
+                channelName: config.channel?.name,
+                configId: config.id,
+                configName: config.name
+            });
+
             // Preparar metadata con datos específicos del canal
             const metadata = {
-                channel: config.channel.name,
+                channel: config.channel?.name || 'sms', // Fallback a 'sms' si no hay canal
                 original_data: data,
                 config_id: config.id,
                 channel_data: {
@@ -229,7 +250,7 @@ class NotificationService {
 
         try {
             // Destinatarios por roles
-            if (config.target_roles && config.target_roles.length > 0) {
+            if (config.target_roles && Array.isArray(config.target_roles) && config.target_roles.length > 0) {
                 const users = await User.findAll({
                     include: [
                         {
@@ -267,7 +288,7 @@ class NotificationService {
             }
 
             // Destinatarios específicos por ID
-            if (config.target_users && config.target_users.length > 0) {
+            if (config.target_users && Array.isArray(config.target_users) && config.target_users.length > 0) {
                 const users = await User.findAll({
                     where: {
                         id: { [Op.in]: config.target_users },
@@ -370,7 +391,7 @@ class NotificationService {
             }
 
             // Destinatarios usuarios comerciales desde inspection_order
-            if (config.for_users && data.inspection_order && config.target_roles && config.target_roles.includes('comercial_mundial')) {
+            if (config.for_users && data.inspection_order && config.target_roles && Array.isArray(config.target_roles) && config.target_roles.includes('comercial_mundial')) {
                 // Buscar usuario comercial por clave_intermediario
                 const commercialUser = await User.findOne({
                     where: {
@@ -429,9 +450,18 @@ class NotificationService {
         const variables = template.match(/\{\{([^}]+)\}\}/g);
 
         if (variables) {
+            console.log(`🔍 Procesando variables en template:`, {
+                template,
+                variables,
+                dataKeys: Object.keys(data || {})
+            });
+
             for (const variable of variables) {
                 const key = variable.replace(/[{}]/g, '');
                 const value = this.getNestedValue(data, key) || '';
+                
+                console.log(`🔍 Variable: ${variable} -> Key: ${key} -> Value: ${value}`);
+                
                 processed = processed.replace(variable, value);
             }
         }
@@ -471,7 +501,24 @@ class NotificationService {
      */
     async sendNotification(notification) {
         try {
-            const channelName = notification.metadata?.channel;
+            // Parsear metadata si es string
+            let metadata = notification.metadata;
+            if (typeof metadata === 'string') {
+                try {
+                    metadata = JSON.parse(metadata);
+                } catch (error) {
+                    console.error('❌ Error parseando metadata:', error);
+                    metadata = {};
+                }
+            }
+            
+            const channelName = metadata?.channel;
+            console.log(`🔍 Debug sendNotification:`, {
+                channelName,
+                metadata,
+                metadataType: typeof notification.metadata,
+                availableChannels: Object.keys(this.channels)
+            });
             const channel = this.channels[channelName];
 
             if (!channel) {

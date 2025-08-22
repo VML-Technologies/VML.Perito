@@ -63,6 +63,16 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    direccion_inspeccion: {
+        type: DataTypes.STRING(1000),
+        allowNull: true,
+        comment: 'Dirección para inspección a domicilio'
+    },
+    observaciones: {
+        type: DataTypes.STRING(1000),
+        allowNull: true,
+        comment: 'Observaciones del agendamiento'
+    },
     session_id: {
         type: DataTypes.STRING(100),
         allowNull: true,
