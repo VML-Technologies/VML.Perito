@@ -7,7 +7,13 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "setup:db": "node scripts/setupDatabase.js",
-    "seed": "node scripts/seedAll.js"
+    "seed": "node scripts/seedAll.js",
+    "migrate": "npx sequelize-cli db:migrate",
+    "migrate:rollback": "npx sequelize-cli db:migrate:undo",
+    "migrate:rollback:all": "npx sequelize-cli db:migrate:undo:all",
+    "migrate:status": "npx sequelize-cli db:migrate:status",
+    "migrate:create": "npx sequelize-cli migration:generate --name",
+    "seed:create": "npx sequelize-cli seed:generate --name"
   },
   "author": "",
   "license": "ISC",
@@ -23,10 +29,14 @@
     "morgan": "^1.10.1",
     "mysql2": "^3.14.1",
     "node-cron": "^4.2.0",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.3",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
     "tedious": "^18.6.1"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.3"
   }
 }
