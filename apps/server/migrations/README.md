@@ -110,6 +110,14 @@ El sistema usa `config/database-cli.cjs` para la configuración de Sequelize CLI
   - `carroceria` (STRING(50)) - Tipo de carrocería
   - `combustible` (STRING(50)) - Tipo de combustible
 
+### 20250822183450-add-inspection-method-field.cjs
+- **Propósito**: Agregar campo de método de inspección recomendado a `inspection_orders`
+- **Campos agregados**:
+  - `metodo_inspeccion_recomendado` (ENUM) - Método de inspección recomendado
+    - Valores: 'Virtual', 'Presencial', 'A Domicilio'
+    - Valor por defecto: 'Virtual'
+    - Obligatorio: Sí
+
 ## 🎯 Ventajas de Sequelize CLI
 
 1. **✅ Estándar de la industria**: Herramienta oficial de Sequelize

@@ -6,7 +6,7 @@ module.exports = {
     // Agregar campo metodo_inspeccion_recomendado a inspection_orders
     await queryInterface.addColumn('inspection_orders', 'metodo_inspeccion_recomendado', {
       type: Sequelize.ENUM('Virtual', 'Presencial', 'A Domicilio'),
-      allowNull: false,
+      allowNull: true,
       defaultValue: 'Virtual',
       comment: 'Método de inspección recomendado para la orden'
     });

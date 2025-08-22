@@ -266,6 +266,7 @@ class InspectionOrderController extends BaseController {
                 marca: order.marca,
                 modelo: order.modelo,
                 producto: order.producto,
+                metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
                 InspectionOrderStatus: order.InspectionOrderStatus,
                 inspection_result: order.inspection_result,
                 callLogs: order.callLogs,

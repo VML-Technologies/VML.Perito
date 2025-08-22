@@ -146,6 +146,12 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         type: DataTypes.STRING(50),
         allowNull: true,
     },
+    metodo_inspeccion_recomendado: {
+        type: DataTypes.ENUM('Virtual', 'Presencial', 'A Domicilio'),
+        allowNull: true,
+        defaultValue: 'Virtual',
+        comment: 'Método de inspección recomendado para la orden'
+    },
     cod_fasecolda: {
         type: DataTypes.STRING(8),
         allowNull: false,
