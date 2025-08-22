@@ -1,0 +1,436 @@
+---
+description: Sistema completo de WebSockets de VML.Perito, incluyendo integración con Socket.IO, autenticación JWT, salas personalizadas por usuario y rol, eventos específicos del contact center (orderAssigned, orderRemoved, appointmentScheduled, orderStatusChanged), integración frontend con hooks personalizados, indicadores de estado de conexión, debugging detallado, seguridad con rate limiting, y optimización de rendimiento.
+alwaysApply: false
+---
+
+# Sistema de WebSockets - VML.Perito
+
+## Arquitectura del Sistema
+
+### Componentes Principales
+
+- [apps/server/websocket/index.js](mdc:apps/server/websocket/index.js) - Sistema principal y punto de entrada
+- [apps/server/websocket/socketManager.js](mdc:apps/server/websocket/socketManager.js) - Gestor de conexiones y autenticación
+- [apps/server/websocket/notificationHandler.js](mdc:apps/server/websocket/notificationHandler.js) - Sistema de notificaciones
+- [apps/server/websocket/realtimeHandler.js](mdc:apps/server/websocket/realtimeHandler.js) - Actualizaciones en tiempo real
+
+### Integración en Servidor
+
+```javascript
+// En apps/server/index.js
+import webSocketSystem from './websocket/index.js';
+
+// Inicialización automática
+await webSocketSystem.initialize(server);
+```
+
+## Autenticación y Seguridad
+
+### 1. Autenticación JWT Obligatoria
+
+```javascript
+// Cliente debe enviar token JWT
+const socket = io('http://192.168.20.6:3000', {
+  auth: {
+    token: 'jwt_token_aqui',
+  },
+});
+```
+
+### 2. Verificación Automática de Permisos
+
+```javascript
+// En eventos del servidor - verificación automática
+socket.userPermissions; // Array de permisos del usuario
+socket.userRoles; // Array de roles del usuario
+socket.user; // Objeto completo del usuario
+```
+
+### 3. Salas Automáticas por Roles
+
+- `user_${userId}` - Sala personal del usuario
+- `role_${roleName}` - Sala por rol (ej: `role_super_admin`)
+- `agent_${agentId}` - Sala específica del agente
+- `coordinator` - Sala de coordinadores
+
+## Sistema de Notificaciones
+
+### Tipos de Notificaciones Predefinidos
+
+- `system` - Notificaciones del sistema
+- `user` - Relacionadas con usuarios
+- `security` - Alertas de seguridad
+- `document` - Documentos
+- `rbac` - Roles y permisos
+- `order` - Órdenes de inspección
+- `appointment` - Agendamientos
+- `call` - Llamadas del contact center
+
+### Patrones de Uso en Backend
+
+#### 1. Enviar a Usuario Específico
+
+```javascript
+import webSocketSystem from './websocket/index.js';
+
+await webSocketSystem.sendNotification(userId, {
+  type: 'user',
+  title: 'Perfil actualizado',
+  message: 'Tu información ha sido actualizada.',
+  priority: 'normal', // low, normal, high, urgent
+});
+```
+
+#### 2. Enviar a Rol Específico
+
+```javascript
+await webSocketSystem.sendNotificationToRole('super_admin', {
+  type: 'system',
+  title: 'Nuevo usuario',
+  message: 'Se ha registrado un nuevo usuario.',
+  priority: 'normal',
+});
+```
+
+#### 3. Broadcast a Todos
+
+```javascript
+await webSocketSystem.broadcastNotification({
+  type: 'system',
+  title: 'Mantenimiento programado',
+  message: 'El sistema estará en mantenimiento.',
+  priority: 'high',
+});
+```
+
+## Eventos del Contact Center
+
+### Eventos de Asignación de Órdenes
+
+#### 1. Orden Asignada a Agente
+
+```javascript
+// En coordinadorContactoController.js
+const handleOrderAssigned = (order, agentId) => {
+  // Notificar al agente
+  webSocketSystem.sendNotificationToUser(agentId, {
+    type: 'order',
+    title: 'Nueva Orden Asignada',
+    message: `Orden ${order.numero} asignada para contacto`,
+    data: { order, type: 'asignacion' },
+  });
+
+  // Emitir evento personalizado
+  webSocketSystem.emitToUser(agentId, 'orderAssigned', {
+    order,
+    message: 'Nueva orden asignada',
+    type: 'asignacion_orden',
+  });
+};
+```
+
+#### 2. Orden Removida de Agente
+
+```javascript
+const handleOrderRemoved = (order, previousAgentId) => {
+  // Notificar al agente anterior
+  webSocketSystem.sendNotificationToUser(previousAgentId, {
+    type: 'order',
+    title: 'Orden Removida',
+    message: `Orden ${order.numero} removida de tu lista`,
+    data: { order, type: 'remocion' },
+  });
+
+  // Emitir evento personalizado
+  webSocketSystem.emitToUser(previousAgentId, 'orderRemoved', {
+    order,
+    message: 'Orden removida',
+    type: 'remocion_orden',
+  });
+};
+```
+
+### Eventos de Agendamiento
+
+#### 1. Cita Agendada
+
+```javascript
+// En scheduleController.js
+const handleAppointmentScheduled = (appointment) => {
+  // Notificar al agente
+  webSocketSystem.sendNotificationToUser(appointment.agent_id, {
+    type: 'appointment',
+    title: 'Cita Agendada',
+    message: `Cita agendada para ${appointment.scheduled_date}`,
+    data: { appointment },
+  });
+
+  // Emitir evento de actualización
+  webSocketSystem.emitToRole('agente_contacto', 'appointmentScheduled', {
+    appointment,
+    message: 'Nueva cita agendada',
+  });
+};
+```
+
+#### 2. Cambio de Estado de Orden
+
+```javascript
+const handleOrderStatusChange = (order, newStatus) => {
+  // Notificar al coordinador
+  webSocketSystem.sendNotificationToRole('coordinador_contacto', {
+    type: 'order',
+    title: 'Estado de Orden Cambiado',
+    message: `Orden ${order.numero} cambió a ${newStatus}`,
+    data: { order, newStatus },
+  });
+
+  // Emitir evento de actualización
+  webSocketSystem.emitToRole('coordinador_contacto', 'orderStatusChanged', {
+    order,
+    newStatus,
+    message: 'Estado de orden actualizado',
+  });
+};
+```
+
+## Frontend Integration
+
+### Hook de WebSocket
+
+```javascript
+// use-websocket.js
+import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+
+export const useWebSocket = () => {
+  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const newSocket = io('http://192.168.20.6:3000', {
+      auth: { token },
+    });
+
+    newSocket.on('connect', () => {
+      setIsConnected(true);
+      console.log('WebSocket conectado');
+    });
+
+    newSocket.on('disconnect', () => {
+      setIsConnected(false);
+      console.log('WebSocket desconectado');
+    });
+
+    setSocket(newSocket);
+
+    return () => newSocket.close();
+  }, []);
+
+  return { socket, isConnected };
+};
+```
+
+### Event Listeners en Componentes
+
+```javascript
+// En AgenteContacto.jsx
+useEffect(() => {
+  const handleOrderAssigned = (event) => {
+    const { order, message, type } = event.detail;
+
+    // Mostrar notificación
+    const notificationMessage =
+      type === 'reasignacion_orden'
+        ? `¡Orden reasignada! ${order?.numero} - Actualizando lista...`
+        : `¡Nueva orden asignada! ${order?.numero} - Actualizando lista...`;
+
+    showToast(notificationMessage, 'success', 4000);
+    loadOrders(); // Actualizar lista
+  };
+
+  const handleOrderRemoved = (event) => {
+    const { order } = event.detail;
+    showToast(`⚠️ Orden ${order?.numero} removida - Actualizando lista...`, 'warning', 4000);
+    loadOrders(); // Actualizar lista
+  };
+
+  window.addEventListener('orderAssigned', handleOrderAssigned);
+  window.addEventListener('orderRemoved', handleOrderRemoved);
+
+  return () => {
+    window.removeEventListener('orderAssigned', handleOrderAssigned);
+    window.removeEventListener('orderRemoved', handleOrderRemoved);
+  };
+}, []);
+```
+
+### Indicador de Estado de Conexión
+
+```javascript
+// websocket-status.jsx
+const WebSocketStatus = () => {
+  const { isConnected } = useWebSocket();
+
+  return (
+    <div
+      className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+        isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+      }`}
+    >
+      <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+      <span>{isConnected ? 'Conectado' : 'Desconectado'}</span>
+    </div>
+  );
+};
+```
+
+## Eventos del Sistema
+
+### Eventos Automatizados
+
+1. **orderAssigned** - Orden asignada a agente
+2. **orderRemoved** - Orden removida de agente
+3. **orderStatusChanged** - Cambio de estado de orden
+4. **appointmentScheduled** - Cita agendada
+5. **appointmentCancelled** - Cita cancelada
+6. **callLogged** - Llamada registrada
+7. **notificationCreated** - Nueva notificación del sistema
+
+### Eventos de Usuario
+
+1. **userLogin** - Usuario conectado
+2. **userLogout** - Usuario desconectado
+3. **userStatusChange** - Cambio de estado de usuario
+4. **permissionUpdate** - Actualización de permisos
+
+### Eventos de Sistema
+
+1. **systemMaintenance** - Mantenimiento del sistema
+2. **systemError** - Error del sistema
+3. **systemNotification** - Notificación general del sistema
+
+## Configuración y Debugging
+
+### Configuración del Cliente
+
+```javascript
+// Configuración recomendada
+const socket = io('http://192.168.20.6:3000', {
+  auth: {
+    token: localStorage.getItem('authToken'),
+  },
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 20000,
+});
+```
+
+### Debugging
+
+```javascript
+// Habilitar logs de debug
+socket.on('connect_error', (error) => {
+  console.error('Error de conexión:', error);
+});
+
+socket.on('error', (error) => {
+  console.error('Error de socket:', error);
+});
+
+// Logs de eventos
+socket.onAny((eventName, ...args) => {
+  console.log(`Evento recibido: ${eventName}`, args);
+});
+```
+
+### Manejo de Reconexión
+
+```javascript
+socket.on('disconnect', (reason) => {
+  console.log('Desconectado:', reason);
+
+  if (reason === 'io server disconnect') {
+    // Reconexión manual requerida
+    socket.connect();
+  }
+});
+
+socket.on('reconnect', (attemptNumber) => {
+  console.log('Reconectado después de', attemptNumber, 'intentos');
+});
+```
+
+## Seguridad y Rate Limiting
+
+### Rate Limiting por Evento
+
+```javascript
+// Configuración en el servidor
+const rateLimiter = {
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 eventos por ventana
+};
+```
+
+### Validación de Eventos
+
+```javascript
+// Validar datos antes de emitir
+const validateEventData = (eventName, data) => {
+  const validators = {
+    orderAssigned: (data) => data.order && data.agent_id,
+    appointmentScheduled: (data) => data.appointment && data.appointment.id,
+  };
+
+  const validator = validators[eventName];
+  return validator ? validator(data) : true;
+};
+```
+
+## Performance y Optimización
+
+### Optimización de Mensajes
+
+```javascript
+// Comprimir mensajes grandes
+const compressMessage = (message) => {
+  if (message.length > 1024) {
+    return JSON.stringify({
+      compressed: true,
+      data: message,
+    });
+  }
+  return message;
+};
+```
+
+### Gestión de Conexiones
+
+```javascript
+// Limpiar conexiones inactivas
+setInterval(() => {
+  const activeConnections = Object.keys(socketManager.getActiveConnections());
+  console.log('Conexiones activas:', activeConnections.length);
+}, 60000);
+```
+
+- ✅ Salas personalizadas
+- ✅ Suscripción a canales
+- ✅ Usuarios conectados
+- ✅ Estadísticas del sistema
+
+## 📚 Referencias Relacionadas
+
+- [**Sistema de Notificaciones**](./Notificaciones.md) - Integración con notificaciones
+- [**Patrones Backend**](./backend-development-patterns.md) - Patrones de desarrollo
+- [**API Controllers**](./api-controllers.md) - Controladores API
+- [**Sistema Principal**](./vml-perito-system.md) - Arquitectura del sistema
+
+---
+
+**Última actualización**: Enero 2025  
+**Estado**: ✅ Implementado

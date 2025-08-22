@@ -14,6 +14,7 @@
 10. [API y Endpoints](#api-y-endpoints)
 11. [Configuración y Despliegue](#configuración-y-despliegue)
 12. [Monitoreo y Logs](#monitoreo-y-logs)
+13. [Integración con Webhooks](#integración-con-webhooks)
 
 ## Descripción General
 
@@ -558,10 +559,186 @@ El sistema incluye credenciales de prueba para todos los roles:
 | **Coordinador** | `coordinador@vmlperito.com` | `coordinador123` | Gestión de agentes |
 | **Agente Contacto** | `agente@vmlperito.com` | `agente123` | Gestión de llamadas |
 
-### Documentación Relacionada
+## Tabla de Notificaciones por Evento
 
-- [**Resumen Ejecutivo**](./resumen_notificaciones.md) - Resumen del sistema
-- [**Flujo de Notificaciones**](./notificaciones_flujo.md) - Flujo detallado
-- [**Estándares**](./notification_standards.md) - Estándares del sistema
-- [**Condiciones**](./notification_conditions_reference.md) - Sistema de condiciones
+### 📋 Notificaciones al Crear Orden de Inspección
+
+| **Evento** | **Tipo de Notificación** | **Destinatario** | **Canal** | **Descripción** | **Plantilla** |
+|------------|--------------------------|------------------|-----------|-----------------|---------------|
+| `inspection_order.created` | `order_created_commercial_email` | Usuario Comercial | Email | Notificación al comercial que creó la orden | "Orden de Inspección Creada - {{inspection_order.numero}}" |
+| `inspection_order.created` | `order_created_coordinator_email` | Coordinadores | Email | Notificación a coordinadores sobre nueva orden | "Nueva Orden de Inspección - {{inspection_order.numero}}" |
+| `inspection_order.created` | `order_created_commercial_inapp` | Usuario Comercial | In-App | Notificación interna al comercial | "Orden {{inspection_order.numero}} creada exitosamente" |
+| `inspection_order.created` | `order_created_coordinator_inapp` | Coordinadores | In-App | Notificación interna a coordinadores | "Nueva orden {{inspection_order.numero}} disponible" |
+| `inspection_order.created` | `order_created_commercial_push` | Usuario Comercial | Push | Notificación push al comercial | "Orden creada: {{inspection_order.numero}}" |
+| `inspection_order.created` | `order_created_coordinator_push` | Coordinadores | Push | Notificación push a coordinadores | "Nueva orden: {{inspection_order.numero}}" |
+
+### 📅 Notificaciones al Realizar Agendamiento
+
+| **Evento** | **Tipo de Notificación** | **Destinatario** | **Canal** | **Descripción** | **Plantilla** |
+|------------|--------------------------|------------------|-----------|-----------------|---------------|
+| `appointment.scheduled` | `appointment_confirmation_client_email` | Cliente | Email | Confirmación de cita al cliente | "Confirmación de Cita - {{appointment.date}}" |
+| `appointment.scheduled` | `appointment_confirmation_client_sms` | Cliente | SMS | Confirmación SMS al cliente | "Su cita está confirmada para {{appointment.date}} {{appointment.time}}" |
+| `appointment.scheduled` | `appointment_scheduled_commercial_inapp` | Usuario Comercial | In-App | Notificación al comercial sobre cita programada | "Cita programada para orden {{inspection_order.numero}}" |
+| `appointment.scheduled` | `appointment_scheduled_commercial_push` | Usuario Comercial | Push | Notificación push sobre cita programada | "Cita programada: {{inspection_order.numero}}" |
+| `appointment.scheduled` | `appointment_reminder_client_email` | Cliente | Email | Recordatorio de cita (1 hora antes) | "Recordatorio: Su cita es hoy a las {{appointment.time}}" |
+| `appointment.scheduled` | `appointment_reminder_client_sms` | Cliente | SMS | Recordatorio SMS (1 hora antes) | "Recordatorio: Su cita es hoy a las {{appointment.time}}" |
+
+### 🚀 Notificaciones al Iniciar Inspección Virtual
+
+| **Evento** | **Tipo de Notificación** | **Destinatario** | **Canal** | **Descripción** | **Plantilla** |
+|------------|--------------------------|------------------|-----------|-----------------|---------------|
+| `inspection_order.started` | `inspection_started_client_sms` | Cliente | SMS | SMS al cliente cuando inicia la inspección virtual | "¡Hola! SEGUROS MUNDIAL te informa que te estamos esperando para la inspección virtual, únete a la sesión con el siguiente enlace: {{appointment.session_url}}" |
+
+### 🔧 Configuración de Condiciones
+
+#### Para Órdenes de Inspección:
+```javascript
+// Condiciones para notificaciones comerciales
+{
+    "is_commercial_creator": true,  // Solo al comercial que creó la orden
+    "user_role": "comercial_mundial"
+}
+
+// Condiciones para coordinadores
+{
+    "user_role": "coordinador_contacto"
+}
+```
+
+#### Para Agendamientos:
+```javascript
+// Condiciones para clientes
+{
+    "for_clients": true  // Enviar al cliente de la orden
+}
+
+// Condiciones para comerciales
+{
+    "user_role": "comercial_mundial",
+    "is_commercial_creator": true  // Solo al comercial de la orden
+}
+```
+
+### 📊 Variables Disponibles
+
+#### Para Órdenes de Inspección:
+- `{{inspection_order.numero}}` - Número de la orden
+- `{{inspection_order.nombre_cliente}}` - Nombre del cliente
+- `{{inspection_order.correo_cliente}}` - Email del cliente
+- `{{inspection_order.celular_cliente}}` - Teléfono del cliente
+- `{{inspection_order.placa}}` - Placa del vehículo
+- `{{inspection_order.marca}}` - Marca del vehículo
+- `{{inspection_order.linea}}` - Línea del vehículo
+- `{{inspection_order.modelo}}` - Modelo del vehículo
+- `{{inspection_order.tipo_vehiculo}}` - Tipo de vehículo
+- `{{inspection_order.sede_name}}` - Nombre de la sede
+
+#### Para Agendamientos:
+- `{{appointment.date}}` - Fecha de la cita
+- `{{appointment.time}}` - Hora de la cita
+- `{{appointment.sede_name}}` - Nombre de la sede
+- `{{appointment.modality}}` - Modalidad de inspección
+- `{{inspection_order.numero}}` - Número de la orden
+- `{{inspection_order.nombre_cliente}}` - Nombre del cliente
+- `{{inspection_order.correo_cliente}}` - Email del cliente
+- `{{inspection_order.celular_cliente}}` - Teléfono del cliente
+
+#### Para Inspección Virtual Iniciada:
+- `{{inspection_order.numero}}` - Número de la orden
+- `{{inspection_order.nombre_cliente}}` - Nombre del cliente
+- `{{inspection_order.celular_cliente}}` - Teléfono del cliente
+- `{{appointment.session_id}}` - ID de la sesión virtual
+- `{{appointment.scheduled_date}}` - Fecha programada
+- `{{appointment.scheduled_time}}` - Hora programada
+- `{{appointment.session_url}}` - URL de la sesión virtual
+- `{{sede.name}}` - Nombre de la sede
+
+### 🎯 Flujo de Ejecución
+
+1. **Creación de Orden**:
+   - Se dispara evento `inspection_order.created`
+   - Sistema busca listeners configurados
+   - Evalúa condiciones para cada listener
+   - Envía notificaciones por canales configurados
+
+2. **Agendamiento**:
+   - Se dispara evento `appointment.scheduled`
+   - Sistema busca listeners configurados
+   - Evalúa condiciones para cada listener
+   - Envía confirmaciones inmediatas
+   - Programa recordatorios para 1 hora antes
+
+3. **Inicio de Inspección Virtual**:
+   - Se dispara evento `inspection_order.started`
+   - Sistema busca listeners configurados
+   - Evalúa condiciones para cada listener
+   - Envía SMS inmediato al cliente con enlace de sesión
+
+### 📱 Canales de Entrega
+
+| **Canal** | **Estado** | **Configuración** | **Notas** |
+|-----------|------------|-------------------|-----------|
+| **Email** | ✅ Activo | SMTP configurado | Usa variables de entorno |
+| **SMS** | ✅ Activo | Hablame.co API | Solo números colombianos |
+| **In-App** | ✅ Activo | WebSocket | Notificaciones en tiempo real |
+| **Push** | ⚠️ Pendiente | FCM no configurado | Requiere configuración |
+| **WhatsApp** | ⚠️ Pendiente | API no configurada | Requiere proveedor |
+
+## Integración con Webhooks
+
+### 🎯 Webhook: inspection_order.started
+
+El sistema de notificaciones se integra con webhooks externos para activar notificaciones automáticas cuando una inspección virtual inicia.
+
+#### **Configuración Automática**
+
+Cuando se recibe el webhook `inspection_order.started`:
+
+1. **Validación**: Se valida la autenticación HMAC y el payload
+2. **Procesamiento**: Se procesa el evento y se enriquece el contexto
+3. **Activación**: Se activa automáticamente el listener `inspection_started_client_sms`
+4. **Notificación**: Se envía SMS inmediato al cliente con el enlace de la sesión
+
+#### **Plantilla SMS Automática**
+
+```
+¡Hola! SEGUROS MUNDIAL te informa que te estamos esperando para la inspección virtual, únete a la sesión con el siguiente enlace: {{inspection_order.appointment.session_url}}
+```
+
+#### **Variables del Webhook**
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `{{inspection_order.numero}}` | Número de la orden | `INS-2024-001` |
+| `{{inspection_order.nombre_cliente}}` | Nombre del cliente | `Juan Pérez` |
+| `{{inspection_order.celular_cliente}}` | Teléfono del cliente | `3043425127` |
+| `{{inspection_order.appointment.session_url}}` | **URL de la sesión virtual** | `https://meet.google.com/abc-defg-hij` |
+| `{{sede.name}}` | Nombre de la sede | `CDA Distrital` |
+
+#### **Testing del Webhook**
+
+```bash
+# Generar comando curl con firma HMAC
+cd apps/server/scripts
+node generateHmac.js
+```
+
+#### **Respuesta Exitosa**
+
+```json
+{
+  "success": true,
+  "data": {
+    "event_id": "webhook_1755835195898",
+    "listeners_executed": 1,
+    "notifications_sent": 1,
+    "message": "Inspección virtual iniciada y notificaciones enviadas"
+  }
+}
+```
+
+### 📚 Documentación Relacionada
+
+- [**Webhook: inspection_order.started**](./webhook-inspection-order-started.md) - Documentación completa del webhook
+- [**Sistema de Webhooks**](./webhook-system.md) - Documentación general de webhooks
 - [**Plantillas**](./templates_reference.md) - Referencia de plantillas

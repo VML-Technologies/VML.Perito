@@ -348,6 +348,14 @@ Este documento describe todas las plantillas disponibles en el sistema, organiza
 - Texto legible en SMS
 - Iconos descriptivos
 
+## 📚 Referencias Relacionadas
+
+- [**Sistema de Notificaciones**](./Notificaciones.md) - Documentación completa del sistema
+- [**Webhook: inspection_order.started**](./webhook-inspection-order-started.md) - Integración con webhooks
+- [**Texto en Español**](./spanish-ui-text.md) - Guías de textos
+
 ---
 
+**Última actualización**: Enero 2025  
+**Estado**: ✅ Implementado  
 **🎯 Resultado:** Sistema completo de plantillas específicas, bien diseñadas y consistentes para todos los tipos de notificación.

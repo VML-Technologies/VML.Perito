@@ -1,0 +1,494 @@
+---
+description: Sistema completo de seeding de base de datos para VML.Perito, incluyendo el proceso de 12 pasos orquestado por seedAll.js, patrones para RBAC, usuarios, sedes reales, sistema de eventos, plantillas de notificación, canales de notificación, y troubleshooting para errores comunes de foreign keys, constraints y orden de ejecución.
+alwaysApply: false
+---
+
+# Database Seeding Patterns
+
+## Seeding Architecture
+
+The application uses multiple seeding scripts for different data types in a specific order:
+
+- **seedRBAC.js**: Roles, permissions, and role-permission assignments
+- **seedData.js**: Master data (departments, cities, companies, sedes)
+- **seedModalitySystem.js**: Vehicle types, sede types, inspection modalities
+- **seedUser.js**: Admin user creation
+- **seedInspectionData.js**: Inspection-related data (statuses, types, call statuses)
+- **seedRealSedes.js**: Real CDA locations with actual addresses
+- **seedSedeModalityAvailability.js**: Modality availability per sede
+- **seedUsers.js**: User accounts with role assignments
+- **seedEventSystem.js**: Notification events and automated triggers
+- **seedTemplates.js**: Notification templates
+- **seedChannels.js**: Notification channel configurations
+- **seedAll.js**: Orchestrates all seeding (12 steps total)
+
+## Complete Seeding Process
+
+### Main Seeder: [apps/server/scripts/seedAll.js](mdc:apps/server/scripts/seedAll.js)
+
+The main seeder orchestrates all seeding scripts in the correct order:
+
+```javascript
+// 12-step seeding process
+1. RBAC Setup (roles and permissions)
+2. Basic Data (departments, cities, companies, sedes)
+3. Modality System (vehicle types, sede types, modalities)
+4. Admin User Creation
+5. Inspection Data (statuses, types, call statuses)
+6. Real Sedes (actual CDA locations)
+7. Modality Availability (per sede configuration)
+8. Users with Roles (contact center agents, coordinators)
+9. Event System (notification events and triggers)
+10. Templates (notification templates)
+11. Channels (notification channel configurations)
+12. Finalization and cleanup
+```
+
+### Command to Run Complete Seeding
+
+```bash
+cd apps/server
+node scripts/seedAll.js
+```
+
+## Common Seeding Issues and Solutions
+
+### 1. Environment File Path Issues
+
+**Problem**: Scripts in subdirectories can't find .env file
+
+```javascript
+// ❌ This fails from /scripts subdirectory
+require('dotenv').config();
+```
+
+**Solution**: Use path.join to locate .env correctly
+
+```javascript
+// ✅ Correct approach
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
+```
+
+### 2. ES Module vs CommonJS
+
+**Problem**: Package.json has `"type": "module"` but scripts use require()
+
+```javascript
+// ❌ This fails with ES modules
+const { sequelize } = require('./models');
+```
+
+**Solution**: Use ES module imports
+
+```javascript
+// ✅ Correct ES module syntax
+import sequelize from '../config/database.js';
+import { User, Role } from '../models/index.js';
+```
+
+### 3. Database Connection Errors
+
+**Problem**: ConnectionRefusedError or ETIMEDOUT
+
+```javascript
+// Common connection issues:
+// - MySQL server not running
+// - Incorrect credentials
+// - Network timeouts
+```
+
+**Solution**: Verify connection and add error handling
+
+```javascript
+try {
+  await sequelize.authenticate();
+  console.log('✅ Database connection established');
+} catch (error) {
+  console.error('❌ Database connection failed:', error.message);
+  process.exit(1);
+}
+```
+
+## Seeding Script Pattern
+
+### Standard Script Structure
+
+```javascript
+import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sequelize from '../config/database.js';
+import { Model1, Model2 } from '../models/index.js';
+
+// Fix .env path for subdirectory scripts
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+async function seedFunction() {
+  try {
+    console.log('🌱 Starting seeding process...');
+
+    // Connect to database
+    await sequelize.authenticate();
+    console.log('✅ Database connected');
+
+    // Sync models (optional)
+    await sequelize.sync();
+    console.log('✅ Models synchronized');
+
+    // Check if data already exists
+    const existingCount = await Model1.count();
+    if (existingCount > 0) {
+      console.log('📊 Data already exists, skipping...');
+      return;
+    }
+
+    // Seed data
+    const seedData = [
+      { name: 'Item 1', description: 'Description 1' },
+      { name: 'Item 2', description: 'Description 2' },
+    ];
+
+    await Model1.bulkCreate(seedData);
+    console.log(`✅ Created ${seedData.length} records`);
+  } catch (error) {
+    console.error('❌ Seeding failed:', error);
+    throw error;
+  } finally {
+    await sequelize.close();
+    console.log('🔌 Database connection closed');
+  }
+}
+
+// Execute if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedFunction();
+}
+
+export default seedFunction;
+```
+
+## RBAC Seeding Pattern
+
+### Role and Permission Creation
+
+```javascript
+// Create roles first
+const roles = [
+  { name: 'super_admin', description: 'Super Administrator' },
+  { name: 'admin', description: 'Administrator' },
+  { name: 'comercial_mundial', description: 'Global Commercial' },
+  { name: 'agente_contacto', description: 'Contact Agent' },
+  { name: 'coordinador_contacto', description: 'Contact Coordinator' },
+  { name: 'manager', description: 'Manager' },
+  { name: 'user', description: 'Basic User' },
+];
+
+const createdRoles = await Role.bulkCreate(roles, {
+  updateOnDuplicate: ['description'],
+});
+
+// Create permissions
+const permissions = [
+  { name: 'coordinador_contacto.read', description: 'View coordinator dashboard' },
+  { name: 'coordinador_contacto.assign', description: 'Assign agents to orders' },
+  { name: 'agente_contacto.read', description: 'View assigned orders' },
+  { name: 'agente_contacto.call', description: 'Log calls' },
+  { name: 'agente_contacto.appointment', description: 'Schedule appointments' },
+];
+
+const createdPermissions = await Permission.bulkCreate(permissions, {
+  updateOnDuplicate: ['description'],
+});
+
+// Assign permissions to roles
+const rolePermissions = [
+  { role_name: 'coordinador_contacto', permission_name: 'coordinador_contacto.read' },
+  { role_name: 'coordinador_contacto', permission_name: 'coordinador_contacto.assign' },
+  { role_name: 'agente_contacto', permission_name: 'agente_contacto.read' },
+  { role_name: 'agente_contacto', permission_name: 'agente_contacto.call' },
+  { role_name: 'agente_contacto', permission_name: 'agente_contacto.appointment' },
+];
+
+for (const rp of rolePermissions) {
+  const role = await Role.findOne({ where: { name: rp.role_name } });
+  const permission = await Permission.findOne({ where: { name: rp.permission_name } });
+
+  if (role && permission) {
+    await RolePermission.findOrCreate({
+      where: { role_id: role.id, permission_id: permission.id },
+    });
+  }
+}
+```
+
+## User Seeding Pattern
+
+### User Creation with Role Assignment
+
+```javascript
+const users = [
+  {
+    name: 'Ana Coordinadora',
+    email: 'coordinadora@vmlperito.com',
+    password: '123456',
+    roles: ['coordinador_contacto'],
+  },
+  {
+    name: 'Laura Agente',
+    email: 'agente1@vmlperito.com',
+    password: '123456',
+    roles: ['agente_contacto'],
+  },
+  {
+    name: 'Carlos Comercial',
+    email: 'comercial@vmlperito.com',
+    password: '123456',
+    roles: ['comercial_mundial'],
+  },
+];
+
+for (const userData of users) {
+  // Create user
+  const [user, created] = await User.findOrCreate({
+    where: { email: userData.email },
+    defaults: {
+      name: userData.name,
+      email: userData.email,
+      password: await bcrypt.hash(userData.password, 10),
+      is_active: true,
+    },
+  });
+
+  if (created) {
+    console.log(`✅ Created user: ${user.name}`);
+  }
+
+  // Assign roles
+  for (const roleName of userData.roles) {
+    const role = await Role.findOne({ where: { name: roleName } });
+    if (role) {
+      await UserRole.findOrCreate({
+        where: { user_id: user.id, role_id: role.id },
+      });
+    }
+  }
+}
+```
+
+## Real Sede Seeding Pattern
+
+### CDA Location Creation
+
+```javascript
+const realSedes = [
+  {
+    name: 'CDA 197',
+    address: 'AUTOPISTA NORTE No. 197 -75',
+    city_name: 'Bogotá',
+    department_name: 'Bogotá D.C.',
+    sede_type_name: 'CDA',
+    vehicle_types: ['Livianos', 'Pesados', 'Motos'],
+  },
+  {
+    name: 'CDA Distrital',
+    address: 'Carrera 36 # 19 – 21',
+    city_name: 'Bogotá',
+    department_name: 'Bogotá D.C.',
+    sede_type_name: 'CDA',
+    vehicle_types: ['Livianos'],
+  },
+];
+
+for (const sedeData of realSedes) {
+  // Find city and department
+  const department = await Department.findOne({
+    where: { name: sedeData.department_name },
+  });
+  const city = await City.findOne({
+    where: { name: sedeData.city_name, department_id: department.id },
+  });
+  const sedeType = await SedeType.findOne({
+    where: { name: sedeData.sede_type_name },
+  });
+
+  // Create sede
+  const sede = await Sede.findOrCreate({
+    where: { name: sedeData.name },
+    defaults: {
+      name: sedeData.name,
+      address: sedeData.address,
+      city_id: city.id,
+      sede_type_id: sedeType.id,
+      is_active: true,
+    },
+  });
+
+  // Assign vehicle types
+  for (const vehicleTypeName of sedeData.vehicle_types) {
+    const vehicleType = await VehicleType.findOne({
+      where: { name: vehicleTypeName },
+    });
+    if (vehicleType) {
+      await SedeVehicleType.findOrCreate({
+        where: { sede_id: sede[0].id, vehicle_type_id: vehicleType.id },
+      });
+    }
+  }
+}
+```
+
+## Event System Seeding Pattern
+
+### Notification Events Creation
+
+```javascript
+const events = [
+  {
+    name: 'user.created',
+    description: 'Usuario creado',
+    category: 'users',
+    is_active: true,
+  },
+  {
+    name: 'inspection_order.created',
+    description: 'Orden de inspección creada',
+    category: 'orders',
+    is_active: true,
+  },
+  {
+    name: 'appointment.scheduled',
+    description: 'Cita agendada',
+    category: 'appointments',
+    is_active: true,
+  },
+  {
+    name: 'call_logged',
+    description: 'Llamada registrada',
+    category: 'calls',
+    is_active: true,
+  },
+];
+
+await Event.bulkCreate(events, {
+  updateOnDuplicate: ['description', 'category', 'is_active'],
+});
+```
+
+## Template Seeding Pattern
+
+### Notification Templates Creation
+
+```javascript
+const templates = [
+  {
+    name: 'Orden Creada',
+    subject: 'Nueva orden de inspección creada',
+    template: 'Se ha creado una nueva orden de inspección para el vehículo {{vehicle_plate}}',
+    event_name: 'inspection_order.created',
+    is_active: true,
+  },
+  {
+    name: 'Cita Agendada',
+    subject: 'Cita de inspección agendada',
+    template:
+      'Su cita de inspección ha sido agendada para el {{appointment_date}} a las {{appointment_time}}',
+    event_name: 'appointment.scheduled',
+    is_active: true,
+  },
+];
+
+for (const templateData of templates) {
+  const event = await Event.findOne({ where: { name: templateData.event_name } });
+  if (event) {
+    await NotificationTemplate.findOrCreate({
+      where: { name: templateData.name },
+      defaults: {
+        ...templateData,
+        event_id: event.id,
+      },
+    });
+  }
+}
+```
+
+## Running Seeds
+
+### Command Line Usage
+
+```bash
+# Run all seeds (recommended)
+node scripts/seedAll.js
+
+# Run specific seed
+node scripts/seedRBAC.js
+node scripts/seedUsers.js
+node scripts/seedRealSedes.js
+
+# Run from package.json scripts
+npm run seed
+npm run seed:rbac
+```
+
+## Troubleshooting Common Issues
+
+### 1. Foreign Key Constraints
+
+```javascript
+// Ensure parent records exist before creating children
+const department = await Department.findOne({ where: { name: 'Bogotá D.C.' } });
+if (!department) {
+  throw new Error('Department not found - run seedData first');
+}
+```
+
+### 2. Unique Constraint Violations
+
+```javascript
+// Use findOrCreate instead of create for unique fields
+const [user, created] = await User.findOrCreate({
+  where: { email: userData.email },
+  defaults: userData,
+});
+```
+
+### 3. Model Sync Issues
+
+```javascript
+// Force sync in development only
+if (process.env.NODE_ENV === 'development') {
+  await sequelize.sync({ force: true });
+}
+```
+
+### 4. Seeding Order Dependencies
+
+Always run seeds in the correct order as defined in `seedAll.js`:
+
+1. RBAC (roles and permissions)
+2. Basic data (departments, cities)
+3. Modality system (vehicle types, sede types)
+4. Admin user
+5. Inspection data
+6. Real sedes
+7. Modality availability
+8. Users with roles
+9. Event system
+10. Templates
+11. Channels
+12. Finalization
+
+if (process.env.NODE_ENV === 'development') {
+await sequelize.sync({ force: true });
+}
+
+```
+
+```
