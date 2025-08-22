@@ -39,6 +39,10 @@ import TemplateVersion from './templateVersion.js';
 // Nuevos modelos para sistema de configuración de canales
 import ChannelConfig from './channelConfig.js';
 
+// Nuevos modelos para sistema de webhooks
+import WebhookApiKey from './webhookApiKey.js';
+import WebhookLog from './webhookLog.js';
+
 // Nuevos modelos para consultas de placas
 import PlateQuery from './plateQuery.js';
 
@@ -577,7 +581,7 @@ User.hasMany(NotificationTemplate, {
 });
 NotificationTemplate.belongsTo(User, {
     foreignKey: 'created_by',
-    as: 'creator'
+    as: 'templateCreator'
 });
 
 // NotificationTemplate -> TemplateVersion (1:N) - Historial de versiones
@@ -597,7 +601,7 @@ User.hasMany(TemplateVersion, {
 });
 TemplateVersion.belongsTo(User, {
     foreignKey: 'created_by',
-    as: 'creator'
+    as: 'versionCreator'
 });
 
 // ===== RELACIONES SISTEMA DE CONFIGURACIÓN DE CANALES =====
@@ -610,6 +614,28 @@ User.hasMany(ChannelConfig, {
 ChannelConfig.belongsTo(User, {
     foreignKey: 'created_by',
     as: 'creator'
+});
+
+// ===== RELACIONES SISTEMA DE WEBHOOKS =====
+
+// User -> WebhookApiKey (1:N) - Usuario que creó la API key
+User.hasMany(WebhookApiKey, {
+    foreignKey: 'created_by',
+    as: 'createdWebhookApiKeys'
+});
+WebhookApiKey.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'webhookCreator'
+});
+
+// WebhookApiKey -> WebhookLog (1:N) - Logs de uso de la API key
+WebhookApiKey.hasMany(WebhookLog, {
+    foreignKey: 'api_key_id',
+    as: 'logs'
+});
+WebhookLog.belongsTo(WebhookApiKey, {
+    foreignKey: 'api_key_id',
+    as: 'webhookApiKey'
 });
 
 // ===== RELACIONES SISTEMA DE CONSULTAS DE PLACAS =====
@@ -660,6 +686,9 @@ export {
     TemplateVersion,
     // Sistema de configuración de canales
     ChannelConfig,
+    // Sistema de webhooks
+    WebhookApiKey,
+    WebhookLog,
     // Sistema de consultas de placas
     PlateQuery
 }; 
