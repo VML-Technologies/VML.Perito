@@ -49,76 +49,20 @@ export const seedWebhooks = async () => {
         // Datos de prueba para API keys
         const webhookApiKeys = [
             {
-                name: 'Sistema CRM Comercial',
+                name: 'InspectYa',
                 api_key: generateApiKey(),
                 api_secret: generateApiSecret(),
-                application_name: 'crm-comercial',
+                application_name: 'InspectYa',
                 contact_email: 'admin@empresa.com',
                 allowed_events: [
-                    'inspection_order.created',
-                    'inspection_order.assigned',
-                    'inspection_order.started',
-                    'appointment.scheduled'
+                    'inspection_order.started'
                 ],
-                allowed_ips: ['192.168.1.100', '10.0.0.50', '192.168.20.6'],
-                rate_limit_per_minute: 100,
-                is_active: true,
-                expires_at: new Date('2025-12-31T23:59:59Z'),
-                created_by: createdBy
-            },
-            {
-                name: 'Sistema de Agendamiento',
-                api_key: generateApiKey(),
-                api_secret: generateApiSecret(),
-                application_name: 'sistema-agendamiento',
-                contact_email: 'agendamiento@empresa.com',
-                allowed_events: [
-                    'appointment.scheduled',
-                    'appointment.cancelled'
-                ],
-                allowed_ips: ['192.168.20.6'],
-                rate_limit_per_minute: 200,
-                is_active: true,
-                expires_at: null,
-                created_by: createdBy
-            },
-            {
-                name: 'Integración Externa',
-                api_key: generateApiKey(),
-                api_secret: generateApiSecret(),
-                application_name: 'integracion-externa',
-                contact_email: 'integracion@empresa.com',
-                allowed_events: [
-                    'inspection_order.created',
-                    'inspection_order.assigned',
-                    'inspection_order.started',
-                    'inspection_order.completed',
-                    'appointment.scheduled',
-                    'appointment.cancelled'
-                ],
-                allowed_ips: ['203.0.113.0/24','192.168.20.6'],
-                rate_limit_per_minute: 50,
-                is_active: true,
-                expires_at: new Date('2024-06-30T23:59:59Z'),
-                created_by: createdBy
-            },
-            {
-                name: 'API de Pruebas',
-                api_key: generateApiKey(),
-                api_secret: generateApiSecret(),
-                application_name: 'api-pruebas',
-                contact_email: 'pruebas@vmlperito.com',
-                allowed_events: [
-                    'inspection_order.created',
-                    'inspection_order.started',
-                    'appointment.scheduled'
-                ],
-                allowed_ips: ['192.168.20.6'],
+                allowed_ips: ['*'],
                 rate_limit_per_minute: 1000,
                 is_active: true,
                 expires_at: null,
                 created_by: createdBy
-            }
+            },
         ];
 
         // Crear API keys

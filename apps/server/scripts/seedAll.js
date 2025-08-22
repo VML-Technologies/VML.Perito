@@ -110,13 +110,6 @@ const seedAll = async () => {
         await addInspectionOrderStarted();
         console.log('✅ Evento inspection_order.started configurado correctamente.');
 
-        // 15. Ejecutar migraciones pendientes
-        console.log('\n🔧 Paso 15: Ejecutando migraciones pendientes...');
-        const { default: MigrationManager } = await import('../migrations/migrationManager.js');
-        const migrationManager = new MigrationManager();
-        await migrationManager.migrate();
-        console.log('✅ Migraciones ejecutadas correctamente.');
-
         console.log('\n🎉 ¡Proceso de seed completado exitosamente!');
         console.log('\n📋 Resumen de lo que se creó:');
         console.log('   - Roles: super_admin, admin, manager, user, comercial_mundial, agente_contacto, coordinador_contacto');
