@@ -41,7 +41,7 @@ const seedRealSedes = async () => {
         const domicilioModality = await InspectionModality.findOne({ where: { code: 'DOMICILIO' } });
         const virtualModality = await InspectionModality.findOne({ where: { code: 'VIRTUAL' } });
 
-        // 3. Obtener ciudades
+        // 3. Obtener ciudades existentes
         const bogota = await City.findOne({
             where: { name: 'Bogotá' },
             include: [{ model: Department, as: 'department', where: { name: 'Cundinamarca' } }]
@@ -52,12 +52,74 @@ const seedRealSedes = async () => {
             include: [{ model: Department, as: 'department', where: { name: 'Valle del Cauca' } }]
         });
 
+        const pasto = await City.findOne({
+            where: { name: 'Pasto' },
+            include: [{ model: Department, as: 'department', where: { name: 'Nariño' } }]
+        });
+
+        const bucaramanga = await City.findOne({
+            where: { name: 'Bucaramanga' },
+            include: [{ model: Department, as: 'department', where: { name: 'Santander' } }]
+        });
+
+        const ibague = await City.findOne({
+            where: { name: 'Ibagué' },
+            include: [{ model: Department, as: 'department', where: { name: 'Tolima' } }]
+        });
+
+        const manizales = await City.findOne({
+            where: { name: 'Manizales' },
+            include: [{ model: Department, as: 'department', where: { name: 'Caldas' } }]
+        });
+
+        const armenia = await City.findOne({
+            where: { name: 'Armenia' },
+            include: [{ model: Department, as: 'department', where: { name: 'Risaralda' } }]
+        });
+
+        const valledupar = await City.findOne({
+            where: { name: 'Valledupar' },
+            include: [{ model: Department, as: 'department', where: { name: 'Cesar' } }]
+        });
+
+        const villavicencio = await City.findOne({
+            where: { name: 'Villavicencio' },
+            include: [{ model: Department, as: 'department', where: { name: 'Meta' } }]
+        });
+
+        // 4. Crear ciudades que faltan
+        console.log('🏙️ Creando ciudades adicionales...');
+        
+        const [barrancabermeja] = await City.findOrCreate({
+            where: { name: 'Barrancabermeja' },
+            defaults: {
+                name: 'Barrancabermeja',
+                department_id: 5 // Santander
+            }
+        });
+
+        const [cucuta] = await City.findOrCreate({
+            where: { name: 'Cúcuta' },
+            defaults: {
+                name: 'Cúcuta',
+                department_id: 5 // Santander (temporalmente)
+            }
+        });
+
+        const [duitama] = await City.findOrCreate({
+            where: { name: 'Duitama' },
+            defaults: {
+                name: 'Duitama',
+                department_id: 16 // Boyacá
+            }
+        });
+
         if (!bogota || !cali) {
             console.log('❌ No se encontraron las ciudades necesarias');
             return;
         }
 
-        // 4. Crear sedes CDA en Bogotá
+        // 5. Crear sedes CDA en Bogotá
         const sedesBogota = [
             {
                 name: 'CDA 197',
@@ -127,7 +189,7 @@ const seedRealSedes = async () => {
             }
         ];
 
-        // 5. Crear sedes CDA en Cali
+        // 6. Crear sedes CDA en Cali
         const sedesCali = [
             {
                 name: 'CDA Cali Norte',
@@ -191,7 +253,7 @@ const seedRealSedes = async () => {
             }
         ];
 
-        // 6. Crear sedes administrativas
+        // 7. Crear sedes administrativas
         const sedesAdministrativas = [
             {
                 name: 'Sede Comercial Bogotá',
@@ -217,8 +279,89 @@ const seedRealSedes = async () => {
             }
         ];
 
-        // 7. Crear todas las sedes
-        const todasLasSedes = [...sedesBogota, ...sedesCali, ...sedesAdministrativas];
+        // 8. Crear sedes adicionales que faltan
+        const sedesAdicionales = [
+            {
+                name: 'CEN BARRANCABERMEJA',
+                address: 'Carrera 15 # 25-45',
+                phone: '607-234-5006',
+                email: 'barrancabermeja@previcar.com',
+                city_id: barrancabermeja.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'AGENCIA BUCARAMANGA',
+                address: 'Calle 35 # 15-23',
+                phone: '607-234-5007',
+                email: 'bucaramanga@previcar.com',
+                city_id: bucaramanga.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'CEN CUCUTA',
+                address: 'Avenida 5 # 12-34',
+                phone: '607-234-5008',
+                email: 'cucuta@previcar.com',
+                city_id: cucuta.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'CEN MANIZALES',
+                address: 'Carrera 23 # 65-12',
+                phone: '606-234-5009',
+                email: 'manizales@previcar.com',
+                city_id: manizales.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'CEN DUITAMA',
+                address: 'Calle 15 # 23-45',
+                phone: '608-234-5010',
+                email: 'duitama@previcar.com',
+                city_id: duitama.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'CEN CENTRO',
+                address: 'Carrera 7 # 26-20',
+                phone: '601-234-5011',
+                email: 'centro@previcar.com',
+                city_id: bogota.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'CEN BOYACÁ Y CASANARE',
+                address: 'Calle 20 # 8-52',
+                phone: '608-234-5012',
+                email: 'boyaca@previcar.com',
+                city_id: bogota.id, // Temporalmente en Bogotá hasta tener ciudad específica
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            }
+        ];
+
+        // 9. Crear todas las sedes
+        const todasLasSedes = [...sedesBogota, ...sedesCali, ...sedesAdministrativas, ...sedesAdicionales];
 
         for (const sedeData of todasLasSedes) {
             // Crear sede
@@ -334,6 +477,7 @@ const seedRealSedes = async () => {
         console.log('   - CDAs: CDA 197, CDA Distrital, CDA PREVITAX (Bogotá)');
         console.log('   - CDAs: CDA Cali Norte, CDA Cali Sur (Cali)');
         console.log('   - Administrativas: Sede Comercial, Sede Soporte (Bogotá)');
+        console.log('   - Adicionales: CEN BARRANCABERMEJA, AGENCIA BUCARAMANGA, CEN CUCUTA, CEN MANIZALES, CEN DUITAMA, CEN CENTRO, CEN BOYACÁ Y CASANARE');
 
     } catch (error) {
         console.error('❌ Error seeding sedes reales:', error);

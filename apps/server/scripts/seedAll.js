@@ -56,7 +56,7 @@ const seedAll = async () => {
         // await seedInspectionData();
         // console.log('✅ Datos de inspección cargados correctamente.');
 
-        // // 7. Crear sedes reales con configuración completa
+        // 7. Crear sedes reales con configuración completa
         // console.log('\n🏢 Paso 6: Creando sedes reales...');
         // const { default: seedRealSedes } = await import('./seedRealSedes.js');
         // await seedRealSedes();

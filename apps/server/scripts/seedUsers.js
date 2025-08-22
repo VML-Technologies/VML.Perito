@@ -157,41 +157,7 @@ const createUsersWithRoles = async () => {
 
         // Crear usuarios con los nuevos roles
         const users = [
-            // Comercial Mundial
-            // Coordinador de Contact Center
-            
-  {
-    "userData": {
-      "sede_id": 1,
-      "identification": "23589377",
-      "name": "COVA MARCANO FLOREIVIS DEL VALLE",
-      "email": "floreivis.cova@holdingvml.com",
-      "phone": "3202699048",
-      "password": hashedPassword,
-      "is_active": true,
-      "notification_channel_in_app_enabled": true,
-      "notification_channel_sms_enabled": true,
-      "notification_channel_email_enabled": true,
-      "notification_channel_whatsapp_enabled": true
-    },
-    "roles": ["agente_contacto"]
-  },
-  {
-    "userData": {
-      "sede_id": 1,
-      "identification": "1000381352",
-      "name": "MARTINEZ MATEUS NATALIA",
-      "email": "natalia.martinez@holdingvml.com",
-      "phone": "3208628214",
-      "password": hashedPassword,
-      "is_active": true,
-      "notification_channel_in_app_enabled": true,
-      "notification_channel_sms_enabled": true,
-      "notification_channel_email_enabled": true,
-      "notification_channel_whatsapp_enabled": true
-    },
-    "roles": ["agente_contacto"]
-  },{
+            {
                 userData: {
                     sede_id: 1,
                     identification: 'COORD001',
@@ -207,8 +173,6 @@ const createUsersWithRoles = async () => {
                 },
                 roles: ['coordinador_contacto']
             },
-
-            // 5 Agentes de Contacto
             {
                 userData: {
                     sede_id: 1,
@@ -225,70 +189,25 @@ const createUsersWithRoles = async () => {
                 },
                 roles: ['agente_contacto']
             },
+
+            // Usuarios Comerciales Mundiales
             {
                 userData: {
-                    sede_id: 1,
-                    identification: 'AGENTE002',
-                    name: 'Laura Agente',
-                    email: 'agente_cc_2@vmltechnologies.com',
-                    phone: '3043425127',
+                    sede_id: 28,
+                    identification: '1130593777',
+                    name: 'Alejandra Marcela Gutierrez Zapata',
+                    email: 'cenamgutierrez@segurosmundial.com.co',
+                    phone: '3000000000',
                     password: hashedPassword,
                     is_active: true,
+                    intermediary_key: 'DIRECTO MUNDIAL',
                     notification_channel_in_app_enabled: true,
                     notification_channel_sms_enabled: true,
                     notification_channel_email_enabled: true,
                     notification_channel_whatsapp_enabled: true,
                 },
-                roles: ['agente_contacto']
+                roles: ['comercial_mundial']
             },
-            {
-                userData: {
-                    sede_id: 1,
-                    identification: 'AGENTE003',
-                    name: 'Roberto Agente',
-                    email: 'agente_cc_3@vmltechnologies.com',
-                    phone: '3043425127',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['agente_contacto']
-            },
-            {
-                userData: {
-                    sede_id: 1,
-                    identification: 'AGENTE004',
-                    name: 'Sofia Agente',
-                    email: 'agente_cc_4@vmltechnologies.com',
-                    phone: '3043425127',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['agente_contacto']
-            },
-            {
-                userData: {
-                    sede_id: 1,
-                    identification: 'AGENTE005',
-                    name: 'Diego Agente',
-                    email: 'agente_cc_5@vmltechnologies.com',
-                    phone: '3043425127',
-                    password: hashedPassword,
-                    is_active: true,
-                    notification_channel_in_app_enabled: true,
-                    notification_channel_sms_enabled: true,
-                    notification_channel_email_enabled: true,
-                    notification_channel_whatsapp_enabled: true,
-                },
-                roles: ['agente_contacto']
-            }
         ];
 
         let createdCount = 0;
