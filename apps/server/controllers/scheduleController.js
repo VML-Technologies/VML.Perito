@@ -8,6 +8,16 @@ import {
 } from '../models/index.js';
 import { Op } from 'sequelize';
 
+// Obtener la capacidad global máxima desde variables de entorno
+const MAX_GLOBAL_AVAILABILITY = parseInt(process.env.MAX_GLOBAL_AVAILABILITY_PER_INTERVAL) || 10;
+
+/**
+ * Controlador de agendamiento con capacidad global
+ * 
+ * IMPORTANTE: El sistema de cupos ahora es independiente de sedes y modalidades.
+ * Se usa MAX_GLOBAL_AVAILABILITY_PER_INTERVAL para limitar el número total
+ * de citas por intervalo de tiempo, sin importar la sede o modalidad.
+ */
 class ScheduleController {
     constructor() {
         // Bind methods to the instance to ensure 'this' context is maintained
@@ -92,7 +102,7 @@ class ScheduleController {
                             start_time: this.convertToLocalTime(template.start_time),
                             end_time: this.convertToLocalTime(template.end_time),
                             interval_minutes: template.interval_minutes,
-                            capacity_per_interval: template.capacity_per_interval
+                            capacity_per_interval: MAX_GLOBAL_AVAILABILITY // Mostrar capacidad global
                         },
                         slots: slots
                     };
@@ -133,11 +143,9 @@ class ScheduleController {
         const endMinutes = this.timeToMinutes(this.convertToLocalTime(template.end_time));
         const intervalMinutes = template.interval_minutes;
 
-        // Obtener citas existentes para esta fecha y plantilla
+        // Obtener citas existentes para esta fecha y hora específica (global, sin importar sede o modalidad)
         const existingAppointments = await Appointment.findAll({
             where: {
-                sede_id: template.sede_id,
-                inspection_modality_id: template.inspection_modality_id,
                 scheduled_date: date,
                 status: {
                     [Op.not]: 'CANCELADA'
@@ -150,20 +158,21 @@ class ScheduleController {
             const slotStart = this.minutesToTime(current);
             const slotEnd = this.minutesToTime(current + intervalMinutes);
 
-            // Contar citas existentes en este intervalo
+            // Contar citas existentes en este intervalo específico (global)
             const overlappingAppointments = existingAppointments.filter(apt => {
                 const aptStart = this.timeToMinutes(apt.scheduled_time);
                 return aptStart >= current && aptStart < (current + intervalMinutes);
             });
 
-            const availableCapacity = template.capacity_per_interval - overlappingAppointments.length;
+            // Usar la capacidad global máxima en lugar de la capacidad por plantilla
+            const availableCapacity = MAX_GLOBAL_AVAILABILITY - overlappingAppointments.length;
 
             if (availableCapacity > 0) {
                 slots.push({
                     start_time: slotStart,
                     end_time: slotEnd,
                     available_capacity: availableCapacity,
-                    total_capacity: template.capacity_per_interval,
+                    total_capacity: MAX_GLOBAL_AVAILABILITY,
                     occupied: overlappingAppointments.length
                 });
             }
@@ -241,14 +250,14 @@ class ScheduleController {
                     });
                 }
 
-                // Verificar capacidad disponible
+                // Verificar capacidad disponible (global)
                 const slots = await this.generateTimeSlots(template, scheduledDate);
                 const requestedSlot = slots.find(slot => slot.start_time == scheduledTime);
 
                 if (!requestedSlot || requestedSlot.available_capacity <= 0) {
                     return res.status(400).json({
                         success: false,
-                        message: 'El horario seleccionado no está disponible'
+                        message: 'El horario seleccionado no está disponible (cupo global agotado)'
                     });
                 }
             }
