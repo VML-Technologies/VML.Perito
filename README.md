@@ -1,8 +1,8 @@
-# VML.Perito - Sistema de Inspecciones de Asegurabilidad
+# Movilidad Mundial - Sistema de Inspecciones de Asegurabilidad
 
 ## 🎯 Descripción General
 
-VML.Perito es un sistema integral para la gestión de inspecciones de asegurabilidad vehicular, que incluye agendamiento avanzado, gestión de contact center, sistema de notificaciones multicanal, y administración completa de usuarios y permisos.
+Movilidad Mundial es un sistema integral para la gestión de inspecciones de asegurabilidad vehicular, que incluye agendamiento avanzado, gestión de contact center, sistema de notificaciones multicanal, y administración completa de usuarios y permisos.
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -17,7 +17,7 @@ VML.Perito es un sistema integral para la gestión de inspecciones de asegurabil
 ### **Estructura del Proyecto**
 
 ```
-VML.Perito/
+Movilidad Mundial/
 ├── apps/
 │   ├── server/          # Backend API
 │   └── web/             # Frontend React
@@ -107,7 +107,7 @@ VML.Perito/
 ```bash
 # 1. Clonar el repositorio
 git clone <repository-url>
-cd VML.Perito
+cd Movilidad Mundial
 
 # 2. Instalar dependencias
 npm install
@@ -282,7 +282,7 @@ npm run lint:fix         # Auto-fix de linting
 
 ## 📄 Licencia
 
-Este proyecto es propiedad de VML.Perito. Todos los derechos reservados.
+Este proyecto es propiedad de Movilidad Mundial. Todos los derechos reservados.
 
 ---
 

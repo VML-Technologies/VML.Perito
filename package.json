@@ -1,5 +1,5 @@
 {
-  "name": "VML.Perito",
+  "name": "MovilidadMundial",
   "private": true,
   "scripts": {
     "build": "turbo run build",
