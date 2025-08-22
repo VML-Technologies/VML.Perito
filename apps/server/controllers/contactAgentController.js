@@ -413,20 +413,20 @@ class ContactAgentController {
                 // enviar, fecha y hora, direccion de inspeccion, nombre del cliente, email del cliente, telefono del cliente y placa
                 const html = `
                     <p>Hola,</p>
-                    <p>Se genereo una nueva orden de inspeccion virtual.</p>
+                    <p>Se genereo una nueva orden de inspeccion a domicilio.</p>
                     <p>Detalles de la orden:</p>
                     <p>ID de la orden: ${fullAppointment.id}</p>
                     <p>Fecha: ${fullAppointment.scheduled_date}</p>
                     <p>Hora: ${fullAppointment.scheduled_time}</p>
                     <p>Direccion de inspeccion: ${fullAppointment.direccion_inspeccion}</p>
                     <p>Nombre del cliente: ${fullAppointment.inspectionOrder.nombre_cliente}</p>
-                    <p>Email del cliente: ${fullAppointment.inspectionOrder.email_cliente}</p>
-                    <p>Telefono del cliente: ${fullAppointment.inspectionOrder.telefono_cliente}</p>
+                    <p>Email del cliente: ${fullAppointment.inspectionOrder.correo_contacto}</p>
+                    <p>Telefono del cliente: ${fullAppointment.inspectionOrder.celular_contacto}</p>
                     <p>Placa: ${fullAppointment.inspectionOrder.placa}</p>
                 `;
                 const text = `
                     Hola,
-                    Se genereo una nueva orden de inspeccion virtual.
+                    Se genereo una nueva orden de inspeccion a domicilio.
                     Detalles de la orden:
                     ID de la orden: ${fullAppointment.id}
                     Fecha: ${fullAppointment.scheduled_date}
