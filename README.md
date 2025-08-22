@@ -60,42 +60,39 @@ VML.Perito/
 
 ## 📚 Documentación
 
-### **📋 Guías de Desarrollo**
+### **📋 Índice Principal**
+- [**Documentación Completa**](docs/README.md) - Navegación y guías organizadas
 
-- [**Sistema Principal**](docs/vml-perito-system.md) - Arquitectura y componentes principales
-- [**Patrones de Desarrollo**](docs/development-patterns.md) - Convenciones y mejores prácticas
-- [**Sistema de Notificaciones**](docs/notification-system.md) - Documentación completa del sistema de notificaciones
-- [**WebSockets**](docs/websockets-system.md) - Sistema de comunicación en tiempo real
+### **🚀 Para Empezar**
+- [**Sistema Principal**](docs/vml-perito-system.md) - Arquitectura completa
+- [**Configuración Inicial**](docs/database-seeding.md) - Setup del proyecto
+- [**Patrones de Desarrollo**](docs/development-patterns.md) - Convenciones
 
-### **🔧 Configuración y Setup**
+### **🔧 Desarrollo**
+- [**Controladores API**](docs/api-controllers.md) - Patrones para endpoints
+- [**Formato de Respuestas**](docs/api-response-format.md) - Estándares JSON
+- [**Sistema de Notificaciones**](docs/Notificaciones.md) - Documentación completa
+- [**WebSockets**](docs/websockets-system.md) - Comunicación en tiempo real
 
-- [**Base de Datos y Seeding**](docs/database-seeding.md) - Configuración inicial y datos de prueba
-- [**Sistema de Agendamiento**](docs/advanced-scheduling-system.md) - Configuración de horarios y sedes
-- [**Contact Center**](docs/contact-center-terminology.md) - Terminología y flujos del contact center
-
-### **📱 Frontend y UI**
-
-- [**Patrones de Componentes**](docs/ui-component-patterns.md) - Componentes React y shadcn/ui
-- [**Estándares Frontend**](docs/frontend-notification-standards.md) - Convenciones para el frontend
-- [**Texto en Español**](docs/spanish-ui-text.md) - Guías para textos de interfaz
+### **📱 Frontend**
+- [**Patrones de Componentes**](docs/ui-component-patterns.md) - Componentes React
+- [**Texto en Español**](docs/spanish-ui-text.md) - Guías de texto
 
 ### **🎯 Flujos de Negocio**
+- [**Flujo de Órdenes**](docs/inspection-order-flow.md) - Proceso completo
+- [**Patrones de Agentes**](docs/agent-contact-patterns.md) - Agentes de contacto
+- [**Patrones de Coordinadores**](docs/coordinator-patterns.md) - Coordinadores
+- [**Contact Center**](docs/contact-center-terminology.md) - Terminología
 
-- [**Flujo de Órdenes**](docs/inspection-order-flow.md) - Proceso completo de inspecciones
-- [**Patrones de Agentes**](docs/agent-contact-patterns.md) - Patrones para agentes de contacto
-- [**Patrones de Coordinadores**](docs/coordinator-patterns.md) - Patrones para coordinadores
+### **🔗 Integración Externa**
+- [**Webhook: inspection_order.started**](docs/webhook-inspection-order-started.md) - Implementación específica
+- [**Sistema de Webhooks**](docs/webhook-system.md) - Documentación general
+- [**Scripts de Testing**](apps/server/scripts/generateHmac.js) - Generador HMAC
 
-### **⚙️ API y Backend**
-
-- [**Controladores API**](docs/api-controllers.md) - Patrones para endpoints
-- [**Formato de Respuestas**](docs/api-response-format.md) - Estándares de respuestas JSON
-- [**Sistema de Webhooks**](docs/webhook-system.md) - Integración con plataformas externas
-
-### **🔍 Debugging y Troubleshooting**
-
-- [**Debugging y Solución de Problemas**](docs/debugging-and-troubleshooting.md) - Guías para resolver problemas
-- [**Patrones Backend**](docs/backend-development-patterns.md) - Patrones específicos del backend
-- [**Patrones Frontend**](docs/frontend-development-patterns.md) - Patrones específicos del frontend
+### **🔍 Troubleshooting**
+- [**Debugging y Solución de Problemas**](docs/debugging-and-troubleshooting.md) - Guías
+- [**Patrones Backend**](docs/backend-development-patterns.md) - Backend
+- [**Patrones Frontend**](docs/frontend-development-patterns.md) - Frontend
 
 ## 🛠️ Instalación y Configuración
 
@@ -242,6 +239,10 @@ npm run db:reset         # Resetear base de datos
 # Testing
 npm run test             # Ejecutar tests
 npm run test:watch       # Tests en modo watch
+
+# Webhooks
+cd apps/server/scripts && node generateHmac.js  # Generar firma HMAC para testing
+cd apps/server/scripts && node fixTemplatePath.js  # Corregir plantillas de notificación
 
 # Linting
 npm run lint             # Lint del código
