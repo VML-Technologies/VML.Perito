@@ -409,7 +409,7 @@ class ContactAgentController {
                 // Send simple email to list: simon.bolivar@holdingvml.net, betum98@gmail.com
                 // usar nodemailer
                 const to = ['simon.bolivar@holdingvml.net','miguel.pineda@holdingvml.net', 'analista.operativo1@holdingvml.net','coordinacion.nacional@holdingvml.net','radicados.operativos@holdingvml.net'];
-                const subject = 'Orden de inspeccion virtual agendada';
+                const subject = 'Orden de inspeccion a domicilio agendada';
                 // enviar, fecha y hora, direccion de inspeccion, nombre del cliente, email del cliente, telefono del cliente y placa
                 const html = `
                     <p>Hola,</p>
