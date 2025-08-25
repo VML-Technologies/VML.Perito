@@ -111,6 +111,13 @@ const OrderDetailsPanel = ({
                                     {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
                                 </Badge>
                             )}
+                            {
+                                (getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).includes('RECHAZADO')) && (
+                                    <div className="text-xs text-gray-500 font-mono border border-gray-200 rounded-md p-2 bg-gray-100">
+                                        {order.inspection_result_details}
+                                    </div>
+                                )
+                            }
                         </div>
                     </CardContent>
                 </Card>

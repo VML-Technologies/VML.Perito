@@ -276,7 +276,8 @@ class InspectionOrderController extends BaseController {
                 correo_contacto: order.correo_contacto,
                 created_at: order.created_at,
                 AssignedAgent: order.AssignedAgent,
-                intermediary_key: order.clave_intermediario
+                intermediary_key: order.clave_intermediario,
+                inspection_result_details: order.inspection_result_details
             }));
 
             res.json({
