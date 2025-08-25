@@ -545,7 +545,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
                                 <Select
@@ -583,23 +583,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.placa}
-                                    </p>
-                                )}
-                            </div>
-                            <div>
-                                <Label htmlFor="cod_fasecolda">Código FASECOLDA (Opcional)</Label>
-                                <Input
-                                    id="cod_fasecolda"
-                                    placeholder="12345678"
-                                    maxLength={8}
-                                    value={formData.cod_fasecolda}
-                                    onChange={(e) => handleInputChange('cod_fasecolda', e.target.value)}
-                                    className={errors.cod_fasecolda ? 'border-red-500' : ''}
-                                />
-                                {errors.cod_fasecolda && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.cod_fasecolda}
                                     </p>
                                 )}
                             </div>
