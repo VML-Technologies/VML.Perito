@@ -35,7 +35,6 @@ export function RBACProvider({ children }) {
                         typeof role == 'string' ? role : role.name
                     );
                     setRoles(roleNames);
-                    console.log("ROLES CARGADOS:", roleNames);
                 } else {
                     setPermissions([]);
                     setRoles([]);

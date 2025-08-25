@@ -685,7 +685,7 @@ const seedRBAC = async () => {
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
-                p.name == 'inspection_orders.read'
+                p.name.startsWith('inspection_orders.') // Permisos completos para órdenes
             );
             for (const permission of agentePermissions) {
                 await RolePermission.findOrCreate({
@@ -703,12 +703,16 @@ const seedRBAC = async () => {
         if (coordinadorRole) {
             const coordinadorPermissions = createdPermissions.filter(p =>
                 p.name.startsWith('coordinador_contacto.') ||
-                p.name.startsWith('contact_agent.read') ||
-                p.name.startsWith('contact_agent.assign') ||
-                p.name.startsWith('contact_agent.stats') ||
-                p.name == 'inspection_orders.read' ||
+                p.name.startsWith('contact_agent.') ||
+                p.name.startsWith('inspection_orders.') || // Permisos completos para órdenes
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
                 p.name == 'users.read' // Necesario para acceder al perfil
             );
+            
+            console.log(`🔍 Permisos que se asignarán al coordinador:`, coordinadorPermissions.map(p => p.name));
+            
             for (const permission of coordinadorPermissions) {
                 await RolePermission.findOrCreate({
                     where: {

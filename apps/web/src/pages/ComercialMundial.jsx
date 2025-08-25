@@ -15,6 +15,7 @@ import OrdersTable from '@/components/OrdersTable';
 import OrderDetailsPanel from '@/components/OrderDetailsPanel';
 import { useOrders } from '@/hooks/use-orders';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function ComercialMundial() {
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -23,6 +24,7 @@ export default function ComercialMundial() {
 
     const { showToast } = useNotificationContext();
     const { socket } = useWebSocket();
+    const { user } = useAuth();
 
     const {
         orders,
@@ -159,6 +161,7 @@ export default function ComercialMundial() {
                 showCallHistory={true}
                 showAppointments={true}
                 showTabs={true}
+                user={user}
             />
         </div>
     );

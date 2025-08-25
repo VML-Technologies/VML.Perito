@@ -154,7 +154,8 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
     },
     cod_fasecolda: {
         type: DataTypes.STRING(8),
-        allowNull: false,
+        allowNull: true,
+        comment: 'Código FASECOLDA del vehículo (opcional)'
     },
     tipo_doc: {
         type: DataTypes.STRING(10),
@@ -256,6 +257,33 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                     }
                 } catch (error) {
                     console.error('❌ Error actualizando commercial_user_id:', error);
+                }
+            }
+        },
+        
+        afterUpdate: async (inspectionOrder, options) => {
+            // Verificar si cambiaron los datos de contacto y guardar en historial
+            const contactFieldsChanged = ['nombre_contacto', 'celular_contacto', 'correo_contacto'];
+            const hasContactChanges = contactFieldsChanged.some(field => inspectionOrder.changed(field));
+            
+            if (hasContactChanges && options.user_id) {
+                try {
+                    const { InspectionOrderContactHistory } = await import('./index.js');
+                    
+                    // Obtener los valores anteriores
+                    const previousValues = inspectionOrder._previousDataValues;
+                    
+                    await InspectionOrderContactHistory.create({
+                        inspection_order_id: inspectionOrder.id,
+                        nombre_contacto: previousValues.nombre_contacto,
+                        celular_contacto: previousValues.celular_contacto,
+                        correo_contacto: previousValues.correo_contacto,
+                        user_id: options.user_id
+                    });
+                    
+                    console.log(`📝 Historial de contacto guardado para orden ${inspectionOrder.id}`);
+                } catch (error) {
+                    console.error('❌ Error guardando historial de contacto:', error);
                 }
             }
         }

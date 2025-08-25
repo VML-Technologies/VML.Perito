@@ -1,10 +1,11 @@
-import { usePermissions } from '@/hooks/use-permissions';
+import { useRBAC } from '@/contexts/rbac-context';
 
-export function PermissionGate({ permission, children, fallback = null }) {
-    const { hasPermission, loading } = usePermissions();
-    if (loading) return null;
-    if (hasPermission(permission)) {
-        return children;
+export default function PermissionGate({ permission, children, fallback = null }) {
+    const { hasPermission } = useRBAC();
+    
+    if (!hasPermission(permission)) {
+        return fallback;
     }
-    return fallback;
+    
+    return children;
 } 

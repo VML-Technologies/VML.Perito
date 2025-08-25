@@ -1,6 +1,9 @@
 // Configuración de la API
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+// Forzar recarga del cache
+console.log('🔄 API Routes cargadas - Timestamp:', new Date().toISOString());
+
 export const API_ROUTES = {
     AUTH: {
         LOGIN: `${API_BASE_URL}/api/auth/login`,
@@ -45,6 +48,25 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        
+        // ===== HISTORIAL DE CONTACTOS =====
+        CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
+        UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
+        
+        // ===== COMENTARIOS =====
+        COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
+        CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
+        GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
+    },
+    // ===== RUTAS DE HISTORIAL DE ÓRDENES =====
+    ORDER_HISTORY: {
+        CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
+        UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
+        COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
+        CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
+        GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
+        STATS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments-stats`,
+        ACTIVITY_LOG: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/activity-log`,
     },
     // ===== RUTAS DE SEDES =====
     SEDES: {
@@ -68,6 +90,12 @@ export const API_ROUTES = {
         AVAILABLE_SEDES: `${API_BASE_URL}/api/contact-agent/available-sedes`,
         ALL_MODALITIES: `${API_BASE_URL}/api/contact-agent/all-modalities`,
         SEDES_BY_MODALITY: `${API_BASE_URL}/api/contact-agent/sedes-by-modality`,
+        
+        // ===== HISTORIAL Y COMENTARIOS =====
+        ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/contact-history`,
+        ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/comments`,
+        CREATE_ORDER_COMMENT: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/comments`,
+        UPDATE_ORDER_CONTACT: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/contact`,
     },
     // ===== RUTAS - Coordinador de Contact Center =====
     COORDINADOR_CONTACTO: {
@@ -76,6 +104,10 @@ export const API_ROUTES = {
         AGENT_STATS: `${API_BASE_URL}/api/coordinador-contacto/agent-stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
+        
+        // ===== HISTORIAL Y COMENTARIOS (SOLO LECTURA) =====
+        ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/contact-history`,
+        ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/comments`,
     },
     // ===== RUTAS DE AGENDAMIENTO =====
     SCHEDULES: {

@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserCheck, UserX } from 'lucide-react';
 import CallHistory from './CallHistory';
 import AppointmentsHistory from './AppointmentsHistory';
+import OrderCommunicationSection from './OrderCommunicationSection';
 
 const OrderDetailsPanel = ({
     isOpen,
@@ -12,7 +13,8 @@ const OrderDetailsPanel = ({
     order,
     showCallHistory = true,
     showAppointments = true,
-    showTabs = true
+    showTabs = true,
+    user = null
 }) => {
     const getStatusBadgeVariant = (status, inspectionResult) => {
         if (!inspectionResult) {
@@ -115,9 +117,10 @@ const OrderDetailsPanel = ({
 
                 {showTabs ? (
                     <Tabs defaultValue="calls" className="space-y-4">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             {showCallHistory && <TabsTrigger value="calls">Historial de Llamadas</TabsTrigger>}
                             {showAppointments && <TabsTrigger value="appointments">Agendamientos</TabsTrigger>}
+                            <TabsTrigger value="communications">Comunicaciones</TabsTrigger>
                         </TabsList>
 
                         {showCallHistory && (
@@ -131,11 +134,24 @@ const OrderDetailsPanel = ({
                                 <AppointmentsHistory appointments={order.appointments} />
                             </TabsContent>
                         )}
+
+                        <TabsContent value="communications">
+                            <OrderCommunicationSection 
+                                orderId={order.id}
+                                orderData={order}
+                                user={user}
+                            />
+                        </TabsContent>
                     </Tabs>
                 ) : (
                     <div className="space-y-4">
                         {showCallHistory && <CallHistory callLogs={order.callLogs} />}
                         {showAppointments && <AppointmentsHistory appointments={order.appointments} />}
+                        <OrderCommunicationSection 
+                            orderId={order.id}
+                            orderData={order}
+                            user={user}
+                        />
                     </div>
                 )}
             </div>

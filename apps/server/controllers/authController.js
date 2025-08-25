@@ -1,5 +1,6 @@
 import User from '../models/user.js';
 import Role from '../models/role.js';
+import Permission from '../models/permission.js';
 import PasswordService from '../services/passwordService.js';
 import jwt from 'jsonwebtoken';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
@@ -16,7 +17,15 @@ export const login = async (req, res) => {
                     model: Role,
                     as: 'roles',
                     through: { attributes: [] },
-                    attributes: ['id', 'name', 'description']
+                    attributes: ['id', 'name', 'description'],
+                    include: [
+                        {
+                            model: Permission,
+                            as: 'permissions',
+                            through: { attributes: [] },
+                            attributes: ['id', 'name', 'description', 'resource', 'action']
+                        }
+                    ]
                 }
             ]
         });
@@ -127,7 +136,15 @@ export const changeTemporaryPassword = async (req, res) => {
                     model: Role,
                     as: 'roles',
                     through: { attributes: [] },
-                    attributes: ['id', 'name', 'description']
+                    attributes: ['id', 'name', 'description'],
+                    include: [
+                        {
+                            model: Permission,
+                            as: 'permissions',
+                            through: { attributes: [] },
+                            attributes: ['id', 'name', 'description', 'resource', 'action']
+                        }
+                    ]
                 }
             ]
         });
@@ -205,7 +222,15 @@ export const changePassword = async (req, res) => {
                     model: Role,
                     as: 'roles',
                     through: { attributes: [] },
-                    attributes: ['id', 'name', 'description']
+                    attributes: ['id', 'name', 'description'],
+                    include: [
+                        {
+                            model: Permission,
+                            as: 'permissions',
+                            through: { attributes: [] },
+                            attributes: ['id', 'name', 'description', 'resource', 'action']
+                        }
+                    ]
                 }
             ]
         });
@@ -241,7 +266,15 @@ export const verify = async (req, res) => {
                         model: Role,
                         as: 'roles',
                         through: { attributes: [] },
-                        attributes: ['id', 'name', 'description']
+                        attributes: ['id', 'name', 'description'],
+                        include: [
+                            {
+                                model: Permission,
+                                as: 'permissions',
+                                through: { attributes: [] },
+                                attributes: ['id', 'name', 'description', 'resource', 'action']
+                            }
+                        ]
                     }
                 ]
             });
@@ -265,6 +298,7 @@ export const verify = async (req, res) => {
 export const logout = (req, res) => {
     res.json({ message: 'Sesión cerrada' });
 };
+
 
 // Export por defecto para compatibilidad con el index.js
 export default {

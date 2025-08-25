@@ -17,6 +17,7 @@ import { useNotificationContext } from '@/contexts/notification-context';
 import { useAuth } from '@/contexts/auth-context';
 import CalendarioAgendamiento from '@/components/CalendarioAgendamiento';
 import useScheduleValidation from '@/hooks/use-schedule-validation';
+import OrderCommunicationSection from '@/components/OrderCommunicationSection';
 
 const AgentOrderPanel = ({
     isOpen,
@@ -28,6 +29,8 @@ const AgentOrderPanel = ({
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
     const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
+    
+
 
     // Estados para el flujo mejorado
     const [allModalities, setAllModalities] = useState([]);
@@ -340,7 +343,7 @@ const AgentOrderPanel = ({
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-lg overflow-y-auto py-2 px-4">
+            <SheetContent className="w-full sm:max-w-4xl overflow-y-auto py-2 px-4">
                 {selectedOrder && (
                     <>
                         <SheetHeader>
@@ -443,6 +446,13 @@ const AgentOrderPanel = ({
                                     </CardContent>
                                 </Card>
                             )}
+
+                            {/* Sección de Comunicación y Datos de Contacto */}
+                            <OrderCommunicationSection 
+                                orderId={selectedOrder.id}
+                                orderData={selectedOrder}
+                                user={user}
+                            />
 
                             <Card>
                                 <CardHeader>

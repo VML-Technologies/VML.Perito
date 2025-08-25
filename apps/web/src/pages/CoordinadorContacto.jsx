@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
+import { useAuth } from '@/contexts/auth-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ export default function CoordinadorContacto() {
     const [selectedAgent, setSelectedAgent] = useState('');
 
     const { showToast } = useNotificationContext();
+    const { user } = useAuth();
 
     const {
         orders,
@@ -268,6 +270,7 @@ export default function CoordinadorContacto() {
                 showCallHistory={true}
                 showAppointments={true}
                 showTabs={true}
+                user={user}
             />
         </div>
     );

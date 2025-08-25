@@ -67,7 +67,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         carroceria: '',
         combustible: '',
         metodo_inspeccion_recomendado: 'Virtual',
-        cod_fasecolda: '',
+        cod_fasecolda: '', // Campo opcional
 
         // Información del cliente
         tipo_doc: '',
@@ -121,7 +121,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             carroceria: 'Carroceria del vehiculo',
             combustible: 'GASOLINA',
             metodo_inspeccion_recomendado: 'Virtual',
-            cod_fasecolda: 'CodigoXX',
+            cod_fasecolda: '', // Campo opcional
 
             // Información del cliente
             tipo_doc: 'CC',
@@ -220,7 +220,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             carroceria: '',
             combustible: '',
             metodo_inspeccion_recomendado: 'Virtual',
-            cod_fasecolda: '',
+            cod_fasecolda: '', // Campo opcional
 
             // Información del cliente
             tipo_doc: '',
@@ -311,7 +311,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             'producto', 'callback_url', 'intermediario', 'clave_intermediario',
             'fecha', 'vlr_accesorios',
             'placa', // Solo la placa es obligatoria de los datos del vehículo
-            'metodo_inspeccion_recomendado', 'cod_fasecolda', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
+            'metodo_inspeccion_recomendado', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
 
@@ -587,7 +587,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 )}
                             </div>
                             <div>
-                                <Label htmlFor="cod_fasecolda">Código FASECOLDA *</Label>
+                                <Label htmlFor="cod_fasecolda">Código FASECOLDA (Opcional)</Label>
                                 <Input
                                     id="cod_fasecolda"
                                     placeholder="12345678"

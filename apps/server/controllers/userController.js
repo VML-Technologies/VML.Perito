@@ -275,11 +275,34 @@ class UserController extends BaseController {
                 return res.status(404).json({ message: 'Usuario no encontrado' });
             }
 
+            // Cargar el usuario completo con roles y permisos desde la base de datos
+            const userWithRoles = await this.model.findByPk(user.id, {
+                attributes: { exclude: ['password'] },
+                include: [
+                    {
+                        model: User.sequelize.models.Role,
+                        as: 'roles',
+                        through: { attributes: [] },
+                        include: [
+                            {
+                                model: User.sequelize.models.Permission,
+                                as: 'permissions',
+                                through: { attributes: [] }
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            if (!userWithRoles) {
+                return res.status(404).json({ message: 'Usuario no encontrado' });
+            }
+
             // Extraer roles y permisos únicos
-            const roles = Array.isArray(user.roles) ? user.roles.map(role => role.name) : [];
-            const permissions = Array.isArray(user.roles)
+            const roles = Array.isArray(userWithRoles.roles) ? userWithRoles.roles.map(role => role.name) : [];
+            const permissions = Array.isArray(userWithRoles.roles)
                 ? [...new Set(
-                    user.roles.flatMap(role =>
+                    userWithRoles.roles.flatMap(role =>
                         Array.isArray(role.permissions)
                             ? role.permissions.map(permission => permission.name)
                             : []
@@ -288,13 +311,14 @@ class UserController extends BaseController {
                 : [];
 
             const userResponse = {
-                ...user.toJSON(),
+                ...userWithRoles.toJSON(),
                 roles,
                 permissions
             };
 
             res.json(userResponse);
         } catch (error) {
+            console.error('Error en profile:', error);
             res.status(500).json({ message: 'Error al obtener perfil', error: error.message });
         }
     }

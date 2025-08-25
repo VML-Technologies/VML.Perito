@@ -56,9 +56,6 @@ export const useWebSocket = () => {
 
             // Eventos de conexión
             socketRef.current.on('connect', () => {
-                console.log('✅ Socket.IO conectado exitosamente');
-                console.log('🔗 Socket ID:', socketRef.current.id);
-                console.log('👤 Usuario conectado:', user.name, user.id);
                 setIsConnected(true);
                 setConnectionStatus('connected');
                 setReconnectAttempts(0);
@@ -66,12 +63,6 @@ export const useWebSocket = () => {
 
             socketRef.current.on('connected', (data) => {
                 console.log('🎉 Confirmación de conexión del servidor:', data);
-                console.log('👤 Usuario que se conectó:', {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    roles: user.roles?.map(r => r.name)
-                });
             });
 
             socketRef.current.on('disconnect', (reason) => {

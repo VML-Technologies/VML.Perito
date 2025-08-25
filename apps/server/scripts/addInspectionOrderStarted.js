@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sequelize from '../config/database.js';
 import Event from '../models/event.js';
 import EventListener from '../models/eventListener.js';
 import NotificationType from '../models/notificationType.js';
@@ -5,10 +9,6 @@ import NotificationConfig from '../models/notificationConfig.js';
 import NotificationTemplate from '../models/notificationTemplate.js';
 import NotificationChannel from '../models/notificationChannel.js';
 import User from '../models/user.js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import sequelize from '../config/database.js';
 
 // Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);
@@ -17,29 +17,16 @@ const __dirname = path.dirname(__filename);
 // Cargar .env desde el directorio padre (apps/server/)
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const addInspectionOrderStarted = async () => {
+// Importar modelos para establecer relaciones
+import '../models/index.js';
+
+/**
+ * Crear evento inspection_order.started
+ */
+const createInspectionOrderStartedEvent = async () => {
     try {
-        console.log('🎯 Agregando evento inspection_order.started...');
+        console.log('🎯 Creando evento inspection_order.started...');
 
-        // Conectar a la base de datos
-        await sequelize.authenticate();
-        console.log('✅ Conexión a la base de datos establecida.');
-
-        // Buscar usuario administrador
-        const adminUser = await User.findOne({ where: { email: 'admin@vmltechnologies.com' } });
-        if (!adminUser) {
-            console.log('⚠️ Usuario admin no encontrado');
-            return;
-        }
-
-        // Buscar canal SMS
-        const smsChannel = await NotificationChannel.findOne({ where: { name: 'sms' } });
-        if (!smsChannel) {
-            console.log('⚠️ Canal SMS no encontrado');
-            return;
-        }
-
-        // 1. Crear el evento inspection_order.started
         const [event, eventCreated] = await Event.findOrCreate({
             where: { name: 'inspection_order.started' },
             defaults: {
@@ -75,7 +62,26 @@ const addInspectionOrderStarted = async () => {
             console.log('ℹ️ Evento inspection_order.started ya existe');
         }
 
-        // 2. Crear tipo de notificación para SMS de inicio de inspección
+        return event;
+
+    } catch (error) {
+        console.error('❌ Error creando evento inspection_order.started:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
+        throw error;
+    }
+};
+
+/**
+ * Crear tipo de notificación para SMS de inicio de inspección
+ */
+const createInspectionStartedNotificationType = async () => {
+    try {
+        console.log('📋 Creando tipo de notificación inspection_started_client_sms...');
+
         const [notificationType, typeCreated] = await NotificationType.findOrCreate({
             where: { name: 'inspection_started_client_sms' },
             defaults: {
@@ -90,7 +96,26 @@ const addInspectionOrderStarted = async () => {
             console.log('ℹ️ Tipo de notificación inspection_started_client_sms ya existe');
         }
 
-        // 3. Crear plantilla de notificación para SMS
+        return notificationType;
+
+    } catch (error) {
+        console.error('❌ Error creando tipo de notificación:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
+        throw error;
+    }
+};
+
+/**
+ * Crear plantilla de notificación para SMS
+ */
+const createInspectionStartedTemplate = async (adminUser) => {
+    try {
+        console.log('📝 Creando plantilla de notificación SMS...');
+
         const [notificationTemplate, templateCreated] = await NotificationTemplate.findOrCreate({
             where: { name: 'inspection_started_client_sms' },
             defaults: {
@@ -124,7 +149,26 @@ const addInspectionOrderStarted = async () => {
             console.log('ℹ️ Plantilla de notificación SMS ya existe');
         }
 
-        // 4. Crear configuración de notificación para SMS
+        return notificationTemplate;
+
+    } catch (error) {
+        console.error('❌ Error creando plantilla de notificación:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
+        throw error;
+    }
+};
+
+/**
+ * Crear configuración de notificación para SMS
+ */
+const createInspectionStartedConfig = async (notificationType, smsChannel, adminUser) => {
+    try {
+        console.log('⚙️ Creando configuración de notificación SMS...');
+
         const [notificationConfig, configCreated] = await NotificationConfig.findOrCreate({
             where: {
                 notification_type_id: notificationType.id,
@@ -164,7 +208,26 @@ const addInspectionOrderStarted = async () => {
             console.log('ℹ️ Configuración de notificación SMS ya existe');
         }
 
-        // 5. Crear listener para el evento
+        return notificationConfig;
+
+    } catch (error) {
+        console.error('❌ Error creando configuración de notificación:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
+        throw error;
+    }
+};
+
+/**
+ * Crear listener para el evento
+ */
+const createInspectionStartedListener = async (event, notificationType, adminUser) => {
+    try {
+        console.log('👂 Creando listener para inspection_order.started...');
+
         const [listener, listenerCreated] = await EventListener.findOrCreate({
             where: {
                 event_id: event.id,
@@ -187,6 +250,59 @@ const addInspectionOrderStarted = async () => {
             console.log('ℹ️ Listener para inspection_order.started ya existe');
         }
 
+        return listener;
+
+    } catch (error) {
+        console.error('❌ Error creando listener:', error.message);
+        if (error.errors) {
+            error.errors.forEach(err => {
+                console.error(`   - Campo: ${err.path}, Valor: ${err.value}, Mensaje: ${err.message}`);
+            });
+        }
+        throw error;
+    }
+};
+
+/**
+ * Función principal que ejecuta todo el proceso
+ */
+const addInspectionOrderStarted = async () => {
+    try {
+        console.log('🎯 Iniciando configuración del evento inspection_order.started...');
+
+        // Conectar a la base de datos
+        await sequelize.authenticate();
+        console.log('✅ Conexión a la base de datos establecida.');
+
+        // Buscar usuario administrador
+        const adminUser = await User.findOne({ where: { email: 'admin@vmltechnologies.com' } });
+        if (!adminUser) {
+            console.log('⚠️ Usuario admin no encontrado. Ejecuta primero el seed de usuarios.');
+            return;
+        }
+
+        // Buscar canal SMS
+        const smsChannel = await NotificationChannel.findOne({ where: { name: 'sms' } });
+        if (!smsChannel) {
+            console.log('⚠️ Canal SMS no encontrado. Ejecuta primero el seed de canales.');
+            return;
+        }
+
+        // 1. Crear el evento
+        const event = await createInspectionOrderStartedEvent();
+
+        // 2. Crear tipo de notificación
+        const notificationType = await createInspectionStartedNotificationType();
+
+        // 3. Crear plantilla de notificación
+        const notificationTemplate = await createInspectionStartedTemplate(adminUser);
+
+        // 4. Crear configuración de notificación
+        const notificationConfig = await createInspectionStartedConfig(notificationType, smsChannel, adminUser);
+
+        // 5. Crear listener para el evento
+        const listener = await createInspectionStartedListener(event, notificationType, adminUser);
+
         console.log('🎉 Evento inspection_order.started configurado correctamente');
 
         // Cerrar conexión
@@ -194,20 +310,16 @@ const addInspectionOrderStarted = async () => {
         console.log('📴 Conexión a la base de datos cerrada correctamente.');
 
     } catch (error) {
-        console.error('❌ Error agregando evento inspection_order.started:', error);
+        console.error('❌ Error en configuración del evento inspection_order.started:', error);
         throw error;
     }
 };
 
-// Ejecutar si se llama directamente
-addInspectionOrderStarted()
-    .then(() => {
-        console.log('\n✅ Proceso completado exitosamente');
-        process.exit(0);
-    })
-    .catch((error) => {
-        console.error('❌ Error fatal:', error);
-        process.exit(1);
-    });
-
 export default addInspectionOrderStarted;
+export { 
+    createInspectionOrderStartedEvent, 
+    createInspectionStartedNotificationType, 
+    createInspectionStartedTemplate, 
+    createInspectionStartedConfig, 
+    createInspectionStartedListener 
+};

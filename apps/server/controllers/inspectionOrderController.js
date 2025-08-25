@@ -611,6 +611,104 @@ class InspectionOrderController extends BaseController {
             res.status(500).json({ message: 'Error al asignar agente', error: error.message });
         }
     }
+
+    /**
+     * Actualizar datos de contacto de una orden de inspección
+     */
+    async updateContactData(req, res) {
+        try {
+            const { id } = req.params;
+            const { nombre_contacto, celular_contacto, correo_contacto } = req.body;
+            const userId = req.user.id;
+
+            // Validaciones
+            if (!nombre_contacto || nombre_contacto.trim().length < 2 || nombre_contacto.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El nombre del contacto debe tener entre 2 y 100 caracteres'
+                });
+            }
+
+            // Validar formato de celular (10 dígitos sin código de país)
+            const phoneRegex = /^\d{10}$/;
+            if (!celular_contacto || !phoneRegex.test(celular_contacto)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El celular debe tener exactamente 10 dígitos numéricos'
+                });
+            }
+
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!correo_contacto || !emailRegex.test(correo_contacto)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El formato del correo electrónico no es válido'
+                });
+            }
+
+            // Buscar la orden
+            const order = await InspectionOrder.findByPk(id);
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // Verificar si hay cambios en los datos de contacto
+            const hasChanges = 
+                order.nombre_contacto !== nombre_contacto.trim() ||
+                order.celular_contacto !== celular_contacto ||
+                order.correo_contacto !== correo_contacto.trim();
+
+            if (!hasChanges) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'No hay cambios en los datos de contacto',
+                    data: order
+                });
+            }
+
+            // Actualizar los datos de contacto
+            await order.update({
+                nombre_contacto: nombre_contacto.trim(),
+                celular_contacto,
+                correo_contacto: correo_contacto.trim()
+            }, {
+                user_id: userId // Pasar el user_id para el hook afterUpdate
+            });
+
+            // Obtener la orden actualizada con relaciones
+            const updatedOrder = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            res.json({
+                success: true,
+                message: 'Datos de contacto actualizados exitosamente',
+                data: updatedOrder
+            });
+        } catch (error) {
+            console.error('❌ Error actualizando datos de contacto:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
 }
 
 export default InspectionOrderController; 

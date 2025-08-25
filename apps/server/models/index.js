@@ -46,6 +46,10 @@ import WebhookLog from './webhookLog.js';
 // Nuevos modelos para consultas de placas
 import PlateQuery from './plateQuery.js';
 
+// Nuevos modelos para historial de contactos y comentarios
+import InspectionOrderContactHistory from './inspectionOrderContactHistory.js';
+import InspectionOrderCommentHistory from './inspectionOrderCommentHistory.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -650,6 +654,48 @@ PlateQuery.belongsTo(InspectionOrder, {
     as: 'order'
 });
 
+// ===== RELACIONES SISTEMA DE HISTORIAL DE CONTACTOS Y COMENTARIOS =====
+
+// InspectionOrder -> InspectionOrderContactHistory (1:N) - Historial de cambios de contacto
+InspectionOrder.hasMany(InspectionOrderContactHistory, {
+    foreignKey: 'inspection_order_id',
+    as: 'contactHistory'
+});
+InspectionOrderContactHistory.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
+// User -> InspectionOrderContactHistory (1:N) - Usuario que realizó el cambio
+User.hasMany(InspectionOrderContactHistory, {
+    foreignKey: 'user_id',
+    as: 'contactHistoryChanges'
+});
+InspectionOrderContactHistory.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+// InspectionOrder -> InspectionOrderCommentHistory (1:N) - Historial de comentarios
+InspectionOrder.hasMany(InspectionOrderCommentHistory, {
+    foreignKey: 'inspection_order_id',
+    as: 'commentHistory'
+});
+InspectionOrderCommentHistory.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
+// User -> InspectionOrderCommentHistory (1:N) - Usuario que creó el comentario
+User.hasMany(InspectionOrderCommentHistory, {
+    foreignKey: 'user_id',
+    as: 'commentHistory'
+});
+InspectionOrderCommentHistory.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
 export {
     Department,
     City,
@@ -690,5 +736,8 @@ export {
     WebhookApiKey,
     WebhookLog,
     // Sistema de consultas de placas
-    PlateQuery
+    PlateQuery,
+    // Sistema de historial de contactos y comentarios
+    InspectionOrderContactHistory,
+    InspectionOrderCommentHistory
 }; 
