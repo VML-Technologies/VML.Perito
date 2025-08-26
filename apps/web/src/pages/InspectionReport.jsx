@@ -557,8 +557,8 @@ const InspectionReport = () => {
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                         <span className="text-gray-600 font-medium">Nombre:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.nombre_cliente || 'N/A'}</span>
-                        </div>
+                                        <span className="font-semibold text-right max-w-xs">{inspection?.inspectionOrder?.nombre_cliente || 'N/A'}</span>
+                                    </div>
                                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                         <span className="text-gray-600 font-medium">Identificación:</span>
                                         <span className="font-semibold">{inspection?.inspectionOrder?.num_doc || 'N/A'}</span>
@@ -569,9 +569,38 @@ const InspectionReport = () => {
                                     </div>
                                     <div className="flex justify-between items-center py-2">
                                         <span className="text-gray-600 font-medium">Correo:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.correo_cliente || 'N/A'}</span>
+                                        <span className="font-semibold text-right max-w-xs break-words">{inspection?.inspectionOrder?.correo_cliente || 'N/A'}</span>
                                     </div>
                                 </div>
+                                
+                                {/* Información de contacto adicional si existe */}
+                                {(inspection?.inspectionOrder?.nombre_contacto || inspection?.inspectionOrder?.celular_contacto || inspection?.inspectionOrder?.correo_contacto) && (
+                                    <div className="mt-6 pt-4 border-t border-gray-300">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">
+                                            Información de Contacto Adicional
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {inspection?.inspectionOrder?.nombre_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Contacto:</span>
+                                                    <span className="font-semibold text-sm text-right max-w-xs">{inspection.inspectionOrder.nombre_contacto}</span>
+                                                </div>
+                                            )}
+                                            {inspection?.inspectionOrder?.celular_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Celular Contacto:</span>
+                                                    <span className="font-semibold text-sm">{inspection.inspectionOrder.celular_contacto}</span>
+                                                </div>
+                                            )}
+                                            {inspection?.inspectionOrder?.correo_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Correo Contacto:</span>
+                                                    <span className="font-semibold text-sm text-right max-w-xs break-words">{inspection.inspectionOrder.correo_contacto}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
@@ -579,24 +608,96 @@ const InspectionReport = () => {
                                     <Car className="h-5 w-5 mr-2 text-blue-600" />
                                     DATOS DEL VEHÍCULO
                                 </h2>
-                            <div className="space-y-3">
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Placa:</span>
-                                        <span className="font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded">{inspection?.inspectionOrder?.placa || 'N/A'}</span>
-                                            </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Marca/Modelo:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.marca || 'N/A'} {inspection?.inspectionOrder?.linea || ''}</span>
-                                            </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Año:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.modelo || 'N/A'}</span>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Información Básica */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
+                                            Información Básica
+                                        </h3>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Placa:</span>
+                                            <span className="font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm">
+                                                {inspection?.inspectionOrder?.placa || 'N/A'}
+                                            </span>
                                         </div>
-                                    <div className="flex justify-between items-center py-2">
-                                        <span className="text-gray-600 font-medium">Color:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.color || 'N/A'}</span>
-                            </div>
-                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Marca:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.marca || 'N/A'} - {inspection?.inspectionOrder?.linea || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Clase:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.clase || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Modelo:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.modelo || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Color:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.color || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Carrocería:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.carroceria || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-gray-600 font-medium">Cilindraje:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.cilindraje ? `${inspection.inspectionOrder.cilindraje} cc` : 'N/A'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Información Técnica */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
+                                            Información Técnica
+                                        </h3>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Producto:</span>
+                                            <span className="font-semibold bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                                {inspection?.inspectionOrder?.producto || 'N/A'}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Motor:</span>
+                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.motor || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Chasis:</span>
+                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.chasis || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">VIN:</span>
+                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.vin || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Código Fasecolda:</span>
+                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.cod_fasecolda || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Combustible:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.combustible || 'N/A'}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Servicio:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.servicio || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
