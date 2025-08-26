@@ -268,9 +268,27 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'created_at'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at'],
+                    include: [
+                        {
+                            model: InspectionModality,
+                            as: 'inspectionModality',
+                            attributes: ['id', 'name', 'description']
+                        },
+                        {
+                            model: Sede,
+                            as: 'sede',
+                            attributes: ['id', 'name', 'address'],
+                            include: [
+                                {
+                                    model: City,
+                                    as: 'city',
+                                    attributes: ['id', 'name']
+                                }
+                            ]
+                        }
+                    ],
                     order: [['created_at', 'DESC']],
-                    limit: 1,
                     required: false
                 },
             ];
@@ -306,6 +324,7 @@ class InspectionOrderController extends BaseController {
                 AssignedAgent: order.AssignedAgent,
                 intermediary_key: order.clave_intermediario,
                 inspection_result_details: order.inspection_result_details,
+                appointments: order.appointments || [],
                 session_id: order.appointments && order.appointments.length > 0 ? order.appointments[0].session_id : null
             }));
 
