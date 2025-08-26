@@ -242,6 +242,10 @@ app.post('/api/inspection-orders', requirePermission('inspection_orders.create')
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
 app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.delete'), inspectionOrderController.destroy);
 
+// Reporte de inspección
+// app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, inspectionOrderController.getInspectionReport);
+app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getInspectionReport);
+
 // Rutas para actualización de datos de contacto
 app.put('/api/inspection-orders/:id/contact-data', requirePermission('inspection_orders.update'), inspectionOrderController.updateContactData);
 
@@ -320,6 +324,7 @@ app.get('/api/templates/variables', readLimiter, requirePermission('templates.re
 app.post('/api/templates/validate', requirePermission('templates.create'), templateController.validate);
 app.post('/api/templates/render', requirePermission('templates.read'), templateController.render);
 app.get('/api/templates/category/:category', readLimiter, requirePermission('templates.read'), templateController.byCategory);
+
 
 // Rutas para canales de notificación
 app.get('/api/channels', readLimiter, requirePermission('channels.read'), channelController.index);

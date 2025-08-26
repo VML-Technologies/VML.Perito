@@ -57,6 +57,7 @@ export const API_ROUTES = {
         COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
+        INSPECTION_REPORT: (sessionId) => `${API_BASE_URL}/api/inspection-orders/${sessionId}/inspection-report`,
     },
     // ===== RUTAS DE HISTORIAL DE ÓRDENES =====
     ORDER_HISTORY: {

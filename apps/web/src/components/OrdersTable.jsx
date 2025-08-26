@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, ChevronUp, ChevronDown, CheckCircle, XCircle, UserCheck, UserX, Eye, Phone, PhoneCall } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/contexts/auth-context';
+
 
 const OrdersTable = ({
     orders = [],
@@ -26,6 +28,7 @@ const OrdersTable = ({
     emptyDescription = "Ajusta los filtros para ver más resultados",
     loading = false
 }) => {
+    const { user } = useAuth();
     /**
      * Determines the badge variant based on order status or inspection result.
      * @param {string} status - The general order status.
@@ -304,6 +307,10 @@ const OrdersTable = ({
                                                                 <UserCheck className="h-4 w-4 text-green-600" />
                                                                 <span className="text-sm">
                                                                     {order.AssignedAgent.name}
+                                                                    <br />
+                                                                    <span className="text-xs text-muted-foreground">
+                                                                        {order.session_id}
+                                                                    </span>
                                                                 </span>
                                                             </div>
                                                         ) : (
@@ -340,7 +347,22 @@ const OrdersTable = ({
                                                                             <Eye className="h-4 w-4 mr-1" />
                                                                             Ver
                                                                         </Button>
-                                                                    )}
+                                                                        )}
+                                                                        
+                                                                        {
+                                                                            (user.email.includes('segurosmundial.com.co') && order.session_id ) ? <>
+                                                                                <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                                    onClick={() => {
+                                                                                window.open(`/inspection-report/${order.session_id}`, '_blank');
+                                                                            }}
+                                                                        >
+                                                                            <FileText className="h-4 w-4 mr-1" />
+                                                                            Ver Inspección
+                                                                        </Button>
+                                                                            </> : <></>
+                                                                        }
 
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select

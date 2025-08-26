@@ -15,6 +15,7 @@ import NotificationTemplates from "@/pages/NotificationTemplates"
 import ChannelConfigurations from "@/pages/ChannelConfigurations"
 import NotificationAdmin from "@/pages/NotificationAdmin"
 import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
+import InspectionReport from "@/pages/InspectionReport"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 
@@ -135,6 +136,18 @@ function AppContent() {
                 <ComercialMundial />
               </AuthenticatedLayout>
             </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de Informe de Inspección */}
+        <Route
+          path="/inspection-report/:session_id"
+          element={
+            // <RoleBasedRoute requiredRoles={['comercial_mundial', 'coordinador_contacto', 'agente_contacto', 'super_admin']}>
+              // <AuthenticatedLayout>
+                <InspectionReport />
+              // </AuthenticatedLayout>
+            // </RoleBasedRoute>
           }
         />
 

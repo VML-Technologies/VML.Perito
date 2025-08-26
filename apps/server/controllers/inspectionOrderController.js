@@ -10,8 +10,15 @@ import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op, Sequelize } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
+import InspectionPart from '../models/inspectionPart.js';
+import InspectionCategory from '../models/inspectionCategory.js';
+import InspectionCategoryResponse from '../models/inspectionCategoryResponse.js';
+import MechanicalTest from '../models/mechanicalTest.js';
+import InspectionModality from '../models/inspectionModality.js';
+import sequelize from '../config/database.js';
+
 
 // Función para generar número de orden incremental
 const generateOrderNumber = async () => {
@@ -95,6 +102,15 @@ registerPermission({
     description: 'Ver estadísticas de órdenes de inspección',
 });
 
+registerPermission({
+    name: 'inspection_orders.inspection_report',
+    resource: 'inspection_orders',
+    action: 'inspection_report',
+    endpoint: '/api/inspection-orders/:session_id/inspection-report',
+    method: 'GET',
+    description: 'Ver informe de inspección',
+});
+
 class InspectionOrderController extends BaseController {
     constructor() {
         super(InspectionOrder);
@@ -108,6 +124,10 @@ class InspectionOrderController extends BaseController {
         this.getStats = this.getStats.bind(this);
         this.search = this.search.bind(this);
         this.getOrders = this.getOrders.bind(this);
+        this.getResponsesData = this.getResponsesData.bind(this);
+        this.getCategoryResponsesData = this.getCategoryResponsesData.bind(this);
+        this.getInspectionReport = this.getInspectionReport.bind(this);
+        this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
     }
 
     async getOrders(req, res) {
@@ -244,6 +264,13 @@ class InspectionOrderController extends BaseController {
                         }
                     ],
                     order: [['call_time', 'DESC']]
+                }, {
+                    model: Appointment,
+                    as: 'appointments',
+                    attributes: ['id', 'session_id', 'created_at'],
+                    order: [['created_at', 'DESC']],
+                    limit: 1,
+                    required: false
                 },
             ];
 
@@ -277,7 +304,8 @@ class InspectionOrderController extends BaseController {
                 created_at: order.created_at,
                 AssignedAgent: order.AssignedAgent,
                 intermediary_key: order.clave_intermediario,
-                inspection_result_details: order.inspection_result_details
+                inspection_result_details: order.inspection_result_details,
+                session_id: order.appointments && order.appointments.length > 0 ? order.appointments[0].session_id : null
             }));
 
             res.json({
@@ -658,7 +686,7 @@ class InspectionOrderController extends BaseController {
             }
 
             // Verificar si hay cambios en los datos de contacto
-            const hasChanges = 
+            const hasChanges =
                 order.nombre_contacto !== nombre_contacto.trim() ||
                 order.celular_contacto !== celular_contacto ||
                 order.correo_contacto !== correo_contacto.trim();
@@ -709,6 +737,233 @@ class InspectionOrderController extends BaseController {
                 error: error.message
             });
         }
+    }
+
+    async getInspectionReport(req, res) {
+        try {
+            const { session_id } = req.params;
+
+            // 1. Obtener datos de la inspección
+            const inspectionData = await Appointment.findOne({
+                where: { session_id: session_id },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [
+                            {
+                                model: City,
+                                as: 'city',
+                                attributes: ['name']
+                            }
+                        ],
+                        attributes: ['id', 'name']
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                    }
+                ]
+            });
+            // 2. Obtener partes de inspección
+            const partsData = await InspectionPart.findAll({
+                include: [{
+                    model: InspectionCategory,
+                    as: 'category', // <-- Alias agregado para evitar EagerLoadingError
+                    attributes: ['categoria']
+                }],
+                order: [
+                    ['categoria_id', 'ASC'],
+                    ['parte', 'ASC']
+                ]
+            });
+            // 3. Obtener respuestas de partes de inspección
+            const responsesData = await this.getResponsesData(session_id);
+            // 4. Obtener respuestas de categorías de inspección
+            const categoryResponsesData = await this.getCategoryResponsesData(inspectionData.inspectionOrder.id);
+            // 5. Obtener datos de pruebas mecánicas
+            const mechanicalTestsData = await this.getMechanicalTestsData(session_id);
+            // 6. Obtener datos de imágenes
+            const imagesData = null;
+            // 7. Obtener datos de accesorios
+            const accessoriesData = null;
+            // 8. Obtener datos de grabaciones
+            const recordingsData = null;
+            // 9. Obtener datos de checklist
+            const checklistData = null;
+            const categoryCommentsData = await this.getCategoryCommentsData(inspectionData.inspectionOrder.id);
+
+            res.json({
+                inspectionData: inspectionData,
+                partsData: partsData,
+                responsesData: responsesData,
+                categoryResponsesData: categoryResponsesData,
+                mechanicalTestsData: mechanicalTestsData,
+                imagesData: imagesData,
+                accessoriesData: accessoriesData,
+                recordingsData: recordingsData,
+                checklistData: checklistData,
+                categoryCommentsData: categoryCommentsData
+            });
+        } catch (error) {
+            console.error('Error al obtener informe de inspección:', error);
+        }
+    }
+
+    async getResponsesData(inspection_id) {
+        const query = `
+        SELECT 
+            ipr.id,
+            ipr.part_id AS part_id,
+            ipr.value,
+            ipr.inspection_id,
+            ipr.timestamp,
+            ip.parte,
+            ic.categoria,
+            ip.bueno,
+            ip.regular,
+            ip.malo,
+            ip.minimo,
+            ip.opciones,
+            ipr.comment AS part_response_comment,
+            icr.comentario AS category_comment
+        FROM inspection_part_responses ipr
+        INNER JOIN inspection_parts ip ON ipr.part_id = ip.id
+        INNER JOIN inspection_categories ic ON ip.categoria_id = ic.id
+        LEFT JOIN inspection_category_responses icr 
+            ON icr.inspection_id = ipr.inspection_id
+        AND icr.category_id = ic.id
+        WHERE ipr.inspection_id = :inspection_id
+        `;
+
+        const responses = await sequelize.query(query, {
+            replacements: { inspection_id: inspection_id.trim() },
+            type: QueryTypes.SELECT
+        });
+
+        console.log(`📝 Encontradas ${responses.length} respuestas para inspección ${inspection_id}`);
+
+        // Formato de respuesta mejorado
+        const formattedResponses = responses.map(response => ({
+            id: response.id,
+            part_id: response.part_id,
+            value: response.value,
+            inspection_id: response.inspection_id,
+            timestamp: response.timestamp,
+            partName: response.parte,
+            category: response.categoria,
+            bueno: response.bueno,
+            regular: response.regular,
+            malo: response.malo,
+            minimo: response.minimo,
+            opciones: response.opciones,
+            comment: response.part_response_comment,
+            commentCategory: response.category_comment
+        }));
+
+        return formattedResponses;
+    }
+
+    async getCategoryResponsesData(inspection_id) {
+        const responses = await InspectionCategoryResponse.findAll({
+            where: { inspection_id: inspection_id },
+            include: [{
+                model: InspectionCategory,
+                as: 'category',
+                attributes: ['id', 'categoria']
+            }]
+        });
+
+        console.log(`📝 Encontradas ${responses.length} respuestas de categorías para inspección ${inspection_id}`);
+        
+        // Formato de respuesta
+        const formattedResponses = responses.map(response => ({
+            id: response.id,
+            category_id: response.category_id,
+            inspection_id: response.inspection_id,
+            comentario: response.comentario,
+            timestamp: response.timestamp,
+            categoryName: response.category ? response.category.categoria : null
+        }));
+
+        return formattedResponses;
+    }
+
+    async getMechanicalTestsData(session_id) {
+        const mechanicalTests = await MechanicalTest.findAll({
+            where: { session_id: session_id },
+            order: [['created_at', 'DESC']]
+        });
+
+        if (mechanicalTests.length === 0) {
+            console.log('📭 No hay pruebas mecanizadas para session_id:', session_id);
+            return {
+                brakes: null,
+                suspension: null,
+                tires: null,
+                alignment: null
+            };
+        }
+
+        // Tomar la prueba más reciente (la primera por orden DESC)
+        const latestTest = mechanicalTests[0];
+        console.log('📋 Prueba más reciente:', latestTest.id, 'con datos:', !!latestTest.data);
+        
+        // Los datos vienen como JSON en el campo 'data'
+        const testData = latestTest.data || {};
+        
+        // Procesar los datos para el formato esperado por el frontend
+        const processedTests = {
+            brakes: testData.brakes || null,
+            suspension: testData.suspension || null,
+            tires: testData.tires || null,
+            alignment: testData.alignment || null
+        };
+        
+        // Agregar información adicional si está disponible
+        if (latestTest.observationText) {
+            processedTests.observations = latestTest.observationText;
+        }
+        
+        if (latestTest.status) {
+            processedTests.status = latestTest.status;
+        }
+
+        // Agregar timestamp si no está presente
+        Object.keys(processedTests).forEach(key => {
+            if (processedTests[key] && !processedTests[key].timestamp) {
+                processedTests[key].timestamp = latestTest.created_at;
+            }
+        });
+
+        return processedTests;
+    }
+
+    async getCategoryCommentsData(inspection_id) {
+        const responses = await InspectionCategoryResponse.findAll({
+            where: { inspection_id: inspection_id },
+            include: [{
+                model: InspectionCategory,
+                as: 'category',
+                attributes: ['id', 'categoria']
+            }]
+        });
+        
+        // Formato de respuesta
+        const formattedResponses = responses.map(response => ({
+            id: response.id,
+            category_id: response.category_id,
+            inspection_id: response.inspection_id,
+            comentario: response.comentario,
+            timestamp: response.timestamp,
+            categoryName: response.category ? response.category.categoria : null
+        }));
+
+        return formattedResponses;
     }
 }
 

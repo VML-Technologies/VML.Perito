@@ -50,6 +50,12 @@ import PlateQuery from './plateQuery.js';
 import InspectionOrderContactHistory from './inspectionOrderContactHistory.js';
 import InspectionOrderCommentHistory from './inspectionOrderCommentHistory.js';
 
+// Nuevos modelos para partes de inspección
+import InspectionPart from './inspectionPart.js';
+import InspectionCategory from './inspectionCategory.js';
+import InspectionCategoryResponse from './inspectionCategoryResponse.js';
+import MechanicalTest from './mechanicalTest.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -696,6 +702,25 @@ InspectionOrderCommentHistory.belongsTo(User, {
     as: 'user'
 });
 
+InspectionCategory.hasMany(InspectionPart, {
+    foreignKey: 'categoria_id',
+    as: 'parts'
+});
+InspectionPart.belongsTo(InspectionCategory, {
+    foreignKey: 'categoria_id',
+    as: 'category'
+});
+
+// Relaciones para InspectionCategoryResponse
+InspectionCategory.hasMany(InspectionCategoryResponse, {
+    foreignKey: 'category_id',
+    as: 'responses'
+});
+InspectionCategoryResponse.belongsTo(InspectionCategory, {
+    foreignKey: 'category_id',
+    as: 'category'
+});
+
 export {
     Department,
     City,
@@ -739,5 +764,10 @@ export {
     PlateQuery,
     // Sistema de historial de contactos y comentarios
     InspectionOrderContactHistory,
-    InspectionOrderCommentHistory
+    InspectionOrderCommentHistory,
+    // Sistema de partes de inspección
+    InspectionPart,
+    InspectionCategory,
+    InspectionCategoryResponse,
+    MechanicalTest
 }; 
