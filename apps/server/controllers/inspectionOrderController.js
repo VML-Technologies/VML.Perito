@@ -128,6 +128,7 @@ class InspectionOrderController extends BaseController {
         this.getCategoryResponsesData = this.getCategoryResponsesData.bind(this);
         this.getInspectionReport = this.getInspectionReport.bind(this);
         this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
+        this.checkPlate = this.checkPlate.bind(this);
     }
 
     async getOrders(req, res) {
@@ -964,6 +965,66 @@ class InspectionOrderController extends BaseController {
         }));
 
         return formattedResponses;
+    }
+
+    /**
+     * Verificar si existe una orden activa con la misma placa
+     */
+    async checkPlate(req, res) {
+        try {
+            const { plate } = req.params;
+            
+            if (!plate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La placa es requerida'
+                });
+            }
+
+            // Buscar órdenes con la misma placa que NO estén en estado "Finalizado" (ID 5)
+            const existingOrder = await InspectionOrder.findOne({
+                where: {
+                    placa: plate.toUpperCase(),
+                    status: { [Op.ne]: 5 } // No igual a 5 (Finalizado)
+                },
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            if (existingOrder) {
+                return res.json({
+                    success: true,
+                    exists: true,
+                    message: `Ya existe una orden de inspección activa para la placa ${plate.toUpperCase()}`,
+                    order: {
+                        id: existingOrder.id,
+                        numero: existingOrder.numero,
+                        status: existingOrder.InspectionOrderStatus?.name || 'Sin estado',
+                        created_at: existingOrder.created_at,
+                        nombre_cliente: existingOrder.nombre_cliente
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                exists: false,
+                message: `La placa ${plate.toUpperCase()} está disponible para crear una nueva orden`
+            });
+
+        } catch (error) {
+            console.error('❌ Error verificando placa:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
     }
 }
 

@@ -49,6 +49,9 @@ export const API_ROUTES = {
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         
+        // ===== VALIDACIÓN DE PLACA =====
+        CHECK_PLATE: (plate) => `${API_BASE_URL}/api/inspection-orders/check-plate/${plate}`,
+        
         // ===== HISTORIAL DE CONTACTOS =====
         CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
         UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
