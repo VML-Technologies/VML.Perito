@@ -95,10 +95,9 @@ select * from users where email in (
         */
         const usuarios = await User.findAll({
             where: {
-                email: {
+                password: {
                     [Op.in]: [
-                        'floreivis.cova@holdingvml.com',
-                        'natalia.martinez@holdingvml.com'
+                        '$2b$10$1gIdZ1oSot0gMGCYMM4oSeLrXkPzuMq1ceT0fJwgeRzraRAXYQrHC'
                     ]
                 }
             }

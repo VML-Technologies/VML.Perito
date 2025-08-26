@@ -193,14 +193,14 @@ const createUsersWithRoles = async () => {
             // Usuarios Comerciales Mundiales
             {
                 userData: {
-                    sede_id: 28,
-                    identification: '1130593777',
-                    name: 'Alejandra Marcela Gutierrez Zapata',
-                    email: 'cenamgutierrez@segurosmundial.com.co',
+                    sede_id: 1,
+                    identification: 'OMBEM001',
+                    name: 'OMAR JAVIER BENAVIDES MORENO',
+                    email: 'omar.benavides@holdingvml.net',
                     phone: '3000000000',
                     password: hashedPassword,
                     is_active: true,
-                    intermediary_key: 'DIRECTO MUNDIAL',
+                    intermediary_key: 'OMARBENAVIDES',
                     notification_channel_in_app_enabled: true,
                     notification_channel_sms_enabled: true,
                     notification_channel_email_enabled: true,
