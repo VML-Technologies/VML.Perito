@@ -6,7 +6,8 @@ const CallHistory = ({
     title = "Historial de Llamadas",
     description = "Registro de todas las llamadas realizadas",
     maxHeight = "max-h-40",
-    showLimit = 5
+    showLimit = 5,
+    userRole = null
 }) => {
     const formatDateTime = (dateString) => {
         if (!dateString) return 'N/A';
@@ -52,12 +53,14 @@ const CallHistory = ({
                                 </div>
 
                                 <div className="space-y-1 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <User className="h-3 w-3" />
-                                        <span>
-                                            Agente: {call.Agent?.name || 'No especificado'}
-                                        </span>
-                                    </div>
+                                    {userRole !== 'comercial_mundial' && (
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-3 w-3" />
+                                            <span>
+                                                Agente: {call.Agent?.name || 'No especificado'}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     {call.comments && (
                                         <div className="flex items-start gap-2 mt-2">

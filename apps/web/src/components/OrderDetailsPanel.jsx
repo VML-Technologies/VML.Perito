@@ -132,7 +132,10 @@ const OrderDetailsPanel = ({
 
                         {showCallHistory && (
                             <TabsContent value="calls">
-                                <CallHistory callLogs={order.callLogs} />
+                                <CallHistory 
+                                    callLogs={order.callLogs} 
+                                    userRole={user?.roles?.[0]?.name}
+                                />
                             </TabsContent>
                         )}
 
@@ -152,7 +155,12 @@ const OrderDetailsPanel = ({
                     </Tabs>
                 ) : (
                     <div className="space-y-4">
-                        {showCallHistory && <CallHistory callLogs={order.callLogs} />}
+                        {showCallHistory && (
+                            <CallHistory 
+                                callLogs={order.callLogs} 
+                                userRole={user?.roles?.[0]?.name}
+                            />
+                        )}
                         {showAppointments && <AppointmentsHistory appointments={order.appointments} />}
                         <OrderCommunicationSection 
                             orderId={order.id}
