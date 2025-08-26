@@ -250,7 +250,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: CallLog,
                     as: 'callLogs',
-                    attributes: ['id', 'comments', 'created_at'],
+                    attributes: ['id', 'comments', 'call_time', 'created_at'],
                     include: [
                         {
                             model: CallStatus,
