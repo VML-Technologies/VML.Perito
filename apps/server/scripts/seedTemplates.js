@@ -41,7 +41,7 @@ const seedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,
@@ -81,7 +81,7 @@ const seedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,

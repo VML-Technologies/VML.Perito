@@ -97,7 +97,7 @@ const seedData = async () => {
                 phone: '601-234-5678'
             },
             {
-                name: 'VML Perito S.A.S.',
+                name: 'Movilidad Mundial S.A.S.',
                 nit: '800987654-3',
                 city_id: 7, // Medellín
                 address: 'Calle 10 # 20-30, Medellín',

@@ -22,11 +22,11 @@ const seedAdvancedTemplates = async () => {
                 category: 'user',
                 channels: {
                     email: {
-                        subject: '¡Bienvenido a VML Perito, {{user.name}}!',
+                        subject: '¡Bienvenido a Movilidad Mundial, {{user.name}}!',
                         template: `
                             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
-                                    <h1 style="margin: 0; font-size: 28px;">¡Bienvenido a VML Perito!</h1>
+                                    <h1 style="margin: 0; font-size: 28px;">¡Bienvenido a Movilidad Mundial!</h1>
                                     <p style="margin: 10px 0 0 0; font-size: 16px;">Sistema de Inspecciones Automotrices</p>
                                 </div>
                                 
@@ -60,7 +60,7 @@ const seedAdvancedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">© 2024 VML Perito. Todos los derechos reservados.</p>
+                                    <p style="margin: 0;">© 2024 Movilidad Mundial. Todos los derechos reservados.</p>
                                 </div>
                             </div>
                         `,
@@ -133,7 +133,7 @@ const seedAdvancedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,
@@ -205,7 +205,7 @@ const seedAdvancedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,
@@ -465,7 +465,7 @@ const seedAdvancedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,
@@ -483,7 +483,7 @@ const seedAdvancedTemplates = async () => {
                 category: 'appointment',
                 channels: {
                     sms: {
-                        template: 'VML Perito: Su cita está confirmada para {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}',
+                        template: 'Movilidad Mundial: Su cita está confirmada para {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}',
                         variables: ['appointment.scheduled_date', 'appointment.scheduled_time', 'appointment.location', 'inspection_order.numero']
                     }
                 },
@@ -594,7 +594,7 @@ const seedAdvancedTemplates = async () => {
                                 </div>
                                 
                                 <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 12px;">
-                                    <p style="margin: 0;">VML Perito - Sistema de Inspecciones Automotrices</p>
+                                    <p style="margin: 0;">Movilidad Mundial - Sistema de Inspecciones Automotrices</p>
                                 </div>
                             </div>
                         `,
@@ -612,7 +612,7 @@ const seedAdvancedTemplates = async () => {
                 category: 'appointment',
                 channels: {
                     sms: {
-                        template: 'VML Perito: Recordatorio - Su cita es mañana {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}',
+                        template: 'Movilidad Mundial: Recordatorio - Su cita es mañana {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}',
                         variables: ['appointment.scheduled_date', 'appointment.scheduled_time', 'appointment.location', 'inspection_order.numero']
                     }
                 },
