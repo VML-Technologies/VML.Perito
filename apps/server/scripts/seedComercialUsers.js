@@ -195,7 +195,13 @@ const getSedeIdByLocation = async (location) => {
             'ARMENIA': 'CEN ARMENIA',
             'Bucarmanga': 'AGENCIA BUCARAMANGA',
             'Bucaramanga': 'AGENCIA BUCARAMANGA',
-            'SINCELEJO': 'CEN SUCRE'
+            'SINCELEJO': 'CEN SUCRE',
+            'Barranquilla': 'SUC BARRANQUILLIA',
+            'Cartagena': 'SUC CARTAGENA',
+            // Mapeos adicionales para usuarios específicos
+            'CEN BOGOTA OCCIDENTE': 'CEN BTÁ OCCIDENTE',
+            'SUCURSAL BOGOTÁ': 'SUCURSAL BOGOTA',
+            'BOGOTA': 'DIRECCIÓN GENERAL'
         };
 
         const sedeName = sedeMapping[location];
@@ -417,6 +423,119 @@ const createComercialUsers = async () => {
                 phone: '3000000000',
                 intermediary_key: 'Directo Mundial',
                 location: 'SINCELEJO'
+            },
+            // Nuevos usuarios comerciales
+            {
+                identification: '1002353828',
+                name: 'ANGIE LORENA GONZALEZ CERPA',
+                email: 'cenagonzalez@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: '80000441',
+                location: 'BOGOTA'
+            },
+            {
+                identification: '1001820480',
+                name: 'Danna Vanessa Santos Payare',
+                email: 'dsantos@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Barranquilla'
+            },
+            {
+                identification: '1140826678',
+                name: 'Julieth Ortiz Muñoz',
+                email: 'julortiz@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Barranquilla'
+            },
+            {
+                identification: '1007458283',
+                name: 'Yoleis Segura Melendez',
+                email: 'ysegura@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Barranquilla'
+            },
+            {
+                identification: '45758887',
+                name: 'Tania Yepes Cadena',
+                email: 'tyepes@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Cartagena'
+            },
+            {
+                identification: '128061537',
+                name: 'Katiusca Sierra Madachi',
+                email: 'ksierra@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Cartagena'
+            },
+            {
+                identification: '1065378132',
+                name: 'Maria Teresa Carracal Serrano',
+                email: 'mcarrascal@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'Cartagena'
+            },
+            {
+                identification: '1023009630',
+                name: 'Jojhan Leonardo Torres Sepulveda',
+                email: 'jotorres@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'BOGOTÁ'
+            },
+            {
+                identification: '1024511490',
+                name: 'Ginna Lizeth Torres Rubiano',
+                email: 'gitorres@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'BOGOTÁ'
+            },
+            {
+                identification: '1075629981',
+                name: 'Gissell Andrea Cifuentes Barbosa',
+                email: 'giscifuentes@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'BOGOTÁ'
+            },
+            {
+                identification: '1019136833',
+                name: 'Yineth Paola Vanegas Lopez',
+                email: 'yivanegas@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'DIRECTO',
+                location: 'BOGOTA'
+            },
+            {
+                identification: '1022352441',
+                name: 'MARIA CLAUDIA MORA CASALLAS',
+                email: 'mmora@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'DIRECTO',
+                location: 'BOGOTA'
+            },
+            {
+                identification: '1010227847',
+                name: 'BRAYAN ALBERTO TORRES VARON',
+                email: 'BTORRES@SEGUROSMUNDIAL.COM.CO',
+                phone: '3000000000',
+                intermediary_key: 'DIRECTO',
+                location: 'BOGOTA'
+            },
+            {
+                identification: '1003631054',
+                name: 'Erika Fernanda Gonzalez',
+                email: 'ergonzalez@segurosmundial.com.co',
+                phone: '3000000000',
+                intermediary_key: 'Directo Mundial',
+                location: 'BOGOTA'
             }
         ];
 

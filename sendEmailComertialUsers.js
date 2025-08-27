@@ -97,7 +97,7 @@ select * from users where email in (
             where: {
                 password: {
                     [Op.in]: [
-                        '$2b$10$1gIdZ1oSot0gMGCYMM4oSeLrXkPzuMq1ceT0fJwgeRzraRAXYQrHC'
+                        '$2b$10$lE8VWR2ARRSMSd1DmM7D9.JExYBnwLAeBe6QZzVjIL4IKoWsbYPHe'
                     ]
                 }
             }

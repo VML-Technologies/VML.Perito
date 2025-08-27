@@ -45,16 +45,16 @@ const seedAll = async () => {
         // console.log('✅ Sistema de modalidades avanzado configurado correctamente.');
 
         // 5. Crear usuarios (administrador y usuarios con roles)
-        console.log('\n👥 Paso 4: Creando usuarios...');
-        const { default: seedUsers } = await import('./seedUsers.js');
-        await seedUsers();
-        console.log('✅ Usuarios creados correctamente.');
+        // console.log('\n👥 Paso 4: Creando usuarios...');
+        // const { default: seedUsers } = await import('./seedUsers.js');
+        // await seedUsers();
+        // console.log('✅ Usuarios creados correctamente.');
 
-        // // 6. Crear usuarios comerciales adicionales
-        // console.log('\n👥 Paso 5: Creando usuarios comerciales adicionales...');
-        // const { default: seedComercialUsers } = await import('./seedComercialUsers.js');
-        // await seedComercialUsers();
-        // console.log('✅ Usuarios comerciales adicionales creados correctamente.');
+        // 6. Crear usuarios comerciales adicionales
+        console.log('\n👥 Paso 5: Creando usuarios comerciales adicionales...');
+        const { default: seedComercialUsers } = await import('./seedComercialUsers.js');
+        await seedComercialUsers();
+        console.log('✅ Usuarios comerciales adicionales creados correctamente.');
 
         // // 6. Ejecutar seed de datos de inspección
         // console.log('\n🏭 Paso 5: Cargando datos de inspección...');
