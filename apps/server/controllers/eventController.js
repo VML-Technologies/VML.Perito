@@ -512,7 +512,8 @@ class EventController {
      */
     async getEventStats(req, res) {
         try {
-            const stats = await this.eventRegistry.getEventStats();
+            // const stats = await this.eventRegistry.getEventStats();
+            const stats = [];
 
             res.json({
                 success: true,

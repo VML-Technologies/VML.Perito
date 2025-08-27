@@ -27,6 +27,7 @@ import SedeModalityAvailability from './sedeModalityAvailability.js';
 import VehicleType from './vehicleType.js';
 import SedeVehicleType from './sedeVehicleType.js';
 import ScheduleTemplate from './scheduleTemplate.js';
+import ScheduleExclusion from './scheduleExclusion.js';
 
 // Nuevos modelos para sistema de eventos
 import Event from './event.js';
@@ -452,6 +453,20 @@ ScheduleTemplate.belongsTo(InspectionModality, {
     as: 'inspectionModality'
 });
 
+// ScheduleTemplate -> ScheduleExclusion (1:N) - Períodos de exclusión en horarios
+ScheduleTemplate.hasMany(ScheduleExclusion, {
+    foreignKey: 'schedule_template_id',
+    as: 'exclusions',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ScheduleExclusion.belongsTo(ScheduleTemplate, {
+    foreignKey: 'schedule_template_id',
+    as: 'scheduleTemplate',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
 // ===== RELACIONES NOTIFICACIONES =====
 
 // NotificationType -> NotificationConfig (1:N)
@@ -749,6 +764,7 @@ export {
     VehicleType,
     SedeVehicleType,
     ScheduleTemplate,
+    ScheduleExclusion,
     // Sistema de eventos
     Event,
     EventListener,

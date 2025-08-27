@@ -385,6 +385,9 @@ app.get('/api/users/trashed/only', readLimiter, requirePermission('users.read'),
 app.get('/api/users', readLimiter, requirePermission('users.read'), userController.index);
 app.get('/api/users/:id', readLimiter, requirePermission('users.read'), userController.show);
 app.post('/api/users', requirePermission('users.create'), userController.store);
+app.post('/api/users/create-with-email', requirePermission('users.create'), userController.createUserWithEmail);
+app.get('/api/users/validate/identification', readLimiter, requirePermission('users.read'), userController.validateIdentification);
+app.get('/api/users/validate/email', readLimiter, requirePermission('users.read'), userController.validateEmail);
 app.put('/api/users/:id', requirePermission('users.update'), userController.update);
 app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
