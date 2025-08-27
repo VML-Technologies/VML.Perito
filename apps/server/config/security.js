@@ -1,4 +1,4 @@
-// Configuración de seguridad para el servidor VML Perito
+// Configuración de seguridad para el servidor Movilidad Mundial
 
 export const securityConfig = {
     // Dominios permitidos para CORS
@@ -10,8 +10,8 @@ export const securityConfig = {
         'http://localhost:5173',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'http://192.168.20.6:5173',
-        'http://192.168.20.6:3000'
+        'http://192.168.78.106:5173',
+        'http://192.168.78.106:3000'
     ],
 
     // Configuración de Helmet

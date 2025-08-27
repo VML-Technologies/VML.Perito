@@ -2,6 +2,7 @@ import User from '../models/user.js';
 import Role from '../models/role.js';
 import Permission from '../models/permission.js';
 import PasswordService from '../services/passwordService.js';
+import PasswordResetService from '../services/passwordResetService.js';
 import jwt from 'jsonwebtoken';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 
@@ -299,6 +300,92 @@ export const logout = (req, res) => {
     res.json({ message: 'Sesión cerrada' });
 };
 
+// Endpoint para solicitar recuperación de contraseña
+export const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'El correo electrónico es requerido.' 
+            });
+        }
+
+        const result = await PasswordResetService.requestPasswordReset(email);
+        
+        if (result.success) {
+            res.status(200).json(result);
+        } else {
+            res.status(400).json(result);
+        }
+
+    } catch (error) {
+        console.error('Error en requestPasswordReset:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error interno del servidor.' 
+        });
+    }
+};
+
+// Endpoint para verificar token de recuperación
+export const verifyResetToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'Token requerido.' 
+            });
+        }
+
+        const result = await PasswordResetService.verifyResetToken(token);
+        
+        if (result.valid) {
+            res.status(200).json({ valid: true, message: 'Token válido.' });
+        } else {
+            res.status(400).json(result);
+        }
+
+    } catch (error) {
+        console.error('Error en verifyResetToken:', error);
+        res.status(500).json({ 
+            valid: false, 
+            message: 'Error interno del servidor.' 
+        });
+    }
+};
+
+// Endpoint para resetear contraseña
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Token y nueva contraseña son requeridos.' 
+            });
+        }
+
+        const result = await PasswordResetService.resetPassword(token, newPassword);
+        
+        if (result.success) {
+            res.status(200).json(result);
+        } else {
+            res.status(400).json(result);
+        }
+
+    } catch (error) {
+        console.error('Error en resetPassword:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error interno del servidor.' 
+        });
+    }
+};
 
 // Export por defecto para compatibilidad con el index.js
 export default {
@@ -308,5 +395,8 @@ export default {
     logout,
     changeTemporaryPassword,
     changePassword,
-    verify
+    verify,
+    requestPasswordReset,
+    verifyResetToken,
+    resetPassword
 }; 

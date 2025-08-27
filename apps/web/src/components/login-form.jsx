@@ -74,11 +74,12 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Contraseña</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
-                    Olvidaste tu contraseña?
-                  </a>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-blue-600 hover:text-blue-800">
+                    ¿Olvidaste tu contraseña?
+                  </button>
                 </div>
                 <Input
                   id="password"
