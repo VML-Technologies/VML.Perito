@@ -1,0 +1,91 @@
+---
+description: Proceso de gestión del changelog del proyecto Movilidad Mundial
+alwaysApply: false
+---
+
+# Gestión del Changelog - Movilidad Mundial
+
+## Ubicación del Archivo
+El changelog del proyecto se encuentra en [changelog.md](mdc:changelog.md) en la raíz del proyecto.
+
+## Formato Estándar para Stakeholders
+
+### Estructura de Entrada por Fecha
+```markdown
+## YYYY-MM-DD
+
+### [Icono] **Título del Cambio**
+**Tipo:** [Clasificación] | **Prioridad:** [Alta/Media/Baja] | **Módulo:** [Área del Sistema]
+
+**Descripción del Negocio:**
+[Explicación orientada a negocio de qué se implementó y por qué]
+
+**Valor de Negocio:**
+- ✅ **Beneficio 1**: Descripción del impacto
+- ✅ **Beneficio 2**: Descripción del impacto
+
+**Funcionalidades Implementadas:**
+- **Feature 1**: Descripción técnica accesible
+- **Feature 2**: Descripción técnica accesible
+
+**Casos de Uso Soportados:**
+- Ejemplo práctico 1
+- Ejemplo práctico 2
+
+**Impacto en Usuarios:**
+- **Rol 1**: Cómo les afecta
+- **Rol 2**: Cómo les afecta
+```
+
+## Clasificaciones de Cambios
+
+### Tipos de Cambios con Iconos
+- 🆕 **Nueva Característica**: Funcionalidades completamente nuevas
+- 🔧 **Mejora**: Optimizaciones de funcionalidades existentes  
+- 🐛 **Corrección de Error**: Solución de bugs y problemas
+- 🔒 **Seguridad**: Mejoras de seguridad y compliance
+- 📈 **Rendimiento**: Optimizaciones de performance
+- 🎨 **Interfaz de Usuario**: Mejoras de UX/UI
+- 🔄 **Refactorización**: Mejoras técnicas internas
+- 📚 **Documentación**: Actualizaciones de documentación
+- ⚡ **Hotfix**: Correcciones urgentes en producción
+
+### Niveles de Prioridad
+- **Alta**: Cambios críticos para el negocio o que afectan flujos principales
+- **Media**: Mejoras importantes pero no críticas
+- **Baja**: Optimizaciones menores o cambios estéticos
+
+### Módulos del Sistema
+- Sistema de Agendamiento
+- Contact Center
+- Sistema de Notificaciones
+- RBAC y Seguridad
+- Sistema de Inspecciones
+- API y Backend
+- Frontend y UI
+- Base de Datos
+- Webhooks e Integraciones
+
+## Proceso de Actualización
+
+### Cuándo Actualizar
+- Al finalizar cada feature o conjunto de cambios relacionados
+- Al implementar correcciones de errores
+- Al realizar mejoras de rendimiento o seguridad
+- Antes de releases a producción
+
+### Responsabilidades
+- **Desarrollador**: Documenta cambios técnicos al finalizar tareas
+- **Product Owner**: Valida que la descripción del negocio sea clara
+- **Stakeholders**: Revisan el valor de negocio y casos de uso
+
+### Mejores Prácticas
+1. **Lenguaje Empresarial**: Usar términos de negocio, no técnicos
+2. **Impacto Claro**: Explicar cómo beneficia a usuarios finales
+3. **Casos Concretos**: Incluir ejemplos prácticos de uso
+4. **Valor Medible**: Destacar ROI y beneficios tangibles
+5. **Orden Cronológico**: Más reciente primero
+6. **Consistencia**: Mantener formato uniforme
+
+## Ejemplo de Implementación
+Ver la entrada del 2025-01-27 en [changelog.md](mdc:changelog.md) como referencia del formato estándar para la funcionalidad de Gestión de Tiempos Muertos en Agendamiento.
