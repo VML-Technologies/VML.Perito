@@ -92,7 +92,7 @@ class WhatsAppService {
             message += '\n\n🚨 *URGENTE*';
         }
 
-        message += '\n\n_VML Perito - Sistema de Notificaciones_';
+        message += '\n\n_Movilidad Mundial - Sistema de Notificaciones_';
 
         return message;
     }

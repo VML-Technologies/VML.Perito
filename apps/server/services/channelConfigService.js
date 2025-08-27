@@ -222,13 +222,13 @@ class ChannelConfigService {
             // Enviar email de prueba
             const testEmail = {
                 recipient_email: testData.to || config.config.test_email || 'test@example.com',
-                title: 'Prueba de Configuración - VML Perito',
+                title: 'Prueba de Configuración - Movilidad Mundial',
                 content: 'Este es un email de prueba para verificar la configuración del canal de email.',
                 priority: 'normal',
                 metadata: {
                     channel_data: {
                         email: {
-                            subject: 'Prueba de Configuración - VML Perito',
+                            subject: 'Prueba de Configuración - Movilidad Mundial',
                             html: '<h1>Prueba de Configuración</h1><p>Este es un email de prueba para verificar la configuración del canal de email.</p>'
                         }
                     }
@@ -265,12 +265,12 @@ class ChannelConfigService {
             // Enviar SMS de prueba
             const testSMS = {
                 recipient_phone: testData.to || config.config.test_phone || '+573001234567',
-                content: 'Prueba de configuración SMS - VML Perito',
+                content: 'Prueba de configuración SMS - Movilidad Mundial',
                 priority: 'normal',
                 metadata: {
                     channel_data: {
                         sms: {
-                            message: 'Prueba de configuración SMS - VML Perito'
+                            message: 'Prueba de configuración SMS - Movilidad Mundial'
                         }
                     }
                 }
@@ -306,13 +306,13 @@ class ChannelConfigService {
             // Enviar mensaje de prueba
             const testMessage = {
                 recipient_phone: testData.to || config.config.test_phone || '+573001234567',
-                content: 'Prueba de configuración WhatsApp - VML Perito',
+                content: 'Prueba de configuración WhatsApp - Movilidad Mundial',
                 title: 'Prueba de Configuración',
                 priority: 'normal',
                 metadata: {
                     channel_data: {
                         whatsapp: {
-                            message: 'Prueba de configuración WhatsApp - VML Perito'
+                            message: 'Prueba de configuración WhatsApp - Movilidad Mundial'
                         }
                     }
                 }

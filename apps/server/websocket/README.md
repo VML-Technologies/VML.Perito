@@ -1,4 +1,4 @@
-# Sistema de WebSockets - VML Perito
+# Sistema de WebSockets - Movilidad Mundial
 
 Un sistema extensible de WebSockets para notificaciones en tiempo real, actualizaciones de datos y comunicación bidireccional.
 

@@ -2,7 +2,7 @@
 
 ## 🎯 Objetivo
 
-Implementar un sistema completo de notificaciones push usando la [Push API nativa](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) sin dependencias de Firebase, integrado con el sistema de notificaciones existente de VML.Perito.
+Implementar un sistema completo de notificaciones push usando la [Push API nativa](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) sin dependencias de Firebase, integrado con el sistema de notificaciones existente de Movilidad Mundial.
 
 ## 📊 Análisis de la Push API
 
@@ -439,6 +439,6 @@ PUSH_TIMEOUT=5000
 ---
 
 **Fecha de creación**: Enero 2025  
-**Responsable**: Equipo de Desarrollo VML.Perito  
+**Responsable**: Equipo de Desarrollo Movilidad Mundial  
 **Estado**: 📋 Planificado  
 **Prioridad**: 🔄 Media (después de webhooks)
