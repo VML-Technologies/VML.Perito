@@ -125,18 +125,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - **Exclusión de Usuarios**: Mejora en filtrado por `intermediary_key` excluyendo usuarios de `segurosmundial.com.co`
 - **Función PDF**: Eliminar función de exportación a PDF para simplificar código y mejorar mantenibilidad
 
-## [1.2.0] - 2025-08-27
+## [1.0.8] - 2025-08-27
 
 ### 🚀 **Nuevas Características**
 - **Sistema de Correos de Bienvenida**: Implementación completa del envío automático de correos electrónicos de bienvenida al crear nuevos usuarios
   - Nuevo controlador para gestión de correos de bienvenida
   - Validaciones para identificación y correo electrónico únicos
   - Plantillas de correo personalizadas
+- **Sistema de Recuperación de Contraseña**: Implementación completa del sistema de recuperación de contraseñas
+  - Nuevos endpoints para solicitar, verificar y restablecer contraseñas
+  - Nuevos campos en el modelo de usuario para tokens de recuperación
+  - Plantilla de correo electrónico personalizada para el proceso de recuperación
+  - Formularios en la interfaz de usuario para gestionar la recuperación de contraseñas
 - **Gestión de Exclusiones de Horarios**: Nuevo modelo y sistema para gestionar exclusiones en la programación
   - Configuración de períodos de tiempo muerto
   - Flexibilidad para días específicos o toda la semana
   - Integración automática con el sistema de agendamiento
-- **Nuevo Archivo de Imagen**: Mejora en la presentación visual de la aplicación
+- **Nuevo Rol de Usuario**: Implementación del rol de Ayuda Técnica (help_desk)
+  - Nuevos permisos específicos para el rol de ayuda técnica
+  - Gestión mejorada de roles y permisos en la interfaz de administración
+  - Integración con el sistema RBAC existente
 
 ### 🔧 **Mejoras**
 - **Control de Visualización por Rol**: Atributo `userRole` en componente CallHistory para controlar información según el rol del usuario
@@ -144,10 +152,38 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - **Ampliación de Datos de Citas**: Nuevos atributos y relaciones con modelos de modalidad de inspección y sede
 - **Verificación de Órdenes Activas**: Nueva funcionalidad para verificar existencia de órdenes activas por placa
 - **Diseño de Informes Mejorado**: Mejor presentación del informe de inspección con información de contacto adicional
+- **Interfaz de Administración RBAC**: Mejoras en la gestión de roles y permisos
+  - Interfaz más intuitiva para administrar roles
+  - Mejor visualización de permisos asignados
+  - Funcionalidades avanzadas de gestión de usuarios
+- **Sistema de Rutas**: Nuevas rutas para funcionalidades de recuperación de contraseña
+  - Endpoints RESTful para el proceso de recuperación
+  - Validaciones de seguridad en todas las rutas
+  - Integración con middleware de autenticación
+- **Nomenclatura del Proyecto**: Actualización completa de referencias de 'VML Perito' a 'Movilidad Mundial'
+  - Documentación actualizada con nueva nomenclatura
+  - Código refactorizado para usar el nuevo nombre del proyecto
+  - Consistencia en toda la aplicación
+
+### 🔒 **Seguridad**
+- **Validaciones de Seguridad**: Mejoras en la seguridad del sistema de recuperación de contraseñas
+  - Tokens de recuperación con expiración automática
+  - Validaciones de formato de contraseña
+  - Protección contra ataques de fuerza bruta
+  - Logs de seguridad para auditoría
 
 ### 🐛 **Correcciones**
 - **Validación de Placas**: Lógica mejorada para validar placas ingresadas y mostrar información relevante
 - **Estructura de Formularios**: Ajustes en el modal de creación de órdenes para mejor presentación
+
+### 📚 **Documentación**
+- **Changelog del Proyecto**: Creación del archivo changelog.md para documentar cambios y versiones
+  - Formato basado en Keep a Changelog
+  - Notas de lanzamiento para versiones anteriores
+  - Estructura organizada para futuras actualizaciones
+
+### 🎨 **Presentación Visual**
+- **Nuevo Archivo de Imagen**: Mejora en la presentación visual de la aplicación
 
 ---
 
@@ -173,8 +209,9 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 
 ### v1.0.8
 - **Deploy**: 27 de Agosto 2025
-- **Características Principales**: Sistema de correos de bienvenida y gestión de exclusiones de horarios
-- **Migración Requerida**: Nuevas migraciones para exclusiones de horarios
+- **Características Principales**: Sistema completo de recuperación de contraseñas, correos de bienvenida, gestión de exclusiones de horarios, nuevo rol de ayuda técnica y actualización de nomenclatura del proyecto
+- **Seguridad**: Mejoras significativas en seguridad con tokens de recuperación y validaciones
+- **Migración Requerida**: Nuevas migraciones para campos de recuperación de contraseña y exclusiones de horarios
 
 ### v1.0.7
 - **Deploy**: 26 de Agosto 2025
