@@ -37,11 +37,15 @@ export default function Admin() {
     const [permissions, setPermissions] = useState([]);
     const [users, setUsers] = useState([]);
 
+    // User roles
+    const isSuperAdmin = user?.roles?.some(role => role.name === 'super_admin');
+    const isHelpDesk = user?.roles?.some(role => role.name === 'help_desk');
+
     // Estados de UI
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRole, setSelectedRole] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('create-user');
+    const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'assignments' : 'create-user');
 
     // Estados para notificaciones
     const [notificationTypes, setNotificationTypes] = useState([]);
@@ -49,11 +53,6 @@ export default function Admin() {
     const [notificationConfigs, setNotificationConfigs] = useState([]);
     const [notificationStats, setNotificationStats] = useState(null);
     const [notificationLogs, setNotificationLogs] = useState([]);
-
-    // User roles
-    const isSuperAdmin = user?.roles?.some(role => role.name === 'super_admin');
-    const isAdminHelpDesk = user?.roles?.some(role => role.name === 'admin_help_desk');
-    const isAdminOperations = user?.roles?.some(role => role.name === 'admin_operations');
 
     // Estados para eventos
     const [events, setEvents] = useState([]);
@@ -73,35 +72,33 @@ export default function Admin() {
 
             showToast('Cargando datos de administración...', 'info');
 
-            if (isSuperAdmin) {
-                const [rolesRes, permissionsRes, usersRes] = await Promise.all([
-                    fetch(API_ROUTES.ROLES.LIST, { headers }),
-                    fetch(API_ROUTES.PERMISSIONS.LIST, { headers }),
-                    fetch(API_ROUTES.USERS.WITH_ROLES, { headers })
-                ]);
+            const [rolesRes, permissionsRes, usersRes] = await Promise.all([
+                fetch(API_ROUTES.ROLES.LIST, { headers }),
+                fetch(API_ROUTES.PERMISSIONS.LIST, { headers }),
+                fetch(API_ROUTES.USERS.WITH_ROLES, { headers })
+            ]);
 
-                if (!rolesRes.ok || !permissionsRes.ok || !usersRes.ok) {
-                    throw new Error('Error al cargar datos');
-                }
-
-                const rolesData = await rolesRes.json();
-                const permissionsData = await permissionsRes.json();
-                const usersData = await usersRes.json();
-
-                const data = {
-                    roles: rolesData,
-                    permissions: permissionsData,
-                    users: usersData
-                };
-
-                setOriginalData(data);
-                setRoles(JSON.parse(JSON.stringify(rolesData)));
-                setPermissions(JSON.parse(JSON.stringify(permissionsData)));
-                setUsers(JSON.parse(JSON.stringify(usersData)));
-                setHasChanges(false);
-
-                showToast(`Datos cargados: ${rolesData.length} roles, ${permissionsData.length} permisos, ${usersData.length} usuarios`, 'success');
+            if (!rolesRes.ok || !permissionsRes.ok || !usersRes.ok) {
+                throw new Error('Error al cargar datos');
             }
+
+            const rolesData = await rolesRes.json();
+            const permissionsData = await permissionsRes.json();
+            const usersData = await usersRes.json();
+
+            const data = {
+                roles: rolesData,
+                permissions: permissionsData,
+                users: usersData
+            };
+
+            setOriginalData(data);
+            setRoles(JSON.parse(JSON.stringify(rolesData)));
+            setPermissions(JSON.parse(JSON.stringify(permissionsData)));
+            setUsers(JSON.parse(JSON.stringify(usersData)));
+            setHasChanges(false);
+
+            showToast(`Datos cargados: ${rolesData.length} roles, ${permissionsData.length} permisos, ${usersData.length} usuarios`, 'success');
         } catch (e) {
             setError(e.message);
             showToast('Error al cargar datos: ' + e.message, 'error');
@@ -112,40 +109,46 @@ export default function Admin() {
 
     // Cargar datos de notificaciones
     const fetchNotificationData = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const headers = { 'Authorization': `Bearer ${token}` };
+        
+        setNotificationTypes([]);
+        setNotificationChannels([]);
+        setNotificationConfigs([]);
+        setNotificationStats(null);
+        setNotificationLogs([]);
+        // try {
+        //     const token = localStorage.getItem('authToken');
+        //     const headers = { 'Authorization': `Bearer ${token}` };
 
-            const [typesRes, channelsRes, configsRes, statsRes] = await Promise.all([
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.TYPES, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CHANNELS, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CONFIGS, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.ADMIN_STATS, { headers })
-            ]);
+        //     const [typesRes, channelsRes, configsRes, statsRes] = await Promise.all([
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.TYPES, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CHANNELS, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CONFIGS, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.ADMIN_STATS, { headers })
+        //     ]);
 
-            if (typesRes.ok) {
-                const typesData = await typesRes.json();
-                setNotificationTypes(typesData.data || []);
-            }
+        //     if (typesRes.ok) {
+        //         const typesData = await typesRes.json();
+        //         setNotificationTypes(typesData.data || []);
+        //     }
 
-            if (channelsRes.ok) {
-                const channelsData = await channelsRes.json();
-                setNotificationChannels(channelsData.data || []);
-            }
+        //     if (channelsRes.ok) {
+        //         const channelsData = await channelsRes.json();
+        //         setNotificationChannels(channelsData.data || []);
+        //     }
 
-            if (configsRes.ok) {
-                const configsData = await configsRes.json();
-                setNotificationConfigs(configsData.data || []);
-            }
+        //     if (configsRes.ok) {
+        //         const configsData = await configsRes.json();
+        //         setNotificationConfigs(configsData.data || []);
+        //     }
 
-            if (statsRes.ok) {
-                const statsData = await statsRes.json();
-                setNotificationStats(statsData.data);
-            }
+        //     if (statsRes.ok) {
+        //         const statsData = await statsRes.json();
+        //         setNotificationStats(statsData.data);
+        //     }
 
-        } catch (e) {
-            console.error('Error cargando datos de notificaciones:', e);
-        }
+        // } catch (e) {
+        //     console.error('Error cargando datos de notificaciones:', e);
+        // }
     };
 
     // Cargar datos de eventos
@@ -193,8 +196,8 @@ export default function Admin() {
 
     useEffect(() => {
         fetchData();
-        // fetchNotificationData();
-        // fetchEventData();
+        fetchNotificationData();
+        fetchEventData();
         fetchSedes();
     }, []);
 
@@ -376,156 +379,143 @@ export default function Admin() {
     }
 
     return (
-        <RoleBasedRoute requiredRoles={['admin', 'super_admin']}>
-            <AuthenticatedLayout>
-                <div className="max-w-7xl mx-auto p-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-2">
-                                <Shield className="h-8 w-8" />
-                                Administración RBAC
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Gestiona roles, permisos y asignaciones de usuarios
-                            </p>
-                        </div>
-
-                        {hasChanges && (
-                            <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="animate-pulse">
-                                    Cambios pendientes
-                                </Badge>
-                                <Button
-                                    onClick={handleSaveChanges}
-                                    disabled={saving}
-                                    className="flex items-center gap-2"
-                                >
-                                    {saving ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="h-4 w-4" />
-                                    )}
-                                    {saving ? 'Guardando...' : 'Guardar Cambios'}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-
-
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-                            <p className="text-red-800">{error}</p>
-                        </div>
-                    )}
-
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-6">
-                            {
-                                isSuperAdmin && <>
-                                    <TabsTrigger value="assignments" className="flex items-center gap-2">
-                                        <UserCheck className="h-4 w-4" />
-                                        Asignaciones
-                                    </TabsTrigger>
-                                    <TabsTrigger value="roles" className="flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        Roles
-                                    </TabsTrigger>
-                                    <TabsTrigger value="permissions" className="flex items-center gap-2">
-                                        <Key className="h-4 w-4" />
-                                        Permisos
-                                    </TabsTrigger>
-                                    <TabsTrigger value="notifications" className="flex items-center gap-2">
-                                        <Bell className="h-4 w-4" />
-                                        Notificaciones
-                                    </TabsTrigger>
-                                    <TabsTrigger value="events" className="flex items-center gap-2">
-                                        <BarChart3 className="h-4 w-4" />
-                                        Eventos
-                                    </TabsTrigger>
-                                </>
-                            }
-                            {
-                                (isAdminHelpDesk || isSuperAdmin) && <>
-                                    <TabsTrigger value="create-user" className="flex items-center gap-2">
-                                        <UserPlus className="h-4 w-4" />
-                                        Crear Usuario
-                                    </TabsTrigger>
-                                </>
-                            }
-
-                        </TabsList>
-
-                        {/* Tab de Asignaciones */}
-                        <TabsContent value="assignments" className="space-y-6">
-                            <RoleAssignments
-                                users={users}
-                                roles={roles}
-                                permissions={permissions}
-                                selectedUser={selectedUser}
-                                setSelectedUser={setSelectedUser}
-                                searchTerm={searchTerm}
-                                setSearchTerm={setSearchTerm}
-                                handleUserRoleChange={handleUserRoleChange}
-                                getUserPermissions={getUserPermissions}
-                            />
-                        </TabsContent>
-
-                        {/* Tab de Roles */}
-                        <TabsContent value="roles" className="space-y-6">
-                            <RoleManagement
-                                roles={roles}
-                                permissions={permissions}
-                                selectedRole={selectedRole}
-                                setSelectedRole={setSelectedRole}
-                                handleRolePermissionChange={handleRolePermissionChange}
-                            />
-                        </TabsContent>
-
-                        {/* Tab de Permisos */}
-                        <TabsContent value="permissions">
-                            <PermissionsList permissions={permissions} />
-                        </TabsContent>
-
-                        {/* Tab de Crear Usuario */}
-                        <TabsContent value="create-user">
-                            <UserCreationForm
-                                sedes={sedes}
-                                availableRoles={availableRoles}
-                                onUserCreated={handleUserCreated}
-                                showToast={showToast}
-                            />
-                        </TabsContent>
-
-                        {/* Tab de Notificaciones */}
-                        {/* <TabsContent value="notifications" className="space-y-6">
-                            <NotificationsPanel
-                                notificationTypes={notificationTypes}
-                                notificationChannels={notificationChannels}
-                                notificationConfigs={notificationConfigs}
-                                notificationStats={notificationStats}
-                                fetchNotificationData={fetchNotificationData}
-                            />
-                        </TabsContent> */}
-
-                        {/* Tab de Eventos */}
-                        {/* <TabsContent value="events" className="space-y-6">
-                            <EventsPanel
-                                events={events}
-                                eventStats={eventStats}
-                                fetchEventData={fetchEventData}
-                            />
-                        </TabsContent> */}
-                    </Tabs>
-
-                    
-                    <div>
-                        <pre>
-                            {JSON.stringify(user.roles, null, 2)}
-                        </pre>
-                    </div>
+        <div className="max-w-7xl mx-auto p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                        <Shield className="h-8 w-8" />
+                        Administración RBAC
+                    </h1>
+                    <p className="text-muted-foreground mt-1">
+                        Gestiona roles, permisos y asignaciones de usuarios
+                    </p>
                 </div>
-            </AuthenticatedLayout>
-        </RoleBasedRoute>
+
+                {hasChanges && (
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="animate-pulse">
+                            Cambios pendientes
+                        </Badge>
+                        <Button
+                            onClick={handleSaveChanges}
+                            disabled={saving}
+                            className="flex items-center gap-2"
+                        >
+                            {saving ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+
+            {error && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                    <p className="text-red-800">{error}</p>
+                </div>
+            )}
+
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full">
+                    {
+                        isSuperAdmin && <>
+                            <TabsTrigger value="assignments" className="flex items-center gap-2">
+                                <UserCheck className="h-4 w-4" />
+                                Asignaciones
+                            </TabsTrigger>
+                            <TabsTrigger value="roles" className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Roles
+                            </TabsTrigger>
+                            <TabsTrigger value="permissions" className="flex items-center gap-2">
+                                <Key className="h-4 w-4" />
+                                Permisos
+                            </TabsTrigger>
+                            <TabsTrigger value="notifications" className="flex items-center gap-2">
+                                <Bell className="h-4 w-4" />
+                                Notificaciones
+                            </TabsTrigger>
+                            <TabsTrigger value="events" className="flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4" />
+                                Eventos
+                            </TabsTrigger>
+                        </>
+                    }
+                    {
+                        isHelpDesk && <>
+                            <TabsTrigger value="create-user" className="flex items-center gap-2">
+                                <UserPlus className="h-4 w-4" />
+                                Crear Usuario
+                            </TabsTrigger>
+                        </>
+                    }
+                </TabsList>
+                {/* Tab de Asignaciones */}
+                <TabsContent value="assignments" className="space-y-6">
+                    <RoleAssignments
+                        users={users}
+                        roles={roles}
+                        permissions={permissions}
+                        selectedUser={selectedUser}
+                        setSelectedUser={setSelectedUser}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        handleUserRoleChange={handleUserRoleChange}
+                        getUserPermissions={getUserPermissions}
+                    />
+                </TabsContent>
+
+                {/* Tab de Roles */}
+                <TabsContent value="roles" className="space-y-6">
+                    <RoleManagement
+                        roles={roles}
+                        permissions={permissions}
+                        selectedRole={selectedRole}
+                        setSelectedRole={setSelectedRole}
+                        handleRolePermissionChange={handleRolePermissionChange}
+                    />
+                </TabsContent>
+
+                {/* Tab de Permisos */}
+                <TabsContent value="permissions">
+                    <PermissionsList permissions={permissions} />
+                </TabsContent>
+
+                {/* Tab de Crear Usuario */}
+                <TabsContent value="create-user">
+                    <UserCreationForm
+                        sedes={sedes}
+                        availableRoles={availableRoles}
+                        onUserCreated={handleUserCreated}
+                        showToast={showToast}
+                    />
+                </TabsContent>
+
+                {/* Tab de Notificaciones */}
+                <TabsContent value="notifications" className="space-y-6">
+                    <NotificationsPanel
+                        notificationTypes={notificationTypes}
+                        notificationChannels={notificationChannels}
+                        notificationConfigs={notificationConfigs}
+                        notificationStats={notificationStats}
+                        fetchNotificationData={fetchNotificationData}
+                    />
+                </TabsContent>
+
+                {/* Tab de Eventos */}
+                <TabsContent value="events" className="space-y-6">
+                    <EventsPanel
+                        events={events}
+                        eventStats={eventStats}
+                        fetchEventData={fetchEventData}
+                    />
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 } 

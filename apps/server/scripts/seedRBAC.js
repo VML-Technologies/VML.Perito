@@ -520,6 +520,15 @@ const seedRBAC = async () => {
                 action: 'trigger',
                 endpoint: '/api/events/:id/trigger',
                 method: 'POST'
+            },
+            // help_desk
+            {
+                name: 'help_desk.view',
+                description: 'Ver panel de ayuda técnica',
+                resource: 'help_desk',
+                action: 'view',
+                endpoint: '/api/help-desk',
+                method: 'GET'
             }
         ];
 
@@ -556,6 +565,10 @@ const seedRBAC = async () => {
             {
                 name: 'user',
                 description: 'Usuario básico con permisos de lectura'
+            },
+            {
+                name: 'help_desk',
+                description: 'Usuario de ayuda técnica'
             },
             // ===== NUEVOS ROLES =====
             {
@@ -722,6 +735,20 @@ const seedRBAC = async () => {
                 });
             }
             console.log(`✅ Permisos de Coordinador de Contact Center asignados a ${coordinadorRole.name}`);
+        }
+
+        // Help Desk: Permisos para ayuda técnica
+        const helpDeskRole = createdRoles.find(r => r.name == 'help_desk');
+        if (helpDeskRole) {
+            for (const permission of createdPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: helpDeskRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Todos los permisos asignados a ${helpDeskRole.name}`);
         }
 
         console.log('🎉 Seed de RBAC completado exitosamente!');

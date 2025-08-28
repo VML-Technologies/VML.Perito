@@ -11,6 +11,11 @@ export const API_ROUTES = {
         LOGOUT: `${API_BASE_URL}/api/auth/logout`,
         CHANGE_TEMPORARY_PASSWORD: `${API_BASE_URL}/api/auth/change-temporary-password`,
         CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
+        
+        // ===== RECUPERACIÓN DE CONTRASEÑA =====
+        REQUEST_PASSWORD_RESET: `${API_BASE_URL}/api/auth/request-password-reset`,
+        RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
+        VERIFY_RESET_TOKEN: (token) => `${API_BASE_URL}/api/auth/verify-reset-token/${token}`,
     },
     USERS: {
         PROFILE: `${API_BASE_URL}/api/users/profile`,

@@ -10,7 +10,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 
 import sequelize from './config/database.js';
-import { login, verify, logout, changeTemporaryPassword, changePassword } from './controllers/authController.js';
+import { login, verify, logout, changeTemporaryPassword, changePassword, requestPasswordReset, verifyResetToken, resetPassword } from './controllers/authController.js';
 import userController from './controllers/userController.js';
 import roleController from './controllers/roleController.js';
 import permissionController from './controllers/permissionController.js';
@@ -167,6 +167,9 @@ app.get('/api/auth/verify', authLimiter, verify);
 app.post('/api/auth/logout', authLimiter, logout);
 app.post('/api/auth/change-temporary-password', authLimiter, requireAuth, changeTemporaryPassword);
 app.post('/api/auth/change-password', authLimiter, requireAuth, changePassword);
+app.post('/api/auth/request-password-reset', authLimiter, requestPasswordReset);
+app.get('/api/auth/verify-reset-token/:token', authLimiter, verifyResetToken);
+app.post('/api/auth/reset-password', authLimiter, resetPassword);
 
 // ===== RUTAS DE CONSULTA DE PLACAS (SIN AUTENTICACIÓN) =====
 
@@ -341,16 +344,16 @@ app.post('/api/channels/reload', requirePermission('channels.update'), channelCo
 
 // Rutas para eventos del sistema
 app.get('/api/events', readLimiter, requirePermission('events.read'), eventController.getAllEvents);
-app.get('/api/events/:id', readLimiter, requirePermission('events.read'), eventController.getEventById);
-app.post('/api/events', requirePermission('events.create'), eventController.createEvent);
-app.put('/api/events/:id', requirePermission('events.update'), eventController.updateEvent);
-app.delete('/api/events/:id', requirePermission('events.delete'), eventController.deleteEvent);
 app.get('/api/events/stats', readLimiter, requirePermission('events.read'), eventController.getEventStats);
-app.post('/api/events/:id/trigger', requirePermission('events.trigger'), eventController.triggerEvent);
 app.get('/api/events/category/:category', readLimiter, requirePermission('events.read'), eventController.getEventsByCategory);
-app.get('/api/events/:id/listeners', readLimiter, requirePermission('events.read'), eventController.getEventListeners);
+app.post('/api/events', requirePermission('events.create'), eventController.createEvent);
 app.post('/api/events/listeners', requirePermission('events.create'), eventController.createListener);
+app.get('/api/events/:id', readLimiter, requirePermission('events.read'), eventController.getEventById);
+app.get('/api/events/:id/listeners', readLimiter, requirePermission('events.read'), eventController.getEventListeners);
+app.post('/api/events/:id/trigger', requirePermission('events.trigger'), eventController.triggerEvent);
+app.put('/api/events/:id', requirePermission('events.update'), eventController.updateEvent);
 app.put('/api/events/listeners/:id', requirePermission('events.update'), eventController.updateListener);
+app.delete('/api/events/:id', requirePermission('events.delete'), eventController.deleteEvent);
 app.delete('/api/events/listeners/:id', requirePermission('events.delete'), eventController.deleteListener);
 
 // Rutas para citas (appointments)
