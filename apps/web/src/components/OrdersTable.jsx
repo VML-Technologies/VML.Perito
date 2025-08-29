@@ -338,22 +338,22 @@ const OrdersTable = ({
                                                                             <Eye className="h-4 w-4 mr-1" />
                                                                             Ver
                                                                         </Button>
-                                                                        )}
-                                                                        
-                                                                        {
-                                                                            (user.email.includes('segurosmundial.com.co') && order.InspectionOrderStatus?.name == 'Finalizado' && order.session_id ) ? <>
-                                                                                <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                                    onClick={() => {
-                                                                                window.open(`/inspection-report/${order.session_id}`, '_blank');
-                                                                            }}
-                                                                        >
-                                                                            <FileText className="h-4 w-4 mr-1" />
-                                                                            Ver Inspección
-                                                                        </Button>
-                                                                            </> : <></>
-                                                                        }
+                                                                    )}
+
+                                                                    {
+                                                                        (user.email.includes('segurosmundial.com.co') && order.InspectionOrderStatus?.name == 'Finalizado' && order.session_id) ? <>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    window.open(`/inspection-report/${order.session_id}`, '_blank');
+                                                                                }}
+                                                                            >
+                                                                                <FileText className="h-4 w-4 mr-1" />
+                                                                                Ver Inspección
+                                                                            </Button>
+                                                                        </> : <></>
+                                                                    }
 
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select

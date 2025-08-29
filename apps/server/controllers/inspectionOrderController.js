@@ -268,7 +268,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
                     include: [
                         {
                             model: InspectionModality,
@@ -288,7 +288,7 @@ class InspectionOrderController extends BaseController {
                             ]
                         }
                     ],
-                    order: [['created_at', 'DESC']],
+                    order: [['updated_at', 'DESC']],
                     required: false
                 },
             ];
@@ -302,31 +302,38 @@ class InspectionOrderController extends BaseController {
                 distinct: true
             });
 
-            let transformedOrders = rows.map(order => ({
-                id: order.id,
-                numero: order.numero,
-                nombre_cliente: order.nombre_cliente,
-                celular_cliente: order.celular_cliente,
-                correo_cliente: order.correo_cliente,
-                placa: order.placa,
-                marca: order.marca,
-                modelo: order.modelo,
-                producto: order.producto,
-                metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
-                InspectionOrderStatus: order.InspectionOrderStatus,
-                inspection_result: order.inspection_result,
-                callLogs: order.callLogs,
-                callLogsCount: order.callLogs ? order.callLogs.length : 0,
-                nombre_contacto: order.nombre_contacto,
-                celular_contacto: order.celular_contacto,
-                correo_contacto: order.correo_contacto,
-                created_at: order.created_at,
-                AssignedAgent: order.AssignedAgent,
-                intermediary_key: order.clave_intermediario,
-                inspection_result_details: order.inspection_result_details,
-                appointments: order.appointments || [],
-                session_id: order.appointments && order.appointments.length > 0 ? order.appointments[0].session_id : null
-            }));
+            let transformedOrders = rows.map(order => {
+                // Ordenar appointments por updated_at descendente (más reciente primero)
+                const sortedAppointments = order.appointments
+                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                    : [];
+
+                return {
+                    id: order.id,
+                    numero: order.numero,
+                    nombre_cliente: order.nombre_cliente,
+                    celular_cliente: order.celular_cliente,
+                    correo_cliente: order.correo_cliente,
+                    placa: order.placa,
+                    marca: order.marca,
+                    modelo: order.modelo,
+                    producto: order.producto,
+                    metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
+                    InspectionOrderStatus: order.InspectionOrderStatus,
+                    inspection_result: order.inspection_result,
+                    callLogs: order.callLogs,
+                    callLogsCount: order.callLogs ? order.callLogs.length : 0,
+                    nombre_contacto: order.nombre_contacto,
+                    celular_contacto: order.celular_contacto,
+                    correo_contacto: order.correo_contacto,
+                    created_at: order.created_at,
+                    AssignedAgent: order.AssignedAgent,
+                    intermediary_key: order.clave_intermediario,
+                    inspection_result_details: order.inspection_result_details,
+                    appointments: sortedAppointments,
+                    session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null
+                };
+            });
 
             res.json({
                 success: true,
@@ -899,7 +906,7 @@ class InspectionOrderController extends BaseController {
         });
 
         console.log(`📝 Encontradas ${responses.length} respuestas de categorías para inspección ${inspection_id}`);
-        
+
         // Formato de respuesta
         const formattedResponses = responses.map(response => ({
             id: response.id,
@@ -932,10 +939,10 @@ class InspectionOrderController extends BaseController {
         // Tomar la prueba más reciente (la primera por orden DESC)
         const latestTest = mechanicalTests[0];
         console.log('📋 Prueba más reciente:', latestTest.id, 'con datos:', !!latestTest.data);
-        
+
         // Los datos vienen como JSON en el campo 'data'
         const testData = latestTest.data || {};
-        
+
         // Procesar los datos para el formato esperado por el frontend
         const processedTests = {
             brakes: testData.brakes || null,
@@ -943,12 +950,12 @@ class InspectionOrderController extends BaseController {
             tires: testData.tires || null,
             alignment: testData.alignment || null
         };
-        
+
         // Agregar información adicional si está disponible
         if (latestTest.observationText) {
             processedTests.observations = latestTest.observationText;
         }
-        
+
         if (latestTest.status) {
             processedTests.status = latestTest.status;
         }
@@ -972,7 +979,7 @@ class InspectionOrderController extends BaseController {
                 attributes: ['id', 'categoria']
             }]
         });
-        
+
         // Formato de respuesta
         const formattedResponses = responses.map(response => ({
             id: response.id,
@@ -992,7 +999,7 @@ class InspectionOrderController extends BaseController {
     async checkPlate(req, res) {
         try {
             const { plate } = req.params;
-            
+
             if (!plate) {
                 return res.status(400).json({
                     success: false,
