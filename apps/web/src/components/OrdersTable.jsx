@@ -39,15 +39,10 @@ const OrdersTable = ({
         if (!inspectionResult) {
             const variants = {
                 'Creada': 'secondary',
-                'Contacto exitoso': 'default',
+                'En proceso de agendamiento': 'default',
                 'Agendado': 'default',
-                'No contesta': 'destructive',
-                'Ocupado': 'outline',
-                'Número incorrecto': 'destructive',
-                'Solicita reagendar': 'outline',
-                'En progreso': 'default',
-                'Finalizada': 'default',
-                'Cancelada': 'destructive'
+                'Inspeccion en curso': 'default',
+                'Finalizado': 'default'
             };
             return variants[status] || 'secondary';
         }
@@ -56,7 +51,8 @@ const OrdersTable = ({
             'RECHAZADO - Vehículo no asegurable': 'destructive',
             'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'default',
             'PENDIENTE - Inspección en proceso': 'secondary',
-            'APROBADO - Vehículo asegurable': 'default'
+            'APROBADO - Vehículo asegurable': 'default',
+            'APROBADO - vehiculo asegurable': 'default'
         };
         return resultVariants[inspectionResult] || 'secondary';
     };
@@ -297,8 +293,7 @@ const OrdersTable = ({
                                                         <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
                                                             {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[0]}
                                                         </Badge>
-                                                        <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>
-                                                    </div>
+                                                        <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>                                                    </div>
                                                 </td>
                                                 {showAgentColumn && (
                                                     <td className="p-2">
@@ -307,10 +302,6 @@ const OrdersTable = ({
                                                                 <UserCheck className="h-4 w-4 text-green-600" />
                                                                 <span className="text-sm">
                                                                     {order.AssignedAgent.name}
-                                                                    <br />
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        {order.session_id}
-                                                                    </span>
                                                                 </span>
                                                             </div>
                                                         ) : (
@@ -350,7 +341,7 @@ const OrdersTable = ({
                                                                         )}
                                                                         
                                                                         {
-                                                                            (user.email.includes('segurosmundial.com.co') && order.session_id ) ? <>
+                                                                            (user.email.includes('segurosmundial.com.co') && order.InspectionOrderStatus?.name == 'Finalizado' && order.session_id ) ? <>
                                                                                 <Button
                                                                             size="sm"
                                                                             variant="outline"
