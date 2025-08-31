@@ -5,6 +5,29 @@ Todas las notables modificaciones a este proyecto serán documentadas en este ar
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2025-08-29
+
+### 🔧 **Mejoras**
+- **Controlador de Órdenes de Inspección**: Actualización del controlador para incluir el atributo 'updated_at' en las citas y ordenar las citas por fecha de actualización
+  - Mejora en la transformación de órdenes para reflejar la nueva lógica de ordenamiento
+  - Optimización del componente OrdersTable para mantener la funcionalidad existente
+  - Mejor gestión de datos de citas con información de actualización
+- **Componente OrderDetailsPanel**: Implementación de carga de datos de inspección con estado de carga y manejo de errores
+  - Nuevo sistema de estados de carga para mejorar la experiencia del usuario
+  - Manejo robusto de errores en la carga de datos de inspección
+  - Optimización de la presentación de información de inspección
+- **Componentes de Interfaz**: Actualización de componentes OrdersTable e InspectionReport
+  - Reflejo de cambios en la nomenclatura del sistema
+  - Mejora en la presentación de información de comentarios y observaciones
+  - Adición de nuevos íconos para mejor visualización
+  - Optimización de las visualizaciones de datos de inspección
+
+### 🎨 **Presentación Visual**
+- **Nuevos Íconos**: Implementación de íconos adicionales para mejorar la experiencia visual
+- **Visualizaciones Optimizadas**: Mejora en la presentación de comentarios y observaciones en los informes de inspección
+
+---
+
 ## [1.0.0] - 2025-08-14
 
 ### 🚀 **Lanzamiento Inicial**
@@ -206,6 +229,12 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 - **PATCH**: Correcciones de errores compatibles hacia atrás
 
 ## Notas de Lanzamiento
+
+### v1.0.9
+- **Deploy**: 29 de Agosto 2025
+- **Características Principales**: Mejoras en el controlador de órdenes de inspección, optimización de componentes de interfaz y mejoras en la presentación visual
+- **Mejoras**: Sistema de carga de datos de inspección con manejo de errores, ordenamiento de citas por fecha de actualización
+- **Experiencia de Usuario**: Nuevos íconos y visualizaciones optimizadas para comentarios y observaciones
 
 ### v1.0.8
 - **Deploy**: 27 de Agosto 2025
