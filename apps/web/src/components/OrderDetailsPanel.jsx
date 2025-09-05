@@ -53,33 +53,26 @@ const OrderDetailsPanel = ({
         };
     }, [order]);
 
-    const getStatusBadgeVariant = (status, inspectionResult) => {
-        if (!inspectionResult) {
-            const variants = {
-                'Creada': 'secondary',
-                'En proceso de agendamiento': 'default',
-                'Agendado': 'default',
-                'Inspeccion en curso': 'default',
-                'Finalizado': 'default'
-            };
-            return variants[status] || 'secondary';
+    const BadgeToDisplay = ({ statusId, statusName, result }) => {
+        const statusBadgeColorMap = {
+            1: 'outline',
+            2: 'outline',
+            3: 'secondary',
+            4: 'default',
+            5: {
+                'APROBADO': 'success',
+                'RECHAZADO': 'destructive',
+            }
         }
-
-        const resultVariants = {
-            'RECHAZADO - Vehículo no asegurable': 'destructive',
-            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'outline',
-            'PENDIENTE - Inspección en proceso': 'secondary',
-            'APROBADO - Vehículo asegurable': 'default'
-        };
-        return resultVariants[inspectionResult] || 'secondary';
-    };
-
-    const getStatusDisplay = (status, inspectionResult) => {
-        if (!inspectionResult) {
-            return status || 'Sin estado';
-        }
-        return inspectionResult;
-    };
+        const resultLabel = (statusId == 5 ? result.split(" - ")[0] : statusName)
+        const badgeColor = (statusId == 5 ? statusBadgeColorMap[statusId][resultLabel] : statusBadgeColorMap[statusId])
+        const badgeLabel = statusId == 5 ? `${statusName} - ${resultLabel}` : resultLabel
+        return (
+            <Badge variant={badgeColor}>
+                {badgeLabel}
+            </Badge>
+        )
+    }
 
     if (!order) return null;
 
@@ -134,7 +127,7 @@ const OrderDetailsPanel = ({
                         ))}
                         <div className='w-full'>
                             <span className="font-medium">Estado:</span>
-                            {order.inspection_result == 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
+                            {/* {order.inspection_result == 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
                                 <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
                                     {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
                                 </Badge>
@@ -149,7 +142,12 @@ const OrderDetailsPanel = ({
                                         {order.inspection_result_details}
                                     </div>
                                 )
-                            }
+                            } */}
+                            <BadgeToDisplay
+                                statusId={order.InspectionOrderStatus?.id}
+                                statusName={order.InspectionOrderStatus?.name}
+                                result={order.inspection_result}
+                            />
                         </div>
                         {
                             inspection && (
@@ -183,74 +181,84 @@ const OrderDetailsPanel = ({
                                                     OBSERVACIONES
                                                 </h2>
                                                 <div className="space-y-6">
-                                                    <div>
-                                                        <pre className='px-4'>
-                                                            {inspection?.inspectionData?.notes}
-                                                        </pre>
-                                                    </div>
-                                                    {/* Comentarios de partes individuales */}
-                                                    {(() => {
-                                                        const partComments = {}
-
-                                                        inspection?.responsesData?.forEach(r => {
-                                                            // Usar part_id en lugar de part_id
-                                                            if (r.part_id && r.value) {
-                                                                partComments[r.part_id] = r.value;
-                                                            }
-
-                                                            // Procesar comentarios de partes
-                                                            if (r.comment && r.part_id) {
-                                                                partComments[r.part_id] = r.comment;
-                                                            }
-                                                        });
-
-
-                                                        const commentsList = [];
-                                                        Object.entries(partComments).forEach(([part_id, comment]) => {
-                                                            const part = inspection?.partsData?.find(p => p.id === parseInt(part_id));
-                                                            if (part && comment) {
-                                                                commentsList.push({
-                                                                    partName: part.parte,
-                                                                    categoryName: part.category?.categoria,
-                                                                    comment: comment
-                                                                });
-                                                            }
-                                                        });
-
-                                                        if (commentsList.length > 0) {
-                                                            return (
+                                                    {
+                                                        order.InspectionOrderStatus?.id == 5 ? (
+                                                            <>
                                                                 <div>
-                                                                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                                                                        Comentarios por Parte
-                                                                    </h3>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                                        {commentsList.map((item, index) => (
-                                                                            <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                                                                                <div className="font-semibold text-blue-800 mb-2">
-                                                                                    {item.partName}
-                                                                                </div>
-                                                                                <div className="text-sm text-blue-600 mb-1">
-                                                                                    Categoría: {item.categoryName}
-                                                                                </div>
-                                                                                <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
-                                                                                    {item.comment}
+                                                                    <pre className='px-4'>
+                                                                        {inspection?.inspectionData?.notes}
+                                                                    </pre>
+                                                                </div>
+                                                                {/* Comentarios de partes individuales */}
+                                                                {(() => {
+                                                                    const partComments = {}
+
+                                                                    inspection?.responsesData?.forEach(r => {
+                                                                        // Usar part_id en lugar de part_id
+                                                                        if (r.part_id && r.value) {
+                                                                            partComments[r.part_id] = r.value;
+                                                                        }
+
+                                                                        // Procesar comentarios de partes
+                                                                        if (r.comment && r.part_id) {
+                                                                            partComments[r.part_id] = r.comment;
+                                                                        }
+                                                                    });
+
+
+                                                                    const commentsList = [];
+                                                                    Object.entries(partComments).forEach(([part_id, comment]) => {
+                                                                        const part = inspection?.partsData?.find(p => p.id === parseInt(part_id));
+                                                                        if (part && comment) {
+                                                                            commentsList.push({
+                                                                                partName: part.parte,
+                                                                                categoryName: part.category?.categoria,
+                                                                                comment: comment
+                                                                            });
+                                                                        }
+                                                                    });
+
+                                                                    if (commentsList.length > 0) {
+                                                                        return (
+                                                                            <div>
+                                                                                <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                                                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                                                                    Comentarios por Parte
+                                                                                </h3>
+                                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                                                    {commentsList.map((item, index) => (
+                                                                                        <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                                                                                            <div className="font-semibold text-blue-800 mb-2">
+                                                                                                {item.partName}
+                                                                                            </div>
+                                                                                            <div className="text-sm text-blue-600 mb-1">
+                                                                                                Categoría: {item.categoryName}
+                                                                                            </div>
+                                                                                            <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
+                                                                                                {item.comment}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
                                                                                 </div>
                                                                             </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        } else {
-                                                            <div className="text-center py-12">
-                                                                <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
-                                                                    <FileTextIcon size={48} className="text-gray-400 mx-auto mb-4" />
-                                                                    <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
-                                                                    <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
-                                                                </div>
-                                                            </div>
-                                                        }
-                                                    })()}
+                                                                        );
+                                                                    } else {
+                                                                        <div className="text-center py-12">
+                                                                            <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
+                                                                                <FileTextIcon size={48} className="text-gray-400 mx-auto mb-4" />
+                                                                                <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
+                                                                                <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                })()}
+                                                            </>
+                                                        ) : (
+                                                            <>
+
+                                                            </>
+                                                        )
+                                                    }
                                                 </div>
                                             </div>
 
@@ -260,7 +268,7 @@ const OrderDetailsPanel = ({
                             )
                         }
                     </CardContent>
-                </Card>                    
+                </Card>
                 {showTabs ? (
                     <Tabs defaultValue="calls" className="space-y-4">
                         <TabsList className="grid w-full grid-cols-3">
