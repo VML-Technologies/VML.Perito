@@ -143,11 +143,9 @@ const OrderDetailsPanel = ({
                                     </div>
                                 )
                             } */}
-                            <BadgeToDisplay
-                                statusId={order.InspectionOrderStatus?.id}
-                                statusName={order.InspectionOrderStatus?.name}
-                                result={order.inspection_result}
-                            />
+                            <Badge variant={order.badgeColor}>
+                                {order.fixedStatus}
+                            </Badge>
                         </div>
                         {
                             inspection && (
@@ -182,7 +180,7 @@ const OrderDetailsPanel = ({
                                                 </h2>
                                                 <div className="space-y-6">
                                                     {
-                                                        order.InspectionOrderStatus?.id == 5 ? (
+                                                        order.InspectionOrderStatus?.id == 5 && order.comentariosAnulacion == null && order.fixedStatus != 'Pendiente de reinspección' ? (
                                                             <>
                                                                 <div>
                                                                     <pre className='px-4'>
@@ -259,6 +257,11 @@ const OrderDetailsPanel = ({
                                                             </>
                                                         )
                                                     }
+                                                    {order.comentariosAnulacion && (
+                                                        <div className="text-xs text-gray-500 font-mono border border-gray-200 rounded-md p-2 bg-gray-100">
+                                                            {order.comentariosAnulacion}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 

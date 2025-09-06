@@ -29,33 +29,6 @@ const OrdersTable = ({
     loading = false
 }) => {
     const { user } = useAuth();
-    /**
-     * Determines the badge variant based on order status or inspection result.
-     * @param {string} status - The general order status.
-     * @param {string} inspectionResult - The inspection result status.
-     * @returns {string} The Tailwind CSS variant for the badge.
-     */
-    const getStatusBadgeVariant = (status, inspectionResult) => {
-        if (!inspectionResult) {
-            const variants = {
-                'Creada': 'secondary',
-                'En proceso de agendamiento': 'default',
-                'Agendado': 'default',
-                'Inspeccion en curso': 'default',
-                'Finalizado': 'default'
-            };
-            return variants[status] || 'secondary';
-        }
-
-        const resultVariants = {
-            'RECHAZADO - Vehículo no asegurable': 'destructive',
-            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'default',
-            'PENDIENTE - Inspección en proceso': 'secondary',
-            'APROBADO - Vehículo asegurable': 'default',
-            'APROBADO - vehiculo asegurable': 'default'
-        };
-        return resultVariants[inspectionResult] || 'secondary';
-    };
 
     /**
      * Returns the display text for the order status, prioritizing inspection result if available.
@@ -69,28 +42,6 @@ const OrdersTable = ({
         }
         return inspectionResult;
     };
-
-    
-    const BadgeToDisplay = ({ statusId, statusName, result }) => {
-        const statusBadgeColorMap = {
-            1: 'outline',
-            2: 'outline',
-            3: 'secondary',
-            4: 'default',
-            5: {
-                'APROBADO': 'success',
-                'RECHAZADO': 'destructive',
-            }
-        }
-        const resultLabel = (statusId == 5 ? result.split(" - ")[0] : statusName)
-        const badgeColor = (statusId == 5 ? statusBadgeColorMap[statusId][resultLabel] : statusBadgeColorMap[statusId])
-        const badgeLabel = statusId == 5 ? `${statusName} - ${resultLabel}` : resultLabel
-        return (
-            <Badge variant={badgeColor}>
-                {badgeLabel}
-            </Badge>
-        )
-    }
 
     /**
      * Formats a date string into a localized short date and time string.
@@ -311,10 +262,9 @@ const OrdersTable = ({
                                                 </td>
                                                 <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
                                                 <td className="p-2">
-                                                    <BadgeToDisplay
-                                                        statusId={order.InspectionOrderStatus?.id}
-                                                        statusName={order.InspectionOrderStatus?.name}
-                                                        result={order.inspection_result} />
+                                                    <Badge variant={order.badgeColor}>
+                                                        {order.fixedStatus}
+                                                    </Badge>
                                                 </td>
                                                 {showAgentColumn && (
                                                     <td className="p-2">
@@ -361,7 +311,7 @@ const OrdersTable = ({
                                                                     )}
 
                                                                     {
-                                                                        (user.email.includes('segurosmundial.com.co') && order.InspectionOrderStatus?.name == 'Finalizado' && order.session_id) ? <>
+                                                                        (user.email.includes('segurosmundial.com.co') && order.fixedStatus.includes('Finalizado') && order.session_id) ? <>
                                                                             <Button
                                                                                 size="sm"
                                                                                 variant="outline"

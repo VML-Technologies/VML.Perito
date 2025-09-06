@@ -29,7 +29,7 @@ const AgentOrderPanel = ({
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
     const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
-    
+
 
 
     // Estados para el flujo mejorado
@@ -391,6 +391,15 @@ const AgentOrderPanel = ({
                                 </CardContent>
                             </Card>
 
+                            <div className='border border-gray-200 rounded-md p-2 bg-red-100'>
+                                <div className='font-bold'>
+                                    Se anulo el agendamiento y es necesario agendar nuevamente, a continuacion se muestra el motivo:
+                                </div>
+                                <div className=''>
+                                    {selectedOrder.comentariosAnulacion}
+                                </div>
+                            </div>
+
                             {/* Call History */}
                             {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
                                 <Card>
@@ -448,7 +457,7 @@ const AgentOrderPanel = ({
                             )}
 
                             {/* Sección de Comunicación y Datos de Contacto */}
-                            <OrderCommunicationSection 
+                            <OrderCommunicationSection
                                 orderId={selectedOrder.id}
                                 orderData={selectedOrder}
                                 user={user}
