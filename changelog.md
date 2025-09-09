@@ -5,7 +5,7 @@ Todas las notables modificaciones a este proyecto serán documentadas en este ar
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-09-08
+## [1.1.0] - 2025-09-09
 
 ### 🚀 **Nuevas Características**
 - **Sistema de Soft Delete para Citas**: Implementación completa de eliminación suave en appointments
@@ -50,6 +50,34 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - **Scripts de Seeding**: Actualización de seedAll para incluir configuración de estados
   - Nuevo archivo seedNewStates.js para gestión de estados internos
   - Mejora en la inicialización de datos en la base de datos
+
+---
+
+## [1.0.10] - 2025-09-09
+
+### 🚀 **Nuevas Características**
+- **Sistema de Notificaciones por Email**: Implementación completa de notificaciones automáticas
+  - Notificaciones por email para registros de llamadas y agendamientos
+  - Métodos para enviar correos electrónicos utilizando plantillas HTML
+  - Mejora en la comunicación con los usuarios del sistema
+- **Campo Código FASECOLDA Obligatorio**: Actualización del formulario de creación de órdenes
+  - Campo `cod_fasecolda` ahora es obligatorio en CreateOrderModal
+  - Nuevo campo de entrada para captura del código FASECOLDA
+  - Mejora en la estructura del formulario con más columnas en la cuadrícula
+
+### 🔧 **Mejoras**
+- **Estados de Carga**: Mejoras en la experiencia del usuario
+  - Actualización de componentes para manejar estado de carga durante envío de formularios
+  - Mejor feedback visual para el usuario durante operaciones asíncronas
+- **Migraciones de Base de Datos**: Actualizaciones y mejoras
+  - Migraciones actualizadas para incluir columna `deleted_at` en múltiples tablas
+  - Mejora en la documentación relacionada con las migraciones
+  - Optimización del proceso de migración de base de datos
+
+### 📚 **Documentación**
+- **Documentación de Migraciones**: Mejoras en la documentación relacionada con las migraciones
+  - Actualización de documentación para reflejar cambios en la estructura de base de datos
+  - Mejor organización de la información de migraciones
 
 ---
 
@@ -278,9 +306,16 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 
 ## Notas de Lanzamiento
 
+### v1.0.10
+- **Deploy**: 9 de Septiembre 2025
+- **Características Principales**: Sistema de notificaciones por email, campo FASECOLDA obligatorio y mejoras en estados de carga
+- **Nuevas Funcionalidades**: Notificaciones automáticas por email para llamadas y agendamientos, campo cod_fasecolda obligatorio
+- **Mejoras**: Estados de carga mejorados, migraciones actualizadas, documentación de migraciones
+- **Migración Requerida**: Migraciones para columna deleted_at en múltiples tablas
+
 ### v1.1.0
 - **Deploy**: 8 de Septiembre 2025
-- **Características Principales**: Sistema de soft delete para citas, sistema de estados avanzado, nuevas rutas API y mejoras significativas en componentes UI
+- **Características Principales**: Sistema de soft delete para citas, sistema de estados avanzado y mejoras significativas en componentes UI
 - **Nuevas Funcionalidades**: Soft delete en appointments, sistema de estados de inspección y citas, componente BadgeToDisplay
 - **Mejoras**: Gestión de estados fijos, optimización de OrdersTable, mejoras en diseño de componentes
 - **Migración Requerida**: Nuevas migraciones para soft delete y sistema de estados
