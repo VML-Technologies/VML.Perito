@@ -143,16 +143,6 @@ const OrdersTable = ({
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => handleSort('id')}
-                                                className="font-semibold"
-                                            >
-                                                ID {getSortIcon('id')}
-                                            </Button>
-                                        </th>
-                                        <th className="text-left p-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
                                                 onClick={() => handleSort('numero')}
                                                 className="font-semibold"
                                             >
@@ -222,8 +212,27 @@ const OrdersTable = ({
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id} className="border-b hover:bg-muted/50">
-                                                <td className="p-2 font-mono font-medium">{order.id}</td>
-                                                <td className="p-2 font-mono font-medium">{order.numero}</td>
+                                                <td className="p-2 font-mono font-medium">
+                                                    <div className='flex flex-col gap-0'>
+                                                        <span className='font-mono font-medium ms-2'>
+                                                            {order.numero}
+                                                        </span>
+                                                        <Badge variant='outline' className='text-xs'>
+                                                            {
+                                                                order.numero.toString().includes('9991') ? (
+                                                                    <>
+                                                                        Orden Manual
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        Integracion
+                                                                    </>
+                                                                )
+                                                            }
+                                                        </Badge>
+                                                    </div>
+
+                                                </td>
                                                 <td className="p-2">
                                                     <div className="space-y-1">
                                                         <div className="font-medium">{order.nombre_cliente}</div>
@@ -289,13 +298,24 @@ const OrdersTable = ({
                                                             {isContactTable ? (
                                                                 // Contact table actions
                                                                 onContactOrder && (
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() => onContactOrder(order)}
-                                                                    >
-                                                                        <PhoneCall className="h-4 w-4 mr-2" />
-                                                                        Contactar
-                                                                    </Button>
+                                                                    <>
+                                                                        {
+                                                                            order.fixedStatus == 'Creada' ? (
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => onContactOrder(order)}
+                                                                                >
+                                                                                    <PhoneCall className="h-4 w-4 mr-2" />
+                                                                                    Contactar
+                                                                                </Button>
+                                                                            ) : <>
+                                                                                <button className='text-sm text-muted-foreground border border-muted-foreground rounded-md px-2 py-1'>
+                                                                                    Ya Agendado
+                                                                                </button>
+                                                                            </>
+                                                                        }
+                                                                    </>
                                                                 )
                                                             ) : (
                                                                 <>
