@@ -292,6 +292,9 @@ class InspectionOrderController extends BaseController {
                     model: Appointment,
                     as: 'appointments',
                     attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
+                    where: {
+                        deleted_at: null // Solo appointments activos
+                    },
                     include: [
                         {
                             model: InspectionModality,

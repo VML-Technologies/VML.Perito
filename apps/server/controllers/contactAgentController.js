@@ -195,6 +195,9 @@ class ContactAgentController {
                     {
                         model: Appointment,
                         as: 'appointments',
+                        where: {
+                            deleted_at: null // Solo appointments activos
+                        },
                         include: [
                             {
                                 model: InspectionModality,
@@ -356,13 +359,45 @@ class ContactAgentController {
                 });
             }
 
+            // Verificar si existen appointments activos para esta orden
+            const existingAppointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id: inspection_order_id,
+                    deleted_at: null // Solo appointments activos
+                }
+            });
+
+            // Si existen appointments activos, marcarlos como eliminados (soft delete)
+            if (existingAppointments.length > 0) {
+                try {
+                    // Usar soft delete con la columna deleted_at
+                    await Appointment.update(
+                        { 
+                            deleted_at: new Date(),
+                            updated_at: new Date()
+                        },
+                        {
+                            where: {
+                                inspection_order_id: inspection_order_id,
+                                deleted_at: null // Solo los que no están eliminados
+                            }
+                        }
+                    );
+                    
+                    console.log(`📝 Se marcaron ${existingAppointments.length} appointments anteriores como eliminados para la orden ${inspection_order_id}`);
+                } catch (updateError) {
+                    console.warn('No se pudieron marcar appointments anteriores como eliminados:', updateError.message);
+                    // Continuar con la creación del nuevo appointment
+                }
+            }
+
             // Generar session_id único si no se proporciona
             const appointmentData = {
                 ...req.body,
                 session_id: req.body.session_id || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
             };
 
-            // Crear el agendamiento
+            // Crear el nuevo agendamiento
             const appointment = await Appointment.create(appointmentData);
 
             // Actualizar la orden con el estado
@@ -547,10 +582,17 @@ class ContactAgentController {
                 // No fallar el proceso principal si la notificación falla
             }
 
+            // Preparar mensaje de respuesta
+            let responseMessage = 'Agendamiento creado exitosamente';
+            if (existingAppointments.length > 0) {
+                responseMessage = `Agendamiento creado exitosamente. Se inhabilitó ${existingAppointments.length} agendamiento(s) anterior(es) para esta orden.`;
+            }
+
             res.status(201).json({
                 success: true,
-                message: 'Agendamiento creado exitosamente',
-                data: fullAppointment
+                message: responseMessage,
+                data: fullAppointment,
+                replaced_appointments: existingAppointments.length
             });
         } catch (error) {
             console.error('Error al crear agendamiento:', error);
@@ -584,6 +626,70 @@ class ContactAgentController {
             res.json(modalities);
         } catch (error) {
             res.status(500).json({ message: 'Error al obtener modalidades de inspección', error: error.message });
+        }
+    }
+
+    // Obtener appointments activos de una orden específica
+    async getActiveAppointments(req, res) {
+        try {
+            const { orderId } = req.params;
+
+            // Verificar que la orden existe y está asignada al agente
+            const order = await InspectionOrder.findOne({
+                where: {
+                    id: orderId,
+                    assigned_agent_id: req.user.id
+                }
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden no encontrada o no asignada a este agente'
+                });
+            }
+
+            // Buscar appointments activos (no eliminados)
+            const activeAppointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id: orderId,
+                    deleted_at: null // Solo appointments activos
+                },
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['id', 'name', 'description']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['id', 'name', 'address'],
+                        include: [
+                            {
+                                model: City,
+                                as: 'city',
+                                attributes: ['id', 'name']
+                            }
+                        ]
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+
+            res.json({
+                success: true,
+                data: activeAppointments,
+                count: activeAppointments.length
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo appointments activos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
         }
     }
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,11 @@ const AgentOrderPanel = ({
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [calendarSelectedDate, setCalendarSelectedDate] = useState('');
+    
+    // Estados para manejo de appointments existentes
+    const [existingAppointments, setExistingAppointments] = useState([]);
+    const [loadingAppointments, setLoadingAppointments] = useState(false);
+    const [loadedOrderId, setLoadedOrderId] = useState(null);
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -93,7 +98,7 @@ const AgentOrderPanel = ({
     validateAppointment();
 
     // Nueva función para cargar todas las modalidades disponibles
-    const loadAllModalities = async () => {
+    const loadAllModalities = useCallback(async () => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await fetch(API_ROUTES.CONTACT_AGENT.ALL_MODALITIES, {
@@ -108,7 +113,37 @@ const AgentOrderPanel = ({
         } catch (error) {
             console.error('Error loading all modalities:', error);
         }
-    };
+    }, []);
+
+    // Función para cargar appointments activos de la orden
+    const loadActiveAppointments = useCallback(async (orderId) => {
+        if (!orderId) return;
+        
+        setLoadingAppointments(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.CONTACT_AGENT.ACTIVE_APPOINTMENTS(orderId), {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setExistingAppointments(data.data || []);
+                setLoadedOrderId(orderId); // Marcar que ya cargamos esta orden
+            } else {
+                console.error('Error loading active appointments:', response.statusText);
+                setExistingAppointments([]);
+                setLoadedOrderId(orderId); // Marcar como cargada incluso si falló
+            }
+        } catch (error) {
+            console.error('Error loading active appointments:', error);
+            setExistingAppointments([]);
+            setLoadedOrderId(orderId); // Marcar como cargada incluso si falló
+        } finally {
+            setLoadingAppointments(false);
+        }
+    }, []);
 
     // Nueva función para cargar sedes por modalidad
     const loadSedesByModality = async (modalityId) => {
@@ -189,10 +224,17 @@ const AgentOrderPanel = ({
                         }
                         return res; // Pass the response along if it's OK
                     })
-                    .then(appointmentResponse => {
-                        console.log('appointmentResponse2'); // This will be the same as the first console.log(res) if successful
-                        console.log(appointmentResponse);
-                        showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
+                    .then(appointmentResponse => appointmentResponse.json())
+                    .then(appointmentData => {
+                        console.log('appointmentResponse2:', appointmentData);
+                        
+                        // Mostrar mensaje personalizado según si se reemplazaron appointments
+                        let successMessage = 'Llamada registrada y agendamiento creado exitosamente';
+                        if (appointmentData.replaced_appointments > 0) {
+                            successMessage = `Llamada registrada y agendamiento creado exitosamente. Se inhabilitó ${appointmentData.replaced_appointments} agendamiento(s) anterior(es).`;
+                        }
+                        
+                        showToast(successMessage, 'success');
                     })
                     .catch(error => {
                         console.error("Fetch error:", error);
@@ -337,9 +379,27 @@ const AgentOrderPanel = ({
     }, []);
 
     // Cargar modalidades cuando se abre el panel
-    if (isOpen && allModalities.length == 0) {
-        loadAllModalities();
-    }
+    useEffect(() => {
+        if (isOpen && allModalities.length === 0) {
+            loadAllModalities();
+        }
+    }, [isOpen, allModalities.length, loadAllModalities]);
+
+    // Limpiar estado cuando se cierra el panel
+    useEffect(() => {
+        if (!isOpen) {
+            setExistingAppointments([]);
+            setLoadedOrderId(null);
+            setLoadingAppointments(false);
+        }
+    }, [isOpen]);
+
+    // Cargar appointments activos cuando se selecciona una orden
+    useEffect(() => {
+        if (isOpen && selectedOrder?.id && loadedOrderId !== selectedOrder.id && !loadingAppointments) {
+            loadActiveAppointments(selectedOrder.id);
+        }
+    }, [isOpen, selectedOrder?.id, loadedOrderId, loadingAppointments, loadActiveAppointments]);
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -391,14 +451,16 @@ const AgentOrderPanel = ({
                                 </CardContent>
                             </Card>
 
-                            <div className='border border-gray-200 rounded-md p-2 bg-red-100'>
-                                <div className='font-bold'>
-                                    Se anulo el agendamiento y es necesario agendar nuevamente, a continuacion se muestra el motivo:
+                            {selectedOrder.comentariosAnulacion && (
+                                <div className='border border-gray-200 rounded-md p-2 bg-red-100'>
+                                    <div className='font-bold'>
+                                        Se anulo el agendamiento y es necesario agendar nuevamente, a continuacion se muestra el motivo:
+                                    </div>
+                                    <div className=''>
+                                        {selectedOrder.comentariosAnulacion}
+                                    </div>
                                 </div>
-                                <div className=''>
-                                    {selectedOrder.comentariosAnulacion}
-                                </div>
-                            </div>
+                            )}
 
                             {/* Call History */}
                             {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
@@ -515,6 +577,28 @@ const AgentOrderPanel = ({
                                         {/* Formulario de agendamiento condicional */}
                                         {showAppointmentForm && (
                                             <div className="border-t pt-4 mt-4">
+                                                {/* Mensaje de advertencia si existen appointments activos */}
+                                                {existingAppointments.length > 0 && (
+                                                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                        <div className="flex items-center gap-2 text-yellow-800">
+                                                            <AlertCircle className="h-4 w-4" />
+                                                            <span className="font-medium">Ten en cuenta que esto inhabilitará el agendamiento que ya existe</span>
+                                                        </div>
+                                                        <div className="mt-2 text-sm text-yellow-700">
+                                                            <p>Esta orden ya tiene {existingAppointments.length} agendamiento(s) activo(s):</p>
+                                                            <ul className="mt-1 ml-4 list-disc">
+                                                                {existingAppointments.map((appointment, index) => (
+                                                                    <li key={index}>
+                                                                        {appointment.scheduled_date} a las {appointment.scheduled_time} - {appointment.inspectionModality?.name}
+                                                                        {appointment.sede && ` (${appointment.sede.name})`}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                            <p className="mt-2 font-medium">Al crear un nuevo agendamiento, los anteriores serán inhabilitados automáticamente.</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
                                                 <Card>
                                                     <CardHeader>
                                                         <CardTitle className="text-base">Agendar Inspección</CardTitle>

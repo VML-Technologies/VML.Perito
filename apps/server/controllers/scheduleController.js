@@ -163,7 +163,8 @@ class ScheduleController {
                 scheduled_date: date,
                 status: {
                     [Op.not]: 'CANCELADA'
-                }
+                },
+                deleted_at: null
             }
         });
 
