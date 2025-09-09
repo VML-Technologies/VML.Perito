@@ -275,6 +275,7 @@ app.post('/api/contact-agent/call-logs', requirePermission('contact_agent.create
 app.get('/api/contact-agent/call-statuses', requirePermission('contact_agent.read'), contactAgentController.getCallStatuses);
 
 // Gestión de agendamientos
+app.get('/api/contact-agent/orders/:orderId/active-appointments', requirePermission('contact_agent.read'), contactAgentController.getActiveAppointments);
 app.post('/api/contact-agent/appointments', requirePermission('contact_agent.create_appointment'), contactAgentController.createAppointment);
 
 // Rutas geográficas para agendamientos
@@ -293,7 +294,7 @@ app.get('/api/contact-agent/sedes-by-modality', requirePermission('contact_agent
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
 
 // Rutas para gestión de horarios y disponibilidad
-app.get('/api/schedules/available', requirePermission('contact_agent.read'), scheduleController.getAvailableSchedules);
+app.get('/api/schedules/available', scheduleController.getAvailableSchedules);
 app.get('/api/sedes/:sedeId/vehicle-types', requirePermission('contact_agent.read'), scheduleController.getSedeVehicleTypes);
 app.post('/api/schedules/appointments', requirePermission('contact_agent.create_appointment'), scheduleController.createScheduledAppointment);
 
