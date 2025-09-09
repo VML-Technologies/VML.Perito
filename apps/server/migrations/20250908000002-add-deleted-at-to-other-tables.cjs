@@ -29,7 +29,21 @@ module.exports = {
       'notification_types',
       'notification_channels',
       'events',
-      'event_listeners'
+      'event_listeners',
+      'accessories',
+      'checklist_responses',
+      'checklists',
+      'database_firewall_rules',
+      'image_captures',
+      'inspection_categories',
+      'inspection_category_responses',
+      'inspection_part_responses',
+      'inspection_parts',
+      'mechanical_tests',
+      'messages',
+      'recordings',
+      'refresh_tokens',
+      'token_blacklist',
     ]
     for (const table of tables) {
       try {
@@ -43,7 +57,7 @@ module.exports = {
           name: `${table}_deleted_at_idx`
         });
       } catch (error) {
-        
+        console.log(`Error al agregar deleted_at a la tabla ${table}:`, error);
       }
 
     }
