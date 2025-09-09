@@ -15,6 +15,14 @@ import { InspectionModality, SedeModalityAvailability, SedeType } from '../model
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
 import nodemailer from 'nodemailer';
+import EmailService from '../services/channels/emailService.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Registrar permisos
 registerPermission({
@@ -234,6 +242,251 @@ class ContactAgentController {
         }
     }
 
+    /**
+     * Enviar email de notificación de call log
+     */
+    async sendCallLogNotificationEmail(order, callLog, agent, skipIfAppointment = false) {
+        try {
+            // Si se está creando un appointment, no enviar email de call log
+            if (skipIfAppointment) {
+                console.log(`📧 Saltando email de call log para orden ${order.numero} porque se está creando un appointment`);
+                return;
+            }
+
+            // Determinar el usuario destinatario según las reglas de negocio
+            let targetUser = null;
+            
+            if (order.numero.toString().includes('9991')) {
+                // Si la orden inicia con 9991, buscar por user_id
+                targetUser = await User.findByPk(order.user_id);
+                console.log(`📧 Orden ${order.numero} inicia con 9991, enviando email a user_id: ${order.user_id}`);
+            } else if (order.clave_intermediario) {
+                // Si no inicia con 9991 pero tiene clave_intermediario, buscar por clave_intermediario
+                targetUser = await User.findOne({
+                    where: {
+                        intermediary_key: order.clave_intermediario,
+                        is_active: true
+                    }
+                });
+                console.log(`📧 Orden ${order.numero} con clave_intermediario: ${order.clave_intermediario}, enviando email a usuario comercial`);
+            }
+
+            if (!targetUser) {
+                console.log(`⚠️ No se encontró usuario destinatario para la orden ${order.numero}`);
+                return;
+            }
+
+            // Verificar si el usuario tiene habilitadas las notificaciones por email
+            if (!targetUser.notification_channel_email_enabled) {
+                console.log(`⚠️ Usuario ${targetUser.email} tiene deshabilitadas las notificaciones por email`);
+                return;
+            }
+
+            // Configurar EmailService si no está configurado
+            if (!EmailService.transporter) {
+                console.log('📧 Configurando EmailService desde variables de entorno...');
+                EmailService.configureFromEnv();
+            }
+
+            // Leer la plantilla HTML
+            const templatePath = path.join(__dirname, '../mailTemplates/callLogNotification.html');
+            let emailTemplate;
+            
+            try {
+                emailTemplate = fs.readFileSync(templatePath, 'utf8');
+            } catch (templateError) {
+                console.error('❌ Error leyendo plantilla de email de call log:', templateError.message);
+                throw new Error('No se pudo cargar la plantilla de email de call log');
+            }
+
+            // Variables para la plantilla
+            const templateVariables = {
+                user_name: targetUser.name,
+                order_number: order.numero,
+                client_name: order.nombre_cliente,
+                client_phone: order.celular_cliente,
+                vehicle_plate: order.placa,
+                vehicle_brand: order.marca,
+                vehicle_model: order.modelo,
+                agent_name: agent.name,
+                call_datetime: new Date(callLog.call_time).toLocaleString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                call_status: callLog.status?.name || 'Estado desconocido',
+                requires_scheduling: callLog.status?.creates_schedule || false,
+                has_comments: callLog.comments && callLog.comments.trim().length > 0,
+                agent_comments: callLog.comments || '',
+                current_year: new Date().getFullYear()
+            };
+
+            // Generar contenido HTML
+            const htmlContent = this.replaceTemplateVariables(emailTemplate, templateVariables);
+            
+            // Crear objeto de notificación compatible con EmailService.send()
+            const notification = {
+                recipient_email: targetUser.email,
+                title: 'Notificación de Llamada - Movilidad Mundial',
+                content: `Se ha registrado una nueva llamada para la orden #${order.numero}. Estado: ${callLog.status?.name || 'Desconocido'}`,
+                priority: 'normal',
+                metadata: {
+                    channel_data: {
+                        email: {
+                            subject: `Notificación de Llamada - Orden #${order.numero} - Movilidad Mundial`,
+                            html: htmlContent
+                        }
+                    }
+                }
+            };
+
+            await EmailService.send(notification, htmlContent);
+            console.log(`📧 Email de notificación de call log enviado a ${targetUser.email} para orden ${order.numero}`);
+
+        } catch (error) {
+            console.error('❌ Error enviando email de notificación de call log:', error);
+            // No lanzar el error para no interrumpir el flujo principal
+        }
+    }
+
+    /**
+     * Reemplazar variables en plantilla HTML
+     */
+    replaceTemplateVariables(template, variables) {
+        let result = template;
+        for (const [key, value] of Object.entries(variables)) {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            result = result.replace(regex, value || '');
+        }
+        return result;
+    }
+
+    /**
+     * Enviar email de notificación de agendamiento
+     */
+    async sendAppointmentNotificationEmail(order, appointment, agent) {
+        try {
+            // Determinar el usuario destinatario según las reglas de negocio
+            let targetUser = null;
+            
+            if (order.numero.toString().includes('9991')) {
+                // Si la orden inicia con 9991, buscar por user_id
+                targetUser = await User.findByPk(order.user_id);
+                console.log(`📧 Orden ${order.numero} inicia con 9991, enviando email de agendamiento a user_id: ${order.user_id}`);
+            } else if (order.clave_intermediario) {
+                // Si no inicia con 9991 pero tiene clave_intermediario, buscar por clave_intermediario
+                targetUser = await User.findOne({
+                    where: {
+                        intermediary_key: order.clave_intermediario,
+                        is_active: true
+                    }
+                });
+                console.log(`📧 Orden ${order.numero} con clave_intermediario: ${order.clave_intermediario}, enviando email de agendamiento a usuario comercial`);
+            }
+
+            if (!targetUser) {
+                console.log(`⚠️ No se encontró usuario destinatario para la orden ${order.numero}`);
+                return;
+            }
+
+            // Verificar si el usuario tiene habilitadas las notificaciones por email
+            if (!targetUser.notification_channel_email_enabled) {
+                console.log(`⚠️ Usuario ${targetUser.email} tiene deshabilitadas las notificaciones por email`);
+                return;
+            }
+
+            // Configurar EmailService si no está configurado
+            if (!EmailService.transporter) {
+                console.log('📧 Configurando EmailService desde variables de entorno...');
+                EmailService.configureFromEnv();
+            }
+
+            // Leer la plantilla HTML
+            const templatePath = path.join(__dirname, '../mailTemplates/appointmentNotification.html');
+            let emailTemplate;
+            
+            try {
+                emailTemplate = fs.readFileSync(templatePath, 'utf8');
+            } catch (templateError) {
+                console.error('❌ Error leyendo plantilla de email de agendamiento:', templateError.message);
+                throw new Error('No se pudo cargar la plantilla de email de agendamiento');
+            }
+
+            // Formatear fecha y hora
+            const appointmentDate = new Date(appointment.scheduled_date).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+
+            const appointmentTime = appointment.scheduled_time;
+
+            // Variables para la plantilla
+            const templateVariables = {
+                user_name: targetUser.name,
+                order_number: order.numero,
+                client_name: order.nombre_cliente,
+                client_phone: order.celular_cliente,
+                vehicle_plate: order.placa,
+                vehicle_brand: order.marca,
+                vehicle_model: order.modelo,
+                inspection_modality: appointment.inspectionModality?.name || 'Modalidad no especificada',
+                appointment_date: appointmentDate,
+                appointment_time: appointmentTime,
+                appointment_status: appointment.status || 'pending',
+                has_sede: appointment.sede && appointment.sede.name,
+                sede_name: appointment.sede?.name || '',
+                sede_address: appointment.sede?.address || '',
+                sede_phone: appointment.sede?.phone || '',
+                has_address: appointment.direccion_inspeccion && appointment.direccion_inspeccion.trim().length > 0,
+                inspection_address: appointment.direccion_inspeccion || '',
+                agent_name: agent.name,
+                call_datetime: appointment.callLog ? new Date(appointment.callLog.call_time).toLocaleString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'No disponible',
+                call_status: appointment.callLog?.status?.name || 'No disponible',
+                has_appointment_comments: appointment.observaciones && appointment.observaciones.trim().length > 0,
+                appointment_comments: appointment.observaciones || '',
+                has_call_comments: appointment.callLog?.comments && appointment.callLog.comments.trim().length > 0,
+                call_comments: appointment.callLog?.comments || '',
+                current_year: new Date().getFullYear()
+            };
+
+            // Generar contenido HTML
+            const htmlContent = this.replaceTemplateVariables(emailTemplate, templateVariables);
+            
+            // Crear objeto de notificación compatible con EmailService.send()
+            const notification = {
+                recipient_email: targetUser.email,
+                title: 'Agendamiento de Inspección - Movilidad Mundial',
+                content: `Se ha agendado exitosamente una inspección para la orden #${order.numero}. Fecha: ${appointmentDate} a las ${appointmentTime}`,
+                priority: 'normal',
+                metadata: {
+                    channel_data: {
+                        email: {
+                            subject: `Agendamiento de Inspección - Orden #${order.numero} - Movilidad Mundial`,
+                            html: htmlContent
+                        }
+                    }
+                }
+            };
+
+            await EmailService.send(notification, htmlContent);
+            console.log(`📧 Email de notificación de agendamiento enviado a ${targetUser.email} para orden ${order.numero}`);
+
+        } catch (error) {
+            console.error('❌ Error enviando email de notificación de agendamiento:', error);
+            // No lanzar el error para no interrumpir el flujo principal
+        }
+    }
+
     // Crear registro de llamada
     async createCallLog(req, res) {
         try {
@@ -257,7 +510,14 @@ class ContactAgentController {
                 where: {
                     id: inspection_order_id,
                     assigned_agent_id: req.user.id
-                }
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email']
+                    }
+                ]
             });
 
             if (!order) {
@@ -308,6 +568,15 @@ class ContactAgentController {
                     timestamp: new Date().toISOString()
                 };
                 webSocketSystem.sendToUser(req.user.id, 'call_logged', notificationData);
+            }
+
+            // Enviar email de notificación solo si no se va a crear un appointment
+            const skipEmail = req.body.skip_email_for_appointment === true;
+            try {
+                await this.sendCallLogNotificationEmail(order, fullCallLog, req.user, skipEmail);
+            } catch (emailError) {
+                console.error('❌ Error enviando email de notificación:', emailError);
+                // No interrumpir el flujo principal si falla el email
             }
 
             // TODO: Crear notificación
@@ -494,6 +763,15 @@ class ContactAgentController {
                 const result = await transporter.sendMail(mailOptions);
                 console.log(`Email enviado: ${result.messageId}`);
 
+            }
+
+            // Enviar email de notificación de agendamiento
+            try {
+                await this.sendAppointmentNotificationEmail(order, fullAppointment, req.user);
+                console.log(`📧 Email de notificación de agendamiento enviado para orden ${order.numero}`);
+            } catch (emailError) {
+                console.error('❌ Error enviando email de notificación de agendamiento:', emailError);
+                // No interrumpir el flujo principal si falla el email
             }
 
             // Emitir evento WebSocket para notificar el cambio de estado

@@ -50,6 +50,9 @@ const AgentOrderPanel = ({
     const [existingAppointments, setExistingAppointments] = useState([]);
     const [loadingAppointments, setLoadingAppointments] = useState(false);
     const [loadedOrderId, setLoadedOrderId] = useState(null);
+    
+    // Estado para loading del formulario de llamada
+    const [loadingCallSubmit, setLoadingCallSubmit] = useState(false);
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -169,13 +172,34 @@ const AgentOrderPanel = ({
     // Cambiar handleCallSubmit para manejar ambos procesos
     const handleCallSubmit = async (e) => {
         e.preventDefault();
+        
+        // Prevenir múltiples envíos
+        if (loadingCallSubmit) {
+            console.log('⚠️ Intento de envío múltiple bloqueado');
+            showToast('Ya se está procesando la llamada, por favor espera...', 'warning');
+            return;
+        }
+        
         if (!selectedOrder || !callForm.call_status_id) {
             showToast('Selecciona un estado de llamada', 'warning');
             return;
         }
+        
+        setLoadingCallSubmit(true);
+        
+        // Timeout de seguridad para evitar que el loading se quede atascado
+        const loadingTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout de seguridad: forzando finalización del loading');
+            setLoadingCallSubmit(false);
+            showToast('La operación está tomando más tiempo del esperado. Por favor intenta nuevamente.', 'warning');
+        }, 30000); // 30 segundos
+        
         try {
             const token = localStorage.getItem('authToken');
             // 1. Registrar llamada
+            const selectedStatus = callStatuses.find(status => status.id.toString() == callForm.call_status_id);
+            const willCreateAppointment = selectedStatus?.creates_schedule;
+            
             const callResponse = await fetch(API_ROUTES.CONTACT_AGENT.CALL_LOGS, {
                 method: 'POST',
                 headers: {
@@ -185,13 +209,13 @@ const AgentOrderPanel = ({
                 body: JSON.stringify({
                     inspection_order_id: selectedOrder.id,
                     ...callForm,
-                    fecha_seguimiento: new Date().toISOString()
+                    fecha_seguimiento: new Date().toISOString(),
+                    skip_email_for_appointment: willCreateAppointment // No enviar email si se va a crear appointment
                 })
             });
             if (!callResponse.ok) throw new Error('Error al registrar la llamada');
             const callData = await callResponse.json();
             // 2. Si requiere agendamiento, registrar agendamiento
-            const selectedStatus = callStatuses.find(status => status.id.toString() == callForm.call_status_id);
 
             if (selectedStatus?.creates_schedule) {
                 if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
@@ -249,6 +273,9 @@ const AgentOrderPanel = ({
             }
         } catch (error) {
             showToast('Error al registrar la llamada o agendamiento', 'error');
+        } finally {
+            clearTimeout(loadingTimeout);
+            setLoadingCallSubmit(false);
         }
     };
 
@@ -402,18 +429,28 @@ const AgentOrderPanel = ({
     }, [isOpen, selectedOrder?.id, loadedOrderId, loadingAppointments, loadActiveAppointments]);
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-4xl overflow-y-auto py-2 px-4">
+        <Sheet open={isOpen} onOpenChange={loadingCallSubmit ? undefined : onOpenChange}>
+            <SheetContent 
+                className="w-full sm:max-w-4xl overflow-y-auto py-2 px-4"
+                onEscapeKeyDown={loadingCallSubmit ? (e) => e.preventDefault() : undefined}
+            >
                 {selectedOrder && (
                     <>
                         <SheetHeader>
                             <SheetTitle>Gestionar Orden #{selectedOrder.numero}</SheetTitle>
                             <SheetDescription>
-                                Registra la llamada o agenda una inspección
+                                {loadingCallSubmit ? (
+                                    <div className="flex items-center gap-2 text-blue-600">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span>Procesando llamada...</span>
+                                    </div>
+                                ) : (
+                                    'Registra la llamada o agenda una inspección'
+                                )}
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="flex flex-col gap-4">
+                        <div className={`flex flex-col gap-4 ${loadingCallSubmit ? 'pointer-events-none opacity-50' : ''}`}>
                             {/* Order Details */}
                             <Card>
                                 <CardHeader>
@@ -809,9 +846,22 @@ const AgentOrderPanel = ({
                                             </div>
                                         )}
 
-                                        <Button type="submit" className="w-full">
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
+                                        <Button 
+                                            type="submit" 
+                                            disabled={loadingCallSubmit}
+                                            className={`w-full ${loadingCallSubmit ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                        >
+                                            {loadingCallSubmit ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    <span>Guardando información...</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <Phone className="h-4 w-4 mr-2" />
+                                                    Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
+                                                </>
+                                            )}
                                         </Button>
                                     </form>
                                 </CardContent>

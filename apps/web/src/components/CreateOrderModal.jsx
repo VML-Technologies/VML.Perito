@@ -523,12 +523,26 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Prevenir múltiples envíos
+        if (loading) {
+            console.log('⚠️ Intento de envío múltiple bloqueado');
+            showToast('Ya se está procesando la orden, por favor espera...', 'warning');
+            return;
+        }
+
         if (!validateForm()) {
             showToast('Por favor corrige los errores en el formulario', 'warning');
             return;
         }
 
         setLoading(true);
+
+        // Timeout de seguridad para evitar que el loading se quede atascado
+        const loadingTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout de seguridad: forzando finalización del loading');
+            setLoading(false);
+            showToast('La operación está tomando más tiempo del esperado. Por favor intenta nuevamente.', 'warning');
+        }, 30000); // 30 segundos
 
         try {
             const token = localStorage.getItem('authToken');
@@ -570,13 +584,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             console.error('Error creating order:', error);
             showToast(error.message || 'Error al crear la orden de inspección', 'error');
         } finally {
+            clearTimeout(loadingTimeout);
             setLoading(false);
         }
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="w-full sm:max-w-6xl overflow-y-auto px-4">
+        <Sheet open={isOpen} onOpenChange={loading ? undefined : onClose}>
+            <SheetContent 
+                className="w-full sm:max-w-6xl overflow-y-auto px-4"
+                onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}
+            >
                 <SheetHeader>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -595,13 +613,20 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 <TestTube className="h-4 w-4" />
                                 Datos de Prueba
                             </Button>
-                        )}
+                        )} 
                     </div>
                     <SheetDescription>
-                        Completa todos los datos requeridos para crear una nueva orden de inspección
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-blue-600">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span>Procesando orden de inspección...</span>
+                            </div>
+                        ) : (
+                            'Completa todos los datos requeridos para crear una nueva orden de inspección'
+                        )}
                     </SheetDescription>
                 </SheetHeader>
-                <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+                <form onSubmit={handleSubmit} className={`mt-6 space-y-6 ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                     {/* Información General de la Orden */}
                     <Card>
                         <CardHeader>
@@ -1179,22 +1204,22 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                         <Button
                             type="submit"
                             disabled={loading || plateExists}
-                            className="flex-1"
+                            className={`flex-1 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Creando...
+                                    <span>Creando Orden...</span>
                                 </div>
                             ) : plateExists ? (
                                 <div className="flex items-center gap-2">
                                     <AlertCircle className="h-4 w-4" />
-                                    Orden de inspección existente
+                                    <span>Orden de inspección existente</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
                                     <CheckCircle className="h-4 w-4" />
-                                    Crear Orden
+                                    <span>Crear Orden</span>
                                 </div>
                             )}
                         </Button>
