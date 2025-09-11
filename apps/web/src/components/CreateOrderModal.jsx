@@ -161,7 +161,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             carroceria: 'Carroceria del vehiculo',
             combustible: 'GASOLINA',
             metodo_inspeccion_recomendado: 'Virtual',
-            cod_fasecolda: '123456', // Campo opcional con valor de prueba
+            cod_fasecolda: '', // Campo opcional
 
             // Información del cliente
             tipo_doc: 'CC',
@@ -320,7 +320,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             const timeoutId = setTimeout(() => {
                 checkPlateExists(value);
             }, 500);
-
+            
             return () => clearTimeout(timeoutId);
         }
 
@@ -376,8 +376,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             'producto', 'callback_url', 'intermediario', 'clave_intermediario',
             'fecha', 'vlr_accesorios',
             'placa', // Solo la placa es obligatoria de los datos del vehículo
-            'metodo_inspeccion_recomendado', 'cod_fasecolda', // Campo ahora requerido
-            'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
+            'metodo_inspeccion_recomendado', 'tipo_doc', 'num_doc', 'nombre_cliente', 'celular_cliente',
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
 
@@ -636,7 +635,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
                                 <Select
@@ -721,26 +720,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <Label htmlFor="placa">Codigo Fasecolda *</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="cod_fasecolda"
-                                        placeholder="Código Fasecolda"
-                                        value={formData.cod_fasecolda}
-                                        onChange={(e) => handleInputChange('cod_fasecolda', e.target.value.toUpperCase())}
-                                        disabled={checkingPlate}
-                                    />
-                                </div>
-                                {errors.cod_fasecolda && (
-                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.cod_fasecolda}
-                                    </p>
-                                )}
-                            </div>
                         </CardContent>
                     </Card>
+
                     {/* Información del Vehículo */}
                     <Card className="hidden">
                         <CardHeader>
