@@ -604,7 +604,7 @@ class AppointmentController {
                 });
 
                 // Emitir evento a la sala del coordinador
-                socketManager.emitToRoom('coordinador_vml', 'sedeAppointmentCreated', {
+                socketManager.sendToRoom('coordinador_vml', 'sedeAppointmentCreated', {
                     appointment: updatedAppointment,
                     allSedeAppointments: allSedeAppointments
                 });
@@ -768,7 +768,7 @@ class AppointmentController {
                 });
 
                 // Emitir evento a la sala del coordinador
-                socketManager.emitToRoom('coordinador_vml', 'sedeAppointmentCreated', {
+                socketManager.sendToRoom('coordinador_vml', 'sedeAppointmentCreated', {
                     appointment: fullAppointment,
                     allSedeAppointments: allSedeAppointments
                 });
