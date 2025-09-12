@@ -68,6 +68,20 @@ export const useInspectionQueueWebSocket = (hash = null) => {
             }
         });
 
+        newSocket.on('inspectorAssigned', (data) => {
+            console.log('👨‍🔧 Inspector asignado recibido:', data);
+            if (data.data) {
+                // Actualizar el estado con la información del inspector
+                const newStatus = {
+                    ...data.data,
+                    inspector: data.data.inspector,
+                    estado: data.data.status
+                };
+                console.log('🔄 Actualizando estado con inspector:', newStatus);
+                setQueueStatus(newStatus);
+            }
+        });
+
         newSocket.on('error', (error) => {
             console.error('❌ Error en WebSocket de cola de inspecciones:', error);
             setError(error.message || 'Error de conexión');

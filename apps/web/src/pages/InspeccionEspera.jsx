@@ -49,8 +49,15 @@ const InspeccionEspera = () => {
                 setPosition(wsQueueStatus.position);
             }
             setLoading(false);
+            
+            // Si se asigna un inspector, redirigir a la página de inspección
+            if (wsQueueStatus.inspector && wsQueueStatus.estado === 'en_proceso') {
+                console.log('🚀 Inspector asignado, redirigiendo a inspección...');
+                console.log('📊 Estado actual:', wsQueueStatus);
+                navigate(`/inspeccion/${hash}`);
+            }
         }
-    }, [wsQueueStatus]);
+    }, [wsQueueStatus, navigate, hash]);
 
     // Efecto para manejar errores de WebSocket
     useEffect(() => {
@@ -214,6 +221,12 @@ const InspeccionEspera = () => {
                 // La posición ya viene incluida en la respuesta del endpoint público
                 if (data.data.position) {
                     setPosition(data.data.position);
+                }
+                
+                // Si se asigna un inspector, redirigir a la página de inspección
+                if (data.data.inspector && data.data.estado === 'en_proceso') {
+                    console.log('🚀 Inspector asignado (API), redirigiendo a inspección...');
+                    navigate(`/inspeccion/${hash}`);
                 }
             } else {
                 setError('No se encontró la orden en la cola');

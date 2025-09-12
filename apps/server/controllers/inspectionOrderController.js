@@ -1359,12 +1359,21 @@ class InspectionOrderController extends BaseController {
                 const hash = order.inspection_link?.replace('/inspeccion/', '');
                 
                 if (hash) {
+                    // Emitir actualización de estado de cola
                     socketManager.default.emitQueueStatusUpdate(hash, {
                         session_id: sessionId,
                         inspector: inspector,
                         sede: sede,
                         redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`,
-                        status: 'inspection_started'
+                        estado: 'en_proceso'
+                    });
+                    
+                    // Emitir evento específico de inspector asignado
+                    socketManager.default.emitInspectorAssigned(hash, {
+                        inspector: inspector,
+                        status: 'en_proceso',
+                        session_id: sessionId,
+                        sede: sede
                     });
                 }
             } catch (wsError) {
