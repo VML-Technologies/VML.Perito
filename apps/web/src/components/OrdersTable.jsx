@@ -230,6 +230,7 @@ const OrdersTable = ({
                                                                 )
                                                             }
                                                         </Badge>
+                                                        <Badge variant='default' className='text-xs'>{order.metodo_inspeccion_recomendado}</Badge>
                                                     </div>
 
                                                 </td>

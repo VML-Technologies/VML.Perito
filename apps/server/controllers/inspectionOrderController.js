@@ -358,6 +358,7 @@ class InspectionOrderController extends BaseController {
                     intermediary_key: order.clave_intermediario,
                     inspection_result_details: order.inspection_result_details,
                     appointments: sortedAppointments,
+                    metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
                     session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null,
                     fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, order.placa).fixedStatus,
                     badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).badgeColor,
