@@ -11,6 +11,7 @@ import {
 import { Op } from 'sequelize';
 import EventRegistry from '../services/eventRegistry.js';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
+import socketManager from '../websocket/socketManager.js';
 
 class AppointmentController {
     // Obtener modalidades disponibles por departamento y ciudad
@@ -396,7 +397,7 @@ class AppointmentController {
     // Obtener agendamientos
     async getAppointments(req, res) {
         try {
-            const { page = 1, limit = 10, status = '', inspection_order_id = '' } = req.query;
+            const { page = 1, limit = 10, status = '', inspection_order_id = '', sede_id = '' } = req.query;
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
             const whereConditions = {};
@@ -407,6 +408,10 @@ class AppointmentController {
 
             if (inspection_order_id) {
                 whereConditions.inspection_order_id = inspection_order_id;
+            }
+
+            if (sede_id) {
+                whereConditions.sede_id = sede_id;
             }
 
             const appointments = await Appointment.findAndCountAll({
@@ -495,6 +500,290 @@ class AppointmentController {
 
         } catch (error) {
             console.error('Error obteniendo agendamiento:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Actualizar agendamiento
+    async updateAppointment(req, res) {
+        try {
+            const { id } = req.params;
+            const updateData = req.body;
+
+            const appointment = await Appointment.findByPk(id);
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Agendamiento no encontrado'
+                });
+            }
+
+            await appointment.update(updateData);
+
+            const updatedAppointment = await Appointment.findByPk(id, {
+                include: [
+                    { model: InspectionOrder, as: 'inspectionOrder' },
+                    { model: Sede, as: 'sede', include: [{ model: City, as: 'city' }] },
+                    { model: InspectionModality, as: 'inspectionModality' }
+                ]
+            });
+
+            res.json({
+                success: true,
+                data: updatedAppointment,
+                message: 'Agendamiento actualizado exitosamente'
+            });
+
+        } catch (error) {
+            console.error('Error actualizando agendamiento:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Método para asignar inspector a un agendamiento
+    async assignInspector(req, res) {
+        try {
+            const { id } = req.params;
+            const { inspector_id, status } = req.body;
+
+            if (!inspector_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID del inspector es requerido'
+                });
+            }
+
+            const appointment = await Appointment.findByPk(id);
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Agendamiento no encontrado'
+                });
+            }
+
+            // Actualizar el appointment con el inspector asignado y el nuevo estado
+            const updateData = {
+                user_id: inspector_id, // Campo user_id = inspector asignado
+                ...(status && { status })
+            };
+
+            await appointment.update(updateData);
+
+            // Obtener el appointment actualizado con sus relaciones
+            const updatedAppointment = await Appointment.findByPk(id, {
+                include: [
+                    { model: InspectionOrder, as: 'inspectionOrder' },
+                    { model: Sede, as: 'sede', include: [{ model: City, as: 'city' }] },
+                    { model: InspectionModality, as: 'inspectionModality' }
+                ]
+            });
+
+            // Emitir evento WebSocket para actualizar CoordinadorVML
+            try {
+                // Obtener todos los agendamientos SEDE para enviar al coordinador
+                const allSedeAppointments = await Appointment.findAll({
+                    where: {
+                        inspection_modality_id: appointment.inspection_modality_id
+                    },
+                    include: [
+                        { model: InspectionOrder, as: 'inspectionOrder' },
+                        { model: Sede, as: 'sede', include: [{ model: City, as: 'city' }] },
+                        { model: InspectionModality, as: 'inspectionModality' }
+                    ],
+                    order: [['created_at', 'DESC']]
+                });
+
+                // Emitir evento a la sala del coordinador
+                socketManager.emitToRoom('coordinador_vml', 'sedeAppointmentCreated', {
+                    appointment: updatedAppointment,
+                    allSedeAppointments: allSedeAppointments
+                });
+
+                console.log('📡 WebSocket: Evento sedeAppointmentCreated emitido al coordinador');
+            } catch (wsError) {
+                console.error('Error emitiendo WebSocket:', wsError);
+            }
+
+            res.json({
+                success: true,
+                data: updatedAppointment,
+                message: 'Inspector asignado exitosamente'
+            });
+
+        } catch (error) {
+            console.error('Error asignando inspector:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // ===== ENDPOINT DEDICADO PARA INSPECTOR ALIADO =====
+    
+    // Crear agendamiento para Inspector Aliado (simplificado)
+    async createInspectorAliadoAppointment(req, res) {
+        try {
+            const {
+                sede_id,
+                inspection_order_id,
+                user_id,
+                scheduled_date,
+                scheduled_time,
+                session_id,
+                status = 'pending'
+            } = req.body;
+
+            // Validaciones básicas
+            if (!sede_id || !inspection_order_id || !user_id || !scheduled_date || !scheduled_time) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Campos requeridos faltantes: sede_id, inspection_order_id, user_id, scheduled_date, scheduled_time'
+                });
+            }
+
+            // Buscar automáticamente la modalidad SEDE
+            const sedeModality = await InspectionModality.findOne({
+                where: { code: 'SEDE', active: true }
+            });
+            
+            if (!sedeModality) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Modalidad SEDE no encontrada en el sistema'
+                });
+            }
+
+            // Validar que la modalidad esté disponible en la sede
+            const availability = await SedeModalityAvailability.findOne({
+                where: {
+                    sede_id: sede_id,
+                    inspection_modality_id: sedeModality.id,
+                    active: true
+                }
+            });
+
+            if (!availability) { 
+                // return res.status(400).json({
+                //     success: false,
+                //     message: 'La modalidad SEDE no está disponible en esta sede'
+                // });
+            }
+
+            // Crear el agendamiento con valores fijos para Inspector Aliado
+            const appointment = await Appointment.create({
+                sede_id: sede_id,
+                inspection_order_id: inspection_order_id,
+                inspection_modality_id: sedeModality.id,
+                user_id: user_id,
+                scheduled_date: scheduled_date,
+                scheduled_time: scheduled_time,
+                session_id: session_id,
+                status: status,
+                // Campos opcionales con valores por defecto
+                call_log_id: null,
+                direccion_inspeccion: null,
+                observaciones: null
+            });
+
+            // Obtener el agendamiento completo con relaciones
+            const fullAppointment = await Appointment.findByPk(appointment.id, {
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder'
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [{
+                            model: City,
+                            as: 'city'
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality'
+                    }
+                ]
+            });
+
+            // Disparar evento de cita creada
+            try {
+                await automatedEventTriggers.triggerAppointmentEvents('created', {
+                    id: fullAppointment.id,
+                    date: fullAppointment.scheduled_date,
+                    time: fullAppointment.scheduled_time,
+                    status: fullAppointment.status,
+                    sede: fullAppointment.sede?.name || 'Sede no especificada',
+                    modality: fullAppointment.inspectionModality?.name || 'Modalidad no especificada',
+                    customer: fullAppointment.inspectionOrder?.nombre_contacto || 'Cliente',
+                    customer_email: fullAppointment.inspectionOrder?.email_contacto || 'email@ejemplo.com'
+                }, {
+                    created_by: req.user?.id,
+                    ip_address: req.ip,
+                    inspection_order_id: inspection_order_id
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento appointment.created:', eventError);
+            }
+
+            // Emitir evento WebSocket para actualizar CoordinadorVML
+            try {
+                // Obtener todos los agendamientos SEDE para enviar al coordinador
+                const allSedeAppointments = await Appointment.findAll({
+                    where: {
+                        inspection_modality_id: sedeModality.id
+                    },
+                    include: [
+                        {
+                            model: InspectionOrder,
+                            as: 'inspectionOrder'
+                        },
+                        {
+                            model: Sede,
+                            as: 'sede',
+                            include: [{
+                                model: City,
+                                as: 'city'
+                            }]
+                        },
+                        {
+                            model: InspectionModality,
+                            as: 'inspectionModality'
+                        }
+                    ],
+                    order: [['created_at', 'DESC']]
+                });
+
+                // Emitir evento a la sala del coordinador
+                socketManager.emitToRoom('coordinador_vml', 'sedeAppointmentCreated', {
+                    appointment: fullAppointment,
+                    allSedeAppointments: allSedeAppointments
+                });
+
+                console.log('📡 WebSocket: Evento sedeAppointmentCreated emitido al coordinador');
+            } catch (wsError) {
+                console.error('Error emitiendo WebSocket:', wsError);
+            }
+
+            res.status(201).json({
+                success: true,
+                data: fullAppointment,
+                message: 'Agendamiento creado exitosamente para Inspector Aliado'
+            });
+
+        } catch (error) {
+            console.error('Error creando agendamiento para Inspector Aliado:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
