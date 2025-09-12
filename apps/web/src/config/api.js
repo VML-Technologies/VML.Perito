@@ -101,6 +101,7 @@ export const API_ROUTES = {
         CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
         CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
         APPOINTMENTS: `${API_BASE_URL}/api/contact-agent/appointments`,
+        ACTIVE_APPOINTMENTS: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/active-appointments`,
         DEPARTMENTS: `${API_BASE_URL}/api/contact-agent/departments`,
         CITIES: (departmentId) => `${API_BASE_URL}/api/contact-agent/cities/${departmentId}`,
         SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,

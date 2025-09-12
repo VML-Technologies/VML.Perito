@@ -17,6 +17,10 @@ export const BaseModel = {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
+    deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 };
 
 // Opciones base para todos los modelos

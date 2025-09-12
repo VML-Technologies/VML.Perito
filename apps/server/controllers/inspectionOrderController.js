@@ -130,10 +130,29 @@ class InspectionOrderController extends BaseController {
         this.getInspectionReport = this.getInspectionReport.bind(this);
         this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
         this.checkPlate = this.checkPlate.bind(this);
-        this.getByHash = this.getByHash.bind(this);
-        this.startInspection = this.startInspection.bind(this);
-        this.startVirtualInspection = this.startVirtualInspection.bind(this);
-        this.searchByPlate = this.searchByPlate.bind(this);
+        this.getFixedStatus = this.getFixedStatus.bind(this);
+    }
+
+    getFixedStatus(statusId, statusName, result, comentariosAnulacion, placa) {
+        const statusBadgeColorMap = {
+            1: 'outline',
+            2: 'outline',
+            3: 'secondary',
+            4: 'default',
+            5: {
+                'APROBADO': 'success',
+                'RECHAZADO': 'destructive',
+            }
+        }
+        const resultLabel = (statusId == 5 ? (result.split(" - ")[0] == 'ANULADO' ? 'Creada' : result.split(" - ")[0]) : statusName)
+        const badgeColor = (statusId == 5 ? statusBadgeColorMap[statusId][resultLabel] : statusBadgeColorMap[statusId])
+        const badgeLabel = statusId == 5 ? (resultLabel == 'Creada' ? 'Creada' : `${statusName} - ${resultLabel}`) : resultLabel
+        const finalLabel = badgeLabel.includes('NO AEGURABLE PARCIAL') ? 'Pendiente de reinspección' : badgeLabel
+        return {
+            fixedStatus: finalLabel,
+            badgeColor: badgeLabel == 'Creada' ? 'outline' : badgeColor,
+            comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO'|| finalLabel == 'Pendiente de reinspección' ?comentariosAnulacion:null)
+        }
     }
 
     async getOrders(req, res) {
@@ -274,6 +293,9 @@ class InspectionOrderController extends BaseController {
                     model: Appointment,
                     as: 'appointments',
                     attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
+                    where: {
+                        deleted_at: null // Solo appointments activos
+                    },
                     include: [
                         {
                             model: InspectionModality,
@@ -336,7 +358,10 @@ class InspectionOrderController extends BaseController {
                     intermediary_key: order.clave_intermediario,
                     inspection_result_details: order.inspection_result_details,
                     appointments: sortedAppointments,
-                    session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null
+                    session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null,
+                    fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, order.placa).fixedStatus,
+                    badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).badgeColor,
+                    comentariosAnulacion: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).comentariosAnulacion,
                 };
             });
 

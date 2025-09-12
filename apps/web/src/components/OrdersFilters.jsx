@@ -51,12 +51,12 @@ const OrdersFilters = ({
     };
 
     return (
-        <Card className="rounded-lg shadow-md"> {/* Added rounded corners and shadow for better visual appeal */}
-            <CardHeader className="pb-4"> {/* Adjusted padding-bottom */}
+        <div className="rounded-lg shadow-md"> {/* Added rounded corners and shadow for better visual appeal */}
+            <div className="px-4"> {/* Adjusted padding-bottom */}
                 <CardTitle className="text-2xl font-bold text-gray-800">{title}</CardTitle>
                 <CardDescription className="text-gray-600">{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4"> {/* Adjusted padding-top */}
+            </div>
+            <div className="p-4"> {/* Adjusted padding-top */}
                 {/* Changed to flex container for inline layout, allowing items to wrap and align at the bottom */}
                 <div className="flex flex-wrap items-end gap-4">
                     {showSearchFilter && (
@@ -129,7 +129,7 @@ const OrdersFilters = ({
 
                     {showDateFilters && (
                         <>
-                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]"> {/* flex-grow to distribute space, min-w for responsiveness */}
+                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]">
                                 <Label htmlFor="date_from" className="text-sm font-medium text-gray-700">Fecha Desde</Label>
                                 <Input
                                     id="date_from"
@@ -140,7 +140,7 @@ const OrdersFilters = ({
                                 />
                             </div>
 
-                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]"> {/* flex-grow to distribute space, min-w for responsiveness */}
+                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]">
                                 <Label htmlFor="date_to" className="text-sm font-medium text-gray-700">Fecha Hasta</Label>
                                 <Input
                                     id="date_to"
@@ -165,8 +165,8 @@ const OrdersFilters = ({
                         </Button>
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 };
 

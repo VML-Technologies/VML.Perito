@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ const AgentOrderPanel = ({
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
     const { validationState, validateRealTime, clearValidations } = useScheduleValidation();
-    
+
 
 
     // Estados para el flujo mejorado
@@ -45,6 +45,14 @@ const AgentOrderPanel = ({
     const [showAppointmentForm, setShowAppointmentForm] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [calendarSelectedDate, setCalendarSelectedDate] = useState('');
+    
+    // Estados para manejo de appointments existentes
+    const [existingAppointments, setExistingAppointments] = useState([]);
+    const [loadingAppointments, setLoadingAppointments] = useState(false);
+    const [loadedOrderId, setLoadedOrderId] = useState(null);
+    
+    // Estado para loading del formulario de llamada
+    const [loadingCallSubmit, setLoadingCallSubmit] = useState(false);
 
     // Estados del formulario
     const [callForm, setCallForm] = useState({
@@ -93,7 +101,7 @@ const AgentOrderPanel = ({
     validateAppointment();
 
     // Nueva función para cargar todas las modalidades disponibles
-    const loadAllModalities = async () => {
+    const loadAllModalities = useCallback(async () => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await fetch(API_ROUTES.CONTACT_AGENT.ALL_MODALITIES, {
@@ -108,7 +116,37 @@ const AgentOrderPanel = ({
         } catch (error) {
             console.error('Error loading all modalities:', error);
         }
-    };
+    }, []);
+
+    // Función para cargar appointments activos de la orden
+    const loadActiveAppointments = useCallback(async (orderId) => {
+        if (!orderId) return;
+        
+        setLoadingAppointments(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.CONTACT_AGENT.ACTIVE_APPOINTMENTS(orderId), {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setExistingAppointments(data.data || []);
+                setLoadedOrderId(orderId); // Marcar que ya cargamos esta orden
+            } else {
+                console.error('Error loading active appointments:', response.statusText);
+                setExistingAppointments([]);
+                setLoadedOrderId(orderId); // Marcar como cargada incluso si falló
+            }
+        } catch (error) {
+            console.error('Error loading active appointments:', error);
+            setExistingAppointments([]);
+            setLoadedOrderId(orderId); // Marcar como cargada incluso si falló
+        } finally {
+            setLoadingAppointments(false);
+        }
+    }, []);
 
     // Nueva función para cargar sedes por modalidad
     const loadSedesByModality = async (modalityId) => {
@@ -134,13 +172,34 @@ const AgentOrderPanel = ({
     // Cambiar handleCallSubmit para manejar ambos procesos
     const handleCallSubmit = async (e) => {
         e.preventDefault();
+        
+        // Prevenir múltiples envíos
+        if (loadingCallSubmit) {
+            console.log('⚠️ Intento de envío múltiple bloqueado');
+            showToast('Ya se está procesando la llamada, por favor espera...', 'warning');
+            return;
+        }
+        
         if (!selectedOrder || !callForm.call_status_id) {
             showToast('Selecciona un estado de llamada', 'warning');
             return;
         }
+        
+        setLoadingCallSubmit(true);
+        
+        // Timeout de seguridad para evitar que el loading se quede atascado
+        const loadingTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout de seguridad: forzando finalización del loading');
+            setLoadingCallSubmit(false);
+            showToast('La operación está tomando más tiempo del esperado. Por favor intenta nuevamente.', 'warning');
+        }, 30000); // 30 segundos
+        
         try {
             const token = localStorage.getItem('authToken');
             // 1. Registrar llamada
+            const selectedStatus = callStatuses.find(status => status.id.toString() == callForm.call_status_id);
+            const willCreateAppointment = selectedStatus?.creates_schedule;
+            
             const callResponse = await fetch(API_ROUTES.CONTACT_AGENT.CALL_LOGS, {
                 method: 'POST',
                 headers: {
@@ -150,13 +209,13 @@ const AgentOrderPanel = ({
                 body: JSON.stringify({
                     inspection_order_id: selectedOrder.id,
                     ...callForm,
-                    fecha_seguimiento: new Date().toISOString()
+                    fecha_seguimiento: new Date().toISOString(),
+                    skip_email_for_appointment: willCreateAppointment // No enviar email si se va a crear appointment
                 })
             });
             if (!callResponse.ok) throw new Error('Error al registrar la llamada');
             const callData = await callResponse.json();
             // 2. Si requiere agendamiento, registrar agendamiento
-            const selectedStatus = callStatuses.find(status => status.id.toString() == callForm.call_status_id);
 
             if (selectedStatus?.creates_schedule) {
                 if (!appointmentForm.fecha_inspeccion || !appointmentForm.hora_inspeccion) {
@@ -189,10 +248,17 @@ const AgentOrderPanel = ({
                         }
                         return res; // Pass the response along if it's OK
                     })
-                    .then(appointmentResponse => {
-                        console.log('appointmentResponse2'); // This will be the same as the first console.log(res) if successful
-                        console.log(appointmentResponse);
-                        showToast('Llamada registrada y agendamiento creado exitosamente', 'success');
+                    .then(appointmentResponse => appointmentResponse.json())
+                    .then(appointmentData => {
+                        console.log('appointmentResponse2:', appointmentData);
+                        
+                        // Mostrar mensaje personalizado según si se reemplazaron appointments
+                        let successMessage = 'Llamada registrada y agendamiento creado exitosamente';
+                        if (appointmentData.replaced_appointments > 0) {
+                            successMessage = `Llamada registrada y agendamiento creado exitosamente. Se inhabilitó ${appointmentData.replaced_appointments} agendamiento(s) anterior(es).`;
+                        }
+                        
+                        showToast(successMessage, 'success');
                     })
                     .catch(error => {
                         console.error("Fetch error:", error);
@@ -207,6 +273,9 @@ const AgentOrderPanel = ({
             }
         } catch (error) {
             showToast('Error al registrar la llamada o agendamiento', 'error');
+        } finally {
+            clearTimeout(loadingTimeout);
+            setLoadingCallSubmit(false);
         }
     };
 
@@ -337,23 +406,51 @@ const AgentOrderPanel = ({
     }, []);
 
     // Cargar modalidades cuando se abre el panel
-    if (isOpen && allModalities.length == 0) {
-        loadAllModalities();
-    }
+    useEffect(() => {
+        if (isOpen && allModalities.length === 0) {
+            loadAllModalities();
+        }
+    }, [isOpen, allModalities.length, loadAllModalities]);
+
+    // Limpiar estado cuando se cierra el panel
+    useEffect(() => {
+        if (!isOpen) {
+            setExistingAppointments([]);
+            setLoadedOrderId(null);
+            setLoadingAppointments(false);
+        }
+    }, [isOpen]);
+
+    // Cargar appointments activos cuando se selecciona una orden
+    useEffect(() => {
+        if (isOpen && selectedOrder?.id && loadedOrderId !== selectedOrder.id && !loadingAppointments) {
+            loadActiveAppointments(selectedOrder.id);
+        }
+    }, [isOpen, selectedOrder?.id, loadedOrderId, loadingAppointments, loadActiveAppointments]);
 
     return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-4xl overflow-y-auto py-2 px-4">
+        <Sheet open={isOpen} onOpenChange={loadingCallSubmit ? undefined : onOpenChange}>
+            <SheetContent 
+                className="w-full sm:max-w-4xl overflow-y-auto py-2 px-4"
+                onEscapeKeyDown={loadingCallSubmit ? (e) => e.preventDefault() : undefined}
+            >
                 {selectedOrder && (
                     <>
                         <SheetHeader>
                             <SheetTitle>Gestionar Orden #{selectedOrder.numero}</SheetTitle>
                             <SheetDescription>
-                                Registra la llamada o agenda una inspección
+                                {loadingCallSubmit ? (
+                                    <div className="flex items-center gap-2 text-blue-600">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span>Procesando llamada...</span>
+                                    </div>
+                                ) : (
+                                    'Registra la llamada o agenda una inspección'
+                                )}
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="flex flex-col gap-4">
+                        <div className={`flex flex-col gap-4 ${loadingCallSubmit ? 'pointer-events-none opacity-50' : ''}`}>
                             {/* Order Details */}
                             <Card>
                                 <CardHeader>
@@ -390,6 +487,17 @@ const AgentOrderPanel = ({
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {selectedOrder.comentariosAnulacion && (
+                                <div className='border border-gray-200 rounded-md p-2 bg-red-100'>
+                                    <div className='font-bold'>
+                                        Se anulo el agendamiento y es necesario agendar nuevamente, a continuacion se muestra el motivo:
+                                    </div>
+                                    <div className=''>
+                                        {selectedOrder.comentariosAnulacion}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Call History */}
                             {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
@@ -448,7 +556,7 @@ const AgentOrderPanel = ({
                             )}
 
                             {/* Sección de Comunicación y Datos de Contacto */}
-                            <OrderCommunicationSection 
+                            <OrderCommunicationSection
                                 orderId={selectedOrder.id}
                                 orderData={selectedOrder}
                                 user={user}
@@ -506,6 +614,28 @@ const AgentOrderPanel = ({
                                         {/* Formulario de agendamiento condicional */}
                                         {showAppointmentForm && (
                                             <div className="border-t pt-4 mt-4">
+                                                {/* Mensaje de advertencia si existen appointments activos */}
+                                                {existingAppointments.length > 0 && (
+                                                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                        <div className="flex items-center gap-2 text-yellow-800">
+                                                            <AlertCircle className="h-4 w-4" />
+                                                            <span className="font-medium">Ten en cuenta que esto inhabilitará el agendamiento que ya existe</span>
+                                                        </div>
+                                                        <div className="mt-2 text-sm text-yellow-700">
+                                                            <p>Esta orden ya tiene {existingAppointments.length} agendamiento(s) activo(s):</p>
+                                                            <ul className="mt-1 ml-4 list-disc">
+                                                                {existingAppointments.map((appointment, index) => (
+                                                                    <li key={index}>
+                                                                        {appointment.scheduled_date} a las {appointment.scheduled_time} - {appointment.inspectionModality?.name}
+                                                                        {appointment.sede && ` (${appointment.sede.name})`}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                            <p className="mt-2 font-medium">Al crear un nuevo agendamiento, los anteriores serán inhabilitados automáticamente.</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
                                                 <Card>
                                                     <CardHeader>
                                                         <CardTitle className="text-base">Agendar Inspección</CardTitle>
@@ -716,9 +846,22 @@ const AgentOrderPanel = ({
                                             </div>
                                         )}
 
-                                        <Button type="submit" className="w-full">
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
+                                        <Button 
+                                            type="submit" 
+                                            disabled={loadingCallSubmit}
+                                            className={`w-full ${loadingCallSubmit ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                        >
+                                            {loadingCallSubmit ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    <span>Guardando información...</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <Phone className="h-4 w-4 mr-2" />
+                                                    Registrar Llamada{showAppointmentForm ? ' y Agendar' : ''}
+                                                </>
+                                            )}
                                         </Button>
                                     </form>
                                 </CardContent>

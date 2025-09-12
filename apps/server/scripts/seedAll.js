@@ -19,10 +19,16 @@ const seedAll = async () => {
         console.log('✅ Conexión a la base de datos establecida.');
 
         // 2. Ejecutar seed de RBAC (roles y permisos)
-        console.log('\n📋 Paso 1: Configurando RBAC...');
-        const { default: seedRBAC } = await import('./seedRBAC.js');
-        await seedRBAC();
+        // console.log('\n📋 Paso 1: Configurando RBAC...');
+        // const { default: seedRBAC } = await import('./seedRBAC.js');
+        // await seedRBAC();
         console.log('✅ RBAC configurado correctamente.');
+
+        // 3. Ejecutar seed de estados de órdenes y citas
+        console.log('\n📋 Paso 2: Configurando estados de órdenes y citas...');
+        const { default: seedNewStates } = await import('./seedNewStates.js');
+        await seedNewStates();
+        console.log('✅ Estados de órdenes y citas configurados correctamente.');
 
         // // 3. Ejecutar seed de datos básicos (departamentos, ciudades, empresas, sedes)
         // console.log('\n📊 Paso 2: Cargando datos básicos...');

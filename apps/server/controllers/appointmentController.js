@@ -400,7 +400,9 @@ class AppointmentController {
             const { page = 1, limit = 10, status = '', inspection_order_id = '', sede_id = '' } = req.query;
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
-            const whereConditions = {};
+            const whereConditions = {
+                deleted_at: null // Solo appointments activos
+            };
 
             if (status) {
                 whereConditions.status = status;

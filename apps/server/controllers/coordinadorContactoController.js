@@ -453,6 +453,9 @@ class CoordinadorContactoController {
                     {
                         model: Appointment,
                         as: 'appointments',
+                        where: {
+                            deleted_at: null // Solo appointments activos
+                        },
                         include: [
                             {
                                 model: InspectionModality,

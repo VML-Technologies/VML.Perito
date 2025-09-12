@@ -5,6 +5,82 @@ Todas las notables modificaciones a este proyecto serán documentadas en este ar
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-09-09
+
+### 🚀 **Nuevas Características**
+- **Sistema de Soft Delete para Citas**: Implementación completa de eliminación suave en appointments
+  - Nueva columna `deleted_at` en la base de datos para gestión de citas eliminadas
+  - Actualización de controladores y modelos para manejar citas activas
+  - Mejora en la gestión de citas en el sistema sin pérdida de datos
+- **Sistema de Estados Avanzado**: Nuevos modelos y migraciones para gestión de estados
+  - Tablas: `inspection_orders_status_internal`, `appointment_statuses`, `inspection_states`
+  - Modelos y relaciones completas para estados de inspección y citas
+  - Mejora en la gestión de estados en todo el sistema
+- **Nuevas Rutas API**: Endpoints para citas activas de pedidos
+  - Nueva ruta para obtener citas activas de un pedido específico
+  - Simplificación de acceso a información de horarios disponibles
+  - Mejora en la funcionalidad del sistema de agendamiento
+
+### 🔧 **Mejoras**
+- **Componente BadgeToDisplay**: Nuevo componente para representación consistente de estados
+  - Nuevas variantes: éxito, advertencia, información y error
+  - Mejora en la presentación visual y funcionalidad del componente
+  - Refactorización de OrderDetailsPanel y OrdersTable para usar el nuevo componente
+- **Gestión de Estados Fijos**: Método getFixedStatus en controlador de órdenes
+  - Lógica para determinar el color de la insignia según el estado
+  - Gestión de comentarios de anulación
+  - Actualización de transformación de órdenes con nuevos atributos
+- **Componente OrdersTable**: Mejoras significativas en visualización
+  - Eliminación de columna de ID para mejor presentación
+  - Nuevo Badge que indica si la orden es manual o de integración
+  - Ajuste en lógica de contacto con botón o mensaje según estado
+  - Cambio de texto del botón de 'Ver' a 'Ver Resumen' para mayor claridad
+- **Componentes de Interfaz**: Mejoras en diseño y presentación
+  - Actualización de StatsCards para mejor presentación visual
+  - Mejora en OrdersFilters reemplazando Card por div con mejor espaciado
+  - Optimización de AgentOrderPanel y OrderDetailsPanel
+  - Eliminación de funciones obsoletas y optimización de código
+
+### 🎨 **Presentación Visual**
+- **Diseño Mejorado**: Mejoras en la presentación visual de múltiples componentes
+- **Consistencia Visual**: Unificación en la representación de estados con BadgeToDisplay
+- **Optimización de Espaciado**: Ajustes en espaciado y estructura de componentes
+
+### 📚 **Documentación**
+- **Scripts de Seeding**: Actualización de seedAll para incluir configuración de estados
+  - Nuevo archivo seedNewStates.js para gestión de estados internos
+  - Mejora en la inicialización de datos en la base de datos
+
+---
+
+## [1.0.10] - 2025-09-09
+
+### 🚀 **Nuevas Características**
+- **Sistema de Notificaciones por Email**: Implementación completa de notificaciones automáticas
+  - Notificaciones por email para registros de llamadas y agendamientos
+  - Métodos para enviar correos electrónicos utilizando plantillas HTML
+  - Mejora en la comunicación con los usuarios del sistema
+- **Campo Código FASECOLDA Obligatorio**: Actualización del formulario de creación de órdenes
+  - Campo `cod_fasecolda` ahora es obligatorio en CreateOrderModal
+  - Nuevo campo de entrada para captura del código FASECOLDA
+  - Mejora en la estructura del formulario con más columnas en la cuadrícula
+
+### 🔧 **Mejoras**
+- **Estados de Carga**: Mejoras en la experiencia del usuario
+  - Actualización de componentes para manejar estado de carga durante envío de formularios
+  - Mejor feedback visual para el usuario durante operaciones asíncronas
+- **Migraciones de Base de Datos**: Actualizaciones y mejoras
+  - Migraciones actualizadas para incluir columna `deleted_at` en múltiples tablas
+  - Mejora en la documentación relacionada con las migraciones
+  - Optimización del proceso de migración de base de datos
+
+### 📚 **Documentación**
+- **Documentación de Migraciones**: Mejoras en la documentación relacionada con las migraciones
+  - Actualización de documentación para reflejar cambios en la estructura de base de datos
+  - Mejor organización de la información de migraciones
+
+---
+
 ## [1.0.9] - 2025-08-29
 
 ### 🔧 **Mejoras**
@@ -229,6 +305,20 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 - **PATCH**: Correcciones de errores compatibles hacia atrás
 
 ## Notas de Lanzamiento
+
+### v1.0.10
+- **Deploy**: 9 de Septiembre 2025
+- **Características Principales**: Sistema de notificaciones por email, campo FASECOLDA obligatorio y mejoras en estados de carga
+- **Nuevas Funcionalidades**: Notificaciones automáticas por email para llamadas y agendamientos, campo cod_fasecolda obligatorio
+- **Mejoras**: Estados de carga mejorados, migraciones actualizadas, documentación de migraciones
+- **Migración Requerida**: Migraciones para columna deleted_at en múltiples tablas
+
+### v1.1.0
+- **Deploy**: 8 de Septiembre 2025
+- **Características Principales**: Sistema de soft delete para citas, sistema de estados avanzado y mejoras significativas en componentes UI
+- **Nuevas Funcionalidades**: Soft delete en appointments, sistema de estados de inspección y citas, componente BadgeToDisplay
+- **Mejoras**: Gestión de estados fijos, optimización de OrdersTable, mejoras en diseño de componentes
+- **Migración Requerida**: Nuevas migraciones para soft delete y sistema de estados
 
 ### v1.0.9
 - **Deploy**: 29 de Agosto 2025
