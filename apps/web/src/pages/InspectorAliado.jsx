@@ -191,7 +191,7 @@ const InspectorAliado = () => {
     const handleCopyLink = async (appointment) => {
         if (appointment.session_id) {
             const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
-            const inspectionUrl = `${base}/inspector/view/${appointment.session_id}`;
+            const inspectionUrl = `${base}/inspection/${appointment.session_id}`;
             
             try {
                 // Verificar si navigator.clipboard está disponible
