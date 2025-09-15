@@ -114,14 +114,11 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         type: DataTypes.DATE,
         allowNull: true,
         comment: 'Fecha y hora cuando falló la inspección'
-    },
-    call_finished_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        comment: 'Fecha y hora cuando se finalizó la llamada'
     }
 }, {
     tableName: 'appointments',
+    paranoid: true,
+    deletedAt: 'deleted_at',
     indexes: [
         {
             name: 'appointment_sede_modality_idx',

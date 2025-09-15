@@ -30,7 +30,7 @@ Este documento describe todas las plantillas disponibles en el sistema, organiza
 
 ### **1. `user_welcome`**
 
-**Asunto:** `¡Bienvenido a VML Perito, {{user.name}}!`
+**Asunto:** `¡Bienvenido a Movilidad Mundial, {{user.name}}!`
 
 **Características:**
 
@@ -105,7 +105,7 @@ Este documento describe todas las plantillas disponibles en el sistema, organiza
 
 ### **1. `appointment_confirmation_client_sms`**
 
-**Mensaje:** `VML Perito: Su cita está confirmada para {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}`
+**Mensaje:** `Movilidad Mundial: Su cita está confirmada para {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}`
 
 **Variables:** `appointment.scheduled_date`, `appointment.scheduled_time`, `appointment.location`, `inspection_order.numero`
 
@@ -113,7 +113,7 @@ Este documento describe todas las plantillas disponibles en el sistema, organiza
 
 ### **2. `appointment_reminder_client_sms`**
 
-**Mensaje:** `VML Perito: Recordatorio - Su cita es mañana {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}`
+**Mensaje:** `Movilidad Mundial: Recordatorio - Su cita es mañana {{appointment.scheduled_date}} a las {{appointment.scheduled_time}} en {{appointment.location}}. Orden: {{inspection_order.numero}}`
 
 **Variables:** `appointment.scheduled_date`, `appointment.scheduled_time`, `appointment.location`, `inspection_order.numero`
 

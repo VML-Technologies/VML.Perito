@@ -39,7 +39,7 @@ const ChannelPreview = ({ template, variables = {}, className = '' }) => {
       sede: 'CDA 197'
     },
     company: {
-      name: 'VML Perito S.A.S.',
+      name: 'Movilidad Mundial S.A.S.',
       address: 'Calle 123 #45-67, Bogotá',
       phone: '+57 1 234 5678'
     },

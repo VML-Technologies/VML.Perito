@@ -10,7 +10,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 
 import sequelize from './config/database.js';
-import { login, verify, logout, changeTemporaryPassword, changePassword } from './controllers/authController.js';
+import { login, verify, logout, changeTemporaryPassword, changePassword, requestPasswordReset, verifyResetToken, resetPassword } from './controllers/authController.js';
 import userController from './controllers/userController.js';
 import roleController from './controllers/roleController.js';
 import permissionController from './controllers/permissionController.js';
@@ -167,6 +167,9 @@ app.get('/api/auth/verify', authLimiter, verify);
 app.post('/api/auth/logout', authLimiter, logout);
 app.post('/api/auth/change-temporary-password', authLimiter, requireAuth, changeTemporaryPassword);
 app.post('/api/auth/change-password', authLimiter, requireAuth, changePassword);
+app.post('/api/auth/request-password-reset', authLimiter, requestPasswordReset);
+app.get('/api/auth/verify-reset-token/:token', authLimiter, verifyResetToken);
+app.post('/api/auth/reset-password', authLimiter, resetPassword);
 
 // ===== RUTAS DE CONSULTA DE PLACAS (SIN AUTENTICACIÓN) =====
 
@@ -237,6 +240,7 @@ app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeContro
 app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
 app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
+app.get('/api/inspection-orders/check-plate/:plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.checkPlate);
 app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
 app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
@@ -271,6 +275,7 @@ app.post('/api/contact-agent/call-logs', requirePermission('contact_agent.create
 app.get('/api/contact-agent/call-statuses', requirePermission('contact_agent.read'), contactAgentController.getCallStatuses);
 
 // Gestión de agendamientos
+app.get('/api/contact-agent/orders/:orderId/active-appointments', requirePermission('contact_agent.read'), contactAgentController.getActiveAppointments);
 app.post('/api/contact-agent/appointments', requirePermission('contact_agent.create_appointment'), contactAgentController.createAppointment);
 
 // Rutas geográficas para agendamientos
@@ -289,7 +294,7 @@ app.get('/api/contact-agent/sedes-by-modality', requirePermission('contact_agent
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
 
 // Rutas para gestión de horarios y disponibilidad
-app.get('/api/schedules/available', requirePermission('contact_agent.read'), scheduleController.getAvailableSchedules);
+app.get('/api/schedules/available', scheduleController.getAvailableSchedules);
 app.get('/api/sedes/:sedeId/vehicle-types', requirePermission('contact_agent.read'), scheduleController.getSedeVehicleTypes);
 app.post('/api/schedules/appointments', requirePermission('contact_agent.create_appointment'), scheduleController.createScheduledAppointment);
 
@@ -340,16 +345,16 @@ app.post('/api/channels/reload', requirePermission('channels.update'), channelCo
 
 // Rutas para eventos del sistema
 app.get('/api/events', readLimiter, requirePermission('events.read'), eventController.getAllEvents);
-app.get('/api/events/:id', readLimiter, requirePermission('events.read'), eventController.getEventById);
-app.post('/api/events', requirePermission('events.create'), eventController.createEvent);
-app.put('/api/events/:id', requirePermission('events.update'), eventController.updateEvent);
-app.delete('/api/events/:id', requirePermission('events.delete'), eventController.deleteEvent);
 app.get('/api/events/stats', readLimiter, requirePermission('events.read'), eventController.getEventStats);
-app.post('/api/events/:id/trigger', requirePermission('events.trigger'), eventController.triggerEvent);
 app.get('/api/events/category/:category', readLimiter, requirePermission('events.read'), eventController.getEventsByCategory);
-app.get('/api/events/:id/listeners', readLimiter, requirePermission('events.read'), eventController.getEventListeners);
+app.post('/api/events', requirePermission('events.create'), eventController.createEvent);
 app.post('/api/events/listeners', requirePermission('events.create'), eventController.createListener);
+app.get('/api/events/:id', readLimiter, requirePermission('events.read'), eventController.getEventById);
+app.get('/api/events/:id/listeners', readLimiter, requirePermission('events.read'), eventController.getEventListeners);
+app.post('/api/events/:id/trigger', requirePermission('events.trigger'), eventController.triggerEvent);
+app.put('/api/events/:id', requirePermission('events.update'), eventController.updateEvent);
 app.put('/api/events/listeners/:id', requirePermission('events.update'), eventController.updateListener);
+app.delete('/api/events/:id', requirePermission('events.delete'), eventController.deleteEvent);
 app.delete('/api/events/listeners/:id', requirePermission('events.delete'), eventController.deleteListener);
 
 // Rutas para citas (appointments)
@@ -384,6 +389,9 @@ app.get('/api/users/trashed/only', readLimiter, requirePermission('users.read'),
 app.get('/api/users', readLimiter, requirePermission('users.read'), userController.index);
 app.get('/api/users/:id', readLimiter, requirePermission('users.read'), userController.show);
 app.post('/api/users', requirePermission('users.create'), userController.store);
+app.post('/api/users/create-with-email', requirePermission('users.create'), userController.createUserWithEmail);
+app.get('/api/users/validate/identification', readLimiter, requirePermission('users.read'), userController.validateIdentification);
+app.get('/api/users/validate/email', readLimiter, requirePermission('users.read'), userController.validateEmail);
 app.put('/api/users/:id', requirePermission('users.update'), userController.update);
 app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);

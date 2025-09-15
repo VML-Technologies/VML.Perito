@@ -8,6 +8,8 @@ import { Dashboard } from "@/pages/Dashboard"
 import Admin from "@/pages/Admin"
 import Profile from "@/pages/Profile"
 import ForcedPasswordChange from "@/pages/ForcedPasswordChange"
+import ForgotPassword from "@/pages/ForgotPassword"
+import ResetPassword from "@/pages/ResetPassword"
 import ComercialMundial from "@/pages/ComercialMundial"
 import AgenteContacto from "@/pages/AgenteContacto"
 import CoordinadorContacto from "@/pages/CoordinadorContacto"
@@ -51,6 +53,18 @@ function AppContent() {
           element={<GuestLayout />}
         />
 
+        {/* Ruta pública para recuperación de contraseña */}
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        {/* Ruta pública para resetear contraseña */}
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+
         {/* Ruta pública para consulta de placas */}
         <Route
           path="/checkinspectionorder"
@@ -70,7 +84,13 @@ function AppContent() {
         {/* Ruta de administración RBAC */}
         <Route
           path="/admin"
-          element={<Admin />}
+          element={
+            <RoleBasedRoute requiredRoles={['admin', 'super_admin', 'help_desk']}>
+              <AuthenticatedLayout>
+                <Admin />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
         />
 
         {/* Ruta de plantillas de notificación */}
@@ -131,7 +151,7 @@ function AppContent() {
         <Route
           path="/comercial-mundial"
           element={
-            <RoleBasedRoute requiredRoles={['comercial_mundial', 'super_admin']}>
+            <RoleBasedRoute requiredRoles={['comercial_mundial', 'super_admin', 'help_desk']}>
               <AuthenticatedLayout>
                 <ComercialMundial />
               </AuthenticatedLayout>
@@ -155,7 +175,7 @@ function AppContent() {
         <Route
           path="/coordinador-contacto"
           element={
-            <RoleBasedRoute requiredRoles={['coordinador_contacto', 'super_admin']}>
+            <RoleBasedRoute requiredRoles={['coordinador_contacto', 'super_admin', 'help_desk']}>
               <AuthenticatedLayout>
                 <CoordinadorContacto />
               </AuthenticatedLayout>

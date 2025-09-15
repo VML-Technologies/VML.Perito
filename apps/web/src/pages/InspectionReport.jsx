@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, FileText, Car, User, Calendar, MapPin, CheckCircle, XCircle, Clock, Camera, Wrench, Star, Download } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, FileText, Car, User, Calendar, MapPin, CheckCircle, XCircle, Clock, Camera, Wrench, Star, Download, FileTextIcon } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -342,7 +342,7 @@ const InspectionReport = () => {
                         processedPartComments[r.part_id] = r.comment;
                     }
                 });
-                
+
                 setPartResponses(processedResponses);
                 setPartComments(processedPartComments);
 
@@ -475,7 +475,7 @@ const InspectionReport = () => {
                                 <div className="bg-white/20 p-3 rounded-xl">
                                     <FileText className="h-8 w-8" />
                                 </div>
-        <div>
+                                <div>
                                     <h1 className="text-2xl font-bold">INSPECCIÓN DE ASEGURABILIDAD</h1>
                                     <p className="text-blue-100 mt-1">Reporte detallado de evaluación vehicular</p>
                                 </div>
@@ -494,37 +494,37 @@ const InspectionReport = () => {
                                 <div className="flex items-center space-x-3">
                                     <div className="bg-blue-600 p-2 rounded-lg">
                                         <Calendar className="h-5 w-5 text-white" />
-                    </div>
+                                    </div>
                                     <div>
                                         <div className="text-sm text-blue-600 font-medium">Fecha</div>
                                         <div className="font-semibold text-gray-800">{inspection?.scheduled_date ? inspection.scheduled_date : 'N/A'}</div>
                                     </div>
-                        </div>
-                    </div>
+                                </div>
+                            </div>
 
                             <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
                                 <div className="flex items-center space-x-3">
                                     <div className="bg-green-600 p-2 rounded-lg">
                                         <Clock className="h-5 w-5 text-white" />
-                        </div>
+                                    </div>
                                     <div>
                                         <div className="text-sm text-green-600 font-medium">Hora</div>
                                         <div className="font-semibold text-gray-800">{inspection?.scheduled_time ? inspection.scheduled_time : 'N/A'}</div>
-                    </div>
-                        </div>
-                    </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
                                 <div className="flex items-center space-x-3">
                                     <div className="bg-purple-600 p-2 rounded-lg">
                                         <MapPin className="h-5 w-5 text-white" />
-                        </div>
+                                    </div>
                                     <div>
                                         <div className="text-sm text-purple-600 font-medium">Centro</div>
                                         <div className="font-semibold text-gray-800">{inspection?.Sede?.name || 'N/A'}</div>
-                    </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
                             <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
                                 <div className="flex items-center space-x-3">
@@ -533,19 +533,19 @@ const InspectionReport = () => {
                                             const { isAsegurable } = calculateAsegurabilidad();
                                             return isAsegurable ? <CheckCircle className="h-5 w-5 text-white" /> : <XCircle className="h-5 w-5 text-white" />;
                                         })()}
-                                            </div>
-                                            <div>
+                                    </div>
+                                    <div>
                                         <div className="text-sm text-orange-600 font-medium">Asegurable</div>
                                         <div className="font-semibold text-gray-800">
                                             {(() => {
                                                 const { isAsegurable } = calculateAsegurabilidad();
                                                 return isAsegurable ? 'SI' : 'NO';
                                             })()}
-                                            </div>
-                                        </div>
                                         </div>
                                     </div>
+                                </div>
                             </div>
+                        </div>
 
                         {/* Datos generales */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -557,8 +557,8 @@ const InspectionReport = () => {
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                         <span className="text-gray-600 font-medium">Nombre:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.nombre_cliente || 'N/A'}</span>
-                        </div>
+                                        <span className="font-semibold text-right max-w-xs">{inspection?.inspectionOrder?.nombre_cliente || 'N/A'}</span>
+                                    </div>
                                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                                         <span className="text-gray-600 font-medium">Identificación:</span>
                                         <span className="font-semibold">{inspection?.inspectionOrder?.num_doc || 'N/A'}</span>
@@ -569,9 +569,38 @@ const InspectionReport = () => {
                                     </div>
                                     <div className="flex justify-between items-center py-2">
                                         <span className="text-gray-600 font-medium">Correo:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.correo_cliente || 'N/A'}</span>
+                                        <span className="font-semibold text-right max-w-xs break-words">{inspection?.inspectionOrder?.correo_cliente || 'N/A'}</span>
                                     </div>
                                 </div>
+
+                                {/* Información de contacto adicional si existe */}
+                                {(inspection?.inspectionOrder?.nombre_contacto || inspection?.inspectionOrder?.celular_contacto || inspection?.inspectionOrder?.correo_contacto) && (
+                                    <div className="mt-6 pt-4 border-t border-gray-300">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">
+                                            Información de Contacto Adicional
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {inspection?.inspectionOrder?.nombre_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Contacto:</span>
+                                                    <span className="font-semibold text-sm text-right max-w-xs">{inspection.inspectionOrder.nombre_contacto}</span>
+                                                </div>
+                                            )}
+                                            {inspection?.inspectionOrder?.celular_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Celular Contacto:</span>
+                                                    <span className="font-semibold text-sm">{inspection.inspectionOrder.celular_contacto}</span>
+                                                </div>
+                                            )}
+                                            {inspection?.inspectionOrder?.correo_contacto && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-600 text-sm font-medium">Correo Contacto:</span>
+                                                    <span className="font-semibold text-sm text-right max-w-xs break-words">{inspection.inspectionOrder.correo_contacto}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
@@ -579,24 +608,96 @@ const InspectionReport = () => {
                                     <Car className="h-5 w-5 mr-2 text-blue-600" />
                                     DATOS DEL VEHÍCULO
                                 </h2>
-                            <div className="space-y-3">
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Placa:</span>
-                                        <span className="font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded">{inspection?.inspectionOrder?.placa || 'N/A'}</span>
-                                            </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Marca/Modelo:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.marca || 'N/A'} {inspection?.inspectionOrder?.linea || ''}</span>
-                                            </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Año:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.modelo || 'N/A'}</span>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Información Básica */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
+                                            Información Básica
+                                        </h3>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Placa:</span>
+                                            <span className="font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm">
+                                                {inspection?.inspectionOrder?.placa || 'N/A'}
+                                            </span>
                                         </div>
-                                    <div className="flex justify-between items-center py-2">
-                                        <span className="text-gray-600 font-medium">Color:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.color || 'N/A'}</span>
-                            </div>
-                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Marca:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.marca || 'N/A'} - {inspection?.inspectionOrder?.linea || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Clase:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.clase || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Modelo:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.modelo || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Color:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.color || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Carrocería:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.carroceria || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-gray-600 font-medium">Cilindraje:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.cilindraje ? `${inspection.inspectionOrder.cilindraje} cc` : 'N/A'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Información Técnica */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
+                                            Información Técnica
+                                        </h3>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Producto:</span>
+                                            <span className="font-semibold bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                                {inspection?.inspectionOrder?.producto || 'N/A'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Motor:</span>
+                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.motor || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Chasis:</span>
+                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.chasis || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">VIN:</span>
+                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.vin || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Código Fasecolda:</span>
+                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.cod_fasecolda || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Combustible:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.combustible || 'N/A'}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                                            <span className="text-gray-600 font-medium">Servicio:</span>
+                                            <span className="font-semibold">{inspection?.inspectionOrder?.servicio || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -617,22 +718,22 @@ const InspectionReport = () => {
                                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                             style={{ width: `${calculateChecklistScores().generalScore || 0}%` }}
                                         ></div>
-                            </div>
+                                    </div>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 text-center">
                                     <div className="text-3xl font-bold text-green-600 mb-2">
                                         {Object.keys(groupPartsByCategory()).length}
-                        </div>
+                                    </div>
                                     <div className="text-sm text-green-600 font-medium">Categorías Evaluadas</div>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 text-center">
                                     <div className="text-3xl font-bold text-purple-600 mb-2">
                                         {inspectionParts.length}
-                                        </div>
-                                    <div className="text-sm text-purple-600 font-medium">Partes Evaluadas</div>
                                     </div>
+                                    <div className="text-sm text-purple-600 font-medium">Partes Evaluadas</div>
+                                </div>
 
                                 <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200 text-center">
                                     <div className="text-3xl font-bold text-orange-600 mb-2">
@@ -640,50 +741,50 @@ const InspectionReport = () => {
                                             const { isAsegurable } = calculateAsegurabilidad();
                                             return isAsegurable ? 'APROBADO' : 'RECHAZADO';
                                         })()}
-                            </div>
+                                    </div>
                                     <div className="text-sm text-orange-600 font-medium">Estado Final</div>
-                        </div>
+                                </div>
                             </div>
                         </div>
 
-                    {/* Inspección Visual Completa */}
+                        {/* Inspección Visual Completa */}
                         <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
                             <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                                 <Wrench className="h-6 w-6 mr-3 text-blue-600" />
                                 INSPECCIÓN VISUAL COMPLETA
                             </h2>
-                        {(() => {
-                            const groupedParts = groupPartsByCategory();
-                            const { categoryScores, generalScore } = calculateChecklistScores();
+                            {(() => {
+                                const groupedParts = groupPartsByCategory();
+                                const { categoryScores, generalScore } = calculateChecklistScores();
 
-                            return (
+                                return (
                                     <div className="space-y-6">
-                                    {/* Puntaje general */}
+                                        {/* Puntaje general */}
                                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                                             <div className="flex justify-between items-center mb-4">
                                                 <span className="text-lg font-bold text-blue-800">Puntaje General del Vehículo</span>
                                                 <span className="text-2xl font-bold text-blue-600">
-                                                {generalScore.toFixed(1)}%
-                                            </span>
-                                        </div>
+                                                    {generalScore.toFixed(1)}%
+                                                </span>
+                                            </div>
                                             <div className="w-full bg-blue-200 rounded-full h-3">
-                                            <div
+                                                <div
                                                     className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500"
-                                                style={{ width: `${generalScore}%` }}
-                                            ></div>
+                                                    style={{ width: `${generalScore}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Categorías */}
+                                        {/* Categorías */}
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {Object.entries(groupedParts).map(([categoria, parts]) => (
+                                            {Object.entries(groupedParts).map(([categoria, parts]) => (
                                                 <div key={categoria} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                                                     <div className="flex justify-between items-center mb-4">
                                                         <h3 className="font-bold text-gray-800 text-lg">{categoria}</h3>
                                                         <div className="text-right">
                                                             <span className="text-2xl font-bold text-blue-600">
-                                                    {categoryScores[categoria]?.toFixed(1) || 0}%
-                                                </span>
+                                                                {categoryScores[categoria]?.toFixed(1) || 0}%
+                                                            </span>
                                                             <div className="w-20 bg-blue-200 rounded-full h-2 mt-1">
                                                                 <div
                                                                     className="bg-blue-600 h-2 rounded-full"
@@ -691,27 +792,26 @@ const InspectionReport = () => {
                                                                 ></div>
                                                             </div>
                                                         </div>
-                                            </div>
+                                                    </div>
 
-                                            {/* Partes de la categoría */}
+                                                    {/* Partes de la categoría */}
                                                     <div className="space-y-3">
-                                                {parts.map(part => (
+                                                        {parts.map(part => (
                                                             <div key={part.id} className="flex justify-between items-center py-2 px-3 bg-white rounded-lg border border-gray-100">
                                                                 <span className="text-gray-700 font-medium">{part.parte}</span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                    getResponseValue(part) === 'Bueno' ? 'bg-green-100 text-green-800' :
-                                                                    getResponseValue(part) === 'Regular' ? 'bg-yellow-100 text-yellow-800' :
-                                                                        getResponseValue(part) === 'Malo' ? 'bg-red-100 text-red-800' :
-                                                                            'bg-gray-100 text-gray-600'
-                                                            }`}>
-                                                            {getResponseValue(part)}
-                                                        </span>
+                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getResponseValue(part) === 'Bueno' ? 'bg-green-100 text-green-800' :
+                                                                        getResponseValue(part) === 'Regular' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            getResponseValue(part) === 'Malo' ? 'bg-red-100 text-red-800' :
+                                                                                'bg-gray-100 text-gray-600'
+                                                                    }`}>
+                                                                    {getResponseValue(part)}
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
 
-                                            {/* Comentario de categoría */}
-                                            {categoryResponses[parts[0]?.category?.id] && (
+                                                    {/* Comentario de categoría */}
+                                                    {categoryResponses[parts[0]?.category?.id] && (
                                                         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                                                             <div className="flex items-start">
                                                                 <div className="text-yellow-600 mr-2 mt-0.5">💬</div>
@@ -720,74 +820,72 @@ const InspectionReport = () => {
                                                                     <div className="text-sm text-yellow-700">{categoryResponses[parts[0].category.id]}</div>
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
-                                    ))}
-                                        </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
 
-                    {/* Pruebas Mecanizadas */}
-                    {mechanicalTests && Object.keys(mechanicalTests).length > 0 && (
+                        {/* Pruebas Mecanizadas */}
+                        {mechanicalTests && Object.keys(mechanicalTests).length > 0 && (
                             <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                                     <Wrench className="h-6 w-6 mr-3 text-blue-600" />
                                     PRUEBAS MECANIZADAS
                                 </h2>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {mechanicalTests.brakes && (
+                                    {mechanicalTests.brakes && (
                                         <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
                                             <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                                                 <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
                                                 Sistema de Frenos
                                             </h3>
                                             <div className="space-y-4">
-                                            {mechanicalTests.brakes.eficaciaTotal && (
+                                                {mechanicalTests.brakes.eficaciaTotal && (
                                                     <div className="bg-white rounded-lg p-4 border border-red-200">
-                                                <div className="flex justify-between items-center">
+                                                        <div className="flex justify-between items-center">
                                                             <span className="text-gray-700 font-medium">Eficacia Total:</span>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-xl font-bold text-red-600">
-                                                            {mechanicalTests.brakes.eficaciaTotal.value}%
-                                                        </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                    mechanicalTests.brakes.eficaciaTotal.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                            mechanicalTests.brakes.eficaciaTotal.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
-                                                            }`}>
-                                                            {mechanicalTests.brakes.eficaciaTotal.status}
-                                                        </span>
+                                                                    {mechanicalTests.brakes.eficaciaTotal.value}%
+                                                                </span>
+                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${mechanicalTests.brakes.eficaciaTotal.status === 'BUENO' ? 'bg-green-100 text-green-800' :
+                                                                        mechanicalTests.brakes.eficaciaTotal.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            'bg-red-100 text-red-800'
+                                                                    }`}>
+                                                                    {mechanicalTests.brakes.eficaciaTotal.status}
+                                                                </span>
                                                             </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                            {mechanicalTests.brakes.frenoAuxiliar && (
+                                                )}
+                                                {mechanicalTests.brakes.frenoAuxiliar && (
                                                     <div className="bg-white rounded-lg p-4 border border-red-200">
-                                                <div className="flex justify-between items-center">
+                                                        <div className="flex justify-between items-center">
                                                             <span className="text-gray-700 font-medium">Freno Auxiliar:</span>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-xl font-bold text-red-600">
-                                                            {mechanicalTests.brakes.frenoAuxiliar.value}%
-                                                        </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                    mechanicalTests.brakes.frenoAuxiliar.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                            mechanicalTests.brakes.frenoAuxiliar.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
-                                                            }`}>
-                                                            {mechanicalTests.brakes.frenoAuxiliar.status}
-                                                        </span>
+                                                                    {mechanicalTests.brakes.frenoAuxiliar.value}%
+                                                                </span>
+                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${mechanicalTests.brakes.frenoAuxiliar.status === 'BUENO' ? 'bg-green-100 text-green-800' :
+                                                                        mechanicalTests.brakes.frenoAuxiliar.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            'bg-red-100 text-red-800'
+                                                                    }`}>
+                                                                    {mechanicalTests.brakes.frenoAuxiliar.status}
+                                                                </span>
                                                             </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {mechanicalTests.suspension && (
+                                    {mechanicalTests.suspension && (
                                         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
                                             <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                                                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
@@ -796,56 +894,54 @@ const InspectionReport = () => {
                                             <div className="space-y-4">
                                                 {Object.entries(mechanicalTests.suspension).map(([key, value]) => (
                                                     <div key={key} className="bg-white rounded-lg p-4 border border-green-200">
-                                                <div className="flex justify-between items-center">
+                                                        <div className="flex justify-between items-center">
                                                             <span className="text-gray-700 font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-xl font-bold text-green-600">
                                                                     {value.value}%
-                                                        </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                    value.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                                    value.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
-                                                            }`}>
+                                                                </span>
+                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${value.status === 'BUENO' ? 'bg-green-100 text-green-800' :
+                                                                        value.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            'bg-red-100 text-red-800'
+                                                                    }`}>
                                                                     {value.status}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {mechanicalTests.alignment && (
+                                    {mechanicalTests.alignment && (
                                         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                                             <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                                                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                                                 Alineación
                                             </h3>
                                             <div className="space-y-4">
-                                            {mechanicalTests.alignment.axes && mechanicalTests.alignment.axes.map((axis, index) => (
+                                                {mechanicalTests.alignment.axes && mechanicalTests.alignment.axes.map((axis, index) => (
                                                     <div key={index} className="bg-white rounded-lg p-4 border border-blue-200">
                                                         <div className="flex justify-between items-center">
                                                             <span className="text-gray-700 font-medium">{axis.name}:</span>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-xl font-bold text-blue-600">
-                                                            {axis.value} {axis.unit}
-                                                        </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                    axis.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                            axis.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-red-100 text-red-800'
-                                                            }`}>
-                                                            {axis.status}
-                                                        </span>
+                                                                    {axis.value} {axis.unit}
+                                                                </span>
+                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${axis.status === 'BUENO' ? 'bg-green-100 text-green-800' :
+                                                                        axis.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
+                                                                            'bg-red-100 text-red-800'
+                                                                    }`}>
+                                                                    {axis.status}
+                                                                </span>
                                                             </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
                                 </div>
 
                                 {mechanicalTests.observations && (
@@ -859,170 +955,170 @@ const InspectionReport = () => {
                                         </div>
                                     </div>
                                 )}
-                        </div>
-                    )}
+                            </div>
+                        )}
 
-                    {/* Fotografías */}
-                    {vehicleImages && Object.keys(vehicleImages).length > 0 && (
+                        {/* Fotografías */}
+                        {vehicleImages && Object.keys(vehicleImages).length > 0 && (
                             <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                                     <Camera className="h-6 w-6 mr-3 text-blue-600" />
                                     FOTOGRAFÍAS ANEXAS
                                 </h2>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {Object.entries(vehicleImages).map(([key, image]) => (
+                                    {Object.entries(vehicleImages).map(([key, image]) => (
                                         <div key={key} className="bg-gray-50 rounded-xl p-3 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                                             <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                            {image.url ? (
-                                                <img
-                                                    src={image.url}
-                                                    alt={image.description || key}
+                                                {image.url ? (
+                                                    <img
+                                                        src={image.url}
+                                                        alt={image.description || key}
                                                         className="w-full h-full object-cover rounded-lg hover:scale-105 transition-transform duration-200"
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'flex';
-                                                    }}
-                                                />
-                                            ) : null}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextSibling.style.display = 'flex';
+                                                        }}
+                                                    />
+                                                ) : null}
                                                 <div className="text-center text-gray-500 text-xs flex flex-col items-center justify-center" style={{ display: image.url ? 'none' : 'flex' }}>
                                                     <div className="w-12 h-12 bg-gray-300 rounded-lg mb-2 flex items-center justify-center">
                                                         <Camera className="h-6 w-6 text-gray-400" />
                                                     </div>
+                                                    {image.description || key}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-center mt-2 text-gray-600 font-medium">
                                                 {image.description || key}
                                             </div>
                                         </div>
-                                            <div className="text-xs text-center mt-2 text-gray-600 font-medium">
-                                            {image.description || key}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Listado de Accesorios */}
-                    {Array.isArray(accessories) && accessories.length > 0 && (
+                        {/* Listado de Accesorios */}
+                        {Array.isArray(accessories) && accessories.length > 0 && (
                             <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                                     <Car className="h-6 w-6 mr-3 text-blue-600" />
                                     LISTADO DE ACCESORIOS
                                 </h2>
-                            <div className="overflow-x-auto">
+                                <div className="overflow-x-auto">
                                     <table className="min-w-full bg-white rounded-xl overflow-hidden border border-gray-200">
                                         <thead className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-                                        <tr>
+                                            <tr>
                                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                Descripción
-                                            </th>
+                                                    Descripción
+                                                </th>
                                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                Marca
-                                            </th>
+                                                    Marca
+                                                </th>
                                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                Referencia
-                                            </th>
+                                                    Referencia
+                                                </th>
                                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                Cantidad
-                                            </th>
-                                        </tr>
-                                    </thead>
+                                                    Cantidad
+                                                </th>
+                                            </tr>
+                                        </thead>
                                         <tbody className="divide-y divide-gray-200">
-                                        {accessories.map((accessory, index) => (
+                                            {accessories.map((accessory, index) => (
                                                 <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
                                                     <td className="px-6 py-4">
-                                                    <div>
+                                                        <div>
                                                             <div className="font-medium text-gray-900">{accessory.description || 'N/A'}</div>
-                                                        {accessory.notes && (
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                Notas: {accessory.notes}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                            {accessory.notes && (
+                                                                <div className="text-xs text-gray-500 mt-1">
+                                                                    Notas: {accessory.notes}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
                                                     <td className="px-6 py-4 text-gray-900">{accessory.brand || 'N/A'}</td>
                                                     <td className="px-6 py-4 text-gray-900">{accessory.reference || 'N/A'}</td>
                                                     <td className="px-6 py-4">
                                                         <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                    {accessory.quantity || 1} {accessory.unit || 'UN'}
+                                                            {accessory.quantity || 1} {accessory.unit || 'UN'}
                                                         </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Observaciones */}
+                        {/* Observaciones */}
                         <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
                             <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                                 <FileText className="h-6 w-6 mr-3 text-blue-600" />
                                 OBSERVACIONES
                             </h2>
                             <div className="space-y-6">
-                            {/* Comentarios de partes individuales */}
-                            {(() => {
-                                const commentsList = [];
-                                Object.entries(partComments).forEach(([part_id, comment]) => {
-                                    const part = inspectionParts.find(p => p.id === parseInt(part_id));
-                                    if (part && comment) {
-                                        commentsList.push({
-                                            partName: part.parte,
-                                            categoryName: part.category?.categoria,
-                                            comment: comment
-                                        });
-                                    }
-                                });
+                                {/* Comentarios de partes individuales */}
+                                {(() => {
+                                    const commentsList = [];
+                                    Object.entries(partComments).forEach(([part_id, comment]) => {
+                                        const part = inspectionParts.find(p => p.id === parseInt(part_id));
+                                        if (part && comment) {
+                                            commentsList.push({
+                                                partName: part.parte,
+                                                categoryName: part.category?.categoria,
+                                                comment: comment
+                                            });
+                                        }
+                                    });
 
-                                if (commentsList.length > 0) {
-                                    return (
-                                        <div>
+                                    if (commentsList.length > 0) {
+                                        return (
+                                            <div>
                                                 <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                                                     <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                                                     Comentarios por Parte
                                                 </h3>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                {commentsList.map((item, index) => (
+                                                    {commentsList.map((item, index) => (
                                                         <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
                                                             <div className="font-semibold text-blue-800 mb-2">
                                                                 {item.partName}
-                                                        </div>
+                                                            </div>
                                                             <div className="text-sm text-blue-600 mb-1">
                                                                 Categoría: {item.categoryName}
                                                             </div>
                                                             <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
-                                                            {item.comment}
+                                                                {item.comment}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })()}
+                                        );
+                                    }
+                                    return null;
+                                })()}
 
-                            {/* Si no hay observaciones */}
-                            {Object.keys(categoryResponses).length === 0 &&
-                                Object.keys(partComments).length === 0 &&
-                                (!mechanicalTests.observations || mechanicalTests.observations.trim() === '') && (
+                                {/* Si no hay observaciones */}
+                                {Object.keys(categoryResponses).length === 0 &&
+                                    Object.keys(partComments).length === 0 &&
+                                    (!mechanicalTests.observations || mechanicalTests.observations.trim() === '') && (
                                         <div className="text-center py-12">
                                             <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
                                                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
                                                 <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
                                             </div>
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
+                            </div>
                         </div>
-                    </div>
 
                         {/* Footer con Políticas */}
                         <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
                             <div className="text-center">
                                 <div className="font-bold text-blue-700 mb-3 text-lg">POLÍTICAS INSPECCIÓN</div>
                                 <p className="text-gray-600 leading-relaxed">
-                                    El análisis de los sistemas de identificación es única y exclusivamente para fines internos de MUNDIAL DE SEGUROS. 
+                                    El análisis de los sistemas de identificación es única y exclusivamente para fines internos de MUNDIAL DE SEGUROS.
                                     Este documento es confidencial y de uso interno.
                                 </p>
                             </div>

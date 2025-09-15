@@ -11,11 +11,20 @@ export const API_ROUTES = {
         LOGOUT: `${API_BASE_URL}/api/auth/logout`,
         CHANGE_TEMPORARY_PASSWORD: `${API_BASE_URL}/api/auth/change-temporary-password`,
         CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
+        
+        // ===== RECUPERACIÓN DE CONTRASEÑA =====
+        REQUEST_PASSWORD_RESET: `${API_BASE_URL}/api/auth/request-password-reset`,
+        RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
+        VERIFY_RESET_TOKEN: (token) => `${API_BASE_URL}/api/auth/verify-reset-token/${token}`,
     },
     USERS: {
         PROFILE: `${API_BASE_URL}/api/users/profile`,
         LIST: `${API_BASE_URL}/api/users`,
         WITH_ROLES: `${API_BASE_URL}/api/users/with-roles`,
+        CREATE: `${API_BASE_URL}/api/users`,
+        CREATE_WITH_EMAIL: `${API_BASE_URL}/api/users/create-with-email`,
+        VALIDATE_IDENTIFICATION: `${API_BASE_URL}/api/users/validate/identification`,
+        VALIDATE_EMAIL: `${API_BASE_URL}/api/users/validate/email`,
         ASSIGN_ROLES: (userId) => `${API_BASE_URL}/api/users/${userId}/roles`,
         GET_ROLES: (userId) => `${API_BASE_URL}/api/users/${userId}/roles`,
     },
@@ -48,6 +57,9 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        
+        // ===== VALIDACIÓN DE PLACA =====
+        CHECK_PLATE: (plate) => `${API_BASE_URL}/api/inspection-orders/check-plate/${plate}`,
         
         // ===== HISTORIAL DE CONTACTOS =====
         CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
@@ -84,6 +96,7 @@ export const API_ROUTES = {
         CALL_LOGS: `${API_BASE_URL}/api/contact-agent/call-logs`,
         CALL_STATUSES: `${API_BASE_URL}/api/contact-agent/call-statuses`,
         APPOINTMENTS: `${API_BASE_URL}/api/contact-agent/appointments`,
+        ACTIVE_APPOINTMENTS: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/active-appointments`,
         DEPARTMENTS: `${API_BASE_URL}/api/contact-agent/departments`,
         CITIES: (departmentId) => `${API_BASE_URL}/api/contact-agent/cities/${departmentId}`,
         SEDES: (cityId) => `${API_BASE_URL}/api/contact-agent/sedes/${cityId}`,

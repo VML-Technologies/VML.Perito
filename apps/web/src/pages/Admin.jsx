@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { RoleBasedRoute } from '@/components/RoleBasedRoute';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { Users, Shield, Key, Save, RefreshCw, UserCheck, Settings, Bell, Mail, MessageSquare, Smartphone, BarChart3, FileText, TestTube } from 'lucide-react';
+import { Shield, Save, RefreshCw, UserCheck, Users, Key, UserPlus, Bell, BarChart3 } from 'lucide-react';
+import { UserCreationForm } from './admin/UserCreationForm';
+import { RoleAssignments } from './admin/RoleAssignments';
+import { RoleManagement } from './admin/RoleManagement';
+import { PermissionsList } from './admin/PermissionsList';
+import { NotificationsPanel } from './admin/NotificationsPanel';
+import { EventsPanel } from './admin/EventsPanel';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function Admin() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
@@ -34,11 +37,15 @@ export default function Admin() {
     const [permissions, setPermissions] = useState([]);
     const [users, setUsers] = useState([]);
 
+    // User roles
+    const isSuperAdmin = user?.roles?.some(role => role.name === 'super_admin');
+    const isHelpDesk = user?.roles?.some(role => role.name === 'help_desk');
+
     // Estados de UI
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRole, setSelectedRole] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('assignments');
+    const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'assignments' : 'create-user');
 
     // Estados para notificaciones
     const [notificationTypes, setNotificationTypes] = useState([]);
@@ -51,6 +58,9 @@ export default function Admin() {
     const [events, setEvents] = useState([]);
     const [eventListeners, setEventListeners] = useState([]);
     const [eventStats, setEventStats] = useState(null);
+
+    // Estados para creación de usuarios
+    const [sedes, setSedes] = useState([]);
 
     // Cargar datos iniciales
     const fetchData = async () => {
@@ -99,40 +109,46 @@ export default function Admin() {
 
     // Cargar datos de notificaciones
     const fetchNotificationData = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const headers = { 'Authorization': `Bearer ${token}` };
+        
+        setNotificationTypes([]);
+        setNotificationChannels([]);
+        setNotificationConfigs([]);
+        setNotificationStats(null);
+        setNotificationLogs([]);
+        // try {
+        //     const token = localStorage.getItem('authToken');
+        //     const headers = { 'Authorization': `Bearer ${token}` };
 
-            const [typesRes, channelsRes, configsRes, statsRes] = await Promise.all([
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.TYPES, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CHANNELS, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CONFIGS, { headers }),
-                fetch(API_ROUTES.NOTIFICATIONS_ADMIN.ADMIN_STATS, { headers })
-            ]);
+        //     const [typesRes, channelsRes, configsRes, statsRes] = await Promise.all([
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.TYPES, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CHANNELS, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.CONFIGS, { headers }),
+        //         fetch(API_ROUTES.NOTIFICATIONS_ADMIN.ADMIN_STATS, { headers })
+        //     ]);
 
-            if (typesRes.ok) {
-                const typesData = await typesRes.json();
-                setNotificationTypes(typesData.data || []);
-            }
+        //     if (typesRes.ok) {
+        //         const typesData = await typesRes.json();
+        //         setNotificationTypes(typesData.data || []);
+        //     }
 
-            if (channelsRes.ok) {
-                const channelsData = await channelsRes.json();
-                setNotificationChannels(channelsData.data || []);
-            }
+        //     if (channelsRes.ok) {
+        //         const channelsData = await channelsRes.json();
+        //         setNotificationChannels(channelsData.data || []);
+        //     }
 
-            if (configsRes.ok) {
-                const configsData = await configsRes.json();
-                setNotificationConfigs(configsData.data || []);
-            }
+        //     if (configsRes.ok) {
+        //         const configsData = await configsRes.json();
+        //         setNotificationConfigs(configsData.data || []);
+        //     }
 
-            if (statsRes.ok) {
-                const statsData = await statsRes.json();
-                setNotificationStats(statsData.data);
-            }
+        //     if (statsRes.ok) {
+        //         const statsData = await statsRes.json();
+        //         setNotificationStats(statsData.data);
+        //     }
 
-        } catch (e) {
-            console.error('Error cargando datos de notificaciones:', e);
-        }
+        // } catch (e) {
+        //     console.error('Error cargando datos de notificaciones:', e);
+        // }
     };
 
     // Cargar datos de eventos
@@ -161,10 +177,28 @@ export default function Admin() {
         }
     };
 
+    // Cargar sedes
+    const fetchSedes = async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            const response = await fetch(API_ROUTES.SEDES.LIST, { headers });
+
+            if (response.ok) {
+                const sedesData = await response.json();
+                setSedes(sedesData || []);
+            }
+        } catch (e) {
+            console.error('Error cargando sedes:', e);
+        }
+    };
+
     useEffect(() => {
         fetchData();
         fetchNotificationData();
         fetchEventData();
+        fetchSedes();
     }, []);
 
     // Detectar cambios
@@ -298,6 +332,8 @@ export default function Admin() {
         // No notificación aquí
     };
 
+
+
     // Obtener permisos de usuario (a través de roles)
     const getUserPermissions = (user) => {
         if (!user.roles) return [];
@@ -313,10 +349,20 @@ export default function Admin() {
         return Array.from(userPermissions);
     };
 
+    // Callback cuando se crea un usuario exitosamente
+    const handleUserCreated = async () => {
+        await fetchData();
+    };
+
     // Filtrar usuarios
     const filteredUsers = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Filtrar roles para creación de usuarios (solo los tres específicos)
+    const availableRoles = roles.filter(role =>
+        ['comercial_mundial', 'agente_contacto', 'coordinador_contacto'].includes(role.name)
     );
 
     if (loading) {
@@ -333,50 +379,51 @@ export default function Admin() {
     }
 
     return (
-        <RoleBasedRoute requiredRoles={['admin', 'super_admin']}>
-            <AuthenticatedLayout>
-                <div className="max-w-7xl mx-auto p-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-2">
-                                <Shield className="h-8 w-8" />
-                                Administración RBAC
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Gestiona roles, permisos y asignaciones de usuarios
-                            </p>
-                        </div>
+        <div className="max-w-7xl mx-auto p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                        <Shield className="h-8 w-8" />
+                        Administración RBAC
+                    </h1>
+                    <p className="text-muted-foreground mt-1">
+                        Gestiona roles, permisos y asignaciones de usuarios
+                    </p>
+                </div>
 
-                        {hasChanges && (
-                            <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="animate-pulse">
-                                    Cambios pendientes
-                                </Badge>
-                                <Button
-                                    onClick={handleSaveChanges}
-                                    disabled={saving}
-                                    className="flex items-center gap-2"
-                                >
-                                    {saving ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="h-4 w-4" />
-                                    )}
-                                    {saving ? 'Guardando...' : 'Guardar Cambios'}
-                                </Button>
-                            </div>
-                        )}
+                {hasChanges && (
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="animate-pulse">
+                            Cambios pendientes
+                        </Badge>
+                        <Button
+                            onClick={handleSaveChanges}
+                            disabled={saving}
+                            className="flex items-center gap-2"
+                        >
+                            {saving ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                        </Button>
                     </div>
+                )}
+            </div>
 
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-                            <p className="text-red-800">{error}</p>
-                        </div>
-                    )}
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-5">
+            {error && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                    <p className="text-red-800">{error}</p>
+                </div>
+            )}
+
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full">
+                    {
+                        isSuperAdmin && <>
                             <TabsTrigger value="assignments" className="flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" />
                                 Asignaciones
@@ -397,670 +444,78 @@ export default function Admin() {
                                 <BarChart3 className="h-4 w-4" />
                                 Eventos
                             </TabsTrigger>
-                        </TabsList>
+                        </>
+                    }
+                    {
+                        isHelpDesk && <>
+                            <TabsTrigger value="create-user" className="flex items-center gap-2">
+                                <UserPlus className="h-4 w-4" />
+                                Crear Usuario
+                            </TabsTrigger>
+                        </>
+                    }
+                </TabsList>
+                {/* Tab de Asignaciones */}
+                <TabsContent value="assignments" className="space-y-6">
+                    <RoleAssignments
+                        users={users}
+                        roles={roles}
+                        permissions={permissions}
+                        selectedUser={selectedUser}
+                        setSelectedUser={setSelectedUser}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        handleUserRoleChange={handleUserRoleChange}
+                        getUserPermissions={getUserPermissions}
+                    />
+                </TabsContent>
 
-                        {/* Tab de Asignaciones */}
-                        <TabsContent value="assignments" className="space-y-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Panel de Usuarios */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Users className="h-5 w-5" />
-                                            Usuarios
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Selecciona un usuario para ver y modificar sus roles
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <Label htmlFor="search">Buscar usuario</Label>
-                                                <Input
-                                                    id="search"
-                                                    placeholder="Buscar por nombre o email..."
-                                                    value={searchTerm}
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                />
-                                            </div>
+                {/* Tab de Roles */}
+                <TabsContent value="roles" className="space-y-6">
+                    <RoleManagement
+                        roles={roles}
+                        permissions={permissions}
+                        selectedRole={selectedRole}
+                        setSelectedRole={setSelectedRole}
+                        handleRolePermissionChange={handleRolePermissionChange}
+                    />
+                </TabsContent>
 
-                                            <div className="max-h-96 overflow-y-auto space-y-2">
-                                                {filteredUsers.map(user => (
-                                                    <div
-                                                        key={user.id}
-                                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedUser?.id == user.id
-                                                            ? 'border-blue-500 bg-blue-50'
-                                                            : 'border-gray-200 hover:border-gray-300'
-                                                            }`}
-                                                        onClick={() => {
-                                                            setSelectedUser(user);
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <p className="font-medium">{user.name}</p>
-                                                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {user.roles?.map(role => (
-                                                                    <Badge key={role.id} variant="secondary" className="text-xs">
-                                                                        {role.name}
-                                                                    </Badge>
-                                                                ))}
-                                                                {user.roles?.length == 0 && (
-                                                                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                                                                        Sin roles
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                {/* Tab de Permisos */}
+                <TabsContent value="permissions">
+                    <PermissionsList permissions={permissions} />
+                </TabsContent>
 
-                                {/* Panel de Roles y Permisos */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Settings className="h-5 w-5" />
-                                            {selectedUser ? `Gestión de ${selectedUser.name}` : 'Selecciona un usuario'}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {selectedUser
-                                                ? 'Modifica los roles y visualiza los permisos del usuario seleccionado'
-                                                : 'Selecciona un usuario de la lista para ver sus roles y permisos'
-                                            }
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {selectedUser ? (
-                                            <div className="space-y-6">
-                                                {/* Roles del usuario */}
-                                                <div>
-                                                    <Label className="text-base font-medium">Roles Asignados</Label>
-                                                    <div className="mt-2 space-y-2">
-                                                        {roles.map(role => {
-                                                            const isAssigned = selectedUser.roles?.some(r => r.id == role.id);
-                                                            return (
-                                                                <div key={role.id} className="flex items-center space-x-2">
-                                                                    <Checkbox
-                                                                        id={`user-role-${role.id}`}
-                                                                        checked={isAssigned}
-                                                                        onCheckedChange={(checked) =>
-                                                                            handleUserRoleChange(selectedUser.id, role.id, checked)
-                                                                        }
-                                                                        className="transition-all duration-200"
-                                                                    />
-                                                                    <Label htmlFor={`user-role-${role.id}`} className="flex-1">
-                                                                        <span className="font-medium">{role.name}</span>
-                                                                        {role.description && (
-                                                                            <span className="text-sm text-muted-foreground ml-2">
-                                                                                - {role.description}
-                                                                            </span>
-                                                                        )}
-                                                                        {isAssigned && (
-                                                                            <Badge variant="secondary" className="ml-2 text-xs">
-                                                                                {role.permissions?.length || 0} permisos
-                                                                            </Badge>
-                                                                        )}
-                                                                    </Label>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
+                {/* Tab de Crear Usuario */}
+                <TabsContent value="create-user">
+                    <UserCreationForm
+                        sedes={sedes}
+                        availableRoles={availableRoles}
+                        onUserCreated={handleUserCreated}
+                        showToast={showToast}
+                    />
+                </TabsContent>
 
-                                                <Separator />
+                {/* Tab de Notificaciones */}
+                <TabsContent value="notifications" className="space-y-6">
+                    <NotificationsPanel
+                        notificationTypes={notificationTypes}
+                        notificationChannels={notificationChannels}
+                        notificationConfigs={notificationConfigs}
+                        notificationStats={notificationStats}
+                        fetchNotificationData={fetchNotificationData}
+                    />
+                </TabsContent>
 
-                                                {/* Permisos efectivos */}
-                                                <div>
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-base font-medium">Permisos Efectivos</Label>
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="text-xs transition-all duration-300 hover:bg-blue-50"
-                                                        >
-                                                            {getUserPermissions(selectedUser).length} permisos
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground mb-2">
-                                                        Permisos otorgados a través de los roles asignados
-                                                    </p>
-                                                    <div className="max-h-48 overflow-y-auto">
-                                                        {getUserPermissions(selectedUser).length > 0 ? (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {getUserPermissions(selectedUser).map(permissionId => {
-                                                                    const permission = permissions.find(p => p.id == permissionId);
-                                                                    return permission ? (
-                                                                        <Badge
-                                                                            key={permission.id}
-                                                                            variant="outline"
-                                                                            className="text-xs transition-all duration-300 hover:scale-105"
-                                                                        >
-                                                                            {permission.name}
-                                                                        </Badge>
-                                                                    ) : null;
-                                                                })}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-center py-4 text-muted-foreground">
-                                                                <p className="text-sm">Este usuario no tiene permisos asignados</p>
-                                                                <p className="text-xs">Asigna roles para otorgar permisos</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                                <p>Selecciona un usuario para ver sus roles y permisos</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-
-                        {/* Tab de Roles */}
-                        <TabsContent value="roles" className="space-y-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Lista de Roles */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Roles del Sistema</CardTitle>
-                                        <CardDescription>
-                                            Selecciona un rol para modificar sus permisos
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2">
-                                            {roles.map(role => (
-                                                <div
-                                                    key={role.id}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedRole?.id == role.id
-                                                        ? 'border-blue-500 bg-blue-50'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                                        }`}
-                                                    onClick={() => {
-                                                        setSelectedRole(role);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="font-medium">{role.name}</p>
-                                                            <p className="text-sm text-muted-foreground">{role.description}</p>
-                                                        </div>
-                                                        <Badge variant="secondary">
-                                                            {role.permissions?.length || 0} permisos
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Permisos del Rol */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>
-                                            {selectedRole ? `Permisos de ${selectedRole.name}` : 'Selecciona un rol'}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {selectedRole
-                                                ? 'Modifica los permisos asignados a este rol'
-                                                : 'Selecciona un rol para ver y modificar sus permisos'
-                                            }
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {selectedRole ? (
-                                            <div className="space-y-4">
-                                                <div className="max-h-96 overflow-y-auto space-y-2">
-                                                    {permissions.map(permission => {
-                                                        const isAssigned = selectedRole.permissions?.some(p => p.id == permission.id);
-                                                        return (
-                                                            <div key={permission.id} className="flex items-center space-x-2">
-                                                                <Checkbox
-                                                                    id={`role-permission-${permission.id}`}
-                                                                    checked={isAssigned}
-                                                                    onCheckedChange={(checked) =>
-                                                                        handleRolePermissionChange(selectedRole.id, permission.id, checked)
-                                                                    }
-                                                                />
-                                                                <Label htmlFor={`role-permission-${permission.id}`} className="flex-1">
-                                                                    <span className="font-medium">{permission.name}</span>
-                                                                    {permission.description && (
-                                                                        <span className="text-sm text-muted-foreground ml-2">
-                                                                            - {permission.description}
-                                                                        </span>
-                                                                    )}
-                                                                </Label>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                                <p>Selecciona un rol para ver sus permisos</p>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-
-                        {/* Tab de Permisos */}
-                        <TabsContent value="permissions">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Key className="h-5 w-5" />
-                                        Permisos del Sistema
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Lista de todos los permisos disponibles en el sistema
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {permissions.map(permission => (
-                                            <Card key={permission.id} className="p-4">
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <Badge variant="outline">{permission.resource}</Badge>
-                                                        <Badge variant="secondary">{permission.action}</Badge>
-                                                    </div>
-                                                    <h4 className="font-medium">{permission.name}</h4>
-                                                    <p className="text-sm text-muted-foreground">{permission.description}</p>
-                                                    {permission.endpoint && (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {permission.method} {permission.endpoint}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Tab de Notificaciones */}
-                        <TabsContent value="notifications" className="space-y-6">
-                            {/* Estadísticas Generales */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Notificaciones</CardTitle>
-                                        <Bell className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{notificationStats?.total || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Hoy: {notificationStats?.today || 0}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Configuraciones Activas</CardTitle>
-                                        <Settings className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{notificationStats?.active_configs || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Tipos y canales configurados
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Tipos de Notificación</CardTitle>
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{notificationTypes.length}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Plantillas disponibles
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Canales Activos</CardTitle>
-                                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{notificationChannels.length}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Email, SMS, WhatsApp, etc.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Configuraciones de Notificación */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Tipos de Notificación */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <FileText className="h-5 w-5" />
-                                            Tipos de Notificación
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Gestiona las plantillas y tipos de notificación
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
-                                            {notificationTypes.map(type => (
-                                                <div key={type.id} className="p-3 border rounded-lg">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <h4 className="font-medium">{type.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{type.description}</p>
-                                                        </div>
-                                                        <Badge variant="outline">{type.variables?.length || 0} variables</Badge>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {notificationTypes.length == 0 && (
-                                                <div className="text-center py-4 text-muted-foreground">
-                                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                    <p>No hay tipos de notificación configurados</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Canales de Notificación */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <MessageSquare className="h-5 w-5" />
-                                            Canales de Notificación
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Gestiona los canales de envío disponibles
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
-                                            {notificationChannels.map(channel => (
-                                                <div key={channel.id} className="p-3 border rounded-lg">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <h4 className="font-medium">{channel.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{channel.description}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Badge variant="secondary">{channel.provider}</Badge>
-                                                            <Badge variant="outline">
-                                                                {channel.config ? 'Configurado' : 'Sin configurar'}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {notificationChannels.length == 0 && (
-                                                <div className="text-center py-4 text-muted-foreground">
-                                                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                    <p>No hay canales de notificación configurados</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Configuraciones de Notificación */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Settings className="h-5 w-5" />
-                                        Configuraciones de Notificación
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Relaciones entre tipos de notificación y canales
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        {notificationConfigs.map(config => (
-                                            <div key={config.id} className="p-3 border rounded-lg">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-4">
-                                                        <div>
-                                                            <h4 className="font-medium">{config.type?.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{config.type?.description}</p>
-                                                        </div>
-                                                        <div className="text-muted-foreground">→</div>
-                                                        <div>
-                                                            <h4 className="font-medium">{config.channel?.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{config.channel?.description}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant={config.enabled ? "default" : "secondary"}>
-                                                            {config.enabled ? 'Activo' : 'Inactivo'}
-                                                        </Badge>
-                                                        <Badge variant="outline">{config.priority}</Badge>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {notificationConfigs.length == 0 && (
-                                            <div className="text-center py-4 text-muted-foreground">
-                                                <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                <p>No hay configuraciones de notificación</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Acciones de Administración */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BarChart3 className="h-5 w-5" />
-                                        Acciones de Administración
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Herramientas para gestionar el sistema de notificaciones
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <RefreshCw className="h-4 w-4" />
-                                            Recargar Datos
-                                        </Button>
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <BarChart3 className="h-4 w-4" />
-                                            Ver Estadísticas
-                                        </Button>
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <TestTube className="h-4 w-4" />
-                                            Probar Notificación
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Tab de Eventos */}
-                        <TabsContent value="events" className="space-y-6">
-                            {/* Estadísticas de Eventos */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Eventos</CardTitle>
-                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{eventStats?.total_events || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Eventos registrados
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Eventos Activos</CardTitle>
-                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{eventStats?.active_events || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Eventos habilitados
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Disparos</CardTitle>
-                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{eventStats?.total_triggers || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Veces disparados
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Categorías</CardTitle>
-                                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{eventStats?.categories_count || 0}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Categorías únicas
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Lista de Eventos */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BarChart3 className="h-5 w-5" />
-                                        Eventos del Sistema
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Eventos disponibles para configurar notificaciones automáticas
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {events.map(event => (
-                                            <div key={event.id} className="p-4 border rounded-lg">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <h4 className="font-medium text-lg">{event.name}</h4>
-                                                            <Badge variant="outline">{event.category}</Badge>
-                                                            <Badge variant={event.is_active ? "default" : "secondary"}>
-                                                                {event.is_active ? 'Activo' : 'Inactivo'}
-                                                            </Badge>
-                                                        </div>
-                                                        <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
-
-                                                        {event.metadata?.variables && (
-                                                            <div className="mb-3">
-                                                                <p className="text-sm font-medium mb-1">Variables disponibles:</p>
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {event.metadata.variables.map((variable, index) => (
-                                                                        <Badge key={index} variant="secondary" className="text-xs">
-                                                                            {variable}
-                                                                        </Badge>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                                            <span>Disparos: {event.trigger_count}</span>
-                                                            <span>Versión: {event.version}</span>
-                                                            {event.last_triggered && (
-                                                                <span>Último: {new Date(event.last_triggered).toLocaleDateString()}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button variant="outline" size="sm">
-                                                            Ver Listeners
-                                                        </Button>
-                                                        <Button variant="outline" size="sm">
-                                                            Probar
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {events.length == 0 && (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                                <p>No hay eventos configurados</p>
-                                                <p className="text-sm">Los eventos se crean automáticamente al ejecutar el seed</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Acciones de Eventos */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Settings className="h-5 w-5" />
-                                        Gestión de Eventos
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Acciones para administrar el sistema de eventos
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Button
-                                            variant="outline"
-                                            className="flex items-center gap-2"
-                                            onClick={fetchEventData}
-                                        >
-                                            <RefreshCw className="h-4 w-4" />
-                                            Recargar Eventos
-                                        </Button>
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <BarChart3 className="h-4 w-4" />
-                                            Ver Estadísticas
-                                        </Button>
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <TestTube className="h-4 w-4" />
-                                            Crear Evento
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </div>
-            </AuthenticatedLayout>
-        </RoleBasedRoute>
+                {/* Tab de Eventos */}
+                <TabsContent value="events" className="space-y-6">
+                    <EventsPanel
+                        events={events}
+                        eventStats={eventStats}
+                        fetchEventData={fetchEventData}
+                    />
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 } 

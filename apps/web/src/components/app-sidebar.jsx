@@ -54,10 +54,10 @@ export function AppSidebar({
   ...props
 }) {
   const { hasRole } = useRoles();
-  const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
-  const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin');
+  const canAccessAdmin = hasRole('admin') || hasRole('super_admin') || hasRole('help_desk');
+  const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin') || hasRole('help_desk');
   const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
-  const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin');
+  const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin') || hasRole('help_desk');
   const appName = import.meta.env.VITE_APP_NAME
 
   return (
@@ -132,30 +132,36 @@ export function AppSidebar({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Plantillas de Notificación">
-                    <Link to="/notification-templates">
-                      <Bell />
-                      <span>Plantillas de Notificación</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Configuración de Canales">
-                    <Link to="/channel-configurations">
-                      <Settings />
-                      <span>Configuración de Canales</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Administración de Notificaciones">
-                    <Link to="/notification-admin">
-                      <BarChart3 />
-                      <span>Administración de Notificaciones</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {
+                  (hasRole('admin') || hasRole('super_admin')) && (
+                    <>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Plantillas de Notificación">
+                          <Link to="/notification-templates">
+                            <Bell />
+                            <span>Plantillas de Notificación</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Configuración de Canales">
+                          <Link to="/channel-configurations">
+                            <Settings />
+                            <span>Configuración de Canales</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Administración de Notificaciones">
+                          <Link to="/notification-admin">
+                            <BarChart3 />
+                            <span>Administración de Notificaciones</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
+                  )
+                }
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

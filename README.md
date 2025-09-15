@@ -1,5 +1,9 @@
 # Movilidad Mundial - Sistema de Inspecciones de Asegurabilidad
 
+## Changelog
+
+- [Changelog](changelog.md)
+
 ## 🎯 Descripción General
 
 Movilidad Mundial es un sistema integral para la gestión de inspecciones de asegurabilidad vehicular, que incluye agendamiento avanzado, gestión de contact center, sistema de notificaciones multicanal, y administración completa de usuarios y permisos.

@@ -27,6 +27,7 @@ import SedeModalityAvailability from './sedeModalityAvailability.js';
 import VehicleType from './vehicleType.js';
 import SedeVehicleType from './sedeVehicleType.js';
 import ScheduleTemplate from './scheduleTemplate.js';
+import ScheduleExclusion from './scheduleExclusion.js';
 
 // Nuevos modelos para sistema de eventos
 import Event from './event.js';
@@ -55,6 +56,11 @@ import InspectionPart from './inspectionPart.js';
 import InspectionCategory from './inspectionCategory.js';
 import InspectionCategoryResponse from './inspectionCategoryResponse.js';
 import MechanicalTest from './mechanicalTest.js';
+
+// Nuevos modelos para estados de inspección
+import InspectionState from './inspectionState.js';
+import InspectionOrdersStatusInternal from './inspectionOrdersStatusInternal.js';
+import AppointmentStatus from './appointmentStatus.js';
 
 // Definir relaciones existentes
 
@@ -452,6 +458,20 @@ ScheduleTemplate.belongsTo(InspectionModality, {
     as: 'inspectionModality'
 });
 
+// ScheduleTemplate -> ScheduleExclusion (1:N) - Períodos de exclusión en horarios
+ScheduleTemplate.hasMany(ScheduleExclusion, {
+    foreignKey: 'schedule_template_id',
+    as: 'exclusions',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ScheduleExclusion.belongsTo(ScheduleTemplate, {
+    foreignKey: 'schedule_template_id',
+    as: 'scheduleTemplate',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
 // ===== RELACIONES NOTIFICACIONES =====
 
 // NotificationType -> NotificationConfig (1:N)
@@ -721,6 +741,68 @@ InspectionCategoryResponse.belongsTo(InspectionCategory, {
     as: 'category'
 });
 
+// ===== RELACIONES SISTEMA DE ESTADOS DE INSPECCIÓN =====
+
+// InspectionOrder -> InspectionState (1:N)
+InspectionOrder.hasMany(InspectionState, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
+// Appointment -> InspectionState (1:N)
+Appointment.hasMany(InspectionState, {
+    foreignKey: 'appointment_id',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment'
+});
+
+// InspectionOrderStatus -> InspectionState (1:N)
+InspectionOrderStatus.hasMany(InspectionState, {
+    foreignKey: 'inspection_order_status',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(InspectionOrderStatus, {
+    foreignKey: 'inspection_order_status',
+    as: 'inspectionOrderStatus'
+});
+
+// InspectionOrdersStatusInternal -> InspectionState (1:N)
+InspectionOrdersStatusInternal.hasMany(InspectionState, {
+    foreignKey: 'inspection_order_status_internal',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(InspectionOrdersStatusInternal, {
+    foreignKey: 'inspection_order_status_internal',
+    as: 'inspectionOrderStatusInternal'
+});
+
+// AppointmentStatus -> InspectionState (1:N)
+AppointmentStatus.hasMany(InspectionState, {
+    foreignKey: 'appointment_status',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(AppointmentStatus, {
+    foreignKey: 'appointment_status',
+    as: 'appointmentStatus'
+});
+
+// User -> InspectionState (1:N)
+User.hasMany(InspectionState, {
+    foreignKey: 'user_id',
+    as: 'inspectionStates'
+});
+InspectionState.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
 export {
     Department,
     City,
@@ -749,6 +831,7 @@ export {
     VehicleType,
     SedeVehicleType,
     ScheduleTemplate,
+    ScheduleExclusion,
     // Sistema de eventos
     Event,
     EventListener,
@@ -769,5 +852,9 @@ export {
     InspectionPart,
     InspectionCategory,
     InspectionCategoryResponse,
-    MechanicalTest
+    MechanicalTest,
+    // Sistema de estados de inspección
+    InspectionState,
+    InspectionOrdersStatusInternal,
+    AppointmentStatus
 }; 

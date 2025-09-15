@@ -1,5 +1,6 @@
 import {
     ScheduleTemplate,
+    ScheduleExclusion,
     Sede,
     InspectionModality,
     Appointment,
@@ -25,6 +26,7 @@ class ScheduleController {
         this.generateTimeSlots = this.generateTimeSlots.bind(this);
         this.getSedeVehicleTypes = this.getSedeVehicleTypes.bind(this);
         this.createScheduledAppointment = this.createScheduledAppointment.bind(this);
+        this.isTimeSlotExcluded = this.isTimeSlotExcluded.bind(this);
         this.timeToMinutes = this.timeToMinutes.bind(this); // Bind auxiliary methods if they use 'this' or are called by other bound methods
         this.minutesToTime = this.minutesToTime.bind(this);
     }
@@ -77,6 +79,18 @@ class ScheduleController {
                         model: InspectionModality,
                         as: 'inspectionModality',
                         attributes: ['id', 'name', 'code']
+                    },
+                    {
+                        model: ScheduleExclusion,
+                        as: 'exclusions',
+                        where: {
+                            active: true,
+                            [Op.or]: [
+                                { days_pattern: null }, // Aplica a todos los días del template
+                                { days_pattern: { [Op.like]: `%${dayOfWeek}%` } } // Aplica a este día específico
+                            ]
+                        },
+                        required: false // LEFT JOIN para incluir templates sin exclusiones
                     }
                 ],
                 order: [['priority', 'DESC'], ['start_time', 'ASC']]
@@ -149,7 +163,8 @@ class ScheduleController {
                 scheduled_date: date,
                 status: {
                     [Op.not]: 'CANCELADA'
-                }
+                },
+                deleted_at: null
             }
         });
 
@@ -157,6 +172,14 @@ class ScheduleController {
         for (let current = startMinutes; current < endMinutes; current += intervalMinutes) {
             const slotStart = this.minutesToTime(current);
             const slotEnd = this.minutesToTime(current + intervalMinutes);
+
+            // Verificar si este intervalo está en un período de exclusión
+            const isExcluded = this.isTimeSlotExcluded(current, current + intervalMinutes, template.exclusions || []);
+            
+            if (isExcluded) {
+                // Saltar este slot porque está en período de exclusión
+                continue;
+            }
 
             // Contar citas existentes en este intervalo específico (global)
             const overlappingAppointments = existingAppointments.filter(apt => {
@@ -322,6 +345,31 @@ class ScheduleController {
                 message: 'Error interno del servidor'
             });
         }
+    }
+
+    // Verificar si un slot de tiempo está en un período de exclusión
+    isTimeSlotExcluded(slotStartMinutes, slotEndMinutes, exclusions) {
+        if (!exclusions || exclusions.length === 0) {
+            return false;
+        }
+
+        return exclusions.some(exclusion => {
+            const exclusionStart = this.timeToMinutes(this.convertToLocalTime(exclusion.start_time));
+            const exclusionEnd = this.timeToMinutes(this.convertToLocalTime(exclusion.end_time));
+
+            // Verificar si hay solapamiento entre el slot y el período de exclusión
+            // Un slot se considera excluido si:
+            // 1. El slot comienza dentro del período de exclusión
+            // 2. El slot termina dentro del período de exclusión  
+            // 3. El slot engloba completamente el período de exclusión
+            // 4. El período de exclusión engloba completamente el slot
+            return (
+                (slotStartMinutes >= exclusionStart && slotStartMinutes < exclusionEnd) ||
+                (slotEndMinutes > exclusionStart && slotEndMinutes <= exclusionEnd) ||
+                (slotStartMinutes <= exclusionStart && slotEndMinutes >= exclusionEnd) ||
+                (exclusionStart <= slotStartMinutes && exclusionEnd >= slotEndMinutes)
+            );
+        });
     }
 
     // Funciones auxiliares

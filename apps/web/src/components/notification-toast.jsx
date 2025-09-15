@@ -32,7 +32,7 @@ export function NotificationToast({
     onClose
 }) {
     const [isVisible, setIsVisible] = useState(true);
-    const toastConfig = TOAST_TYPES[type];
+    const toastConfig = TOAST_TYPES[type] || TOAST_TYPES.info; // Fallback a 'info' si el tipo no existe
     const IconComponent = toastConfig.icon;
 
     useEffect(() => {

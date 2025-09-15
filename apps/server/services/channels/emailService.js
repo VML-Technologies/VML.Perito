@@ -55,7 +55,7 @@ class EmailService {
     /**
      * Enviar notificación por Email
      */
-    async send(notification) {
+    async send(notification, content = null) {
         try {
             console.log(`📧 Enviando email a: ${notification.recipient_email}`);
 
@@ -71,7 +71,7 @@ class EmailService {
                 from: `"${this.config.fromName}" <${this.config.from}>`,
                 to: notification.recipient_email,
                 subject: channelData.subject || notification.title,
-                html: this.generateHtmlContent(notification, channelData),
+                html: content || this.generateHtmlContent(notification, channelData),
                 text: channelData.text || notification.content,
                 priority: this.mapPriority(notification.priority)
             };
@@ -132,7 +132,7 @@ class EmailService {
         <html>
         <head>
             <meta charset="utf-8">
-            <title>${channelData.subject || notification.title || 'Notificación VML Perito'}</title>
+            <title>${channelData.subject || notification.title || 'Notificación Movilidad Mundial'}</title>
             <style>
                 body { font-family: Arial, sans-serif; line-height: 1.6; }
                 .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -144,13 +144,13 @@ class EmailService {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>${channelData.subject || notification.title || 'Notificación VML Perito'}</h1>
+                    <h1>${channelData.subject || notification.title || 'Notificación Movilidad Mundial'}</h1>
                 </div>
                 <div class="content">
                     <p>${content.replace(/\n/g, '<br>')}</p>
                 </div>
                 <div class="footer">
-                    <p>VML Perito - Sistema de Notificaciones</p>
+                    <p>Movilidad Mundial - Sistema de Notificaciones</p>
                 </div>
             </div>
         </body>

@@ -45,7 +45,7 @@ const TemplatePreview = ({ template, className = '' }) => {
             notes: 'Llegar 15 minutos antes'
         },
         company: {
-            name: 'VML Perito',
+            name: 'Movilidad Mundial',
             address: 'Calle 123 #45-67, Bogotá',
             phone: '+57 1 234 5678',
             email: 'contacto@vmltechnologies.com'

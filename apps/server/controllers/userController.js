@@ -8,6 +8,14 @@ import PasswordService from '../services/passwordService.js';
 import webSocketSystem from '../websocket/index.js';
 import EventRegistry from '../services/eventRegistry.js';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
+import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class UserController extends BaseController {
     constructor() {
@@ -24,6 +32,9 @@ class UserController extends BaseController {
         this.indexWithTrashed = this.indexWithTrashed.bind(this);
         this.onlyTrashed = this.onlyTrashed.bind(this);
         this.profile = this.profile.bind(this);
+        this.createUserWithEmail = this.createUserWithEmail.bind(this);
+        this.validateIdentification = this.validateIdentification.bind(this);
+        this.validateEmail = this.validateEmail.bind(this);
     }
 
     // Sobrescribir el método store para hashear la contraseña
@@ -320,6 +331,325 @@ class UserController extends BaseController {
         } catch (error) {
             console.error('Error en profile:', error);
             res.status(500).json({ message: 'Error al obtener perfil', error: error.message });
+        }
+    }
+
+    // Método para validar identificación única
+    async validateIdentification(req, res) {
+        try {
+            const { identification, userId } = req.query;
+
+            if (!identification) {
+                return res.status(400).json({ 
+                    message: 'Identificación es requerida',
+                    isValid: false 
+                });
+            }
+
+            const whereClause = { identification };
+            
+            // Si se está editando un usuario, excluirlo de la validación
+            if (userId) {
+                whereClause.id = { [User.sequelize.Sequelize.Op.ne]: userId };
+            }
+
+            const existingUser = await User.findOne({
+                where: whereClause,
+                paranoid: false // Incluir usuarios eliminados
+            });
+
+            if (existingUser) {
+                return res.status(409).json({
+                    message: 'La identificación ya está en uso',
+                    isValid: false,
+                    existingUser: {
+                        id: existingUser.id,
+                        name: existingUser.name,
+                        email: existingUser.email,
+                        is_active: existingUser.is_active,
+                        deletedAt: existingUser.deletedAt
+                    }
+                });
+            }
+
+            res.json({
+                message: 'Identificación disponible',
+                isValid: true
+            });
+
+        } catch (error) {
+            console.error('Error validando identificación:', error);
+            res.status(500).json({ 
+                message: 'Error interno del servidor',
+                isValid: false 
+            });
+        }
+    }
+
+    // Método para validar email único
+    async validateEmail(req, res) {
+        try {
+            const { email, userId } = req.query;
+
+            if (!email) {
+                return res.status(400).json({ 
+                    message: 'Email es requerido',
+                    isValid: false 
+                });
+            }
+
+            const whereClause = { email: email.toLowerCase() };
+            
+            // Si se está editando un usuario, excluirlo de la validación
+            if (userId) {
+                whereClause.id = { [User.sequelize.Sequelize.Op.ne]: userId };
+            }
+
+            const existingUser = await User.findOne({
+                where: whereClause,
+                paranoid: false // Incluir usuarios eliminados
+            });
+
+            if (existingUser) {
+                return res.status(409).json({
+                    message: 'El email ya está en uso',
+                    isValid: false,
+                    existingUser: {
+                        id: existingUser.id,
+                        name: existingUser.name,
+                        email: existingUser.email,
+                        is_active: existingUser.is_active,
+                        deletedAt: existingUser.deletedAt
+                    }
+                });
+            }
+
+            res.json({
+                message: 'Email disponible',
+                isValid: true
+            });
+
+        } catch (error) {
+            console.error('Error validando email:', error);
+            res.status(500).json({ 
+                message: 'Error interno del servidor',
+                isValid: false 
+            });
+        }
+    }
+
+    // Función para reemplazar variables en la plantilla de email
+    replaceTemplateVariables(template, variables) {
+        let result = template;
+        for (const [key, value] of Object.entries(variables)) {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            result = result.replace(regex, value);
+        }
+        return result;
+    }
+
+    // Función para enviar email de bienvenida
+    async sendWelcomeEmail(userEmail, userName, temporaryPassword) {
+        try {
+            // Configurar transporter de nodemailer
+            const transporter = nodemailer.createTransport({
+                host: process.env.EMAIL_HOST,
+                port: parseInt(process.env.EMAIL_PORT) || 587,
+                secure: process.env.EMAIL_SECURE === 'true',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            // Leer la plantilla HTML desde el directorio raíz del proyecto
+            const templatePath = path.join(__dirname, '../../../email.html');
+            let emailTemplate;
+            
+            try {
+                emailTemplate = fs.readFileSync(templatePath, 'utf8');
+            } catch (templateError) {
+                console.error('❌ Error leyendo plantilla de email:', templateError.message);
+                throw new Error('No se pudo cargar la plantilla de email');
+            }
+
+            // Variables para la plantilla
+            const templateVariables = {
+                user_name: userName,
+                PASSWORD_TEMPORAL: temporaryPassword,
+                login_url: process.env.FRONTEND_URL || 'https://movilidadmundial.vmltechnologies.com/',
+                current_year: new Date().getFullYear()
+            };
+
+            // Generar contenido HTML
+            const htmlContent = this.replaceTemplateVariables(emailTemplate, templateVariables);
+
+            // Verificar que la imagen existe
+            const imagePath = path.join(__dirname, '../../../image.png');
+            const attachments = [];
+            
+            if (fs.existsSync(imagePath)) {
+                attachments.push({
+                    filename: 'mesa-ayuda.png',
+                    path: imagePath,
+                    cid: 'mesa-ayuda'
+                });
+            } else {
+                console.warn('⚠️ Imagen de mesa de ayuda no encontrada, enviando email sin imagen');
+            }
+
+            // Configurar opciones del email
+            const mailOptions = {
+                from: `"${process.env.EMAIL_FROM_NAME || 'Movilidad Mundial'}" <${process.env.EMAIL_FROM}>`,
+                to: userEmail,
+                subject: '¡Bienvenido a Movilidad Mundial! Activa tu cuenta',
+                html: htmlContent,
+                attachments: attachments
+            };
+
+            // Enviar email
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`✅ Email de bienvenida enviado a ${userEmail}: ${info.messageId}`);
+            
+            return { success: true, messageId: info.messageId };
+
+        } catch (error) {
+            console.error(`❌ Error enviando email de bienvenida a ${userEmail}:`, error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Método para crear usuario con envío de email
+    async createUserWithEmail(req, res) {
+        try {
+            const { sede_id, identification, name, email, phone, password } = req.body;
+
+            // Validaciones básicas
+            if (!sede_id || !identification || !name || !email || !password) {
+                return res.status(400).json({
+                    message: 'Todos los campos son obligatorios: sede_id, identification, name, email, password'
+                });
+            }
+
+            // Verificar que la sede existe
+            const sede = await Sede.findByPk(sede_id);
+            if (!sede) {
+                return res.status(400).json({
+                    message: 'La sede especificada no existe'
+                });
+            }
+
+            // Verificar que la identificación no existe
+            const existingIdUser = await User.findOne({
+                where: { identification },
+                paranoid: false
+            });
+
+            if (existingIdUser) {
+                return res.status(409).json({
+                    message: 'La identificación ya está en uso',
+                    field: 'identification',
+                    existingUser: {
+                        id: existingIdUser.id,
+                        name: existingIdUser.name,
+                        email: existingIdUser.email,
+                        is_active: existingIdUser.is_active
+                    }
+                });
+            }
+
+            // Verificar que el email no existe
+            const existingEmailUser = await User.findOne({
+                where: { email: email.toLowerCase() },
+                paranoid: false
+            });
+
+            if (existingEmailUser) {
+                return res.status(409).json({
+                    message: 'El email ya está en uso',
+                    field: 'email',
+                    existingUser: {
+                        id: existingEmailUser.id,
+                        name: existingEmailUser.name,
+                        email: existingEmailUser.email,
+                        is_active: existingEmailUser.is_active
+                    }
+                });
+            }
+
+            // Hash de la contraseña
+            const hashedPassword = await PasswordService.hashPassword(password);
+
+            // Crear usuario con configuraciones por defecto
+            const user = await User.create({
+                sede_id,
+                identification,
+                name,
+                email: email.toLowerCase(),
+                phone,
+                password: hashedPassword,
+                is_active: true,
+                notification_channel_in_app_enabled: true,
+                notification_channel_sms_enabled: true,
+                notification_channel_email_enabled: true,
+                notification_channel_whatsapp_enabled: true,
+                temporary_password: true
+            });
+
+            // Enviar email de bienvenida
+            const emailResult = await this.sendWelcomeEmail(email, name, password);
+
+            // Preparar respuesta (sin incluir password)
+            const { password: _, ...userResponse } = user.toJSON();
+            userResponse.sede = sede;
+
+            // Disparar evento de usuario creado
+            try {
+                await automatedEventTriggers.triggerUserEvents('created', {
+                    id: userResponse.id,
+                    email: userResponse.email,
+                    name: userResponse.name,
+                    role: 'user'
+                }, {
+                    created_by: req.user?.id,
+                    ip_address: req.ip,
+                    created_with_email: true
+                });
+            } catch (eventError) {
+                console.error('Error disparando evento user.created:', eventError);
+            }
+
+            // Enviar notificación WebSocket
+            if (webSocketSystem.isInitialized()) {
+                await webSocketSystem.sendNotificationToRole('super_admin', {
+                    type: 'user',
+                    title: 'Nuevo usuario creado',
+                    message: `Se ha creado el usuario: ${userResponse.name} con envío de email`,
+                    priority: 'normal',
+                    category: 'user_management',
+                    data: { 
+                        userId: userResponse.id, 
+                        userName: userResponse.name,
+                        emailSent: emailResult.success
+                    }
+                });
+            }
+
+            res.status(201).json({
+                user: userResponse,
+                emailSent: emailResult.success,
+                emailError: emailResult.success ? null : emailResult.error,
+                message: emailResult.success 
+                    ? 'Usuario creado exitosamente y email de bienvenida enviado'
+                    : 'Usuario creado exitosamente, pero no se pudo enviar el email de bienvenida'
+            });
+
+        } catch (error) {
+            console.error('Error en createUserWithEmail:', error);
+            res.status(500).json({ 
+                message: 'Error interno del servidor al crear usuario',
+                error: error.message 
+            });
         }
     }
 }

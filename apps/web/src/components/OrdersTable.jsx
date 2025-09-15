@@ -29,37 +29,6 @@ const OrdersTable = ({
     loading = false
 }) => {
     const { user } = useAuth();
-    /**
-     * Determines the badge variant based on order status or inspection result.
-     * @param {string} status - The general order status.
-     * @param {string} inspectionResult - The inspection result status.
-     * @returns {string} The Tailwind CSS variant for the badge.
-     */
-    const getStatusBadgeVariant = (status, inspectionResult) => {
-        if (!inspectionResult) {
-            const variants = {
-                'Creada': 'secondary',
-                'Contacto exitoso': 'default',
-                'Agendado': 'default',
-                'No contesta': 'destructive',
-                'Ocupado': 'outline',
-                'Número incorrecto': 'destructive',
-                'Solicita reagendar': 'outline',
-                'En progreso': 'default',
-                'Finalizada': 'default',
-                'Cancelada': 'destructive'
-            };
-            return variants[status] || 'secondary';
-        }
-
-        const resultVariants = {
-            'RECHAZADO - Vehículo no asegurable': 'destructive',
-            'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones': 'default',
-            'PENDIENTE - Inspección en proceso': 'secondary',
-            'APROBADO - Vehículo asegurable': 'default'
-        };
-        return resultVariants[inspectionResult] || 'secondary';
-    };
 
     /**
      * Returns the display text for the order status, prioritizing inspection result if available.
@@ -166,20 +135,10 @@ const OrdersTable = ({
                 ) : (
                     <>
                         {/* Table view for medium and larger screens */}
-                        <div className="overflow-x-auto hidden md:block">
+                        <div className="overflow-x-auto block">
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="text-left p-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleSort('id')}
-                                                className="font-semibold"
-                                            >
-                                                ID {getSortIcon('id')}
-                                            </Button>
-                                        </th>
                                         <th className="text-left p-2">
                                             <Button
                                                 variant="ghost"
@@ -253,8 +212,27 @@ const OrdersTable = ({
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id} className="border-b hover:bg-muted/50">
-                                                <td className="p-2 font-mono font-medium">{order.id}</td>
-                                                <td className="p-2 font-mono font-medium">{order.numero}</td>
+                                                <td className="p-2 font-mono font-medium">
+                                                    <div className='flex flex-col gap-0'>
+                                                        <span className='font-mono font-medium ms-2'>
+                                                            {order.numero}
+                                                        </span>
+                                                        <Badge variant='outline' className='text-xs'>
+                                                            {
+                                                                order.numero.toString().includes('9991') ? (
+                                                                    <>
+                                                                        Orden Manual
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        Integracion
+                                                                    </>
+                                                                )
+                                                            }
+                                                        </Badge>
+                                                    </div>
+
+                                                </td>
                                                 <td className="p-2">
                                                     <div className="space-y-1">
                                                         <div className="font-medium">{order.nombre_cliente}</div>
@@ -293,12 +271,9 @@ const OrdersTable = ({
                                                 </td>
                                                 <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
                                                 <td className="p-2">
-                                                    <div className='flex flex-col'>
-                                                        <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
-                                                            {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[0]}
-                                                        </Badge>
-                                                        <span className='text-xs text-muted-foreground font-mono'>{getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).split(" - ")[1]}</span>
-                                                    </div>
+                                                    <Badge variant={order.badgeColor}>
+                                                        {order.fixedStatus}
+                                                    </Badge>
                                                 </td>
                                                 {showAgentColumn && (
                                                     <td className="p-2">
@@ -307,10 +282,6 @@ const OrdersTable = ({
                                                                 <UserCheck className="h-4 w-4 text-green-600" />
                                                                 <span className="text-sm">
                                                                     {order.AssignedAgent.name}
-                                                                    <br />
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        {order.session_id}
-                                                                    </span>
                                                                 </span>
                                                             </div>
                                                         ) : (
@@ -327,16 +298,26 @@ const OrdersTable = ({
                                                             {isContactTable ? (
                                                                 // Contact table actions
                                                                 onContactOrder && (
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() => onContactOrder(order)}
-                                                                    >
-                                                                        <PhoneCall className="h-4 w-4 mr-2" />
-                                                                        Contactar
-                                                                    </Button>
+                                                                    <>
+                                                                        {
+                                                                            order.fixedStatus == 'Creada' ? (
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => onContactOrder(order)}
+                                                                                >
+                                                                                    <PhoneCall className="h-4 w-4 mr-2" />
+                                                                                    Contactar
+                                                                                </Button>
+                                                                            ) : <>
+                                                                                <button className='text-sm text-muted-foreground border border-muted-foreground rounded-md px-2 py-1'>
+                                                                                    Ya Agendado
+                                                                                </button>
+                                                                            </>
+                                                                        }
+                                                                    </>
                                                                 )
                                                             ) : (
-                                                                // Default table actions
                                                                 <>
                                                                     {onViewDetails && (
                                                                         <Button
@@ -345,24 +326,24 @@ const OrdersTable = ({
                                                                             onClick={() => onViewDetails(order)}
                                                                         >
                                                                             <Eye className="h-4 w-4 mr-1" />
-                                                                            Ver
+                                                                            Ver Resumen
                                                                         </Button>
-                                                                        )}
-                                                                        
-                                                                        {
-                                                                            (user.email.includes('segurosmundial.com.co') && order.session_id ) ? <>
-                                                                                <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                                    onClick={() => {
-                                                                                window.open(`/inspection-report/${order.session_id}`, '_blank');
-                                                                            }}
-                                                                        >
-                                                                            <FileText className="h-4 w-4 mr-1" />
-                                                                            Ver Inspección
-                                                                        </Button>
-                                                                            </> : <></>
-                                                                        }
+                                                                    )}
+
+                                                                    {
+                                                                        (user.email.includes('segurosmundial.com.co') && order.fixedStatus.includes('Finalizado') && order.session_id) ? <>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    window.open(`/inspection-report/${order.session_id}`, '_blank');
+                                                                                }}
+                                                                            >
+                                                                                <FileText className="h-4 w-4 mr-1" />
+                                                                                Ver Inspección
+                                                                            </Button>
+                                                                        </> : <></>
+                                                                    }
 
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select
@@ -402,159 +383,6 @@ const OrdersTable = ({
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Card view for small screens */}
-                        <div className="md:hidden grid grid-cols-1 gap-4">
-                            {orders.length == 0 ? (
-                                <div className="text-center p-8">
-                                    <div className="text-muted-foreground">
-                                        {isContactTable ? (
-                                            <Phone className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                        ) : (
-                                            <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                        )}
-                                        <p>{emptyMessage}</p>
-                                        <p className="text-sm">{emptyDescription}</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                orders.map((order) => (
-                                    <Card key={order.id} className="rounded-lg shadow-sm border">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                                                <span>Orden #{order.id} - {order.numero}</span>
-                                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
-                                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
-                                                </Badge>
-                                            </CardTitle>
-                                            <CardDescription className="text-sm text-gray-500">
-                                                {formatDate(order.created_at)}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 text-sm">
-                                            <div className="space-y-2">
-                                                <div>
-                                                    <strong>Cliente:</strong>
-                                                    <div className="ml-2 space-y-1">
-                                                        <div className="font-medium">{order.nombre_cliente}</div>
-                                                        <div className="text-sm text-muted-foreground">{order.correo_cliente}</div>
-                                                        <div className="text-sm font-mono">{order.celular_cliente}</div>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <strong>Contacto:</strong>
-                                                    <div className="ml-2 space-y-1">
-                                                        <div className="font-medium">{order.nombre_contacto}</div>
-                                                        <div className="text-sm text-muted-foreground">{order.correo_contacto}</div>
-                                                        <div className="text-sm font-mono">{order.celular_contacto}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p><strong>Placa:</strong> {order.placa}</p>
-
-                                            {/* {isContactTable && ( */}
-                                            <div className="flex items-center gap-2">
-                                                <strong>Intentos:</strong>
-                                                <div className="flex items-center gap-2">
-                                                    <Phone className="h-4 w-4 text-muted-foreground" />
-                                                    <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) == 0
-                                                        ? 'bg-gray-100 text-gray-600'
-                                                        : getCallLogsCount(order) <= 2
-                                                            ? 'bg-blue-100 text-blue-700'
-                                                            : getCallLogsCount(order) <= 4
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {getCallLogsCount(order)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {/* )} */}
-
-                                            {showAgentColumn && !isContactTable && (
-                                                <div className="flex items-center gap-2">
-                                                    <strong>Agente:</strong>
-                                                    {order.AssignedAgent ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <UserCheck className="h-4 w-4 text-green-600" />
-                                                            <span>{order.AssignedAgent.name}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-2">
-                                                            <UserX className="h-4 w-4 text-red-500" />
-                                                            <span className="text-muted-foreground">Sin asignar</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {showActions && (
-                                                <div className="flex flex-col gap-2 pt-2 border-t mt-2">
-                                                    {isContactTable ? (
-                                                        // Contact table actions
-                                                        onContactOrder && (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => onContactOrder(order)}
-                                                                className="w-full"
-                                                            >
-                                                                <PhoneCall className="h-4 w-4 mr-2" />
-                                                                Contactar
-                                                            </Button>
-                                                        )
-                                                    ) : (
-                                                        // Default table actions
-                                                        <>
-                                                            {onViewDetails && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => onViewDetails(order)}
-                                                                    className="w-full"
-                                                                >
-                                                                    <Eye className="h-4 w-4 mr-2" />
-                                                                    Ver Detalles
-                                                                </Button>
-                                                            )}
-
-                                                            {onAssignAgent && agents.length > 0 && (
-                                                                <Select
-                                                                    value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
-                                                                    onValueChange={(value) => {
-                                                                        onAgentChange(value);
-                                                                        onAssignAgent(order.id, value);
-                                                                    }}
-                                                                    disabled={assigningOrder == order.id}
-                                                                >
-                                                                    <SelectTrigger className="w-full text-xs h-9">
-                                                                        <SelectValue placeholder={order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"} />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="reassign">{order.AssignedAgent ? "Reasignar Agente" : "Asignar Agente"}</SelectItem>
-                                                                        <SelectItem value="unassign">Quitar asignación</SelectItem>
-                                                                        {agents.filter(agent => agent.id && agent.name).map((agent) => (
-                                                                            <SelectItem key={agent.id} value={agent.id.toString()}>
-                                                                                {agent.name}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            )}
-                                                            {assigningOrder == order.id && (
-                                                                <div className="flex justify-center items-center mt-2">
-                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                ))
-                            )}
-                        </div>
-
 
                         {/* Pagination remains visible for both views */}
                         {pagination.pages > 1 && (

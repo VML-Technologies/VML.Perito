@@ -62,6 +62,24 @@ const User = createModelWithSoftDeletes('User', {
         allowNull: true,
         defaultValue: false,
     },
+    password_reset_token: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+    },
+    password_reset_expires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    password_reset_attempts: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    password_reset_locked_until: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 }, {
     tableName: 'users',
 });

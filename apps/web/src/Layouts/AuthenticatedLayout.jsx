@@ -14,6 +14,7 @@ function AuthenticatedLayout({ children }) {
     const { user, logout } = useAuth();
     const { hasRole, loading } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
+    const canAccessHelpDesk = hasRole('help_desk') || hasRole('super_admin');
     const { toast, hideToast } = useNotificationContext();
     const navigate = useNavigate();
     const location = useLocation();
@@ -34,7 +35,7 @@ function AuthenticatedLayout({ children }) {
         <ProtectedRoute>
             <SidebarProvider>
                 {
-                    canAccessAdmin && (
+                    (canAccessAdmin || canAccessHelpDesk) && (
                         <AppSidebar />
                     )
                 }

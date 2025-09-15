@@ -1,4 +1,4 @@
-# Sistema de Notificaciones - VML Perito
+# Sistema de Notificaciones - Movilidad Mundial
 
 ## Índice
 
@@ -18,7 +18,7 @@
 
 ## Descripción General
 
-El sistema de notificaciones de VML Perito es una solución integral que permite enviar notificaciones a través de múltiples canales (Email, WhatsApp, SMS, Push, In-App) de manera configurable, escalable y confiable.
+El sistema de notificaciones de Movilidad Mundial es una solución integral que permite enviar notificaciones a través de múltiples canales (Email, WhatsApp, SMS, Push, In-App) de manera configurable, escalable y confiable.
 
 ### Características Principales
 

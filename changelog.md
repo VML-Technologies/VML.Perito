@@ -1,0 +1,385 @@
+# Changelog - Sistema Movilidad Mundial
+
+Todas las notables modificaciones a este proyecto serán documentadas en este archivo.
+
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.1.0] - 2025-09-09
+
+### 🚀 **Nuevas Características**
+- **Sistema de Soft Delete para Citas**: Implementación completa de eliminación suave en appointments
+  - Nueva columna `deleted_at` en la base de datos para gestión de citas eliminadas
+  - Actualización de controladores y modelos para manejar citas activas
+  - Mejora en la gestión de citas en el sistema sin pérdida de datos
+- **Sistema de Estados Avanzado**: Nuevos modelos y migraciones para gestión de estados
+  - Tablas: `inspection_orders_status_internal`, `appointment_statuses`, `inspection_states`
+  - Modelos y relaciones completas para estados de inspección y citas
+  - Mejora en la gestión de estados en todo el sistema
+- **Nuevas Rutas API**: Endpoints para citas activas de pedidos
+  - Nueva ruta para obtener citas activas de un pedido específico
+  - Simplificación de acceso a información de horarios disponibles
+  - Mejora en la funcionalidad del sistema de agendamiento
+
+### 🔧 **Mejoras**
+- **Componente BadgeToDisplay**: Nuevo componente para representación consistente de estados
+  - Nuevas variantes: éxito, advertencia, información y error
+  - Mejora en la presentación visual y funcionalidad del componente
+  - Refactorización de OrderDetailsPanel y OrdersTable para usar el nuevo componente
+- **Gestión de Estados Fijos**: Método getFixedStatus en controlador de órdenes
+  - Lógica para determinar el color de la insignia según el estado
+  - Gestión de comentarios de anulación
+  - Actualización de transformación de órdenes con nuevos atributos
+- **Componente OrdersTable**: Mejoras significativas en visualización
+  - Eliminación de columna de ID para mejor presentación
+  - Nuevo Badge que indica si la orden es manual o de integración
+  - Ajuste en lógica de contacto con botón o mensaje según estado
+  - Cambio de texto del botón de 'Ver' a 'Ver Resumen' para mayor claridad
+- **Componentes de Interfaz**: Mejoras en diseño y presentación
+  - Actualización de StatsCards para mejor presentación visual
+  - Mejora en OrdersFilters reemplazando Card por div con mejor espaciado
+  - Optimización de AgentOrderPanel y OrderDetailsPanel
+  - Eliminación de funciones obsoletas y optimización de código
+
+### 🎨 **Presentación Visual**
+- **Diseño Mejorado**: Mejoras en la presentación visual de múltiples componentes
+- **Consistencia Visual**: Unificación en la representación de estados con BadgeToDisplay
+- **Optimización de Espaciado**: Ajustes en espaciado y estructura de componentes
+
+### 📚 **Documentación**
+- **Scripts de Seeding**: Actualización de seedAll para incluir configuración de estados
+  - Nuevo archivo seedNewStates.js para gestión de estados internos
+  - Mejora en la inicialización de datos en la base de datos
+
+---
+
+## [1.0.10] - 2025-09-09
+
+### 🚀 **Nuevas Características**
+- **Sistema de Notificaciones por Email**: Implementación completa de notificaciones automáticas
+  - Notificaciones por email para registros de llamadas y agendamientos
+  - Métodos para enviar correos electrónicos utilizando plantillas HTML
+  - Mejora en la comunicación con los usuarios del sistema
+- **Campo Código FASECOLDA Obligatorio**: Actualización del formulario de creación de órdenes
+  - Campo `cod_fasecolda` ahora es obligatorio en CreateOrderModal
+  - Nuevo campo de entrada para captura del código FASECOLDA
+  - Mejora en la estructura del formulario con más columnas en la cuadrícula
+
+### 🔧 **Mejoras**
+- **Estados de Carga**: Mejoras en la experiencia del usuario
+  - Actualización de componentes para manejar estado de carga durante envío de formularios
+  - Mejor feedback visual para el usuario durante operaciones asíncronas
+- **Migraciones de Base de Datos**: Actualizaciones y mejoras
+  - Migraciones actualizadas para incluir columna `deleted_at` en múltiples tablas
+  - Mejora en la documentación relacionada con las migraciones
+  - Optimización del proceso de migración de base de datos
+
+### 📚 **Documentación**
+- **Documentación de Migraciones**: Mejoras en la documentación relacionada con las migraciones
+  - Actualización de documentación para reflejar cambios en la estructura de base de datos
+  - Mejor organización de la información de migraciones
+
+---
+
+## [1.0.9] - 2025-08-29
+
+### 🔧 **Mejoras**
+- **Controlador de Órdenes de Inspección**: Actualización del controlador para incluir el atributo 'updated_at' en las citas y ordenar las citas por fecha de actualización
+  - Mejora en la transformación de órdenes para reflejar la nueva lógica de ordenamiento
+  - Optimización del componente OrdersTable para mantener la funcionalidad existente
+  - Mejor gestión de datos de citas con información de actualización
+- **Componente OrderDetailsPanel**: Implementación de carga de datos de inspección con estado de carga y manejo de errores
+  - Nuevo sistema de estados de carga para mejorar la experiencia del usuario
+  - Manejo robusto de errores en la carga de datos de inspección
+  - Optimización de la presentación de información de inspección
+- **Componentes de Interfaz**: Actualización de componentes OrdersTable e InspectionReport
+  - Reflejo de cambios en la nomenclatura del sistema
+  - Mejora en la presentación de información de comentarios y observaciones
+  - Adición de nuevos íconos para mejor visualización
+  - Optimización de las visualizaciones de datos de inspección
+
+### 🎨 **Presentación Visual**
+- **Nuevos Íconos**: Implementación de íconos adicionales para mejorar la experiencia visual
+- **Visualizaciones Optimizadas**: Mejora en la presentación de comentarios y observaciones en los informes de inspección
+
+---
+
+## [1.0.0] - 2025-08-14
+
+### 🚀 **Lanzamiento Inicial**
+- **Sistema Movilidad Mundial**: Primera versión estable del sistema de gestión de órdenes de inspección
+- **Funcionalidades Base**: Sistema completo de agendamiento, gestión de órdenes, contact center y RBAC
+- **Arquitectura**: Backend Express.js con frontend React, base de datos con Sequelize
+- **Roles y Permisos**: Sistema RBAC completo con roles de Comercial Mundial, Agente de Contact Center y Coordinador
+
+---
+
+## [1.0.1] - 2025-08-18
+
+### 🔧 **Mejoras**
+- **Validaciones de Tiempo**: Nuevas validaciones para campos de tiempo en ScheduleController
+- **Obtención de Datos**: Mejoras en obtención de datos de tiempo en modelos
+- **Integridad de Datos**: Aseguramiento de integridad y consistencia en manipulación de tiempos
+
+## [1.0.2] - 2025-08-19
+
+### 🔧 **Mejoras**
+- **Indicadores de Carga**: Funcionalidad de carga en OrdersTable
+- **Optimización de Gestión**: Mejor gestión de órdenes en AgenteContacto
+- **Experiencia de Usuario**: Indicador de carga y simplificación de lógica de obtención de datos
+- **Manejo de Zona Horaria**: Conversión de horas a zona horaria local en ScheduleController
+- **Integridad de Datos**: Mejoras en baseModel para correcta representación de datos temporales
+
+### 🐛 **Correcciones**
+- **Selección de Fechas**: Modificación para permitir selección de todas las fechas
+- **Validaciones de Tiempo**: Agregadas validaciones para campos de tiempo en ScheduleController
+
+## [1.0.3] - 2025-08-20
+
+### 🔧 **Mejoras**
+- **Selección de Fechas**: Ajuste en lógica de CalendarioAgendamiento para permitir solo fechas a partir de hoy
+- **Usabilidad**: Mejora en la usabilidad del componente de selección de fechas
+
+## [1.0.4] - 2025-08-21
+
+### 🔧 **Mejoras**
+- **Consulta de Placas**: Funcionalidad de consulta de placas en servidor
+- **Paginación y Ordenamiento**: Actualización de AgenteContacto con paginación en tabla de órdenes
+- **Optimización de Experiencia**: Mejor experiencia del usuario
+
+## [1.0.5] - 2025-08-22
+
+### 🔧 **Mejoras**
+- **Nombre de Aplicación**: Actualización a "Movilidad Mundial" en documentación y configuraciones
+- **Configuración de Sequelize**: Nuevos archivos de configuración para migraciones
+- **Gestión de Base de Datos**: Mejoras en la gestión y desarrollo
+
+### 🐛 **Correcciones**
+- **Asunto de Correos**: Actualización de "virtual" por "a domicilio" en notificaciones
+- **Campos de Correo**: Corrección de nombres de campos en controlador de ContactAgent
+- **Migraciones Pendientes**: Eliminación de migraciones pendientes del script seedAll
+
+## [1.1.0] - 2025-08-22
+
+### 🚀 **Nuevas Características**
+- **Sistema de Webhooks Completo**: Implementación completa de gestión de webhooks
+  - Nuevo controlador con manejo de eventos, validaciones y gestión de API keys
+  - Nuevos modelos: WebhookApiKey y WebhookLog
+  - Autenticación, validación de firmas y manejo de eventos
+  - Gestión de API keys y logs de webhooks
+- **Envío de Correos Automático**: Sistema de notificaciones por email para nuevas órdenes
+  - Implementación con nodemailer para notificar a agentes
+  - Detalles de citas agendadas en correos
+
+## [1.1.1] - 2025-08-22
+
+### 🚀 **Nuevas Características**
+- **Método de Inspección Recomendado**: Campo de selección en modal de creación de órdenes
+  - Opciones: virtual, presencial y a domicilio
+  - Actualización de interfaz del formulario
+  - Nuevo campo en modelo y migración de `inspection_orders`
+- **Sistema de Capacidad Global**: Control centralizado de citas por intervalo de tiempo
+  - Configuración en `.env.example` para límite máximo de disponibilidad
+  - Documentación completa del sistema de capacidad global
+  - Lógica mejorada en controlador de agendamiento
+
+### 🔧 **Mejoras**
+- **Campos de Vehículo Flexibles**: Modificación para permitir valores nulos en campos de vehículo
+- **Validaciones de Formulario**: Ajustes en formulario de creación de órdenes
+- **Configuración de Webhooks**: Nuevas opciones para limitación de tasa, verificación de firma
+- **Scripts de Migración**: Nuevos scripts en `package.json` para gestión de base de datos
+
+### 🐛 **Correcciones**
+- **Lógica de Verificación**: Ajuste en lógica de verificación de roles en `inspectionOrderController`
+
+## [1.1.2] - 2025-08-25
+
+### 🔧 **Mejoras**
+- **Detalles de Resultado**: Agregar detalles del resultado de la inspección en el controlador de órdenes
+- **Información de Estado**: Mostrar información adicional en el panel de detalles cuando el estado es 'RECHAZADO'
+- **Historial de Contactos**: Nuevos controladores y rutas para gestión de cambios de contacto
+- **Historial de Comentarios**: Sistema para gestión y visualización de comentarios asociados
+- **Nuevas Migraciones**: Tablas para historial de contactos y comentarios en órdenes de inspección
+
+### 🐛 **Correcciones**
+- **Diseño de Modal**: Ajuste del modal de creación de órdenes eliminando campo opcional 'Código FASECOLDA'
+- **Estructura de Columnas**: Modificación de la estructura de columnas en el formulario para mejor presentación
+
+## [1.1.3] - 2025-08-26
+
+### 🚀 **Nuevas Características**
+- **Sistema de Informes de Inspección**: Implementación completa de generación y visualización de informes
+  - Nueva ruta y controlador para obtener informes de inspección
+  - Nuevos modelos y relaciones para partes y categorías de inspección
+  - Lógica para procesar y devolver datos relevantes en el informe
+
+### 🔧 **Mejoras**
+- **Diseño de Informes**: Mejorar el diseño y presentación del informe de inspección
+- **Información de Contacto**: Añadir información de contacto adicional
+- **Estructura de Datos**: Reorganizar sección de información básica y técnica del vehículo
+- **Estilos de Visualización**: Implementar estilos para mejor visualización de datos
+
+### 🐛 **Correcciones**
+- **Validación de Roles**: Ajuste en lógica de verificación de roles en `inspectionOrderController`
+- **Exclusión de Usuarios**: Mejora en filtrado por `intermediary_key` excluyendo usuarios de `segurosmundial.com.co`
+- **Función PDF**: Eliminar función de exportación a PDF para simplificar código y mejorar mantenibilidad
+
+## [1.0.8] - 2025-08-27
+
+### 🚀 **Nuevas Características**
+- **Sistema de Correos de Bienvenida**: Implementación completa del envío automático de correos electrónicos de bienvenida al crear nuevos usuarios
+  - Nuevo controlador para gestión de correos de bienvenida
+  - Validaciones para identificación y correo electrónico únicos
+  - Plantillas de correo personalizadas
+- **Sistema de Recuperación de Contraseña**: Implementación completa del sistema de recuperación de contraseñas
+  - Nuevos endpoints para solicitar, verificar y restablecer contraseñas
+  - Nuevos campos en el modelo de usuario para tokens de recuperación
+  - Plantilla de correo electrónico personalizada para el proceso de recuperación
+  - Formularios en la interfaz de usuario para gestionar la recuperación de contraseñas
+- **Gestión de Exclusiones de Horarios**: Nuevo modelo y sistema para gestionar exclusiones en la programación
+  - Configuración de períodos de tiempo muerto
+  - Flexibilidad para días específicos o toda la semana
+  - Integración automática con el sistema de agendamiento
+- **Nuevo Rol de Usuario**: Implementación del rol de Ayuda Técnica (help_desk)
+  - Nuevos permisos específicos para el rol de ayuda técnica
+  - Gestión mejorada de roles y permisos en la interfaz de administración
+  - Integración con el sistema RBAC existente
+
+### 🔧 **Mejoras**
+- **Control de Visualización por Rol**: Atributo `userRole` en componente CallHistory para controlar información según el rol del usuario
+- **Información de Citas Mejorada**: Nuevo atributo `call_time` en registros de llamadas del controlador de órdenes
+- **Ampliación de Datos de Citas**: Nuevos atributos y relaciones con modelos de modalidad de inspección y sede
+- **Verificación de Órdenes Activas**: Nueva funcionalidad para verificar existencia de órdenes activas por placa
+- **Diseño de Informes Mejorado**: Mejor presentación del informe de inspección con información de contacto adicional
+- **Interfaz de Administración RBAC**: Mejoras en la gestión de roles y permisos
+  - Interfaz más intuitiva para administrar roles
+  - Mejor visualización de permisos asignados
+  - Funcionalidades avanzadas de gestión de usuarios
+- **Sistema de Rutas**: Nuevas rutas para funcionalidades de recuperación de contraseña
+  - Endpoints RESTful para el proceso de recuperación
+  - Validaciones de seguridad en todas las rutas
+  - Integración con middleware de autenticación
+- **Nomenclatura del Proyecto**: Actualización completa de referencias de 'VML Perito' a 'Movilidad Mundial'
+  - Documentación actualizada con nueva nomenclatura
+  - Código refactorizado para usar el nuevo nombre del proyecto
+  - Consistencia en toda la aplicación
+
+### 🔒 **Seguridad**
+- **Validaciones de Seguridad**: Mejoras en la seguridad del sistema de recuperación de contraseñas
+  - Tokens de recuperación con expiración automática
+  - Validaciones de formato de contraseña
+  - Protección contra ataques de fuerza bruta
+  - Logs de seguridad para auditoría
+
+### 🐛 **Correcciones**
+- **Validación de Placas**: Lógica mejorada para validar placas ingresadas y mostrar información relevante
+- **Estructura de Formularios**: Ajustes en el modal de creación de órdenes para mejor presentación
+
+### 📚 **Documentación**
+- **Changelog del Proyecto**: Creación del archivo changelog.md para documentar cambios y versiones
+  - Formato basado en Keep a Changelog
+  - Notas de lanzamiento para versiones anteriores
+  - Estructura organizada para futuras actualizaciones
+
+### 🎨 **Presentación Visual**
+- **Nuevo Archivo de Imagen**: Mejora en la presentación visual de la aplicación
+
+---
+
+## Tipos de Cambios
+
+- **🚀 Nuevas Características**: Nuevas funcionalidades agregadas
+- **🔧 Mejoras**: Mejoras en funcionalidades existentes
+- **🐛 Correcciones**: Corrección de errores
+- **♻️ Refactorización**: Cambios en el código que no agregan funcionalidad
+- **📚 Documentación**: Cambios en documentación
+- **⚡ Rendimiento**: Mejoras en rendimiento
+- **🔒 Seguridad**: Mejoras en seguridad
+
+## Convenciones de Versionado
+
+Este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
+
+- **MAJOR**: Cambios incompatibles en la API
+- **MINOR**: Nuevas funcionalidades compatibles hacia atrás
+- **PATCH**: Correcciones de errores compatibles hacia atrás
+
+## Notas de Lanzamiento
+
+### v1.0.10
+- **Deploy**: 9 de Septiembre 2025
+- **Características Principales**: Sistema de notificaciones por email, campo FASECOLDA obligatorio y mejoras en estados de carga
+- **Nuevas Funcionalidades**: Notificaciones automáticas por email para llamadas y agendamientos, campo cod_fasecolda obligatorio
+- **Mejoras**: Estados de carga mejorados, migraciones actualizadas, documentación de migraciones
+- **Migración Requerida**: Migraciones para columna deleted_at en múltiples tablas
+
+### v1.1.0
+- **Deploy**: 8 de Septiembre 2025
+- **Características Principales**: Sistema de soft delete para citas, sistema de estados avanzado y mejoras significativas en componentes UI
+- **Nuevas Funcionalidades**: Soft delete en appointments, sistema de estados de inspección y citas, componente BadgeToDisplay
+- **Mejoras**: Gestión de estados fijos, optimización de OrdersTable, mejoras en diseño de componentes
+- **Migración Requerida**: Nuevas migraciones para soft delete y sistema de estados
+
+### v1.0.9
+- **Deploy**: 29 de Agosto 2025
+- **Características Principales**: Mejoras en el controlador de órdenes de inspección, optimización de componentes de interfaz y mejoras en la presentación visual
+- **Mejoras**: Sistema de carga de datos de inspección con manejo de errores, ordenamiento de citas por fecha de actualización
+- **Experiencia de Usuario**: Nuevos íconos y visualizaciones optimizadas para comentarios y observaciones
+
+### v1.0.8
+- **Deploy**: 27 de Agosto 2025
+- **Características Principales**: Sistema completo de recuperación de contraseñas, correos de bienvenida, gestión de exclusiones de horarios, nuevo rol de ayuda técnica y actualización de nomenclatura del proyecto
+- **Seguridad**: Mejoras significativas en seguridad con tokens de recuperación y validaciones
+- **Migración Requerida**: Nuevas migraciones para campos de recuperación de contraseña y exclusiones de horarios
+
+### v1.0.7
+- **Deploy**: 26 de Agosto 2025
+- **Características Principales**: Sistema completo de informes de inspección
+- **Mejoras**: Diseño mejorado de informes y optimización de código
+
+### v1.0.6
+- **Deploy**: 25 de Agosto 2025
+- **Mejoras**: Historial de contactos y comentarios en órdenes de inspección
+- **Correcciones**: Ajustes en diseño de modales y formularios
+
+### v1.0.5
+- **Deploy**: 22 de Agosto 2025
+- **Características Principales**: Métodos de inspección recomendados y capacidad global
+- **Sistema de Control**: Control centralizado de capacidad de agendamiento
+- **Características Principales**: Sistema completo de webhooks y notificaciones
+- **Integración**: Sistema automático de correos electrónicos
+- **Mejoras**: Actualización de nombre de aplicación y configuraciones (VML.Perito -> Movilidad Mundial)
+- **Correcciones**: Ajustes en notificaciones y migraciones
+
+### v1.0.4
+- **Deploy**: 21 de Agosto 2025
+- **Mejoras**: Consulta de placas y optimizaciones de experiencia
+
+### v1.0.3
+- **Deploy**: 20 de Agosto 2025
+- **Mejoras**: Ajustes en selección de fechas del calendario
+
+### v1.0.2
+- **Deploy**: 19 de Agosto 2025
+- **Mejoras**: Indicadores de carga y manejo de zona horaria
+- **Correcciones**: Ajustes en selección de fechas y validaciones
+
+### v1.0.1
+- **Deploy**: 18 de Agosto 2025
+- **Mejoras**: Validaciones de tiempo y integridad de datos
+
+### v1.0.0
+- **Deploy**: 14 de Agosto 2025
+- **Lanzamiento Inicial**: Primera versión estable del sistema Movilidad Mundial
+- **Funcionalidades Base**: Sistema completo de agendamiento, gestión de órdenes, contact center y RBAC
+
+
+## Política de Deploy
+
+- **Frecuencia**: Deploy diario en la tarde
+- **Agrupación**: Cambios agrupados por día de deploy
+- **Versionado**: 
+  - **PATCH** (1.0.x): Correcciones y mejoras menores
+  - **MINOR** (1.x.0): Nuevas funcionalidades significativas
+  - **MAJOR** (x.0.0): Cambios breaking (no aplicado en este período)
+- **Compatibilidad**: Mantenimiento de compatibilidad hacia atrás en todas las versiones

@@ -33,10 +33,13 @@ import { useAuth } from '@/contexts/auth-context';
 
 export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const [loading, setLoading] = useState(false);
+    const [checkingPlate, setCheckingPlate] = useState(false);
     const { showToast } = useNotificationContext();
     const { user } = useAuth();
     const [sameAsClient, setSameAsClient] = useState(true); // Checkbox para sincronizar datos
     const [clientData, setClientData] = useState({}); // Almacenar datos del cliente por separado
+    const [plateExists, setPlateExists] = useState(false); // Estado para validación de placa
+    const [existingOrder, setExistingOrder] = useState(null); // Datos de la orden existente
 
     // Estado del formulario con todos los campos del modelo (sin sede_id)
     const [formData, setFormData] = useState({
@@ -90,6 +93,43 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
     // Verificar si el usuario es super_admin
     const isSuperAdmin = user?.roles?.some(role => role.name == 'super_admin');
+
+    // Función para verificar si la placa ya existe
+    const checkPlateExists = async (plate) => {
+        if (!plate || plate.length < 3) {
+            setPlateExists(false);
+            setExistingOrder(null);
+            return;
+        }
+
+        setCheckingPlate(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.CHECK_PLATE(plate.toUpperCase()), {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setPlateExists(data.exists);
+                setExistingOrder(data.exists ? data.order : null);
+                
+                if (data.exists) {
+                    showToast(data.message, 'warning');
+                }
+            } else {
+                console.error('Error verificando placa:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error verificando placa:', error);
+        } finally {
+            setCheckingPlate(false);
+        }
+    };
 
     // Función para llenar datos de prueba
     const fillTestData = () => {
@@ -156,6 +196,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     useEffect(() => {
         if (!isOpen) {
             resetForm();
+        }
+    }, [isOpen]);
+
+    // Limpiar validación de placa cuando se abra el modal
+    useEffect(() => {
+        if (isOpen) {
+            setPlateExists(false);
+            setExistingOrder(null);
         }
     }, [isOpen]);
 
@@ -240,6 +288,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         setErrors({});
         setSameAsClient(true); // Resetear checkbox a marcado
         setClientData({}); // Limpiar datos del cliente guardados
+        setPlateExists(false); // Limpiar validación de placa
+        setExistingOrder(null); // Limpiar datos de orden existente
     };
 
     const handleInputChange = (field, value) => {
@@ -262,6 +312,16 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 ...prev,
                 [field]: ''
             }));
+        }
+
+        // Verificar placa cuando se escriba
+        if (field === 'placa') {
+            // Usar debounce para evitar muchas llamadas
+            const timeoutId = setTimeout(() => {
+                checkPlateExists(value);
+            }, 500);
+            
+            return () => clearTimeout(timeoutId);
         }
 
         // Sincronizar datos del contacto si el checkbox está marcado
@@ -305,6 +365,11 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
     const validateForm = () => {
         const newErrors = {};
+
+        // Validar si existe una orden activa con la misma placa
+        if (plateExists) {
+            newErrors.placa = 'Ya existe una orden de inspección activa para esta placa';
+        }
 
         // Validaciones obligatorias - solo campos esenciales según el modelo actualizado
         const requiredFields = [
@@ -457,12 +522,26 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Prevenir múltiples envíos
+        if (loading) {
+            console.log('⚠️ Intento de envío múltiple bloqueado');
+            showToast('Ya se está procesando la orden, por favor espera...', 'warning');
+            return;
+        }
+
         if (!validateForm()) {
             showToast('Por favor corrige los errores en el formulario', 'warning');
             return;
         }
 
         setLoading(true);
+
+        // Timeout de seguridad para evitar que el loading se quede atascado
+        const loadingTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout de seguridad: forzando finalización del loading');
+            setLoading(false);
+            showToast('La operación está tomando más tiempo del esperado. Por favor intenta nuevamente.', 'warning');
+        }, 30000); // 30 segundos
 
         try {
             const token = localStorage.getItem('authToken');
@@ -504,13 +583,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             console.error('Error creating order:', error);
             showToast(error.message || 'Error al crear la orden de inspección', 'error');
         } finally {
+            clearTimeout(loadingTimeout);
             setLoading(false);
         }
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="w-full sm:max-w-6xl overflow-y-auto px-4">
+        <Sheet open={isOpen} onOpenChange={loading ? undefined : onClose}>
+            <SheetContent 
+                className="w-full sm:max-w-6xl overflow-y-auto px-4"
+                onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}
+            >
                 <SheetHeader>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -529,13 +612,20 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 <TestTube className="h-4 w-4" />
                                 Datos de Prueba
                             </Button>
-                        )}
+                        )} 
                     </div>
                     <SheetDescription>
-                        Completa todos los datos requeridos para crear una nueva orden de inspección
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-blue-600">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span>Procesando orden de inspección...</span>
+                            </div>
+                        ) : (
+                            'Completa todos los datos requeridos para crear una nueva orden de inspección'
+                        )}
                     </SheetDescription>
                 </SheetHeader>
-                <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+                <form onSubmit={handleSubmit} className={`mt-6 space-y-6 ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                     {/* Información General de la Orden */}
                     <Card>
                         <CardHeader>
@@ -571,19 +661,41 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
                             <div>
                                 <Label htmlFor="placa">Placa *</Label>
-                                <Input
-                                    id="placa"
-                                    placeholder="ABC123"
-                                    maxLength={6}
-                                    value={formData.placa}
-                                    onChange={(e) => handleInputChange('placa', e.target.value.toUpperCase())}
-                                    className={errors.placa ? 'border-red-500' : ''}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="placa"
+                                        placeholder="ABC123"
+                                        maxLength={6}
+                                        value={formData.placa}
+                                        onChange={(e) => handleInputChange('placa', e.target.value.toUpperCase())}
+                                        className={`${errors.placa ? 'border-red-500' : ''} ${plateExists ? 'border-orange-500' : ''} ${checkingPlate ? 'pr-10' : ''}`}
+                                        disabled={checkingPlate}
+                                    />
+                                    {checkingPlate && (
+                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        </div>
+                                    )}
+                                </div>
                                 {errors.placa && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.placa}
                                     </p>
+                                )}
+                                {plateExists && existingOrder && (
+                                    <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                        <div className="flex items-start gap-2">
+                                            <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                                            <div className="text-sm text-orange-800">
+                                                <p className="font-medium">Orden existente encontrada:</p>
+                                                <p>• Número: {existingOrder.numero}</p>
+                                                {/* <p>• Cliente: {existingOrder.nombre_cliente}</p>
+                                                <p>• Estado: {existingOrder.status}</p>
+                                                <p>• Fecha: {new Date(existingOrder.created_at).toLocaleDateString('es-ES')}</p> */}
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                             <div>
@@ -1073,18 +1185,23 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading}
-                            className="flex-1"
+                            disabled={loading || plateExists}
+                            className={`flex-1 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Creando...
+                                    <span>Creando Orden...</span>
+                                </div>
+                            ) : plateExists ? (
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>Orden de inspección existente</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
                                     <CheckCircle className="h-4 w-4" />
-                                    Crear Orden
+                                    <span>Crear Orden</span>
                                 </div>
                             )}
                         </Button>

@@ -183,7 +183,7 @@ Detalles de la cita:
 Por favor llega 10 minutos antes de tu cita.
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: true,
                 for_users: false,
@@ -224,7 +224,7 @@ Detalles:
 Por favor llega 10 minutos antes.
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: true,
                 for_users: false,

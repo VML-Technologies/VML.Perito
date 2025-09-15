@@ -347,7 +347,7 @@ Detalles del agendamiento:
 Por favor, llega 10 minutos antes de la hora programada.
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: true,
                 for_users: false,
@@ -417,7 +417,7 @@ Detalles adicionales:
 {{/if}}
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: false,
                 for_users: true,
@@ -444,7 +444,7 @@ Detalles del cliente:
 Por favor, realiza un seguimiento directo con el cliente para coordinar el agendamiento de la inspección.
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: false,
                 for_users: true,
@@ -473,7 +473,7 @@ Motivo del rechazo: {{rejection_reason}}
 Por favor, realiza un seguimiento para entender las razones y evaluar alternativas.
 
 Saludos,
-Equipo VML Perito
+Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: false,
                 for_users: true,
