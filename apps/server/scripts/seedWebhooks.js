@@ -63,6 +63,24 @@ export const seedWebhooks = async () => {
                 expires_at: null,
                 created_by: createdBy
             },
+            {
+                name: 'API-MovilidadMundial',
+                api_key: generateApiKey(),
+                api_secret: generateApiSecret(),
+                application_name: 'API-MovilidadMundial',
+                contact_email: 'admin@movilidadmundial.com',
+                allowed_events: [
+                    'inspection_order.process_existing',
+                    'inspection_order.created',
+                    'inspection_order.assigned',
+                    'appointment.scheduled'
+                ],
+                allowed_ips: ['*'],
+                rate_limit_per_minute: 2000,
+                is_active: true,
+                expires_at: null,
+                created_by: createdBy
+            },
         ];
 
         // Crear API keys
@@ -106,16 +124,40 @@ export const seedWebhooks = async () => {
             }
         }
 
-        console.log('\n🚀 Ejemplo de uso:');
+        console.log('\n🚀 Ejemplos de uso:');
         console.log('==================');
-        console.log(`
-# Crear orden de inspección
-curl -X POST http://localhost:3001/api/webhooks/events \\
-  -H "Authorization: Bearer ${createdApiKeys[0].api_key}" \\
-  -H "X-Webhook-Signature: t=1640995200,v1=sha256hash" \\
+        
+        // Ejemplo para API-MovilidadMundial
+        const movilidadMundialKey = createdApiKeys.find(key => key.application_name === 'API-MovilidadMundial');
+        if (movilidadMundialKey) {
+            console.log(`
+# Procesar orden de inspección existente (API-MovilidadMundial)
+curl -X POST http://localhost:3000/api/webhooks/trigger \\
   -H "Content-Type: application/json" \\
+  -H "x-api-key: ${movilidadMundialKey.api_key}" \\
   -d '{
-    "event_type": "inspection_order.created",
+    "event": "inspection_order.process_existing",
+    "data": {
+      "inspection_order_id": 123
+    },
+    "context": {
+      "source": "API-MovilidadMundial",
+      "user_id": 456
+    }
+  }'
+            `);
+        }
+        
+        // Ejemplo para InspectYa
+        const inspectYaKey = createdApiKeys.find(key => key.application_name === 'InspectYa');
+        if (inspectYaKey) {
+            console.log(`
+# Crear orden de inspección (InspectYa)
+curl -X POST http://localhost:3000/api/webhooks/trigger \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: ${inspectYaKey.api_key}" \\
+  -d '{
+    "event": "inspection_order.created",
     "data": {
       "inspection_order": {
         "numero": "ORD-WEBHOOK-001",
@@ -134,7 +176,8 @@ curl -X POST http://localhost:3001/api/webhooks/events \\
       "source_user_id": "user_123"
     }
   }'
-        `);
+            `);
+        }
 
         return createdApiKeys;
 
