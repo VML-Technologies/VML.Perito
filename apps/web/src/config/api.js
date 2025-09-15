@@ -25,6 +25,7 @@ export const API_ROUTES = {
         CREATE_WITH_EMAIL: `${API_BASE_URL}/api/users/create-with-email`,
         VALIDATE_IDENTIFICATION: `${API_BASE_URL}/api/users/validate/identification`,
         VALIDATE_EMAIL: `${API_BASE_URL}/api/users/validate/email`,
+        INSPECTORS: `${API_BASE_URL}/api/users/inspectors`,
         ASSIGN_ROLES: (userId) => `${API_BASE_URL}/api/users/${userId}/roles`,
         GET_ROLES: (userId) => `${API_BASE_URL}/api/users/${userId}/roles`,
     },
@@ -53,6 +54,7 @@ export const API_ROUTES = {
         LIST: `${API_BASE_URL}/api/inspection-orders`,
         STATS: `${API_BASE_URL}/api/inspection-orders/stats`,
         SEARCH: `${API_BASE_URL}/api/inspection-orders/search`,
+        SEARCH_BY_PLATE: `${API_BASE_URL}/api/inspection-orders/search-by-plate`,
         GET: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
@@ -70,6 +72,8 @@ export const API_ROUTES = {
         CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
         INSPECTION_REPORT: (sessionId) => `${API_BASE_URL}/api/inspection-orders/${sessionId}/inspection-report`,
+        ORDER_BY_HASH: (hash) => `${API_BASE_URL}/api/inspection-orders/by-hash/${hash}`,
+        START_VIRTUAL_INSPECTION: (id) => `${API_BASE_URL}/api/inspection-orders/${id}/start-virtual-inspection`,
     },
     // ===== RUTAS DE HISTORIAL DE ÓRDENES =====
     ORDER_HISTORY: {
@@ -89,6 +93,7 @@ export const API_ROUTES = {
         UPDATE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
         BY_COMPANY: (companyId) => `${API_BASE_URL}/api/companies/${companyId}/sedes`,
+        CDA: `${API_BASE_URL}/api/sedes/cda`,
     },
     // ===== RUTAS - Agente de Contact =====
     CONTACT_AGENT: {
@@ -110,6 +115,18 @@ export const API_ROUTES = {
         ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/comments`,
         CREATE_ORDER_COMMENT: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/comments`,
         UPDATE_ORDER_CONTACT: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/contact`,
+    },
+    // ===== RUTAS - Queue de Inspecciones =====
+    INSPECTION_QUEUE: {
+        GET_QUEUE: `${API_BASE_URL}/api/inspection-queue`,
+        ADD_TO_QUEUE: `${API_BASE_URL}/api/inspection-queue`,
+        UPDATE_STATUS: (id) => `${API_BASE_URL}/api/inspection-queue/${id}/status`,
+        GET_STATS: `${API_BASE_URL}/api/inspection-queue/stats`,
+        GET_INSPECTORS: `${API_BASE_URL}/api/inspection-queue/inspectors`,
+        // Rutas públicas (sin autenticación)
+        ADD_TO_QUEUE_PUBLIC: `${API_BASE_URL}/api/public/inspection-queue`,
+        GET_STATUS_PUBLIC: (orderId) => `${API_BASE_URL}/api/public/inspection-queue/${orderId}`,
+        GET_STATUS_BY_HASH_PUBLIC: (hash) => `${API_BASE_URL}/api/public/inspection-queue/hash/${hash}`,
     },
     // ===== RUTAS - Coordinador de Contact Center =====
     COORDINADOR_CONTACTO: {
@@ -207,6 +224,8 @@ export const API_ROUTES = {
         LIST: `${API_BASE_URL}/api/appointments`,
         GET: (id) => `${API_BASE_URL}/api/appointments/${id}`,
         CREATE: `${API_BASE_URL}/api/appointments`,
+        UPDATE: (id) => `${API_BASE_URL}/api/appointments/${id}`,
+        ASSIGN_INSPECTOR: (id) => `${API_BASE_URL}/api/appointments/${id}/assign-inspector`,
 
         // Modalidades y sedes
         MODALITIES: `${API_BASE_URL}/api/appointments/modalities`,
@@ -214,6 +233,22 @@ export const API_ROUTES = {
         SEDES: `${API_BASE_URL}/api/appointments/sedes`,
         TIME_SLOTS: `${API_BASE_URL}/api/appointments/time-slots`,
     },
+    
+    // ===== RUTAS DEDICADAS PARA INSPECTOR ALIADO =====
+    INSPECTOR_ALIADO: {
+        APPOINTMENTS: {
+            CREATE: `${API_BASE_URL}/api/inspector-aliado/appointments`
+        }
+    },
+    
+    // ===== RUTAS DE MODALIDADES DE INSPECCIÓN =====
+    // INSPECTION_MODALITIES: {
+    //     LIST: `${API_BASE_URL}/api/inspection-modalities`,
+    //     GET: (id) => `${API_BASE_URL}/api/inspection-modalities/${id}`,
+    //     CREATE: `${API_BASE_URL}/api/inspection-modalities`,
+    //     UPDATE: (id) => `${API_BASE_URL}/api/inspection-modalities/${id}`,
+    //     DELETE: (id) => `${API_BASE_URL}/api/inspection-modalities/${id}`,
+    // },
 
     // ===== RUTAS DEL SISTEMA DE WEBHOOKS =====
     WEBHOOKS: {

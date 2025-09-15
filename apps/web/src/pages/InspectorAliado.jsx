@@ -1,0 +1,430 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useNotifications } from '@/hooks/use-notifications';
+import { API_ROUTES } from '@/config/api';
+import { useAuth } from '@/contexts/auth-context';
+
+const InspectorAliado = () => {
+    const { user } = useAuth();
+    const { showToast } = useNotifications();
+    
+    // Estados para el formulario de búsqueda
+    const [plate, setPlate] = useState('');
+    const [searching, setSearching] = useState(false);
+    const [inspectionOrder, setInspectionOrder] = useState(null);
+    const [orderNotFound, setOrderNotFound] = useState(false);
+    
+    // Estados para el agendamiento
+    const [waitTime, setWaitTime] = useState('');
+    const [creatingAppointment, setCreatingAppointment] = useState(false);
+    
+    // Estados para la tabla de agendamientos
+    const [appointments, setAppointments] = useState([]);
+    const [loadingAppointments, setLoadingAppointments] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    
+
+    
+    // Generar opciones de tiempo de espera
+    const generateWaitTimeOptions = () => {
+        const options = [];
+        const inicio = 20;
+        const fin = 140;
+        const intervalo = 5;
+        
+        for (let i = inicio; i <= fin; i += intervalo) {
+            options.push({
+                value: i.toString(),
+                label: `+${i} minutos`
+            });
+        }
+        
+        return options;
+    };
+    
+    const waitTimeOptions = generateWaitTimeOptions();
+    
+    // Función para generar session_id
+    const generateSessionId = () => {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 10);
+        return `session_${timestamp}_${random}`;
+    };
+    
+
+    
+    // Cargar agendamientos existentes
+    useEffect(() => {
+        if (user?.sede_id) {
+            fetchAppointments();
+        }
+    }, [user?.sede_id]);
+    
+    const fetchAppointments = async () => {
+        try {
+            setLoadingAppointments(true);
+            const response = await fetch(`${API_ROUTES.APPOINTMENTS.LIST}?sede_id=${user.sede_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setAppointments(data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching appointments:', error);
+            showToast('Error al cargar los agendamientos', 'error');
+        } finally {
+            setLoadingAppointments(false);
+        }
+    };
+    
+    const handleSearchOrder = async () => {
+        if (!plate.trim()) {
+            showToast('Por favor ingresa una placa', 'error');
+            return;
+        }
+        
+        try {
+            setSearching(true);
+            setOrderNotFound(false);
+            setInspectionOrder(null);
+            
+            const response = await fetch(`${API_ROUTES.INSPECTION_ORDERS.SEARCH_BY_PLATE}?plate=${encodeURIComponent(plate.trim())}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.data) {
+                    setInspectionOrder(data.data);
+                } else {
+                    setOrderNotFound(true);
+                }
+            } else {
+                setOrderNotFound(true);
+            }
+        } catch (error) {
+            console.error('Error searching order:', error);
+            showToast('Error al buscar la orden', 'error');
+        } finally {
+            setSearching(false);
+        }
+    };
+    
+    const handleCreateAppointment = async () => {
+        if (!inspectionOrder || !waitTime) {
+            showToast('Por favor completa todos los campos', 'error');
+            return;
+        }
+        
+        try {
+            setCreatingAppointment(true);
+            
+            // Calcular tiempo de agendamiento
+            const now = new Date();
+            const appointmentTime = new Date(now.getTime() + (parseInt(waitTime) * 60 * 1000));
+            
+            const appointmentData = {
+                sede_id: user.sede_id,
+                inspection_order_id: inspectionOrder.id,
+                user_id: user.id,
+                scheduled_date: appointmentTime.toISOString().split('T')[0],
+                scheduled_time: appointmentTime.toTimeString().split(' ')[0],
+                session_id: generateSessionId(),
+                status: 'pending'
+            };
+            
+            const response = await fetch(API_ROUTES.INSPECTOR_ALIADO.APPOINTMENTS.CREATE, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify(appointmentData)
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                showToast('Agendamiento creado exitosamente', 'success');
+                
+                // Limpiar formulario
+                setPlate('');
+                setInspectionOrder(null);
+                setOrderNotFound(false);
+                setWaitTime('');
+                
+                // Recargar agendamientos
+                fetchAppointments();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al crear el agendamiento');
+            }
+        } catch (error) {
+            console.error('Error creating appointment:', error);
+            showToast(error.message || 'Error al crear el agendamiento', 'error');
+        } finally {
+            setCreatingAppointment(false);
+        }
+    };
+    
+    const handleStartInspection = (appointment) => {
+        if (appointment.session_id) {
+            const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
+            const inspectionUrl = `${base}/inspector/view/${appointment.session_id}`;
+            console.log('🚀 Abriendo inspección:', inspectionUrl);
+            window.open(inspectionUrl, '_blank');
+        }
+    };
+    
+    const handleRefreshAppointments = async () => {
+        setRefreshing(true);
+        await fetchAppointments();
+        setRefreshing(false);
+    };
+    
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'pending':
+                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
+            case 'active':
+                return <Badge variant="default" className="bg-green-100 text-green-800">Activa</Badge>;
+            case 'completed':
+                return <Badge variant="default" className="bg-blue-100 text-blue-800">Completada</Badge>;
+            case 'cancelled':
+                return <Badge variant="destructive">Cancelada</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+    
+    return (
+        <div className="container mx-auto p-6">
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">Inspector Aliado</h1>
+                <p className="text-gray-600">Gestión de inspecciones y agendamientos</p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Parte Izquierda - Formulario de Búsqueda */}
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center">
+                                <Search className="h-5 w-5 mr-2" />
+                                Buscar Orden de Inspección
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <Label htmlFor="plate">Placa del Vehículo</Label>
+                                <div className="flex gap-2 mt-2">
+                                    <Input
+                                        id="plate"
+                                        value={plate}
+                                        onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                                        placeholder="Ej: ABC123"
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchOrder()}
+                                    />
+                                    <Button 
+                                        onClick={handleSearchOrder}
+                                        disabled={searching || !plate.trim()}
+                                    >
+                                        {searching ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Search className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                            
+                            {/* Resultado de búsqueda */}
+                            {orderNotFound && (
+                                <Alert>
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertDescription>
+                                        No se encontró una orden de inspección para la placa "{plate}"
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            
+                            {inspectionOrder && (
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-green-800 mb-3 flex items-center">
+                                        <CheckCircle className="h-5 w-5 mr-2" />
+                                        Orden Encontrada
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="font-medium text-gray-600">Placa:</span>
+                                            <p className="text-gray-800 font-semibold">{inspectionOrder.placa}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-gray-600">Cliente:</span>
+                                            <p className="text-gray-800">{inspectionOrder.nombre_contacto}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-gray-600">Teléfono:</span>
+                                            <p className="text-gray-800">{inspectionOrder.celular_contacto}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-gray-600">Correo:</span>
+                                            <p className="text-gray-800">{inspectionOrder.email_contacto || 'No especificado'}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <Separator className="my-4" />
+                                    
+                                    <div>
+                                        <Label htmlFor="waitTime">Tiempo de Espera</Label>
+                                        <Select value={waitTime} onValueChange={setWaitTime}>
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue placeholder="Selecciona el tiempo de espera" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {waitTimeOptions.map((option) => (
+                                                    <SelectItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    
+                                    <Button 
+                                        onClick={handleCreateAppointment}
+                                        disabled={creatingAppointment || !waitTime}
+                                        className="w-full mt-4"
+                                    >
+                                        {creatingAppointment ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Creando Agendamiento...
+                                            </>
+                                        ) : (
+                                            'Crear Agendamiento'
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                {/* Parte Derecha - Tabla de Agendamientos */}
+                <div>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center">
+                                    <Calendar className="h-5 w-5 mr-2" />
+                                    Agendamientos del CDA
+                                </CardTitle>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={handleRefreshAppointments}
+                                    disabled={refreshing}
+                                >
+                                    {refreshing ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {loadingAppointments ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin" />
+                                    <span className="ml-2">Cargando agendamientos...</span>
+                                </div>
+                            ) : appointments.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    No hay agendamientos registrados
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Placa</TableHead>
+                                                <TableHead>Cliente</TableHead>
+                                                <TableHead>Teléfono</TableHead>
+                                                <TableHead>Correo</TableHead>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Hora</TableHead>
+                                                <TableHead>Estado</TableHead>
+                                                <TableHead>Acciones</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {appointments.map((appointment) => (
+                                                <TableRow key={appointment.id}>
+                                                    <TableCell className="font-medium">
+                                                        {appointment.inspectionOrder?.placa}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.inspectionOrder?.nombre_contacto}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.inspectionOrder?.celular_contacto}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.inspectionOrder?.email_contacto || '-'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.scheduled_date ? 
+                                                            new Date(appointment.scheduled_date).toLocaleDateString('es-ES') : 
+                                                            '-'
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.scheduled_time || '-'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {getStatusBadge(appointment.status)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleStartInspection(appointment)}
+                                                            disabled={!appointment.session_id}
+                                                        >
+                                                            <Play className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default InspectorAliado;

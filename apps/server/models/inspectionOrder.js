@@ -157,6 +157,11 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         allowNull: true,
         comment: 'Código FASECOLDA del vehículo (opcional)'
     },
+    inspection_link: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Link único para acceder a la inspección de asegurabilidad'
+    },
     tipo_doc: {
         type: DataTypes.STRING(10),
         allowNull: false,
@@ -235,6 +240,15 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                     console.error('❌ Error auto-asignando commercial_user_id:', error);
                 }
             }
+
+            // Generar link único para la inspección (se completará en afterCreate)
+            if (!inspectionOrder.inspection_link) {
+                const timestamp = Date.now();
+                const uniqueHash = `${inspectionOrder.placa}_temp_${timestamp}`;
+                const encodedHash = Buffer.from(uniqueHash).toString('base64').replace(/[+/=]/g, '');
+                inspectionOrder.inspection_link = `/inspeccion/${encodedHash}`;
+                console.log(`🔗 Link temporal generado: ${inspectionOrder.inspection_link}`);
+            }
         },
         beforeUpdate: async (inspectionOrder, options) => {
             // Si cambió clave_intermediario, actualizar commercial_user_id
@@ -258,6 +272,53 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                 } catch (error) {
                     console.error('❌ Error actualizando commercial_user_id:', error);
                 }
+            }
+        },
+        
+        afterCreate: async (inspectionOrder, options) => {
+            // Generar link final con el ID real
+            try {
+                const timestamp = Date.now();
+                const uniqueHash = `${inspectionOrder.placa}_${inspectionOrder.id}_${timestamp}`;
+                const encodedHash = Buffer.from(uniqueHash).toString('base64').replace(/[+/=]/g, '');
+                const finalLink = `/inspeccion/${encodedHash}`;
+                
+                // Actualizar el link con el hash final
+                await inspectionOrder.update({
+                    inspection_link: finalLink
+                });
+                
+                console.log(`🔗 Link final generado: ${finalLink}`);
+            } catch (error) {
+                console.error('❌ Error generando link final:', error);
+            }
+
+            // Enviar SMS con el link de inspección
+            try {
+                const smsService = await import('../services/channels/smsService.js');
+                
+                // const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, cuando estés listo para tu inspección de asegurabilidad ingresa a este link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+                const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
+                
+                await smsService.default.send({
+                    recipient_phone: inspectionOrder.celular_contacto,
+                    content: smsMessage,
+                    priority: 'normal',
+                    metadata: {
+                        inspection_order_id: inspectionOrder.id,
+                        placa: inspectionOrder.placa,
+                        nombre_contacto: inspectionOrder.nombre_contacto,
+                        channel_data: {
+                            sms: {
+                                message: smsMessage
+                            }
+                        }
+                    }
+                });
+                
+                console.log(`📱 SMS enviado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
+            } catch (error) {
+                console.error('❌ Error enviando SMS con link de inspección:', error);
             }
         },
         

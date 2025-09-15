@@ -13,11 +13,15 @@ import ResetPassword from "@/pages/ResetPassword"
 import ComercialMundial from "@/pages/ComercialMundial"
 import AgenteContacto from "@/pages/AgenteContacto"
 import CoordinadorContacto from "@/pages/CoordinadorContacto"
+import CoordinadorVML from "@/pages/CoordinadorVML"
 import NotificationTemplates from "@/pages/NotificationTemplates"
 import ChannelConfigurations from "@/pages/ChannelConfigurations"
 import NotificationAdmin from "@/pages/NotificationAdmin"
 import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
 import InspectionReport from "@/pages/InspectionReport"
+import Inspeccion from "@/pages/Inspeccion"
+import InspeccionEspera from "@/pages/InspeccionEspera"
+import InspectorAliado from "@/pages/InspectorAliado"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 
@@ -69,6 +73,18 @@ function AppContent() {
         <Route
           path="/checkinspectionorder"
           element={<CheckInspectionOrder />}
+        />
+
+        {/* Ruta pública para inspección de asegurabilidad */}
+        <Route
+          path="/inspeccion/:hash"
+          element={<Inspeccion />}
+        />
+
+        {/* Ruta pública para estado de espera de inspección */}
+        <Route
+          path="/espera/inspeccion/:hash"
+          element={<InspeccionEspera />}
         />
 
         {/* Rutas protegidas */}
@@ -183,6 +199,18 @@ function AppContent() {
           }
         />
 
+        {/* Ruta de Coordinador VML */}
+        <Route
+          path="/coordinador-vml"
+          element={
+            <RoleBasedRoute requiredRoles={['coordinador_vml', 'super_admin', 'help_desk']}>
+              <AuthenticatedLayout>
+                <CoordinadorVML />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
         {/* Ruta de Agente de Contact Center */}
         <Route
           path="/agente-contacto"
@@ -190,6 +218,18 @@ function AppContent() {
             <RoleBasedRoute requiredRoles={['agente_contacto', 'super_admin']}>
               <AuthenticatedLayout>
                 <AgenteContacto />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de Inspector Aliado */}
+        <Route
+          path="/inspector-aliado"
+          element={
+            <RoleBasedRoute requiredRoles={['inspector_aliado', 'super_admin']}>
+              <AuthenticatedLayout>
+                <InspectorAliado />
               </AuthenticatedLayout>
             </RoleBasedRoute>
           }

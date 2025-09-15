@@ -17,6 +17,7 @@ import InspectionCategory from '../models/inspectionCategory.js';
 import InspectionCategoryResponse from '../models/inspectionCategoryResponse.js';
 import MechanicalTest from '../models/mechanicalTest.js';
 import InspectionModality from '../models/inspectionModality.js';
+import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 
 
@@ -357,6 +358,7 @@ class InspectionOrderController extends BaseController {
                     intermediary_key: order.clave_intermediario,
                     inspection_result_details: order.inspection_result_details,
                     appointments: sortedAppointments,
+                    metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
                     session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null,
                     fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, order.placa).fixedStatus,
                     badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).badgeColor,
@@ -1023,6 +1025,171 @@ class InspectionOrderController extends BaseController {
     }
 
     /**
+     * Obtener orden de inspección por hash de acceso (público)
+     */
+    async getByHash(req, res) {
+        try {
+            const { hash } = req.params;
+
+            if (!hash) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El hash de acceso es requerido'
+                });
+            }
+
+            // Buscar la orden directamente en InspectionOrder por inspection_link
+            const order = await InspectionOrder.findOne({
+                where: { inspection_link: `/inspeccion/${hash}` },
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    },
+                    {
+                        model: Appointment,
+                        as: 'appointments',
+                        attributes: ['id', 'scheduled_date', 'scheduled_time', 'session_id', 'status'],
+                        include: [
+                            {
+                                model: Sede,
+                                as: 'sede',
+                                attributes: ['id', 'name', 'address']
+                            },
+                            {
+                                model: InspectionModality,
+                                as: 'inspectionModality',
+                                attributes: ['id', 'name', 'code']
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    id: order.id,
+                    numero: order.numero,
+                    placa: order.placa,
+                    nombre_contacto: order.nombre_contacto,
+                    celular_contacto: order.celular_contacto,
+                    status: order.InspectionOrderStatus?.name || 'Sin estado',
+                    created_at: order.created_at,
+                    appointment: order.appointments && order.appointments.length > 0 ? {
+                        id: order.appointments[0].id,
+                        scheduled_date: order.appointments[0].scheduled_date,
+                        scheduled_time: order.appointments[0].scheduled_time,
+                        session_id: order.appointments[0].session_id,
+                        status: order.appointments[0].status,
+                        sede: order.appointments[0].sede,
+                        modality: order.appointments[0].inspectionModality
+                    } : null
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo orden por hash:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Iniciar inspección de una orden
+     */
+    async startInspection(req, res) {
+        try {
+            const { id } = req.params;
+            const { inspector_id } = req.body;
+
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El ID de la orden es requerido'
+                });
+            }
+
+            // Buscar la orden
+            const order = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // Verificar que la orden esté en estado válido para iniciar inspección
+            if (order.status !== 1) { // Asumiendo que 1 es "Pendiente" o estado válido para iniciar
+                return res.status(400).json({
+                    success: false,
+                    message: 'La orden no está en estado válido para iniciar inspección'
+                });
+            }
+
+            // Actualizar estado a "En Proceso" (asumiendo que 2 es "En Proceso")
+            await order.update({
+                status: 2,
+                inspector_id: inspector_id || null,
+                fecha_inicio_inspeccion: new Date()
+            });
+
+            // Disparar evento de inspección iniciada
+            try {
+                await automatedEventTriggers.triggerEvent('inspection_started', {
+                    order_id: order.id,
+                    inspector_id: inspector_id,
+                    placa: order.placa,
+                    numero_orden: order.numero
+                });
+            } catch (eventError) {
+                console.warn('⚠️ Error disparando evento inspection_started:', eventError);
+            }
+
+            res.json({
+                success: true,
+                message: 'Inspección iniciada exitosamente',
+                data: {
+                    id: order.id,
+                    numero: order.numero,
+                    placa: order.placa,
+                    status: 'En Proceso',
+                    inspector_id: inspector_id,
+                    fecha_inicio: order.fecha_inicio_inspeccion
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error iniciando inspección:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
      * Verificar si existe una orden activa con la misma placa
      */
     async checkPlate(req, res) {
@@ -1074,6 +1241,220 @@ class InspectionOrderController extends BaseController {
 
         } catch (error) {
             console.error('❌ Error verificando placa:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Iniciar inspección virtual con inspector y sede asignados
+     */
+    async startVirtualInspection(req, res) {
+        // try {
+            console.log('🔍 === INICIO startVirtualInspection ===');
+            console.log('👤 Usuario autenticado:', req.user ? { id: req.user.id, email: req.user.email } : 'No autenticado');
+            console.log('🎭 Roles del usuario:', req.user?.roles?.map(r => r.name) || 'Sin roles');
+            
+            const { id } = req.params;
+            const { inspector_id, sede_id } = req.body;
+            
+            console.log('📋 Parámetros recibidos:', { id, inspector_id, sede_id });
+
+            if (!inspector_id || !sede_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El inspector y la sede son requeridos'
+                });
+            }
+
+            // Buscar la orden
+            const order = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // Verificar que la orden esté en estado válido
+            if (order.status != 1) {
+                return res.status(400).json({
+                    order: order,
+                    success: false,
+                    message: 'La orden no está en estado válido para iniciar inspección'
+                });
+            }
+
+            // Obtener modalidad virtual
+            const virtualModality = await InspectionModality.findOne({
+                where: { code: 'VIRTUAL' }
+            });
+
+            if (!virtualModality) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Modalidad virtual no encontrada'
+                });
+            }
+
+            // Generar session_id único
+            const generateSessionId = () => {
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substring(2, 10);
+                return `session_${timestamp}_${random}`;
+            };
+
+            const sessionId = generateSessionId();
+
+            // Crear agendamiento
+            const appointment = await Appointment.create({
+                sede_id: sede_id,
+                inspection_order_id: order.id,
+                inspection_modality_id: virtualModality.id,
+                user_id: inspector_id,
+                scheduled_date: new Date().toISOString().split('T')[0],
+                scheduled_time: new Date().toTimeString().split(' ')[0],
+                session_id: sessionId,
+                status: 'pending'
+            });
+
+            // Actualizar estado de la orden
+            await order.update({
+                status: 3, // En Proceso
+                assigned_agent_id: inspector_id,
+                fecha_inicio_inspeccion: new Date()
+            });
+
+            // Obtener información del inspector y sede
+            const inspector = await User.findByPk(inspector_id, {
+                attributes: ['id', 'name', 'email']
+            });
+
+            const sede = await Sede.findByPk(sede_id, {
+                include: [
+                    {
+                        model: City,
+                        as: 'city',
+                        attributes: ['id', 'name']
+                    }
+                ],
+                attributes: ['id', 'name', 'address']
+            });
+
+            // Emitir evento WebSocket para notificar al usuario
+            try {
+                const socketManager = await import('../websocket/socketManager.js');
+                const hash = order.inspection_link?.replace('/inspeccion/', '');
+                
+                if (hash) {
+                    // Emitir actualización de estado de cola
+                    socketManager.default.emitQueueStatusUpdate(hash, {
+                        session_id: sessionId,
+                        inspector: inspector,
+                        sede: sede,
+                        redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`,
+                        estado: 'en_proceso'
+                    });
+                    
+                    // Emitir evento específico de inspector asignado
+                    socketManager.default.emitInspectorAssigned(hash, {
+                        inspector: inspector,
+                        status: 'en_proceso',
+                        session_id: sessionId,
+                        sede: sede
+                    });
+                }
+            } catch (wsError) {
+                console.warn('⚠️ Error emitiendo evento WebSocket:', wsError);
+            }
+
+            console.log('✅ Inspección virtual iniciada exitosamente');
+            console.log('🔍 === FIN startVirtualInspection ===');
+            
+            res.json({
+                success: true,
+                message: 'Inspección virtual iniciada exitosamente',
+                data: {
+                    appointment_id: appointment.id,
+                    session_id: sessionId,
+                    inspector: inspector,
+                    sede: sede,
+                    redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`
+                }
+            });
+
+        // } catch (error) {
+        //     console.error('❌ Error iniciando inspección virtual:', error);
+        //     console.error('🔍 === ERROR startVirtualInspection ===');
+        //     res.status(500).json({
+        //         success: false,
+        //         message: 'Error interno del servidor',
+        //         error: error.message
+        //     });
+        // }
+    }
+
+    /**
+     * Buscar orden de inspección por placa
+     */
+    async searchByPlate(req, res) {
+        try {
+            const { plate } = req.query;
+
+            if (!plate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La placa es requerida'
+                });
+            }
+
+            // Buscar la orden por placa
+            const order = await InspectionOrder.findOne({
+                where: { placa: plate.toUpperCase() },
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    id: order.id,
+                    numero: order.numero,
+                    placa: order.placa,
+                    nombre_contacto: order.nombre_contacto,
+                    celular_contacto: order.celular_contacto,
+                    email_contacto: order.email_contacto,
+                    status: order.InspectionOrderStatus?.name || 'Sin estado',
+                    created_at: order.created_at
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error buscando orden por placa:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
