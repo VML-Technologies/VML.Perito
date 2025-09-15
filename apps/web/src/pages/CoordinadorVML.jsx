@@ -133,8 +133,8 @@ const CoordinadorVML = () => {
             setLoadingSedeAppointments(true);
             const token = localStorage.getItem('authToken');
 
-            // Obtener todos los agendamientos con modalidad SEDE
-            const response = await fetch(`${API_ROUTES.APPOINTMENTS.LIST}?status=&inspection_order_id=&sede_id=`, {
+            // Usar la nueva ruta específica para coordinador que filtra por status 1,2,3
+            const response = await fetch(API_ROUTES.APPOINTMENTS.SEDE_COORDINATOR, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -142,19 +142,19 @@ const CoordinadorVML = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                const sedeAppointments = data.data.filter(appointment =>
-                    appointment.inspectionModality?.code === 'SEDE'
-                );
-                setSedeAppointments(sedeAppointments);
+                console.log('🏢 Appointments en sede recibidos:', data.data);
+                setSedeAppointments(data.data);
 
                 // Calcular estadísticas
                 const stats = {
-                    pending: sedeAppointments.filter(a => a.status === 'pending').length,
-                    active: sedeAppointments.filter(a => a.status === 'active').length,
-                    completed: sedeAppointments.filter(a => a.status === 'completed').length,
-                    total: sedeAppointments.length
+                    pending: data.data.filter(a => a.status === 'pending').length,
+                    active: data.data.filter(a => a.status === 'active').length,
+                    completed: data.data.filter(a => a.status === 'completed').length,
+                    total: data.data.length
                 };
                 setSedeStats(stats);
+            } else {
+                throw new Error('Error al obtener agendamientos en sede');
             }
         } catch (error) {
             console.error('Error fetching sede appointments:', error);
@@ -249,6 +249,7 @@ const CoordinadorVML = () => {
             }
             // Si hay nuevos agendamientos en sede, actualizar la tabla
             if (coordinatorData.sedeAppointments) {
+                console.log('🏢 Actualizando appointments en sede desde WebSocket:', coordinatorData.sedeAppointments);
                 setSedeAppointments(coordinatorData.sedeAppointments);
                 // Recalcular estadísticas
                 const stats = {
@@ -676,6 +677,7 @@ const CoordinadorVML = () => {
                                             <TableHead>Placa y Sede</TableHead>
                                             <TableHead>Cliente</TableHead>
                                             <TableHead>Fecha Programada</TableHead>
+                                            <TableHead>Inspector Asignado</TableHead>
                                             <TableHead>Estado</TableHead>
                                             <TableHead>Acciones</TableHead>
                                         </TableRow>
@@ -724,6 +726,27 @@ const CoordinadorVML = () => {
                                                             <span className="text-sm">{appointment.scheduled_time || '-'}</span>
                                                         </div>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {appointment.user && appointment.user.roles && 
+                                                     appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="h-4 w-4 text-gray-500" />
+                                                            <div>
+                                                                <p className="font-medium text-sm">{appointment.user.name}</p>
+                                                                <p className="text-xs text-gray-500">{appointment.user.email}</p>
+                                                                <div className="flex gap-1 mt-1">
+                                                                    {appointment.user.roles.map((role, index) => (
+                                                                        <Badge key={index} variant="outline" className="text-xs">
+                                                                            {role.name}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-500">Sin asignar</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     {getSedeStatusBadge(appointment.status)}

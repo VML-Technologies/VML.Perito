@@ -74,6 +74,7 @@ export const API_ROUTES = {
         INSPECTION_REPORT: (sessionId) => `${API_BASE_URL}/api/inspection-orders/${sessionId}/inspection-report`,
         ORDER_BY_HASH: (hash) => `${API_BASE_URL}/api/inspection-orders/by-hash/${hash}`,
         START_VIRTUAL_INSPECTION: (id) => `${API_BASE_URL}/api/inspection-orders/${id}/start-virtual-inspection`,
+        FULL_REPORT: (inspectionOrderId) => `${API_BASE_URL}/api/inspection-orders/full/${inspectionOrderId}`,
     },
     // ===== RUTAS DE HISTORIAL DE ÓRDENES =====
     ORDER_HISTORY: {
@@ -226,6 +227,8 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/appointments`,
         UPDATE: (id) => `${API_BASE_URL}/api/appointments/${id}`,
         ASSIGN_INSPECTOR: (id) => `${API_BASE_URL}/api/appointments/${id}/assign-inspector`,
+        SEDE_COORDINATOR: `${API_BASE_URL}/api/appointments/sede-coordinator`,
+        SEDE_INSPECTOR_ALIADO: `${API_BASE_URL}/api/appointments/sede-inspector-aliado`,
 
         // Modalidades y sedes
         MODALITIES: `${API_BASE_URL}/api/appointments/modalities`,

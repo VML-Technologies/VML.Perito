@@ -8,14 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useNotifications } from '@/hooks/use-notifications';
+import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, RefreshCw, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
+import { useNotificationContext } from '@/contexts/notification-context';
 import { API_ROUTES } from '@/config/api';
 import { useAuth } from '@/contexts/auth-context';
 
 const InspectorAliado = () => {
     const { user } = useAuth();
-    const { showToast } = useNotifications();
+    const { showToast } = useNotificationContext();
     
     // Estados para el formulario de búsqueda
     const [plate, setPlate] = useState('');
@@ -72,7 +72,7 @@ const InspectorAliado = () => {
     const fetchAppointments = async () => {
         try {
             setLoadingAppointments(true);
-            const response = await fetch(`${API_ROUTES.APPOINTMENTS.LIST}?sede_id=${user.sede_id}`, {
+            const response = await fetch(`${API_ROUTES.APPOINTMENTS.SEDE_INSPECTOR_ALIADO}?sede_id=${user.sede_id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -82,7 +82,10 @@ const InspectorAliado = () => {
             
             if (response.ok) {
                 const data = await response.json();
+                console.log('🏢 Appointments para Inspector Aliado recibidos:', data.data);
                 setAppointments(data.data || []);
+            } else {
+                throw new Error('Error al obtener agendamientos');
             }
         } catch (error) {
             console.error('Error fetching appointments:', error);
@@ -184,13 +187,42 @@ const InspectorAliado = () => {
             setCreatingAppointment(false);
         }
     };
-    
-    const handleStartInspection = (appointment) => {
+
+    const handleCopyLink = async (appointment) => {
         if (appointment.session_id) {
             const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
             const inspectionUrl = `${base}/inspector/view/${appointment.session_id}`;
-            console.log('🚀 Abriendo inspección:', inspectionUrl);
-            window.open(inspectionUrl, '_blank');
+            
+            try {
+                // Verificar si navigator.clipboard está disponible
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(inspectionUrl);
+                    showToast('Enlace copiado al portapapeles', 'success');
+                } else {
+                    // Fallback para navegadores que no soportan clipboard API
+                    const textArea = document.createElement('textarea');
+                    textArea.value = inspectionUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                        showToast('Enlace copiado al portapapeles', 'success');
+                    } catch (fallbackError) {
+                        console.error('Error with fallback copy:', fallbackError);
+                        showToast('Error al copiar el enlace', 'error');
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+                showToast('Error al copiar el enlace', 'error');
+            }
         }
     };
     
@@ -216,15 +248,15 @@ const InspectorAliado = () => {
     };
     
     return (
-        <div className="container mx-auto p-6">
+        <div className="">
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900">Inspector Aliado</h1>
                 <p className="text-gray-600">Gestión de inspecciones y agendamientos</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex gap-2">
                 {/* Parte Izquierda - Formulario de Búsqueda */}
-                <div className="space-y-6">
+                <div className="w-3/12">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center">
@@ -330,7 +362,7 @@ const InspectorAliado = () => {
                 </div>
                 
                 {/* Parte Derecha - Tabla de Agendamientos */}
-                <div>
+                <div className="w-9/12">
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-center">
@@ -369,51 +401,83 @@ const InspectorAliado = () => {
                                             <TableRow>
                                                 <TableHead>Placa</TableHead>
                                                 <TableHead>Cliente</TableHead>
-                                                <TableHead>Teléfono</TableHead>
-                                                <TableHead>Correo</TableHead>
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>Hora</TableHead>
-                                                <TableHead>Estado</TableHead>
+                                                <TableHead>Inspección</TableHead>
+                                                <TableHead>Inspector Asignado</TableHead>
                                                 <TableHead>Acciones</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {appointments.map((appointment) => (
-                                                <TableRow key={appointment.id}>
-                                                    <TableCell className="font-medium">
-                                                        {appointment.inspectionOrder?.placa}
+                                                <>
+                                                 <TableRow key={appointment.id}>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <Car className="h-4 w-4 text-gray-500" />
+                                                            <span className="font-medium">{appointment.inspectionOrder?.placa}</span>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {appointment.inspectionOrder?.nombre_contacto}
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="h-4 w-4 text-gray-500" />
+                                                            <div>
+                                                                <p className="font-medium">{appointment.inspectionOrder?.nombre_contacto}</p>
+                                                                {appointment.inspectionOrder?.celular_contacto && (
+                                                                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                                        <Phone className="h-3 w-3" />
+                                                                        {appointment.inspectionOrder.celular_contacto}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {appointment.inspectionOrder?.celular_contacto}
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar className="h-4 w-4 text-gray-500" />
+                                                                <span className="text-sm">
+                                                                    {appointment.scheduled_date ?
+                                                                        new Date(appointment.scheduled_date).toLocaleDateString('es-ES') :
+                                                                        '-'
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Clock className="h-4 w-4 text-gray-500" />
+                                                                <span className="text-sm">{appointment.scheduled_time || '-'}</span>
+                                                            </div>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {appointment.inspectionOrder?.email_contacto || '-'}
+                                                        {appointment.user && appointment.user.roles && 
+                                                         appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="h-4 w-4 text-gray-500" />
+                                                                <div>
+                                                                    <p className="font-medium text-sm">{appointment.user.name}</p>
+                                                                    <p className="text-xs text-gray-500">{appointment.user.email}</p>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-500">Sin asignar</span>
+                                                        )}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {appointment.scheduled_date ? 
-                                                            new Date(appointment.scheduled_date).toLocaleDateString('es-ES') : 
-                                                            '-'
-                                                        }
+                                                        <div className="flex gap-2">
+                                                            {appointment.session_id && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => handleCopyLink(appointment)}
+                                                                    title="Copiar enlace de inspección"
+                                                                >
+                                                                    <Copy className="h-4 w-4" /> Copiar enlace
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        {appointment.scheduled_time || '-'}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {getStatusBadge(appointment.status)}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() => handleStartInspection(appointment)}
-                                                            disabled={!appointment.session_id}
-                                                        >
-                                                            <Play className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
+                                                    </TableRow>
+                                                </>
                                             ))}
                                         </TableBody>
                                     </Table>
