@@ -171,6 +171,10 @@ class WebhookController {
                     console.log(`🔄 Manejando inspection_order.started`);
                     return await this.handleInspectionOrderStarted(data, context, options);
                     
+                case 'inspection_order.process_existing':
+                    console.log(`🔄 Manejando inspection_order.process_existing`);
+                    return await this.handleInspectionOrderProcessExisting(data, context, options);
+                    
                 default:
                     console.error(`❌ Tipo de evento no soportado: ${event}`);
                     throw new Error(`Tipo de evento no soportado: ${event}`);
@@ -232,6 +236,162 @@ class WebhookController {
             
         } catch (error) {
             console.error(`❌ Error en handleInspectionOrderCreated:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Manejar procesamiento de orden de inspección existente (sin inspection_link)
+     * Este webhook se usa cuando otra aplicación crea una orden y necesita generar el link y SMS
+     */
+    async handleInspectionOrderProcessExisting(data, context, options) {
+        console.log(`🔄 Iniciando handleInspectionOrderProcessExisting`);
+        console.log(`📋 Datos recibidos:`, JSON.stringify(data, null, 2));
+        
+        try {
+            // 1. Validar que se proporcione el ID de la orden
+            if (!data.inspection_order_id) {
+                throw new ValidationError(['El ID de la orden de inspección es requerido']);
+            }
+            
+            console.log(`🔍 Procesando orden ID: ${data.inspection_order_id}`);
+            
+            // 2. Importar modelos necesarios
+            const { InspectionOrder } = await import('../models/index.js');
+            
+            // 3. Buscar la orden de inspección
+            const inspectionOrder = await InspectionOrder.findByPk(data.inspection_order_id, {
+                include: [
+                    {
+                        model: (await import('../models/index.js')).InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+            
+            if (!inspectionOrder) {
+                throw new Error(`Orden de inspección con ID ${data.inspection_order_id} no encontrada`);
+            }
+            
+            console.log(`✅ Orden encontrada: ${inspectionOrder.numero} - ${inspectionOrder.placa}`);
+            
+            // 4. Verificar si ya tiene inspection_link
+            if (inspectionOrder.inspection_link) {
+                console.log(`⚠️ La orden ya tiene inspection_link: ${inspectionOrder.inspection_link}`);
+                return {
+                    status: 'already_processed',
+                    message: 'La orden ya tiene inspection_link generado',
+                    inspection_link: inspectionOrder.inspection_link,
+                    processed_at: new Date().toISOString()
+                };
+            }
+            
+            // 5. Generar inspection_link único
+            console.log(`🔗 Generando inspection_link...`);
+            const timestamp = Date.now();
+            const uniqueHash = `${inspectionOrder.placa}_${inspectionOrder.id}_${timestamp}`;
+            const encodedHash = Buffer.from(uniqueHash).toString('base64').replace(/[+/=]/g, '');
+            const finalLink = `/inspeccion/${encodedHash}`;
+            
+            // 6. Actualizar la orden con el inspection_link
+            await inspectionOrder.update({
+                inspection_link: finalLink
+            });
+            
+            console.log(`✅ inspection_link generado y actualizado: ${finalLink}`);
+            
+            // 7. Enviar SMS automático
+            console.log(`📱 Enviando SMS automático...`);
+            try {
+                const smsService = await import('../services/channels/smsService.js');
+                
+                const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${finalLink}`;
+                
+                const smsResult = await smsService.default.send({
+                    recipient_phone: inspectionOrder.celular_contacto,
+                    content: smsMessage,
+                    priority: 'normal',
+                    metadata: {
+                        inspection_order_id: inspectionOrder.id,
+                        placa: inspectionOrder.placa,
+                        nombre_contacto: inspectionOrder.nombre_contacto,
+                        channel_data: {
+                            sms: {
+                                message: smsMessage
+                            }
+                        }
+                    }
+                });
+                
+                console.log(`✅ SMS enviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+                
+                // 8. Disparar evento de procesamiento completado
+                try {
+                    await automatedEventTriggers.triggerInspectionOrderEvents('processed_external', {
+                        id: inspectionOrder.id,
+                        numero: inspectionOrder.numero,
+                        nombre_cliente: inspectionOrder.nombre_cliente,
+                        correo_cliente: inspectionOrder.correo_cliente,
+                        celular_cliente: inspectionOrder.celular_cliente,
+                        placa: inspectionOrder.placa,
+                        marca: inspectionOrder.marca,
+                        linea: inspectionOrder.linea,
+                        modelo: inspectionOrder.modelo,
+                        status: inspectionOrder.InspectionOrderStatus?.name || 'Nueva',
+                        inspection_link: finalLink,
+                        created_at: inspectionOrder.created_at,
+                        clave_intermediario: inspectionOrder.clave_intermediario
+                    }, {
+                        ...context,
+                        webhook_source: true,
+                        trigger_source: 'external_webhook_process',
+                        processed_at: new Date().toISOString()
+                    });
+                    
+                    console.log(`✅ Evento processed_external disparado`);
+                } catch (eventError) {
+                    console.warn('⚠️ Error disparando evento processed_external:', eventError);
+                }
+                
+                const response = {
+                    status: 'success',
+                    message: 'Orden procesada exitosamente',
+                    data: {
+                        inspection_order_id: inspectionOrder.id,
+                        numero: inspectionOrder.numero,
+                        placa: inspectionOrder.placa,
+                        inspection_link: finalLink,
+                        sms_sent: true,
+                        sms_recipient: inspectionOrder.celular_contacto,
+                        processed_at: new Date().toISOString()
+                    }
+                };
+                
+                console.log(`✅ handleInspectionOrderProcessExisting completado:`, response);
+                return response;
+                
+            } catch (smsError) {
+                console.error('❌ Error enviando SMS:', smsError);
+                
+                // Aún así, devolver éxito porque el link se generó correctamente
+                return {
+                    status: 'partial_success',
+                    message: 'Link generado exitosamente, pero falló el envío de SMS',
+                    data: {
+                        inspection_order_id: inspectionOrder.id,
+                        numero: inspectionOrder.numero,
+                        placa: inspectionOrder.placa,
+                        inspection_link: finalLink,
+                        sms_sent: false,
+                        sms_error: smsError.message,
+                        processed_at: new Date().toISOString()
+                    }
+                };
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error en handleInspectionOrderProcessExisting:`, error);
             throw error;
         }
     }
@@ -318,6 +478,12 @@ class WebhookController {
             case 'inspection_order.assigned':
                 if (!payload.data.inspection_order) {
                     errors.push('data.inspection_order es requerido');
+                }
+                break;
+                
+            case 'inspection_order.process_existing':
+                if (!payload.data.inspection_order_id) {
+                    errors.push('data.inspection_order_id es requerido');
                 }
                 break;
                 
