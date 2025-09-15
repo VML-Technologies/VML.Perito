@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { useEffect } from "react"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
@@ -24,6 +25,32 @@ import InspeccionEspera from "@/pages/InspeccionEspera"
 import InspectorAliado from "@/pages/InspectorAliado"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
+import { useMatomo } from "@/hooks/use-matomo"
+import { analytics, getPageName } from "@/utils/analytics"
+
+// Componente para trackear rutas automáticamente
+function RouteTracker() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Trackear vista de página cuando cambia la ruta
+    const pageName = getPageName(location.pathname);
+    analytics.pageView(pageName, location.pathname);
+
+    // Trackear login si el usuario está autenticado y es la primera vez
+    if (user && location.pathname !== '/login') {
+      // Solo trackear login una vez por sesión
+      const hasTrackedLogin = sessionStorage.getItem('matomo_login_tracked');
+      if (!hasTrackedLogin) {
+        analytics.userLogin(user.id, user.role);
+        sessionStorage.setItem('matomo_login_tracked', 'true');
+      }
+    }
+  }, [location.pathname, user]);
+
+  return null; // Este componente no renderiza nada
+}
 
 // Componente para redirección inteligente
 function SmartRedirect() {
@@ -48,8 +75,12 @@ function SmartRedirect() {
 }
 
 function AppContent() {
+  // Inicializar Matomo Analytics
+  useMatomo();
+
   return (
     <Router>
+      <RouteTracker />
       <Routes>
         {/* Ruta pública para login */}
         <Route
