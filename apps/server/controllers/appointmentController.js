@@ -6,7 +6,9 @@ import {
     Department,
     SedeType,
     Appointment,
-    InspectionOrder
+    InspectionOrder,
+    User,
+    Role
 } from '../models/index.js';
 import { Op } from 'sequelize';
 import EventRegistry from '../services/eventRegistry.js';
@@ -454,6 +456,150 @@ class AppointmentController {
 
         } catch (error) {
             console.error('Error obteniendo agendamientos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Obtener agendamientos en sede para coordinador (solo con status 1,2,3)
+    async getSedeAppointmentsForCoordinator(req, res) {
+        try {
+            console.log('🏢 Obteniendo agendamientos en sede para coordinador...');
+            
+                const appointments = await Appointment.findAll({
+                where: {
+                    deleted_at: null // Solo appointments activos
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        where: {
+                            status: [1, 2, 3] // Solo órdenes con status 1, 2, 3
+                        },
+                        required: true
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [{
+                            model: City,
+                            as: 'city'
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        where: {
+                            code: 'SEDE' // Solo modalidad SEDE
+                        },
+                        required: true
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email'],
+                        required: false, // LEFT JOIN para incluir appointments sin inspector asignado
+                        include: [{
+                            model: Role,
+                            as: 'roles',
+                            attributes: ['id', 'name', 'description'],
+                            through: { attributes: [] } // Excluir tabla intermedia
+                        }]
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+
+            console.log(`📊 Encontrados ${appointments.length} agendamientos en sede para coordinador`);
+
+            res.json({
+                success: true,
+                data: appointments
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo agendamientos en sede para coordinador:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Obtener agendamientos en sede para Inspector Aliado (filtrado por sede del usuario)
+    async getSedeAppointmentsForInspectorAliado(req, res) {
+        try {
+            console.log('🏢 Obteniendo agendamientos en sede para Inspector Aliado...');
+            
+            const { sede_id } = req.query;
+            
+            if (!sede_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'sede_id es requerido'
+                });
+            }
+            
+            const appointments = await Appointment.findAll({
+                where: {
+                    deleted_at: null, // Solo appointments activos
+                    sede_id: sede_id // Filtrar por sede del usuario
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        where: {
+                            status: [1, 2, 3, 4] // Solo órdenes con status 1, 2, 3, 4
+                        },
+                        required: true
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [{
+                            model: City,
+                            as: 'city'
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        where: {
+                            code: 'SEDE' // Solo modalidad SEDE
+                        },
+                        required: true
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email'],
+                        required: false, // LEFT JOIN para incluir appointments sin inspector asignado
+                        include: [{
+                            model: Role,
+                            as: 'roles',
+                            attributes: ['id', 'name', 'description'],
+                            through: { attributes: [] } // Excluir tabla intermedia
+                        }]
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+
+            console.log(`📊 Encontrados ${appointments.length} agendamientos en sede para Inspector Aliado (sede: ${sede_id})`);
+
+            res.json({
+                success: true,
+                data: appointments
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo agendamientos en sede para Inspector Aliado:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',

@@ -301,10 +301,61 @@ class SocketManager {
                 // Obtener estadísticas
                 const stats = inspectionQueueMemoryService.getStats();
                 
+                // Obtener appointments en sede para coordinador
+                const { Appointment, InspectionOrder, Sede, City, InspectionModality, User, Role } = await import('../models/index.js');
+                
+                const sedeAppointments = await Appointment.findAll({
+                    where: {
+                        deleted_at: null // Solo appointments activos
+                    },
+                    include: [
+                        {
+                            model: InspectionOrder,
+                            as: 'inspectionOrder',
+                            where: {
+                                status: [1, 2, 3] // Solo órdenes con status 1, 2, 3
+                            },
+                            required: true
+                        },
+                        {
+                            model: Sede,
+                            as: 'sede',
+                            include: [{
+                                model: City,
+                                as: 'city'
+                            }]
+                        },
+                        {
+                            model: InspectionModality,
+                            as: 'inspectionModality',
+                            where: {
+                                code: 'SEDE' // Solo modalidad SEDE
+                            },
+                            required: true
+                        },
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email'],
+                            required: false, // LEFT JOIN para incluir appointments sin inspector asignado
+                            include: [{
+                                model: Role,
+                                as: 'roles',
+                                attributes: ['id', 'name', 'description'],
+                                through: { attributes: [] } // Excluir tabla intermedia
+                            }]
+                        }
+                    ],
+                    order: [['created_at', 'DESC']]
+                });
+                
+                console.log(`🏢 Encontrados ${sedeAppointments.length} appointments en sede para coordinador`);
+                
                 // Enviar datos al coordinador
                 socket.emit('coordinatorData', {
                     queueData,
                     stats,
+                    sedeAppointments,
                     timestamp: new Date().toISOString()
                 });
                 

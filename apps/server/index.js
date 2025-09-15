@@ -241,6 +241,7 @@ app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeContro
 // ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN UNIFICADAS =====
 
 // Endpoint unificado para órdenes de inspección
+app.get('/api/inspection-orders/full/:id', readLimiter, inspectionOrderController.getFullInspectionOrder);
 app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
 app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
@@ -400,6 +401,8 @@ app.get('/api/public/inspection-queue/hash/:hash', inspectionQueueController.get
 
 // Rutas para gestión de agendamientos
 app.get('/api/appointments', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointments);
+app.get('/api/appointments/sede-coordinator', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForCoordinator);
+app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForInspectorAliado);
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
 app.post('/api/appointments/:id/assign-inspector', requirePermission('appointments.update'), appointmentController.assignInspector);

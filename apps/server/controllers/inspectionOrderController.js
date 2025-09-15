@@ -19,6 +19,7 @@ import MechanicalTest from '../models/mechanicalTest.js';
 import InspectionModality from '../models/inspectionModality.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
+import fs from 'fs';
 
 
 // Función para generar número de orden incremental
@@ -131,6 +132,12 @@ class InspectionOrderController extends BaseController {
         this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
         this.checkPlate = this.checkPlate.bind(this);
         this.getFixedStatus = this.getFixedStatus.bind(this);
+        this.getFullInspectionOrder = this.getFullInspectionOrder.bind(this);
+        // Bind métodos de cálculo
+        this.groupPartsByCategory = this.groupPartsByCategory.bind(this);
+        this.getResponseValue = this.getResponseValue.bind(this);
+        this.calculateChecklistScores = this.calculateChecklistScores.bind(this);
+        this.calculateAsegurabilidad = this.calculateAsegurabilidad.bind(this);
     }
 
     getFixedStatus(statusId, statusName, result, comentariosAnulacion, placa) {
@@ -452,11 +459,13 @@ class InspectionOrderController extends BaseController {
                     }
                 }),
 
-                // Órdenes completadas (estado 4 - Finalizada)
+                // Órdenes completadas
                 InspectionOrder.count({
                     where: {
                         ...whereConditions,
-                        status: 4
+                        //inspection_result: not null or status == 5
+                        inspection_result: { [Op.not]: null },
+                        status: 5
                     }
                 }),
 
@@ -1024,6 +1033,261 @@ class InspectionOrderController extends BaseController {
         return formattedResponses;
     }
 
+    // Función para agrupar partes por categoría
+    groupPartsByCategory(parts) {
+        const grouped = {};
+        parts.forEach(part => {
+            if (!part.categoria) return;
+
+            const categoriaNombre = part.categoria;
+            if (!grouped[categoriaNombre]) {
+                grouped[categoriaNombre] = [];
+            }
+            grouped[categoriaNombre].push(part);
+        });
+        return grouped;
+    }
+
+    // Función para obtener el valor de respuesta formateado
+    getResponseValue(part, partResponses) {
+        const value = partResponses[part.id];
+        if (!value) return 'No presenta';
+
+        if (Array.isArray(part.opciones) && part.opciones.length > 0) {
+            const opt = part.opciones.find(opt => String(opt.value) === String(value));
+            return opt ? opt.label : value;
+        } else {
+            return value === 'bueno' ? 'Bueno' : value === 'regular' ? 'Regular' : value === 'malo' ? 'Malo' : value;
+        }
+    }
+
+    // Función para calcular puntajes del checklist
+    calculateChecklistScores(parts, partResponses) {
+        const groupedParts = this.groupPartsByCategory(parts);
+        const categoryScores = {};
+        let totalPercentSum = 0;
+        let totalPercentCount = 0;
+        let hasRejectionCriteria = false;
+        let hasMinScoreRejection = false;
+
+        Object.entries(groupedParts).forEach(([categoria, parts]) => {
+            // Casos especiales: categorías de rechazo inmediato
+            if (categoria === 'POLITICAS DE ASEGURABILIDAD "Estructura y Carroceria"' ||
+                categoria === 'POLITICAS DE ASEGURABILIDAD "Sistema de identificación"') {
+                const hasAnySelected = parts.some(part => {
+                    const value = partResponses[part.id];
+                    return value !== undefined && value !== "" && value !== null;
+                });
+
+                if (hasAnySelected) {
+                    categoryScores[categoria] = 0; // 0% si hay alguna marcada
+                    hasRejectionCriteria = true;
+                } else {
+                    categoryScores[categoria] = 100; // 100% si no hay ninguna marcada
+                }
+
+                // No sumar al total general, se maneja por separado
+                return;
+            }
+
+            // Caso especial: POLITICAS DE ASEGURABILIDAD solo para observaciones
+            if (categoria === 'POLITICAS DE ASEGURABILIDAD') {
+                categoryScores[categoria] = null; // null indica que no tiene puntaje
+                return;
+            }
+
+            let sumSelected = 0;
+            let sumMax = 0;
+
+            parts.forEach(part => {
+                const value = partResponses[part.id];
+
+                if (Array.isArray(part.opciones) && part.opciones.length > 0) {
+                    // Para partes con opciones múltiples
+                    const opt = part.opciones.find(opt => String(opt.value) === String(value));
+                    if (value !== undefined && value !== "") {
+                        const selectedValue = opt ? Number(opt.value) : 0;
+                        sumSelected += selectedValue;
+                    }
+                    // Para máximo, tomamos el mayor value numérico
+                    const maxOpt = part.opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
+                    sumMax += maxOpt;
+                } else {
+                    // Para partes con bueno/regular/malo
+                    if (value === 'bueno') {
+                        sumSelected += Number(part.bueno);
+                    } else if (value === 'regular') {
+                        sumSelected += Number(part.regular);
+                    } else if (value === 'malo') {
+                        sumSelected += Number(part.malo);
+                    }
+                    // Usamos bueno como máximo para estas partes
+                    sumMax += Number(part.bueno);
+                }
+            });
+
+            // Calculamos porcentaje basado en valores seleccionados vs máximo posible
+            const percent = sumMax > 0 ? (sumSelected / sumMax) * 100 : 0;
+            categoryScores[categoria] = percent;
+
+            // Verificar si la categoría cumple con el mínimo requerido
+            const categoryMin = parts[0]?.minimo;
+            if (categoryMin !== undefined && categoryMin > 0 && percent < categoryMin) {
+                hasMinScoreRejection = true;
+            }
+
+            if (sumMax > 0) {
+                totalPercentSum += percent;
+                totalPercentCount++;
+            }
+        });
+
+        // Si hay criterios de rechazo marcados o alguna categoría no cumple el mínimo, el puntaje general es 0%
+        const generalScore = (hasRejectionCriteria || hasMinScoreRejection) ? 0 : (totalPercentCount > 0 ? (totalPercentSum / totalPercentCount) : 0);
+
+        return { categoryScores, generalScore };
+    }
+
+    // Función para calcular asegurabilidad basada en los datos reales
+    calculateAsegurabilidad(parts, partResponses, mechanicalTests) {
+        // Verificar criterios de rechazo inmediato del checklist
+        const hasRejectionCriteria = () => {
+            if (!partResponses || Object.keys(partResponses).length === 0) {
+                return false;
+            }
+
+            // Buscar respuestas en categorías de rechazo inmediato
+            const rejectionCategories = [
+                'POLITICAS DE ASEGURABILIDAD "Estructura y Carroceria"',
+                'POLITICAS DE ASEGURABILIDAD "Sistema de identificación"'
+            ];
+
+            // Verificar si hay alguna respuesta marcada en estas categorías
+            for (const [part_id, response] of Object.entries(partResponses)) {
+                const part = parts.find(p => p.id.toString() === part_id.toString());
+                if (part && part.categoria && rejectionCategories.includes(part.categoria)) {
+                    if (response === 'checked' || response === true || response === 'si') {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        // Verificar fallas en pruebas mecanizadas
+        const hasMechanicalFailures = () => {
+            if (!mechanicalTests) return false;
+
+            // Verificar suspensión
+            if (mechanicalTests.suspension) {
+                const suspensionValues = Object.values(mechanicalTests.suspension);
+                if (suspensionValues.some(item => item.status && item.status !== 'BUENO')) {
+                    return true;
+                }
+            }
+
+            // Verificar frenos
+            if (mechanicalTests.brakes) {
+                if (mechanicalTests.brakes.eficaciaTotal && mechanicalTests.brakes.eficaciaTotal.status !== 'BUENO') {
+                    return true;
+                }
+                if (mechanicalTests.brakes.frenoAuxiliar && mechanicalTests.brakes.frenoAuxiliar.status !== 'BUENO') {
+                    return true;
+                }
+            }
+
+            // Verificar alineación
+            if (mechanicalTests.alignment && mechanicalTests.alignment.axes) {
+                if (mechanicalTests.alignment.axes.some(axis => axis.status && axis.status !== 'BUENO')) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Verificar puntaje mínimo no cumplido
+        const hasMinScoreRejection = () => {
+            if (!partResponses || !parts) return false;
+
+            // Agrupar partes por categoría
+            const groupedParts = parts.reduce((acc, part) => {
+                if (!part.categoria) return acc;
+
+                const categoria = part.categoria;
+                if (!acc[categoria]) {
+                    acc[categoria] = [];
+                }
+                acc[categoria].push(part);
+                return acc;
+            }, {});
+
+            // Verificar cada categoría
+            for (const [categoria, parts] of Object.entries(groupedParts)) {
+                // Saltar categorías de rechazo inmediato y observaciones
+                if (categoria.includes('POLITICAS DE ASEGURABILIDAD') || categoria === 'OBSERVACIONES') {
+                    continue;
+                }
+
+                // Calcular puntaje de la categoría
+                let sumSelected = 0;
+                let sumMax = 0;
+
+                parts.forEach(part => {
+                    const value = partResponses[part.id];
+
+                    if (Array.isArray(part.opciones) && part.opciones.length > 0) {
+                        const opt = part.opciones.find(opt => String(opt.value) === String(value));
+                        if (value !== undefined && value !== "") {
+                            sumSelected += opt ? Number(opt.value) : 0;
+                        }
+                        const maxOpt = part.opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
+                        sumMax += maxOpt;
+                    } else {
+                        if (value === 'bueno') {
+                            sumSelected += Number(part.bueno || 100);
+                        } else if (value === 'regular') {
+                            sumSelected += Number(part.regular || 50);
+                        } else if (value === 'malo') {
+                            sumSelected += Number(part.malo || 0);
+                        }
+                        sumMax += Number(part.bueno || 100);
+                    }
+                });
+
+                const percent = sumMax > 0 ? (sumSelected / sumMax) * 100 : 0;
+                const minRequired = parts[0]?.minimo;
+
+                if (minRequired && percent < minRequired) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Determinar asegurabilidad
+        const rejectionCriteria = hasRejectionCriteria();
+        const mechanicalFailures = hasMechanicalFailures();
+        const minScoreRejection = hasMinScoreRejection();
+
+        const isAsegurable = !rejectionCriteria && !mechanicalFailures && !minScoreRejection;
+
+        let reason = '';
+        if (rejectionCriteria) {
+            reason = 'Criterios de rechazo inmediato detectados';
+        } else if (mechanicalFailures) {
+            reason = 'Fallas en pruebas mecanizadas';
+        } else if (minScoreRejection) {
+            reason = 'Puntaje mínimo no cumplido';
+        } else {
+            reason = 'Vehículo cumple todos los criterios';
+        }
+
+        return { isAsegurable, reason };
+    }
+
     /**
      * Obtener orden de inspección por hash de acceso (público)
      */
@@ -1244,6 +1508,219 @@ class InspectionOrderController extends BaseController {
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    async getFullInspectionOrder(req, res) {
+        try {
+            const { id } = req.params;
+            const inspectionOrder = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['name']
+                    }, {
+                        model: Appointment,
+                        as: 'appointments',
+                        attributes: ['id', 'session_id', 'observaciones', 'scheduled_date', 'scheduled_time', 'created_at'],
+                        include: [
+                            {
+                                model: InspectionModality,
+                                as: 'inspectionModality',
+                                attributes: ['name']
+                            },
+                            {
+                                model: Sede,
+                                as: 'sede',
+                                attributes: ['name'],
+                            }
+                        ]
+                    }
+                ],
+                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at']
+            });
+
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+            // save in a file the inspectionOrder
+            // fs.writeFileSync('inspectionOrder.json', JSON.stringify(inspectionOrder, null, 2));
+            // Validar que tenga appointments
+            if (!inspectionOrder.appointments || inspectionOrder.appointments.length === 0) {
+                return res.json({
+                    success: true,
+                    data: {
+                        ...inspectionOrder,
+                        appointments: []
+                    }
+                });
+            }
+
+            // Extender con respuestas
+            const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
+                // Obtener respuestas de partes de inspección
+                const responsesData = await this.getResponsesData(appointment.session_id);
+                
+                // Obtener respuestas de categorías de inspección
+                const categoryResponsesData = await this.getCategoryResponsesData(inspectionOrder.id);
+                
+                // Obtener datos de pruebas mecánicas
+                const mechanicalTestsData = await this.getMechanicalTestsData(appointment.session_id);
+                
+                // Obtener comentarios de categorías
+                const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
+                
+                // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
+                const partsData = await sequelize.query(`
+                    SELECT 
+                        ip.id,
+                        ip.parte,
+                        ip.bueno,
+                        ip.regular,
+                        ip.malo,
+                        ip.minimo,
+                        ip.opciones,
+                        ic.categoria
+                    FROM inspection_parts ip
+                    INNER JOIN inspection_categories ic ON ip.categoria_id = ic.id
+                    ORDER BY ip.categoria_id ASC, ip.parte ASC
+                `, {
+                    type: QueryTypes.SELECT
+                });
+
+                console.log(`📋 Encontradas ${partsData.length} partes de inspección para appointment ${appointment.session_id}`);
+
+                // Procesar respuestas para crear un objeto de respuestas por part_id
+                const partResponses = {};
+                responsesData.forEach(response => {
+                    if (response.part_id) {
+                        partResponses[response.part_id] = response.value;
+                    }
+                });
+
+                // Calcular todos los valores en el backend
+                const groupedParts = this.groupPartsByCategory(partsData);
+                const { categoryScores, generalScore } = this.calculateChecklistScores(partsData, partResponses);
+                const { isAsegurable, reason } = this.calculateAsegurabilidad(partsData, partResponses, mechanicalTestsData);
+
+                // Procesar partes con valores de respuesta formateados
+                const processedParts = partsData.map(part => ({
+                    ...part,
+                    responseValue: this.getResponseValue(part, partResponses),
+                    hasResponse: partResponses[part.id] !== undefined
+                }));
+
+                // Convertir appointment a objeto plano para evitar referencias circulares
+                const plainAppointment = {
+                    id: appointment.id,
+                    session_id: appointment.session_id,
+                    scheduled_date: appointment.scheduled_date,
+                    scheduled_time: appointment.scheduled_time,
+                    created_at: appointment.created_at,
+                    observaciones: appointment.observaciones,
+                    inspectionModality: appointment.inspectionModality ? {
+                        id: appointment.inspectionModality.id,
+                        name: appointment.inspectionModality.name
+                    } : null,
+                    sede: appointment.sede ? {
+                        id: appointment.sede.id,
+                        name: appointment.sede.name
+                    } : null
+                };
+
+                // Crear estructura organizada por categorías para el frontend
+                const inspectionResults = Object.entries(groupedParts).map(([categoria, parts]) => {
+                    const categoryScore = categoryScores[categoria];
+                    const categoryComment = categoryCommentsData.find(c => c.categoryName === categoria);
+                    
+                return {
+                        categoria,
+                        puntaje: categoryScore,
+                        minimo: parts[0]?.minimo || 0,
+                        cumpleMinimo: categoryScore !== null ? (categoryScore >= (parts[0]?.minimo || 0)) : true,
+                        parts: processedParts.filter(el=>el.categoria == categoria),
+                        comentario: categoryComment ? categoryComment.comentario : null,
+                        // Solo lo esencial para el render visual
+                        estado: categoryScore === null ? 'observacion' : 
+                               categoryScore >= (parts[0]?.minimo || 0) ? 'aprobado' : 'rechazado',
+                        color: categoryScore === null ? 'gray' : 
+                              categoryScore >= (parts[0]?.minimo || 0) ? 'green' : 'red'
+                };
+            });
+
+                return {
+                    ...plainAppointment,
+                    // Solo datos esenciales para el frontend
+                    inspectionResults,
+                    calculatedData: {
+                        generalScore,
+                        asegurabilidad: {
+                            isAsegurable,
+                            reason
+                        },
+                        // Resumen por estado
+                        resumen: {
+                            aprobadas: inspectionResults.filter(cat => cat.estado === 'aprobado').length,
+                            rechazadas: inspectionResults.filter(cat => cat.estado === 'rechazado').length,
+                            observaciones: inspectionResults.filter(cat => cat.estado === 'observacion').length
+                        }
+                    },
+                    // Datos de pruebas mecánicas (solo si existen)
+                    mechanicalTests: mechanicalTestsData && Object.keys(mechanicalTestsData).length > 0 ? mechanicalTestsData : null
+                };
+            }));
+
+            // Convertir inspectionOrder a objeto plano para evitar referencias circulares
+            const plainInspectionOrder = {
+                id: inspectionOrder.id,
+                numero: inspectionOrder.numero,
+                placa: inspectionOrder.placa,
+                nombre_cliente: inspectionOrder.nombre_cliente,
+                num_doc: inspectionOrder.num_doc,
+                celular_cliente: inspectionOrder.celular_cliente,
+                correo_cliente: inspectionOrder.correo_cliente,
+                marca: inspectionOrder.marca,
+                linea: inspectionOrder.linea,
+                modelo: inspectionOrder.modelo,
+                clase: inspectionOrder.clase,
+                color: inspectionOrder.color,
+                carroceria: inspectionOrder.carroceria,
+                cilindraje: inspectionOrder.cilindraje,
+                producto: inspectionOrder.producto,
+                motor: inspectionOrder.motor,
+                chasis: inspectionOrder.chasis,
+                vin: inspectionOrder.vin,
+                cod_fasecolda: inspectionOrder.cod_fasecolda,
+                combustible: inspectionOrder.combustible,
+                servicio: inspectionOrder.servicio,
+                nombre_contacto: inspectionOrder.nombre_contacto,
+                celular_contacto: inspectionOrder.celular_contacto,
+                correo_contacto: inspectionOrder.correo_contacto,
+                fecha_creacion: inspectionOrder.created_at,
+                InspectionOrderStatus: inspectionOrder.InspectionOrderStatus ? {
+                    id: inspectionOrder.InspectionOrderStatus.id,
+                    name: inspectionOrder.InspectionOrderStatus.name
+                } : null
+            };
+
+            res.json({
+                success: true,
+                data: {
+                    ...plainInspectionOrder,
+                    appointments: fullInspectionOrderAppointments
+                }
+            });
+        } catch (error) {
+            console.error('Error al obtener orden de inspección completa:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener orden de inspección completa',
                 error: error.message
             });
         }
