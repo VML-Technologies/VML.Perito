@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { API_ROUTES } from '@/config/api';
 import { getDefaultRouteForUser } from '@/lib/role-utils';
+import { analytics } from '@/utils/analytics';
 
 const AuthContext = createContext();
 
@@ -37,6 +38,9 @@ export const AuthProvider = ({ children }) => {
                     const userData = await response.json();
                     setUser(userData);
                     setIsAuthenticated(true);
+                    
+                    // Trackear login con custom dimensions
+                    analytics.userLogin(userData);
                 } else {
                     logout();
                 }
@@ -65,6 +69,9 @@ export const AuthProvider = ({ children }) => {
                 setUser(data.user);
                 setIsAuthenticated(true);
                 
+                // Trackear login con custom dimensions
+                analytics.userLogin(data.user);
+                
                 // Determinar la ruta por defecto según el rol
                 const defaultRoute = getDefaultRouteForUser(data.user?.roles);
                 
@@ -79,6 +86,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        // Obtener datos del usuario antes de hacer logout para tracking
+        const currentUser = user;
+        
         try {
             const token = localStorage.getItem('authToken');
             if (token) {
@@ -92,6 +102,9 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('Error en logout:', error);
         } finally {
+            // Trackear logout con custom dimensions
+            analytics.userLogout(currentUser);
+            
             localStorage.removeItem('authToken');
             setUser(null);
             setIsAuthenticated(false);

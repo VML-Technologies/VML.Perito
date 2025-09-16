@@ -3,6 +3,87 @@
  * Sistema de analytics para Movilidad Mundial
  */
 
+// IDs de Custom Dimensions configuradas en Matomo
+const CUSTOM_DIMENSIONS = {
+    USER_EMAIL: 1,    // Custom Dimension ID: 1 - User Email
+    USER_ROLE: 2      // Custom Dimension ID: 2 - User Role
+};
+
+// Función para establecer custom dimensions de Matomo
+export const setCustomDimensions = (userData) => {
+    if (!userData) {
+        console.warn('⚠️ Datos de usuario no disponibles para custom dimensions');
+        return;
+    }
+
+    // Verificar si tenemos Matomo Tag Manager (_mtm) o Matomo Tracker (_paq)
+    const matomoTracker = window._paq || window._mtm;
+    
+    if (!matomoTracker) {
+        console.warn('⚠️ Matomo no está disponible para custom dimensions');
+        return;
+    }
+
+    // Establecer User Email (ID: 1)
+    if (userData.email) {
+        matomoTracker.push(['setCustomDimension', CUSTOM_DIMENSIONS.USER_EMAIL, userData.email]);
+        console.log(`📊 Custom Dimension establecida - User Email: ${userData.email}`);
+    }
+
+    // Establecer User Role (ID: 2) - tomar el primer rol si hay múltiples
+    if (userData.roles && userData.roles.length > 0) {
+        const primaryRole = Array.isArray(userData.roles) 
+            ? userData.roles[0].name || userData.roles[0] 
+            : userData.roles.name || userData.roles;
+        
+        matomoTracker.push(['setCustomDimension', CUSTOM_DIMENSIONS.USER_ROLE, primaryRole]);
+        console.log(`📊 Custom Dimension establecida - User Role: ${primaryRole}`);
+    }
+
+    // Las custom dimensions se envían automáticamente con el próximo trackPageView
+    // No necesitamos forzar trackPageView aquí ya que se hace en la inicialización
+};
+
+// Función para actualizar el perfil del visitante con nueva información
+export const updateVisitorProfile = (userData) => {
+    if (!userData) {
+        console.warn('⚠️ Datos de usuario no disponibles para actualizar perfil');
+        return;
+    }
+
+    // Actualizar custom dimensions
+    setCustomDimensions(userData);
+    
+    // Trackear evento de actualización de perfil
+    trackEvent('visitorProfileUpdated', {
+        userId: userData.id,
+        userEmail: userData.email,
+        userRole: userData.roles?.[0]?.name || userData.roles?.[0] || 'N/A',
+        timestamp: new Date().toISOString()
+    });
+    
+    console.log('📊 Perfil de visitante actualizado con nueva información');
+};
+
+// Función para limpiar custom dimensions (logout)
+export const clearCustomDimensions = () => {
+    // Verificar si tenemos Matomo Tag Manager (_mtm) o Matomo Tracker (_paq)
+    const matomoTracker = window._paq || window._mtm;
+    
+    if (!matomoTracker) {
+        console.warn('⚠️ Matomo no está disponible para limpiar custom dimensions');
+        return;
+    }
+
+    // Limpiar User Email
+    matomoTracker.push(['setCustomDimension', CUSTOM_DIMENSIONS.USER_EMAIL, '']);
+    
+    // Limpiar User Role
+    matomoTracker.push(['setCustomDimension', CUSTOM_DIMENSIONS.USER_ROLE, '']);
+    
+    console.log('📊 Custom Dimensions limpiadas');
+};
+
 // Función base para trackear eventos
 export const trackEvent = (eventName, eventData = {}) => {
     if (window._mtm) {
@@ -96,14 +177,46 @@ export const analytics = {
     }),
     
     // === EVENTOS DE USUARIOS ===
-    userLogin: (userId, userRole) => trackEvent('userLogin', {
-        userId,
-        userRole
-    }),
+    userLogin: (userData) => {
+        // Establecer custom dimensions para el usuario logueado
+        setCustomDimensions(userData);
+        
+        // Trackear el evento de login
+        trackEvent('userLogin', {
+            userId: userData.id,
+            userEmail: userData.email,
+            userRole: userData.roles?.[0]?.name || userData.roles?.[0] || 'N/A'
+        });
+    },
     
-    userLogout: (userId) => trackEvent('userLogout', {
-        userId
-    }),
+    userLogout: (userData) => {
+        // Limpiar custom dimensions
+        clearCustomDimensions();
+        
+        // Trackear el evento de logout
+        trackEvent('userLogout', {
+            userId: userData?.id,
+            userEmail: userData?.email || 'N/A'
+        });
+    },
+
+    // === EVENTOS DE PERFIL DE VISITANTE ===
+    profileUpdated: (userData) => {
+        // Actualizar perfil del visitante
+        updateVisitorProfile(userData);
+    },
+
+    roleChanged: (userData, oldRole, newRole) => {
+        // Actualizar custom dimensions cuando cambia el rol
+        setCustomDimensions(userData);
+        
+        trackEvent('userRoleChanged', {
+            userId: userData.id,
+            userEmail: userData.email,
+            oldRole,
+            newRole
+        });
+    },
     
     // === EVENTOS DE SISTEMA ===
     systemError: (error, context) => trackEvent('systemError', {
