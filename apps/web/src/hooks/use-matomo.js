@@ -26,7 +26,8 @@ export const useMatomo = () => {
         _paq.push(['enableLinkTracking']);
         
         (function() {
-            var u = analyticsUrl.replace('/js/container_', '/');
+            // Extraer la URL base removiendo la parte del container
+            var u = analyticsUrl.replace(/\/js\/container_[^\/]+\.js$/, '/');
             _paq.push(['setTrackerUrl', u + 'matomo.php']);
             _paq.push(['setSiteId', '10']);
             var d = document, g = d.createElement('script'), s = d.getElementsByTagName('script')[0];
