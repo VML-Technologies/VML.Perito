@@ -1,0 +1,564 @@
+/* Estilos de impresión para reportes de inspección */
+/* Formato tabloide horizontal con gráficos de fondo */
+
+@media print {
+  @page {
+    size: tabloid landscape;
+    margin: 0.5in;
+    orientation: landscape;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+  
+  /* Forzar orientación horizontal del contenido */
+  #inspection-report-content {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 0.5in !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ocultar elementos no deseados para impresión */
+  button {
+    display: none !important;
+  }
+  
+  /* Asegurar que los colores de fondo se impriman */
+  .bg-gradient-to-br,
+  .bg-gradient-to-r,
+  .bg-blue-50,
+  .bg-green-50,
+  .bg-purple-50,
+  .bg-gray-50,
+  .bg-indigo-50,
+  .bg-emerald-50,
+  .bg-violet-50,
+  .bg-slate-50,
+  .bg-yellow-50,
+  .bg-red-50 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Asegurar que los bordes se impriman */
+  .border,
+  .border-blue-200,
+  .border-green-200,
+  .border-purple-200,
+  .border-gray-200,
+  .border-yellow-200,
+  .border-red-200 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Asegurar que los colores de texto se impriman */
+  .text-blue-600,
+  .text-green-600,
+  .text-purple-600,
+  .text-gray-600,
+  .text-gray-900,
+  .text-gray-700,
+  .text-gray-500,
+  .text-red-600,
+  .text-yellow-600 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Mejorar la legibilidad en impresión */
+  .text-xs {
+    font-size: 10px !important;
+  }
+  
+  .text-sm {
+    font-size: 12px !important;
+  }
+  
+  .text-base {
+    font-size: 14px !important;
+  }
+  
+  .text-lg {
+    font-size: 16px !important;
+  }
+  
+  .text-xl {
+    font-size: 18px !important;
+  }
+  
+  .text-2xl {
+    font-size: 20px !important;
+  }
+  
+  /* Asegurar que las imágenes se impriman correctamente */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Forzar que las imágenes se distribuyan horizontalmente */
+  .grid img {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover !important;
+  }
+  
+  /* Forzar que las imágenes del grid principal se distribuyan horizontalmente */
+  .lg\:grid-cols-12 img {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Forzar que los contenedores de imágenes usen todo el ancho */
+  .aspect-\[4\/3\] {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 4 / 3 !important;
+  }
+  
+  /* Forzar que las imágenes de inspección se distribuyan horizontalmente */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4,
+  .grid-cols-6,
+  .grid-cols-8 {
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 0.5rem !important;
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  
+  .grid-cols-6 {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+  
+  .grid-cols-8 {
+    grid-template-columns: repeat(8, 1fr) !important;
+  }
+  
+  /* Ajustar grids para impresión - Forzar distribución horizontal */
+  .grid {
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* Forzar que los contenedores principales usen todo el ancho horizontal */
+  .max-w-7xl {
+    max-width: none !important;
+    width: 100% !important;
+  }
+  
+  /* Asegurar que las secciones se distribuyan horizontalmente */
+  .space-y-6 > * + * {
+    margin-top: 1.5rem !important;
+  }
+  
+  /* Forzar que el header se distribuya horizontalmente */
+  .flex.justify-between {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  /* Forzar que los elementos del header usen el espacio horizontal */
+  .flex.justify-between > * {
+    flex: 1 1 auto !important;
+    max-width: 50% !important;
+  }
+  
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  
+  .md\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Forzar que las tarjetas de información se distribuyan horizontalmente */
+  .md\:grid-cols-5 > * {
+    width: 100% !important;
+    max-width: none !important;
+    flex: 1 1 0% !important;
+  }
+  
+  /* Forzar que las tarjetas de información usen todo el ancho horizontal */
+  .bg-gray-50 {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Forzar que las tarjetas de evaluación se distribuyan horizontalmente */
+  .grid-cols-2 > * {
+    width: 100% !important;
+    max-width: none !important;
+    flex: 1 1 0% !important;
+  }
+  
+  /* Forzar que las tarjetas de evaluación usen todo el ancho */
+  .bg-white {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Forzar que las tarjetas de evaluación usen todo el ancho horizontal */
+  .bg-white.rounded-xl {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+  
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-8 {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+  
+  .lg\:grid-cols-12 {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* Forzar que el grid principal use todo el ancho horizontal disponible */
+  .lg\:grid-cols-12 > * {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .lg\:col-span-1 {
+    grid-column: span 1 / span 1 !important;
+  }
+  
+  .lg\:col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+  
+  .lg\:col-span-3 {
+    grid-column: span 3 / span 3 !important;
+  }
+  
+  .lg\:col-span-4 {
+    grid-column: span 4 / span 4 !important;
+  }
+  
+  .lg\:col-span-5 {
+    grid-column: span 5 / span 5 !important;
+  }
+  
+  /* Forzar que el grid principal use todo el ancho horizontal */
+  .lg\:grid-cols-12 {
+    display: grid !important;
+    grid-template-columns: repeat(12, 1fr) !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 1rem !important;
+  }
+  
+  /* Asegurar que las columnas del grid principal se distribuyan horizontalmente */
+  .lg\:col-span-4 {
+    grid-column: span 4 / span 4 !important;
+    width: 100% !important;
+  }
+  
+  .lg\:col-span-5 {
+    grid-column: span 5 / span 5 !important;
+    width: 100% !important;
+  }
+  
+  .lg\:col-span-3 {
+    grid-column: span 3 / span 3 !important;
+    width: 100% !important;
+  }
+  
+  /* Asegurar que los contenedores mantengan su ancho */
+  .max-w-7xl {
+    max-width: none !important;
+  }
+  
+  /* Forzar que todos los elementos respeten el ancho del contenedor */
+  * {
+    box-sizing: border-box !important;
+  }
+  
+  /* Mejorar sombras para impresión */
+  .shadow-sm,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Asegurar que los badges se impriman */
+  .bg-blue-100,
+  .bg-green-100,
+  .bg-red-100,
+  .bg-yellow-100,
+  .bg-purple-100,
+  .bg-gray-100 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Asegurar que los iconos se impriman */
+  svg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Mejorar la presentación de los gráficos de fondo */
+  .bg-gradient-to-br {
+    background: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+  
+  .bg-gradient-to-r {
+    background: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+  }
+  
+  /* Asegurar que los colores de los gradientes se impriman */
+  .from-blue-50 {
+    --tw-gradient-from: #eff6ff !important;
+  }
+  
+  .to-blue-700 {
+    --tw-gradient-to: #1d4ed8 !important;
+  }
+  
+  .from-green-50 {
+    --tw-gradient-from: #f0fdf4 !important;
+  }
+  
+  .to-emerald-50 {
+    --tw-gradient-to: #ecfdf5 !important;
+  }
+  
+  .from-purple-50 {
+    --tw-gradient-from: #faf5ff !important;
+  }
+  
+  .to-violet-50 {
+    --tw-gradient-to: #f5f3ff !important;
+  }
+  
+  .from-gray-50 {
+    --tw-gradient-from: #f9fafb !important;
+  }
+  
+  .to-slate-50 {
+    --tw-gradient-to: #f8fafc !important;
+  }
+  
+  /* Mejorar la legibilidad de los textos sobre fondos de color */
+  .text-white {
+    color: white !important;
+  }
+  
+  .text-gray-900 {
+    color: #111827 !important;
+  }
+  
+  .text-gray-700 {
+    color: #374151 !important;
+  }
+  
+  .text-gray-600 {
+    color: #4b5563 !important;
+  }
+  
+  .text-gray-500 {
+    color: #6b7280 !important;
+  }
+  
+  /* Asegurar que los elementos de estado se impriman correctamente */
+  .text-green-600 {
+    color: #059669 !important;
+  }
+  
+  .text-red-600 {
+    color: #dc2626 !important;
+  }
+  
+  .text-yellow-600 {
+    color: #d97706 !important;
+  }
+  
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+  
+  .text-purple-600 {
+    color: #9333ea !important;
+  }
+  
+  /* Mejorar la presentación de las tarjetas */
+  .rounded-xl,
+  .rounded-lg,
+  .rounded-2xl {
+    border-radius: 0.5rem !important;
+  }
+  
+  /* Asegurar que los márgenes y padding se mantengan */
+  .p-4 {
+    padding: 1rem !important;
+  }
+  
+  .p-6 {
+    padding: 1.5rem !important;
+  }
+  
+  .p-8 {
+    padding: 2rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mb-6 {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .mb-8 {
+    margin-bottom: 2rem !important;
+  }
+  
+  /* Mejorar la presentación de las imágenes */
+  .aspect-square {
+    aspect-ratio: 1 / 1 !important;
+  }
+  
+  .aspect-\[4\/3\] {
+    aspect-ratio: 4 / 3 !important;
+  }
+  
+  /* Asegurar que los elementos flex se comporten correctamente */
+  .flex {
+    display: flex !important;
+    width: 100% !important;
+  }
+  
+  .items-center {
+    align-items: center !important;
+  }
+  
+  .justify-center {
+    justify-content: center !important;
+  }
+  
+  .justify-between {
+    justify-content: space-between !important;
+  }
+  
+  /* Forzar distribución horizontal en elementos flex */
+  .flex > * {
+    flex: 1 1 auto !important;
+  }
+  
+  /* Mejorar la presentación de los badges */
+  .px-2\.5 {
+    padding-left: 0.625rem !important;
+    padding-right: 0.625rem !important;
+  }
+  
+  .py-0\.5 {
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  
+  /* Asegurar que los elementos de estado se impriman */
+  .bg-green-50 {
+    background-color: #f0fdf4 !important;
+  }
+  
+  .bg-red-50 {
+    background-color: #fef2f2 !important;
+  }
+  
+  .bg-yellow-50 {
+    background-color: #fefce8 !important;
+  }
+  
+  .bg-blue-50 {
+    background-color: #eff6ff !important;
+  }
+  
+  .bg-purple-50 {
+    background-color: #faf5ff !important;
+  }
+  
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+  }
+}
