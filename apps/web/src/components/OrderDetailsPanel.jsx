@@ -100,19 +100,20 @@ const OrderDetailsPanel = ({
     ];
 
     const formatObservations = (observations) => {
-        // split via regex on date and time and show as a timeline
-        const observationsArray = observations.split('\n\n')
-        return observationsArray.map((observation, index) => {
-            const data = observation.split('\n')
-            const timestamp = data[0]
-            const message = data[1]
-            return <div className='flex flex-col gap-2 border border-gray-400 p-2 rounded-md' key={index}>
-                <div className='flex flex-col gap-1'>
-                    <span className='font-bold font-mono'>{timestamp}</span>
-                    <span>{message}</span>
-                </div>
-            </div>;
-        });
+        if (observations) {
+            const observationsArray = observations.split('\n\n')
+            return observationsArray.map((observation, index) => {
+                const data = observation.split('\n')
+                const timestamp = data[0]
+                const message = data[1]
+                return <div className='flex flex-col gap-2 border border-gray-400 p-2 rounded-md' key={index}>
+                    <div className='flex flex-col gap-1'>
+                        <span className='font-bold font-mono'>{timestamp}</span>
+                        <span>{message}</span>
+                    </div>
+                </div>;
+            });
+        }
     }
 
     const content = (
