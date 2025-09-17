@@ -148,6 +148,16 @@ const OrdersTable = ({
                                             >
                                                 Número {getSortIcon('numero')}
                                             </Button>
+                                            </th>
+                                            <th className="text-left p-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSort('created_at')}
+                                                className="font-semibold"
+                                            >
+                                                Fecha de creacion {getSortIcon('created_at')}
+                                            </Button>
                                         </th>
                                         <th className="text-left p-2">
                                             <Button
@@ -171,16 +181,6 @@ const OrdersTable = ({
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">Intentos</th>
-                                        <th className="text-left p-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleSort('created_at')}
-                                                className="font-semibold"
-                                            >
-                                                Fecha de solicitud {getSortIcon('created_at')}
-                                            </Button>
-                                        </th>
                                         <th className="text-left p-2">Estado</th>
                                         {showAgentColumn && (
                                             <th className="text-left p-2">Agente Asignado</th>
@@ -233,6 +233,14 @@ const OrdersTable = ({
                                                     </div>
 
                                                 </td>
+                                                <td className="p-2 text-sm">
+                                                    <div>
+                                                        {formatDate(order.created_at)}
+                                                    </div>
+                                                    <div className='text-xs font-mono text-muted-foreground'>
+                                                        Modalidad sugerida: {order.metodo_inspeccion_recomendado}
+                                                    </div>
+                                                </td>
                                                 <td className="p-2">
                                                     <div className="space-y-1">
                                                         <div className="font-medium">{order.nombre_cliente}</div>
@@ -267,14 +275,6 @@ const OrdersTable = ({
                                                             }`}>
                                                             {getCallLogsCount(order)}
                                                         </span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-2 text-sm">
-                                                    <div>
-                                                        {formatDate(order.created_at)}
-                                                    </div>
-                                                    <div className='text-xs font-mono text-muted-foreground'>
-                                                        Modalidad sugerida: {order.metodo_inspeccion_recomendado}
                                                     </div>
                                                 </td>
                                                 <td className="p-2">
@@ -343,11 +343,11 @@ const OrdersTable = ({
                                                                                 size="sm"
                                                                                 variant="outline"
                                                                                 onClick={() => {
-                                                                                    window.open(`/inspection-report/${order.session_id}`, '_blank');
+                                                                                    window.open(`/inspection-report/${order.id}`, '_blank');
                                                                                 }}
                                                                             >
                                                                                 <FileText className="h-4 w-4 mr-1" />
-                                                                                Ver Inspección
+                                                                                Ver Inspección {order.id}
                                                                             </Button>
                                                                         </> : <></>
                                                                     }
