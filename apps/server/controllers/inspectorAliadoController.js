@@ -8,6 +8,7 @@ import Role from '../models/role.js';
 import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import { Op } from 'sequelize';
 import XLSX from 'xlsx';
+import InspectionModality from '../models/inspectionModality.js';
 
 class InspectorAliadoController extends BaseController {
     constructor() {
@@ -42,6 +43,12 @@ class InspectorAliadoController extends BaseController {
                 });
             }
 
+            const inspectionModality = await InspectionModality.findOne({
+                where: {
+                    code: 'SEDE'
+                }
+            });
+
             // Crear el agendamiento
             const appointment = await Appointment.create({
                 sede_id,
@@ -50,7 +57,8 @@ class InspectorAliadoController extends BaseController {
                 scheduled_date,
                 scheduled_time,
                 session_id,
-                status: status || 'pending'
+                status: status || 'pending',
+                inspection_modality_id: inspectionModality.id
             });
 
             // Obtener el agendamiento creado con relaciones
