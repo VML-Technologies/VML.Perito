@@ -347,7 +347,7 @@ const OrdersTable = ({
                                                                                 }}
                                                                             >
                                                                                 <FileText className="h-4 w-4 mr-1" />
-                                                                                Ver Inspección {order.id}
+                                                                                Ver Inspección
                                                                             </Button>
                                                                         </> : <></>
                                                                     }
