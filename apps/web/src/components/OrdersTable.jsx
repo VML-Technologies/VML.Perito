@@ -269,7 +269,14 @@ const OrdersTable = ({
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="p-2 text-sm">{formatDate(order.created_at)}</td>
+                                                <td className="p-2 text-sm">
+                                                    <div>
+                                                        {formatDate(order.created_at)}
+                                                    </div>
+                                                    <div className='text-xs font-mono text-muted-foreground'>
+                                                        Modalidad sugerida: {order.metodo_inspeccion_recomendado}
+                                                    </div>
+                                                </td>
                                                 <td className="p-2">
                                                     <Badge variant={order.badgeColor}>
                                                         {order.fixedStatus}

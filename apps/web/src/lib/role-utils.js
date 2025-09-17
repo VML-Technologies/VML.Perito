@@ -30,6 +30,10 @@ export const getDefaultRouteForUser = (userRoles) => {
         return '/agente-contacto';
     }
 
+    if (roleNames.includes('coordinador_vml')) {
+        return '/coordinador-vml';
+    }
+
     if (roleNames.includes('admin')) {
         return '/admin';
     }
@@ -55,6 +59,7 @@ export const getPrimaryRoleName = (userRoles) => {
     const roleDisplayNames = {
         'super_admin': 'Súper Administrador',
         'coordinador_contacto': 'Coordinador de Contact Center',
+        'coordinador_vml': 'Coordinador VML',
         'comercial_mundial': 'Usuario Comercial',
         'agente_contacto': 'Agente de Contact Center',
         'admin': 'Administrador',
@@ -66,6 +71,7 @@ export const getPrimaryRoleName = (userRoles) => {
     const priorityOrder = [
         'super_admin',
         'coordinador_contacto',
+        'coordinador_vml',
         'comercial_mundial',
         'agente_contacto',
         'admin',

@@ -34,6 +34,9 @@ import webhookController from './controllers/webhookController.js';
 import plateQueryController from './controllers/plateQueryController.js';
 import contactHistoryController from './controllers/contactHistoryController.js';
 import commentHistoryController from './controllers/commentHistoryController.js';
+import inspectionQueueController from './controllers/inspectionQueueController.js';
+import inspectionModalityController from './controllers/inspectionModalityController.js';
+import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -54,9 +57,13 @@ import templateService from './services/templateService.js';
 import eventService from './services/eventService.js';
 import automatedEventTriggers from './services/automatedEventTriggers.js';
 import webSocketSystem from './websocket/index.js';
+import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
+
+// Crear instancia del controlador de Inspector Aliado
+const inspectorAliadoControllerInstance = new inspectorAliadoController();
 
 const app = express();
 const server = createServer(app);
@@ -226,6 +233,7 @@ app.post('/api/companies/:id/restore', requirePermission('companies.update'), co
 
 // Rutas de sedes
 app.get('/api/sedes', readLimiter, requirePermission('sedes.read'), sedeController.index);
+app.get('/api/sedes/cda', readLimiter, requirePermission('sedes.read'), sedeController.getCDASedes);
 app.get('/api/sedes/:id', readLimiter, requirePermission('sedes.read'), sedeController.show);
 app.get('/api/companies/:companyId/sedes', readLimiter, requirePermission('sedes.read'), sedeController.getByCompany);
 app.post('/api/sedes', requirePermission('sedes.create'), sedeController.store);
@@ -237,14 +245,21 @@ app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeContro
 // ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN UNIFICADAS =====
 
 // Endpoint unificado para órdenes de inspección
+app.get('/api/inspection-orders/full/:id', readLimiter, inspectionOrderController.getFullInspectionOrder);
 app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
 app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
+app.get('/api/inspection-orders/search-by-plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.searchByPlate);
 app.get('/api/inspection-orders/check-plate/:plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.checkPlate);
 app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
 app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
 app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.delete'), inspectionOrderController.destroy);
+
+// Rutas públicas para inspección de asegurabilidad
+app.get('/api/inspection-orders/by-hash/:hash', readLimiter, inspectionOrderController.getByHash);
+app.post('/api/inspection-orders/:id/start', inspectionOrderController.startInspection);
+app.post('/api/inspection-orders/:id/start-virtual-inspection', requirePermission('inspection_orders.update'), inspectionOrderController.startVirtualInspection);
 
 // Reporte de inspección
 // app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, inspectionOrderController.getInspectionReport);
@@ -340,6 +355,13 @@ app.delete('/api/channels/:channelName', requirePermission('channels.delete'), c
 app.post('/api/channels/:channelName/test', requirePermission('channels.test'), channelController.testChannel);
 app.get('/api/channels/schemas', readLimiter, requirePermission('channels.read'), channelController.getSchemas);
 app.post('/api/channels/validate', requirePermission('channels.create'), channelController.validateConfig);
+
+// ===== RUTAS DE MODALIDADES DE INSPECCIÓN =====
+// app.get('/api/inspection-modalities', readLimiter, requirePermission('inspection_modalities.read'), inspectionModalityController.index);
+// app.get('/api/inspection-modalities/:id', readLimiter, requirePermission('inspection_modalities.read'), inspectionModalityController.show);
+// app.post('/api/inspection-modalities', requirePermission('inspection_modalities.create'), inspectionModalityController.store);
+// app.put('/api/inspection-modalities/:id', requirePermission('inspection_modalities.update'), inspectionModalityController.update);
+// app.delete('/api/inspection-modalities/:id', requirePermission('inspection_modalities.delete'), inspectionModalityController.destroy);
 app.get('/api/channels/memory', readLimiter, requirePermission('channels.read'), channelController.getFromMemory);
 app.post('/api/channels/reload', requirePermission('channels.update'), channelController.reload);
 
@@ -364,9 +386,31 @@ app.get('/api/appointments/sedes', readLimiter, requirePermission('appointments.
 app.post('/api/appointments', requirePermission('appointments.create'), appointmentController.createAppointment);
 app.get('/api/appointments/time-slots', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableTimeSlots);
 
+// ===== RUTAS DEDICADAS PARA INSPECTOR ALIADO =====
+app.post('/api/inspector-aliado/appointments', requirePermission('appointments.create'), inspectorAliadoControllerInstance.createAppointment);
+app.get('/api/inspector-aliado/reports/historical', requirePermission('reports.read'), inspectorAliadoControllerInstance.getHistoricalReport);
+
+// ===== RUTAS - Queue de Inspecciones =====
+
+// Rutas para gestión del queue de inspecciones
+app.get('/api/inspection-queue', readLimiter, requirePermission('inspections.read'), inspectionQueueController.getQueue);
+app.post('/api/inspection-queue', requirePermission('inspections.create'), inspectionQueueController.addToQueue);
+app.put('/api/inspection-queue/:id/status', requirePermission('inspections.update'), inspectionQueueController.updateQueueStatus);
+app.get('/api/inspection-queue/stats', readLimiter, requirePermission('inspections.read'), inspectionQueueController.getQueueStats);
+app.get('/api/inspection-queue/inspectors', readLimiter, requirePermission('inspections.read'), inspectionQueueController.getAvailableInspectors);
+
+// Rutas públicas para cola de inspecciones (sin autenticación)
+app.post('/api/public/inspection-queue', inspectionQueueController.addToQueuePublic);
+app.get('/api/public/inspection-queue/:orderId', inspectionQueueController.getQueueStatusPublic);
+app.get('/api/public/inspection-queue/hash/:hash', inspectionQueueController.getQueueStatusByHashPublic);
+
 // Rutas para gestión de agendamientos
 app.get('/api/appointments', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointments);
+app.get('/api/appointments/sede-coordinator', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForCoordinator);
+app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForInspectorAliado);
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
+app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
+app.post('/api/appointments/:id/assign-inspector', requirePermission('appointments.update'), appointmentController.assignInspector);
 
 
 // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
@@ -387,6 +431,7 @@ app.get('/api/users/profile', requireAuth, userController.profile);
 app.get('/api/users/trashed/all', readLimiter, requirePermission('users.read'), userController.indexWithTrashed);
 app.get('/api/users/trashed/only', readLimiter, requirePermission('users.read'), userController.onlyTrashed);
 app.get('/api/users', readLimiter, requirePermission('users.read'), userController.index);
+app.get('/api/users/inspectors', readLimiter, requirePermission('users.read'), userController.getInspectors);
 app.get('/api/users/:id', readLimiter, requirePermission('users.read'), userController.show);
 app.post('/api/users', requirePermission('users.create'), userController.store);
 app.post('/api/users/create-with-email', requirePermission('users.create'), userController.createUserWithEmail);
@@ -812,14 +857,25 @@ const startServer = async () => {
         console.log('🎯 Inicializando WebSocket...');
         await webSocketSystem.initialize(server);
 
-        // NOVENO: Hacer disponible el sistema WebSocket en la app
+        // NOVENO: Inicializar servicio de memoria para cola de inspecciones
+        console.log('🎯 Inicializando servicio de memoria para cola de inspecciones...');
+        await inspectionQueueMemoryService.initialize();
+
+        // DÉCIMO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
+        
+        // Middleware para incluir io en req
+        app.use((req, res, next) => {
+            req.io = webSocketSystem.io;
+            next();
+        });
+        
         console.log('✅ Sistema completamente inicializado');
 
-        // DÉCIMO: Mostrar estadísticas iniciales
+        // UNDÉCIMO: Mostrar estadísticas iniciales
         const stats = await automatedEventTriggers.getStats();
 
-        // UNDÉCIMO: Iniciar el servidor HTTP
+        // DUODÉCIMO: Iniciar el servidor HTTP
         server.listen(port, '0.0.0.0', () => {
             console.log(`🚀 Servidor Express escuchando en http://localhost:${port}`);
 

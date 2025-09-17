@@ -34,6 +34,17 @@ class SocketManager {
         // Middleware de autenticación
         this.io.use(async (socket, next) => {
             try {
+                // Verificar si es una conexión pública para cola de inspecciones
+                const isPublicConnection = socket.handshake.auth.public === true;
+                
+                if (isPublicConnection) {
+                    // Conexión pública para cola de inspecciones
+                    socket.isPublic = true;
+                    socket.publicHash = socket.handshake.auth.hash;
+                    console.log(`🔌 Conexión pública para hash: ${socket.publicHash}`);
+                    return next();
+                }
+
                 // Obtener token de múltiples fuentes posibles
                 const token = socket.handshake.auth.token ||
                     socket.handshake.headers.authorization?.split(' ')[1] ||
@@ -92,6 +103,12 @@ class SocketManager {
      * Manejar nueva conexión
      */
     handleConnection(socket) {
+        // Verificar si es una conexión pública
+        if (socket.isPublic) {
+            this.handlePublicConnection(socket);
+            return;
+        }
+
         const userId = socket.userId;
         const userName = socket.user.name;
 
@@ -137,9 +154,49 @@ class SocketManager {
         // Manejar eventos personalizados
         this.setupEventHandlers(socket);
 
+        // Configurar eventos específicos para coordinadores
+        if (socket.userRoles.includes('coordinador_vml')) {
+            this.setupCoordinatorEventHandlers(socket);
+        }
+
         // Manejar desconexión
         socket.on('disconnect', () => {
             this.handleDisconnection(socket);
+        });
+    }
+
+    /**
+     * Manejar conexión pública para cola de inspecciones
+     */
+    handlePublicConnection(socket) {
+        const hash = socket.publicHash;
+        console.log(`🔌 Conexión pública para cola de inspecciones - Hash: ${hash}`);
+
+        // Registrar conexión pública
+        this.userSockets.set(socket.id, {
+            isPublic: true,
+            hash: hash,
+            connectedAt: new Date()
+        });
+
+        // Unirse a sala específica para el hash
+        const queueRoom = `inspection_queue_${hash}`;
+        socket.join(queueRoom);
+
+        // Notificar conexión exitosa
+        socket.emit('connected', {
+            message: 'Conectado a cola de inspecciones',
+            hash: hash,
+            room: queueRoom,
+            timestamp: new Date().toISOString()
+        });
+
+        // Configurar eventos específicos para conexiones públicas
+        this.setupPublicEventHandlers(socket);
+
+        // Manejar desconexión
+        socket.on('disconnect', () => {
+            this.handlePublicDisconnection(socket);
         });
     }
 
@@ -163,6 +220,211 @@ class SocketManager {
             if (socketIds.size == 0) {
                 this.rooms.delete(roomName);
             }
+        });
+    }
+
+    /**
+     * Manejar desconexión pública
+     */
+    handlePublicDisconnection(socket) {
+        const hash = socket.publicHash;
+        console.log(`🔌 Conexión pública desconectada - Hash: ${hash}`);
+
+        // Limpiar registros
+        this.userSockets.delete(socket.id);
+    }
+
+    /**
+     * Configurar eventos para conexiones públicas
+     */
+    setupPublicEventHandlers(socket) {
+        // Evento para unirse a la cola de inspecciones
+        socket.on('joinInspectionQueue', (data) => {
+            const { hash } = data;
+            const queueRoom = `inspection_queue_${hash}`;
+            
+            socket.join(queueRoom);
+            console.log(`📋 Cliente público unido a cola: ${hash}`);
+            
+            socket.emit('queueJoined', {
+                message: 'Unido a la cola de inspecciones',
+                hash: hash,
+                room: queueRoom
+            });
+        });
+
+        // Evento para salir de la cola de inspecciones
+        socket.on('leaveInspectionQueue', (data) => {
+            const { hash } = data;
+            const queueRoom = `inspection_queue_${hash}`;
+            
+            socket.leave(queueRoom);
+            console.log(`📋 Cliente público salió de cola: ${hash}`);
+        });
+
+        // Evento ping para mantener conexión
+        socket.on('ping', () => {
+            socket.emit('pong', { timestamp: new Date().toISOString() });
+        });
+    }
+
+    /**
+     * Configurar eventos para coordinadores
+     */
+    setupCoordinatorEventHandlers(socket) {
+        // Evento para unirse a la sala del coordinador
+        socket.on('joinCoordinatorRoom', () => {
+            socket.join('coordinador_vml');
+            console.log(`👨‍💼 Coordinador unido a sala: coordinador_vml`);
+            
+            socket.emit('coordinatorJoined', {
+                message: 'Unido como coordinador VML',
+                room: 'coordinador_vml'
+            });
+        });
+
+        // Evento para solicitar datos del coordinador
+        socket.on('requestCoordinatorData', async (data) => {
+            try {
+                console.log('📊 Solicitando datos para coordinador');
+                
+                // Importar el servicio de memoria
+                const inspectionQueueMemoryService = (await import('../services/inspectionQueueMemoryService.js')).default;
+                
+                // Obtener datos de la cola
+                const queueData = inspectionQueueMemoryService.getQueueEntries({
+                    estado: data?.filters?.estado || 'en_cola',
+                    page: data?.filters?.page || 1,
+                    limit: data?.filters?.limit || 10
+                });
+                
+                // Obtener estadísticas
+                const stats = inspectionQueueMemoryService.getStats();
+                
+                // Obtener appointments en sede para coordinador
+                const { Appointment, InspectionOrder, Sede, City, InspectionModality, User, Role } = await import('../models/index.js');
+                
+                const sedeAppointments = await Appointment.findAll({
+                    where: {
+                        deleted_at: null // Solo appointments activos
+                    },
+                    include: [
+                        {
+                            model: InspectionOrder,
+                            as: 'inspectionOrder',
+                            where: {
+                                status: [1, 2, 3] // Solo órdenes con status 1, 2, 3
+                            },
+                            required: true
+                        },
+                        {
+                            model: Sede,
+                            as: 'sede',
+                            include: [{
+                                model: City,
+                                as: 'city'
+                            }]
+                        },
+                        {
+                            model: InspectionModality,
+                            as: 'inspectionModality',
+                            where: {
+                                code: 'SEDE' // Solo modalidad SEDE
+                            },
+                            required: true
+                        },
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email'],
+                            required: false, // LEFT JOIN para incluir appointments sin inspector asignado
+                            include: [{
+                                model: Role,
+                                as: 'roles',
+                                attributes: ['id', 'name', 'description'],
+                                through: { attributes: [] } // Excluir tabla intermedia
+                            }]
+                        }
+                    ],
+                    order: [['created_at', 'DESC']]
+                });
+                
+                console.log(`🏢 Encontrados ${sedeAppointments.length} appointments en sede para coordinador`);
+                
+                // Enviar datos al coordinador
+                socket.emit('coordinatorData', {
+                    queueData,
+                    stats,
+                    sedeAppointments,
+                    timestamp: new Date().toISOString()
+                });
+                
+                console.log('📊 Datos enviados al coordinador');
+            } catch (error) {
+                console.error('❌ Error obteniendo datos para coordinador:', error);
+                socket.emit('error', {
+                    message: 'Error obteniendo datos de la cola',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para actualizar estado de la cola
+        socket.on('updateQueueStatus', async (data) => {
+            try {
+                const { id, estado, inspector_asignado_id, observaciones } = data;
+                console.log(`🔄 Actualizando estado de cola: ${id} -> ${estado}`);
+                
+                // Importar el servicio de memoria
+                const inspectionQueueMemoryService = (await import('../services/inspectionQueueMemoryService.js')).default;
+                
+                // Actualizar estado
+                const result = await inspectionQueueMemoryService.updateQueueStatus(
+                    id, 
+                    estado, 
+                    inspector_asignado_id, 
+                    observaciones
+                );
+                
+                // Emitir actualización a todos los coordinadores
+                this.io.to('coordinador_vml').emit('inspectionQueueStatusUpdated', {
+                    queueEntry: result.data,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Emitir actualización a conexiones públicas si hay hash
+                if (result.data && result.data.hash_acceso) {
+                    this.emitQueueStatusUpdate(result.data.hash_acceso, result.data);
+                    
+                    // Si se asignó un inspector, emitir evento específico
+                    if (estado === 'en_proceso' && inspector_asignado_id) {
+                        const { User } = await import('../models/index.js');
+                        const inspector = await User.findByPk(inspector_asignado_id, {
+                            attributes: ['id', 'name', 'email']
+                        });
+                        
+                        if (inspector) {
+                            this.emitInspectorAssigned(result.data.hash_acceso, {
+                                inspector: inspector,
+                                status: 'en_proceso'
+                            });
+                        }
+                    }
+                }
+                
+                console.log('✅ Estado de cola actualizado correctamente');
+            } catch (error) {
+                console.error('❌ Error actualizando estado de cola:', error);
+                socket.emit('error', {
+                    message: 'Error actualizando estado de la cola',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento ping para mantener conexión
+        socket.on('ping', () => {
+            socket.emit('pong', { timestamp: new Date().toISOString() });
         });
     }
 
@@ -364,6 +626,44 @@ class SocketManager {
             } else {
                 socket.emit('error', { message: 'Sin permisos para ver usuarios conectados' });
             }
+        });
+    }
+
+    /**
+     * Emitir actualización de estado de cola de inspecciones a conexiones públicas
+     */
+    emitQueueStatusUpdate(hash, queueData) {
+        if (!this.io) {
+            console.warn('⚠️ Socket.IO no inicializado');
+            return;
+        }
+
+        const queueRoom = `inspection_queue_${hash}`;
+        console.log(`📊 Emitiendo actualización de cola a sala: ${queueRoom}`);
+
+        this.io.to(queueRoom).emit('queueStatusUpdate', {
+            success: true,
+            data: queueData,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    /**
+     * Emitir evento de inspector asignado a conexiones públicas
+     */
+    emitInspectorAssigned(hash, inspectorData) {
+        if (!this.io) {
+            console.warn('⚠️ Socket.IO no inicializado');
+            return;
+        }
+
+        const queueRoom = `inspection_queue_${hash}`;
+        console.log(`👨‍🔧 Emitiendo inspector asignado a sala: ${queueRoom}`);
+
+        this.io.to(queueRoom).emit('inspectorAssigned', {
+            success: true,
+            data: inspectorData,
+            timestamp: new Date().toISOString()
         });
     }
 }

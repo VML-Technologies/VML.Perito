@@ -58,6 +58,8 @@ export function AppSidebar({
   const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin') || hasRole('help_desk');
   const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
   const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin') || hasRole('help_desk');
+  const canAccessCoordinadorVML = hasRole('coordinador_vml') || hasRole('super_admin') || hasRole('help_desk');
+  const canAccessInspectorAliado = hasRole('inspector_aliado') || hasRole('super_admin');
   const appName = import.meta.env.VITE_APP_NAME
 
   return (
@@ -78,7 +80,7 @@ export function AppSidebar({
         <NavMain items={data.navMain} />
 
         {/* Sistema de Inspecciones */}
-        {(canAccessComercial || canAccessAgente || canAccessCoordinador) && (
+        {(canAccessComercial || canAccessAgente || canAccessCoordinador || canAccessCoordinadorVML || canAccessInspectorAliado) && (
           <SidebarGroup>
             <SidebarGroupLabel>Sistema de Inspecciones</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -103,12 +105,32 @@ export function AppSidebar({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+                {canAccessCoordinadorVML && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Coordinador VML">
+                      <Link to="/coordinador-vml">
+                        <ClipboardList />
+                        <span>Coordinador VML</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 {canAccessAgente && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip="Agente de Contact Center">
                       <Link to="/agente-contacto">
                         <Phone />
                         <span>Agente de Contact Center</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {canAccessInspectorAliado && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Inspector Aliado">
+                      <Link to="/inspector-aliado">
+                        <Camera />
+                        <span>Inspector Aliado</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

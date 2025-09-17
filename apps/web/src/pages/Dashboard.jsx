@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
@@ -11,20 +11,32 @@ export const Dashboard = () => {
     const isCoordinador = hasRole('coordinador_contacto');
     const isComercial = hasRole('comercial_mundial');
     const isAgente = hasRole('agente_contacto');
+    const isCoordinadorVml = hasRole('coordinador_vml');
+    const isInspectorAliado = hasRole('inspector_aliado');
     const navigate = useNavigate();
+    const hasRedirected = useRef(false);
 
     useEffect(() => {
-        // Solo redirigir cuando los roles ya se han cargado
-        if (!loading) {
+        // Solo redirigir cuando los roles ya se han cargado y no se ha redirigido antes
+        if (!loading && !hasRedirected.current) {
             if (isCoordinador) {
+                hasRedirected.current = true;
                 navigate('/coordinador-contacto');
             } else if (isComercial) {
+                hasRedirected.current = true;
                 navigate('/comercial-mundial');
             } else if (isAgente) {
+                hasRedirected.current = true;
                 navigate('/agente-contacto');
+            } else if (isCoordinadorVml) {
+                hasRedirected.current = true;
+                navigate('/coordinador-vml');
+            } else if (isInspectorAliado) {
+                hasRedirected.current = true;
+                navigate('/inspector-aliado');
             }
         }
-    }, [loading, isCoordinador, isComercial, isAgente, navigate]);
+    }, [loading, isCoordinador, isComercial, isAgente, isCoordinadorVml, navigate]);
 
     return (
         <div className="p-6">

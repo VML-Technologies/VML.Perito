@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { useEffect } from "react"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
@@ -13,13 +14,43 @@ import ResetPassword from "@/pages/ResetPassword"
 import ComercialMundial from "@/pages/ComercialMundial"
 import AgenteContacto from "@/pages/AgenteContacto"
 import CoordinadorContacto from "@/pages/CoordinadorContacto"
+import CoordinadorVML from "@/pages/CoordinadorVML"
 import NotificationTemplates from "@/pages/NotificationTemplates"
 import ChannelConfigurations from "@/pages/ChannelConfigurations"
 import NotificationAdmin from "@/pages/NotificationAdmin"
 import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
 import InspectionReport from "@/pages/InspectionReport"
+import Inspeccion from "@/pages/Inspeccion"
+import InspeccionEspera from "@/pages/InspeccionEspera"
+import InspectorAliado from "@/pages/InspectorAliado"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
+import { useMatomo } from "@/hooks/use-matomo"
+import { analytics, getPageName } from "@/utils/analytics"
+
+// Componente para trackear rutas automáticamente
+function RouteTracker() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Trackear vista de página cuando cambia la ruta
+    const pageName = getPageName(location.pathname);
+    analytics.pageView(pageName, location.pathname);
+
+    // Trackear login si el usuario está autenticado y es la primera vez
+    if (user && location.pathname !== '/login') {
+      // Solo trackear login una vez por sesión
+      const hasTrackedLogin = sessionStorage.getItem('matomo_login_tracked');
+      if (!hasTrackedLogin) {
+        analytics.userLogin(user.id, user.role);
+        sessionStorage.setItem('matomo_login_tracked', 'true');
+      }
+    }
+  }, [location.pathname, user]);
+
+  return null; // Este componente no renderiza nada
+}
 
 // Componente para redirección inteligente
 function SmartRedirect() {
@@ -44,8 +75,12 @@ function SmartRedirect() {
 }
 
 function AppContent() {
+  // Inicializar Matomo Analytics
+  useMatomo();
+
   return (
     <Router>
+      <RouteTracker />
       <Routes>
         {/* Ruta pública para login */}
         <Route
@@ -69,6 +104,18 @@ function AppContent() {
         <Route
           path="/checkinspectionorder"
           element={<CheckInspectionOrder />}
+        />
+
+        {/* Ruta pública para inspección de asegurabilidad */}
+        <Route
+          path="/inspeccion/:hash"
+          element={<Inspeccion />}
+        />
+
+        {/* Ruta pública para estado de espera de inspección */}
+        <Route
+          path="/espera/inspeccion/:hash"
+          element={<InspeccionEspera />}
         />
 
         {/* Rutas protegidas */}
@@ -183,6 +230,18 @@ function AppContent() {
           }
         />
 
+        {/* Ruta de Coordinador VML */}
+        <Route
+          path="/coordinador-vml"
+          element={
+            <RoleBasedRoute requiredRoles={['coordinador_vml', 'super_admin', 'help_desk']}>
+              <AuthenticatedLayout>
+                <CoordinadorVML />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
         {/* Ruta de Agente de Contact Center */}
         <Route
           path="/agente-contacto"
@@ -190,6 +249,18 @@ function AppContent() {
             <RoleBasedRoute requiredRoles={['agente_contacto', 'super_admin']}>
               <AuthenticatedLayout>
                 <AgenteContacto />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de Inspector Aliado */}
+        <Route
+          path="/inspector-aliado"
+          element={
+            <RoleBasedRoute requiredRoles={['inspector_aliado', 'super_admin']}>
+              <AuthenticatedLayout>
+                <InspectorAliado />
               </AuthenticatedLayout>
             </RoleBasedRoute>
           }

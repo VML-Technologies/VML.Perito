@@ -4,6 +4,7 @@ import Sede from '../models/sede.js';
 import Company from '../models/company.js';
 import Role from '../models/role.js';
 import Permission from '../models/permission.js';
+import UserRole from '../models/userRole.js';
 import PasswordService from '../services/passwordService.js';
 import webSocketSystem from '../websocket/index.js';
 import EventRegistry from '../services/eventRegistry.js';
@@ -12,6 +13,7 @@ import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { Op } from 'sequelize';
 
 // Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +37,7 @@ class UserController extends BaseController {
         this.createUserWithEmail = this.createUserWithEmail.bind(this);
         this.validateIdentification = this.validateIdentification.bind(this);
         this.validateEmail = this.validateEmail.bind(this);
+        this.getInspectors = this.getInspectors.bind(this);
     }
 
     // Sobrescribir el método store para hashear la contraseña
@@ -649,6 +652,98 @@ class UserController extends BaseController {
             res.status(500).json({ 
                 message: 'Error interno del servidor al crear usuario',
                 error: error.message 
+            });
+        }
+    }
+
+    /**
+     * Obtener usuarios con roles de inspector
+     */
+    async getInspectors(req, res) {
+        try {
+            console.log('🔍 === INICIO getInspectors ===');
+            console.log('🔍 Buscando inspectores...');
+            
+            // Estrategia 1: Buscar roles por nombre
+            console.log('📋 Estrategia 1: Buscando roles por nombre...');
+            const inspectorRoles = await Role.findAll({
+                where: {
+                    name: {
+                        [Op.in]: ['inspector_vml_virtual', 'inspector_vml_cda', 'inspector']
+                    }
+                },
+                attributes: ['id', 'name'],
+                raw: true
+            });
+            
+            console.log('🎭 Roles de inspector encontrados:', inspectorRoles);
+            
+            if (inspectorRoles.length === 0) {
+                console.log('⚠️ No se encontraron roles de inspector');
+                return res.json({
+                    success: true,
+                    data: []
+                });
+            }
+            
+            // Obtener los IDs de los roles
+            const roleIds = inspectorRoles.map(role => role.id);
+            console.log('🆔 IDs de roles a buscar:', roleIds);
+            
+            // Estrategia 2: Buscar UserRoles directamente
+            console.log('📋 Estrategia 2: Buscando UserRoles...');
+            const userRoles = await UserRole.findAll({
+                where: {
+                    role_id: {
+                        [Op.in]: roleIds
+                    }
+                },
+                raw: true
+            });
+            
+            console.log(`📋 UserRoles encontrados: ${userRoles.length}`, userRoles);
+            
+            if (userRoles.length === 0) {
+                console.log('⚠️ No se encontraron UserRoles');
+                return res.json({
+                    success: true,
+                    data: []
+                });
+            }
+            
+            // Obtener IDs únicos de usuarios
+            const userIds = [...new Set(userRoles.map(ur => ur.user_id))];
+            console.log('👥 IDs de usuarios únicos:', userIds);
+            
+            // Estrategia 3: Buscar usuarios activos
+            console.log('📋 Estrategia 3: Buscando usuarios activos...');
+            const inspectors = await User.findAll({
+                where: {
+                    id: {
+                        [Op.in]: userIds
+                    },
+                    is_active: true
+                },
+                attributes: ['id', 'name', 'email', 'phone'],
+                order: [['name', 'ASC']],
+                raw: true
+            });
+
+            console.log(`✅ ${inspectors.length} inspectores únicos encontrados:`, inspectors);
+            console.log('🔍 === FIN getInspectors ===');
+            
+            res.json({
+                success: true,
+                data: inspectors
+            });
+        } catch (error) {
+            console.error('❌ Error obteniendo inspectores:', error);
+            console.error('📍 Stack:', error.stack);
+            console.error('🔍 === ERROR getInspectors ===');
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener inspectores',
+                error: error.message
             });
         }
     }

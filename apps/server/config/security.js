@@ -22,8 +22,8 @@ export const securityConfig = {
                 styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
                 fontSrc: ["'self'", "https://fonts.gstatic.com"],
                 imgSrc: ["'self'", "data:", "https:"],
-                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-                connectSrc: ["'self'", "ws:", "wss:"],
+                scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://analytics.vmltechnologies.com"],
+                connectSrc: ["'self'", "ws:", "wss:", "https://analytics.vmltechnologies.com"],
                 frameSrc: ["'none'"],
                 objectSrc: ["'none'"],
                 upgradeInsecureRequests: []

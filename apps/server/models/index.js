@@ -62,6 +62,9 @@ import InspectionState from './inspectionState.js';
 import InspectionOrdersStatusInternal from './inspectionOrdersStatusInternal.js';
 import AppointmentStatus from './appointmentStatus.js';
 
+// Nuevos modelos para queue de inspecciones
+import InspectionQueue from './inspectionQueue.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -803,6 +806,28 @@ InspectionState.belongsTo(User, {
     as: 'user'
 });
 
+// ===== RELACIONES PARA INSPECTION QUEUE =====
+
+// InspectionOrder -> InspectionQueue (1:N) - Una orden puede estar en la cola
+InspectionOrder.hasMany(InspectionQueue, {
+    foreignKey: 'inspection_order_id',
+    as: 'queueEntries'
+});
+InspectionQueue.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
+// User -> InspectionQueue (1:N) - Inspector asignado a la cola
+User.hasMany(InspectionQueue, {
+    foreignKey: 'inspector_asignado_id',
+    as: 'assignedInspections'
+});
+InspectionQueue.belongsTo(User, {
+    foreignKey: 'inspector_asignado_id',
+    as: 'inspector'
+});
+
 export {
     Department,
     City,
@@ -853,6 +878,8 @@ export {
     InspectionCategory,
     InspectionCategoryResponse,
     MechanicalTest,
+    // Sistema de queue de inspecciones
+    InspectionQueue,
     // Sistema de estados de inspección
     InspectionState,
     InspectionOrdersStatusInternal,

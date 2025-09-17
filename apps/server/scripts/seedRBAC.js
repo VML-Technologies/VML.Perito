@@ -291,6 +291,14 @@ const seedRBAC = async () => {
                 endpoint: '/api/inspection-orders/:id',
                 method: 'DELETE'
             },
+            {
+                name: 'inspection_orders.search_by_plate',
+                description: 'Buscar órdenes de inspección por placa',
+                resource: 'inspection_orders',
+                action: 'search_by_plate',
+                endpoint: '/api/inspection-orders/search-by-plate',
+                method: 'GET'
+            },
             // ===== NUEVOS PERMISOS - Agente de Contact Center =====
             {
                 name: 'contact_agent.read',
@@ -529,6 +537,47 @@ const seedRBAC = async () => {
                 action: 'view',
                 endpoint: '/api/help-desk',
                 method: 'GET'
+            },
+            // Appointments
+            {
+                name: 'appointments.read',
+                description: 'Ver agendamientos',
+                resource: 'appointments',
+                action: 'read',
+                endpoint: '/api/appointments',
+                method: 'GET'
+            },
+            {
+                name: 'appointments.create',
+                description: 'Crear agendamientos',
+                resource: 'appointments',
+                action: 'create',
+                endpoint: '/api/appointments',
+                method: 'POST'
+            },
+            {
+                name: 'appointments.update',
+                description: 'Actualizar agendamientos',
+                resource: 'appointments',
+                action: 'update',
+                endpoint: '/api/appointments/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'appointments.delete',
+                description: 'Eliminar agendamientos',
+                resource: 'appointments',
+                action: 'delete',
+                endpoint: '/api/appointments/:id',
+                method: 'DELETE'
+            },
+            {
+                name: 'reports.read',
+                description: 'Ver reportes',
+                resource: 'reports',
+                action: 'read',
+                endpoint: '/api/reports',
+                method: 'GET'
             }
         ];
 
@@ -582,6 +631,28 @@ const seedRBAC = async () => {
             {
                 name: 'coordinador_contacto',
                 description: 'Coordinador de Contact Center - Supervisa y asigna agentes'
+            },
+            // ===== ROLES DE INSPECTORES VML =====
+            {
+                name: 'inspector_vml_virtual',
+                description: 'Inspector VML Virtual - Realiza inspecciones virtuales'
+            },
+            {
+                name: 'inspector_vml_cda',
+                description: 'Inspector VML CDA - Realiza inspecciones en CDAs'
+            },
+            {
+                name: 'coordinador_vml',
+                description: 'Coordinador VML - Supervisa y coordina inspectores VML'
+            },
+            // ===== ROLES DE ALIADOS =====
+            {
+                name: 'inspector_aliado',
+                description: 'Inspector Aliado - Realiza inspecciones para aliados'
+            },
+            {
+                name: 'coordinador_aliado',
+                description: 'Coordinador Aliado - Supervisa y coordina inspectores aliados'
             }
         ];
 
@@ -735,6 +806,151 @@ const seedRBAC = async () => {
                 });
             }
             console.log(`✅ Permisos de Coordinador de Contact Center asignados a ${coordinadorRole.name}`);
+        }
+
+        // ===== ROLES DE INSPECTORES VML =====
+
+        // Inspector VML Virtual: Permisos para inspecciones virtuales
+        const inspectorVirtualRole = createdRoles.find(r => r.name == 'inspector_vml_virtual');
+        if (inspectorVirtualRole) {
+            const inspectorVirtualPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspections.') ||
+                p.name.startsWith('inspection_orders.read') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
+                p.name == 'users.read' // Necesario para acceder al perfil
+            );
+            for (const permission of inspectorVirtualPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: inspectorVirtualRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Inspector VML Virtual asignados a ${inspectorVirtualRole.name}`);
+        }
+
+        // Inspector VML CDA: Permisos para inspecciones en CDAs
+        const inspectorCDARole = createdRoles.find(r => r.name == 'inspector_vml_cda');
+        if (inspectorCDARole) {
+            const inspectorCDAPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspections.') ||
+                p.name.startsWith('inspection_orders.read') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
+                p.name == 'users.read' // Necesario para acceder al perfil
+            );
+            for (const permission of inspectorCDAPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: inspectorCDARole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Inspector VML CDA asignados a ${inspectorCDARole.name}`);
+        }
+
+        // Coordinador VML: Permisos para supervisar inspectores VML
+        const coordinadorVMLRole = createdRoles.find(r => r.name == 'coordinador_vml');
+        if (coordinadorVMLRole) {
+            // Definir permisos específicos necesarios para el coordinador VML
+            const coordinadorVMLPermissionNames = [
+                'users.read',           // Para obtener inspectores
+                'sedes.read',           // Para obtener sedes CDA
+                'inspection_orders.read', // Para ver órdenes
+                'inspection_orders.update', // Para iniciar inspecciones virtuales
+                'appointments.read',    // Para ver agendamientos en sede
+                'appointments.update',  // Para actualizar estados de agendamientos
+                'departments.read',     // Para datos geográficos
+                'cities.read',          // Para datos geográficos
+                'inspections.read',     // Para ver cola de inspecciones
+                'inspections.update'    // Para actualizar estados
+            ];
+            
+            const coordinadorVMLPermissions = createdPermissions.filter(p =>
+                coordinadorVMLPermissionNames.includes(p.name)
+            );
+            
+            console.log(`🔍 Permisos que se asignarán al coordinador VML:`, coordinadorVMLPermissions.map(p => p.name));
+            
+            for (const permission of coordinadorVMLPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: coordinadorVMLRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Coordinador VML asignados a ${coordinadorVMLRole.name}`);
+        }
+
+        // ===== ROLES DE ALIADOS =====
+
+        // Inspector Aliado: Permisos para inspecciones de aliados
+        const inspectorAliadoRole = createdRoles.find(r => r.name == 'inspector_aliado');
+        if (inspectorAliadoRole) {
+            const inspectorAliadoPermissionNames = [
+                'users.read',           // Para acceder al perfil
+                'sedes.read',           // Para obtener información de sedes
+                'inspection_orders.read', // Para buscar órdenes por placa
+                'inspection_orders.search_by_plate', // Para búsqueda específica por placa
+                'appointments.read',    // Para ver agendamientos
+                'appointments.create',  // Para crear agendamientos
+                'departments.read',     // Para datos geográficos
+                'cities.read',           // Para datos geográficos
+                'reports.read'          // Para ver reportes
+            ];
+            
+            const inspectorAliadoPermissions = createdPermissions.filter(p =>
+                inspectorAliadoPermissionNames.includes(p.name)
+            );
+
+            const permissionsNoEncontrados = inspectorAliadoPermissionNames.filter(p => !inspectorAliadoPermissions.some(pp => pp.name == p));
+
+            console.log(`🔍 Permisos no encontrados:`, permissionsNoEncontrados);
+            
+            console.log(`🔍 Permisos que se asignarán al Inspector Aliado:`, inspectorAliadoPermissions.map(p => p.name));
+            
+            for (const permission of inspectorAliadoPermissions) {
+                console.log("Validando permiso:", permission.name);
+
+                const rolePermission = await RolePermission.findOrCreate({
+                    where: {
+                        role_id: inspectorAliadoRole.id,
+                        permission_id: permission.id
+                    }
+                });
+
+                console.log("Permiso asignado:", rolePermission.name);
+            }
+            console.log(`✅ Permisos de Inspector Aliado asignados a ${inspectorAliadoRole.name}`);
+        }
+
+        // Coordinador Aliado: Permisos para supervisar inspectores aliados
+        const coordinadorAliadoRole = createdRoles.find(r => r.name == 'coordinador_aliado');
+        if (coordinadorAliadoRole) {
+            const coordinadorAliadoPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspections.') ||
+                p.name.startsWith('inspection_orders.') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
+                p.name.startsWith('users.read') ||
+                p.name.startsWith('users.update') // Para asignar inspectores
+            );
+            for (const permission of coordinadorAliadoPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: coordinadorAliadoRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Coordinador Aliado asignados a ${coordinadorAliadoRole.name}`);
         }
 
         // Help Desk: Permisos para ayuda técnica
