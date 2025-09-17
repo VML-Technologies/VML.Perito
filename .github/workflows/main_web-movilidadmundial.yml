@@ -37,6 +37,11 @@ jobs:
           echo "VITE_INSPECTYA_URL_CLIENT=${{ secrets.VITE_INSPECTYA_URL_CLIENT }}" > .env
           echo "VITE_ANALYTICS_URL=${{ secrets.VITE_ANALYTICS_URL }}" > .env
 
+      - name: print .env file
+        working-directory: apps/web
+        run: |
+          cat .env
+
       - name: Build frontend
         working-directory: apps/web
         run: |
