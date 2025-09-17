@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - WEB-MovilidadMundial
 on:
   push:
     branches:
-      - dev
+      - main
   workflow_dispatch:
 
 jobs:
@@ -62,16 +62,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F893C1A17E89431F9FCEBF2ADEEDEEC0 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0F08DCF3D0F84FAE843EDE32A0985114 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6A3F306D725D44AB9625A57B044B42C9 }}
-
-      - name: Wait for Azure to be ready
-        run: sleep 30
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_95F15140ADC34A3587AE2B495F6015E0 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5A4B86721FEF4ECBBDD5C31C342302C1 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_115D94A2CA824BDF925EEAF58FA6EE00 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -80,4 +77,4 @@ jobs:
           app-name: 'WEB-MovilidadMundial'
           slot-name: 'Production'
           package: .
-
+          
