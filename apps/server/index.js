@@ -407,8 +407,6 @@ app.get('/api/public/inspection-queue/hash/:hash', inspectionQueueController.get
 // Rutas para gestión de agendamientos
 app.get('/api/appointments', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointments);
 app.get('/api/appointments/sede-coordinator', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForCoordinator);
-app.get('/api/appointments/sede-inspector-aliado', readLimiter, appointmentController.getSedeAppointmentsForInspectorAliado);
-
 app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForInspectorAliado);
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
