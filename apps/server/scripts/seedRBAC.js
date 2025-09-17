@@ -570,6 +570,14 @@ const seedRBAC = async () => {
                 action: 'delete',
                 endpoint: '/api/appointments/:id',
                 method: 'DELETE'
+            },
+            {
+                name: 'reports.read',
+                description: 'Ver reportes',
+                resource: 'reports',
+                action: 'read',
+                endpoint: '/api/reports',
+                method: 'GET'
             }
         ];
 
@@ -893,7 +901,8 @@ const seedRBAC = async () => {
                 'appointments.read',    // Para ver agendamientos
                 'appointments.create',  // Para crear agendamientos
                 'departments.read',     // Para datos geográficos
-                'cities.read'           // Para datos geográficos
+                'cities.read',           // Para datos geográficos
+                'reports.read'          // Para ver reportes
             ];
             
             const inspectorAliadoPermissions = createdPermissions.filter(p =>

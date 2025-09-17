@@ -36,6 +36,7 @@ import contactHistoryController from './controllers/contactHistoryController.js'
 import commentHistoryController from './controllers/commentHistoryController.js';
 import inspectionQueueController from './controllers/inspectionQueueController.js';
 import inspectionModalityController from './controllers/inspectionModalityController.js';
+import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -60,6 +61,9 @@ import inspectionQueueMemoryService from './services/inspectionQueueMemoryServic
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
+
+// Crear instancia del controlador de Inspector Aliado
+const inspectorAliadoControllerInstance = new inspectorAliadoController();
 
 const app = express();
 const server = createServer(app);
@@ -382,8 +386,9 @@ app.get('/api/appointments/sedes', readLimiter, requirePermission('appointments.
 app.post('/api/appointments', requirePermission('appointments.create'), appointmentController.createAppointment);
 app.get('/api/appointments/time-slots', readLimiter, requirePermission('appointments.read'), appointmentController.getAvailableTimeSlots);
 
-// ===== RUTA DEDICADA PARA INSPECTOR ALIADO =====
-app.post('/api/inspector-aliado/appointments', requirePermission('appointments.create'), appointmentController.createInspectorAliadoAppointment);
+// ===== RUTAS DEDICADAS PARA INSPECTOR ALIADO =====
+app.post('/api/inspector-aliado/appointments', requirePermission('appointments.create'), inspectorAliadoControllerInstance.createAppointment);
+app.get('/api/inspector-aliado/reports/historical', requirePermission('reports.read'), inspectorAliadoControllerInstance.getHistoricalReport);
 
 // ===== RUTAS - Queue de Inspecciones =====
 
@@ -402,6 +407,8 @@ app.get('/api/public/inspection-queue/hash/:hash', inspectionQueueController.get
 // Rutas para gestión de agendamientos
 app.get('/api/appointments', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointments);
 app.get('/api/appointments/sede-coordinator', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForCoordinator);
+app.get('/api/appointments/sede-inspector-aliado', readLimiter, appointmentController.getSedeAppointmentsForInspectorAliado);
+
 app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermission('appointments.read'), appointmentController.getSedeAppointmentsForInspectorAliado);
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
