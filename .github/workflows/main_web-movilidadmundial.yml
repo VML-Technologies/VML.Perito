@@ -33,6 +33,9 @@ jobs:
         run: |
           echo "VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}" > .env
           echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env
+          echo "VITE_INSPECTYA_URL=${{ secrets.VITE_INSPECTYA_URL }}" > .env
+          echo "VITE_INSPECTYA_URL_CLIENT=${{ secrets.VITE_INSPECTYA_URL_CLIENT }}" > .env
+          echo "VITE_ANALYTICS_URL=${{ secrets.VITE_ANALYTICS_URL }}" > .env
 
       - name: Build frontend
         working-directory: apps/web
