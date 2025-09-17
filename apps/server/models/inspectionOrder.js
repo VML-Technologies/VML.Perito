@@ -293,32 +293,36 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                 console.error('❌ Error generando link final:', error);
             }
 
-            // Enviar SMS con el link de inspección
-            try {
-                const smsService = await import('../services/channels/smsService.js');
-                
-                // const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, cuando estés listo para tu inspección de asegurabilidad ingresa a este link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
-                const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
-                
-                await smsService.default.send({
-                    recipient_phone: inspectionOrder.celular_contacto,
-                    content: smsMessage,
-                    priority: 'normal',
-                    metadata: {
-                        inspection_order_id: inspectionOrder.id,
-                        placa: inspectionOrder.placa,
-                        nombre_contacto: inspectionOrder.nombre_contacto,
-                        channel_data: {
-                            sms: {
-                                message: smsMessage
+            // Enviar SMS con el link de inspección (condicionado por FLAG_SEND_SMS_OIN_CREATE)
+            if (process.env.FLAG_SEND_SMS_OIN_CREATE === 'true') {
+                try {
+                    const smsService = await import('../services/channels/smsService.js');
+                    
+                    // const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, cuando estés listo para tu inspección de asegurabilidad ingresa a este link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+                    const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
+                    
+                    await smsService.default.send({
+                        recipient_phone: inspectionOrder.celular_contacto,
+                        content: smsMessage,
+                        priority: 'normal',
+                        metadata: {
+                            inspection_order_id: inspectionOrder.id,
+                            placa: inspectionOrder.placa,
+                            nombre_contacto: inspectionOrder.nombre_contacto,
+                            channel_data: {
+                                sms: {
+                                    message: smsMessage
+                                }
                             }
                         }
-                    }
-                });
-                
-                console.log(`📱 SMS enviado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
-            } catch (error) {
-                console.error('❌ Error enviando SMS con link de inspección:', error);
+                    });
+                    
+                    console.log(`📱 SMS enviado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
+                } catch (error) {
+                    console.error('❌ Error enviando SMS con link de inspección:', error);
+                }
+            } else {
+                console.log(`📱 SMS saltado por configuración FLAG_SEND_SMS_OIN_CREATE=${process.env.FLAG_SEND_SMS_OIN_CREATE} para orden ${inspectionOrder.id}`);
             }
         },
         

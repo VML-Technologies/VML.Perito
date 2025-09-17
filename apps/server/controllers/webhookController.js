@@ -301,94 +301,98 @@ class WebhookController {
             
             console.log(`✅ inspection_link generado y actualizado: ${finalLink}`);
             
-            // 7. Enviar SMS automático
-            console.log(`📱 Enviando SMS automático...`);
-            try {
-                const smsService = await import('../services/channels/smsService.js');
-                
-                const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${finalLink}`;
-                
-                const smsResult = await smsService.default.send({
-                    recipient_phone: inspectionOrder.celular_contacto,
-                    content: smsMessage,
-                    priority: 'normal',
-                    metadata: {
-                        inspection_order_id: inspectionOrder.id,
-                        placa: inspectionOrder.placa,
-                        nombre_contacto: inspectionOrder.nombre_contacto,
-                        channel_data: {
-                            sms: {
-                                message: smsMessage
+            // 7. Enviar SMS automático (condicionado por FLAG_SEND_SMS_OIN_CREATE)
+            let smsSent = false;
+            let smsError = null;
+            
+            if (process.env.FLAG_SEND_SMS_OIN_CREATE === 'true') {
+                console.log(`📱 Enviando SMS automático...`);
+                try {
+                    const smsService = await import('../services/channels/smsService.js');
+                    
+                    const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${finalLink}`;
+                    
+                    const smsResult = await smsService.default.send({
+                        recipient_phone: inspectionOrder.celular_contacto,
+                        content: smsMessage,
+                        priority: 'normal',
+                        metadata: {
+                            inspection_order_id: inspectionOrder.id,
+                            placa: inspectionOrder.placa,
+                            nombre_contacto: inspectionOrder.nombre_contacto,
+                            channel_data: {
+                                sms: {
+                                    message: smsMessage
+                                }
                             }
                         }
-                    }
-                });
-                
-                console.log(`✅ SMS enviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
-                
-                // 8. Disparar evento de procesamiento completado
-                try {
-                    await automatedEventTriggers.triggerInspectionOrderEvents('processed_external', {
-                        id: inspectionOrder.id,
-                        numero: inspectionOrder.numero,
-                        nombre_cliente: inspectionOrder.nombre_cliente,
-                        correo_cliente: inspectionOrder.correo_cliente,
-                        celular_cliente: inspectionOrder.celular_cliente,
-                        placa: inspectionOrder.placa,
-                        marca: inspectionOrder.marca,
-                        linea: inspectionOrder.linea,
-                        modelo: inspectionOrder.modelo,
-                        status: inspectionOrder.InspectionOrderStatus?.name || 'Nueva',
-                        inspection_link: finalLink,
-                        created_at: inspectionOrder.created_at,
-                        clave_intermediario: inspectionOrder.clave_intermediario
-                    }, {
-                        ...context,
-                        webhook_source: true,
-                        trigger_source: 'external_webhook_process',
-                        processed_at: new Date().toISOString()
                     });
                     
-                    console.log(`✅ Evento processed_external disparado`);
-                } catch (eventError) {
-                    console.warn('⚠️ Error disparando evento processed_external:', eventError);
+                    console.log(`✅ SMS enviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+                    smsSent = true;
+                    
+                } catch (error) {
+                    console.error('❌ Error enviando SMS:', error);
+                    smsError = error.message;
                 }
-                
-                const response = {
-                    status: 'success',
-                    message: 'Orden procesada exitosamente',
-                    data: {
-                        inspection_order_id: inspectionOrder.id,
-                        numero: inspectionOrder.numero,
-                        placa: inspectionOrder.placa,
-                        inspection_link: finalLink,
-                        sms_sent: true,
-                        sms_recipient: inspectionOrder.celular_contacto,
-                        processed_at: new Date().toISOString()
-                    }
-                };
-                
-                console.log(`✅ handleInspectionOrderProcessExisting completado:`, response);
-                return response;
-                
-            } catch (smsError) {
-                console.error('❌ Error enviando SMS:', smsError);
-                
-                // Aún así, devolver éxito porque el link se generó correctamente
-                return {
-                    status: 'partial_success',
-                    message: 'Link generado exitosamente, pero falló el envío de SMS',
-                    data: {
-                        inspection_order_id: inspectionOrder.id,
-                        numero: inspectionOrder.numero,
-                        placa: inspectionOrder.placa,
-                        inspection_link: finalLink,
-                        sms_sent: false,
-                        sms_error: smsError.message,
-                        processed_at: new Date().toISOString()
-                    }
-                };
+            } else {
+                console.log(`📱 SMS saltado por configuración FLAG_SEND_SMS_OIN_CREATE=${process.env.FLAG_SEND_SMS_OIN_CREATE} para orden ${inspectionOrder.id}`);
             }
+            
+            // 8. Disparar evento de procesamiento completado
+            try {
+                await automatedEventTriggers.triggerInspectionOrderEvents('processed_external', {
+                    id: inspectionOrder.id,
+                    numero: inspectionOrder.numero,
+                    nombre_cliente: inspectionOrder.nombre_cliente,
+                    correo_cliente: inspectionOrder.correo_cliente,
+                    celular_cliente: inspectionOrder.celular_cliente,
+                    placa: inspectionOrder.placa,
+                    marca: inspectionOrder.marca,
+                    linea: inspectionOrder.linea,
+                    modelo: inspectionOrder.modelo,
+                    status: inspectionOrder.InspectionOrderStatus?.name || 'Nueva',
+                    inspection_link: finalLink,
+                    created_at: inspectionOrder.created_at,
+                    clave_intermediario: inspectionOrder.clave_intermediario
+                }, {
+                    ...context,
+                    webhook_source: true,
+                    trigger_source: 'external_webhook_process',
+                    processed_at: new Date().toISOString()
+                });
+                
+                console.log(`✅ Evento processed_external disparado`);
+            } catch (eventError) {
+                console.warn('⚠️ Error disparando evento processed_external:', eventError);
+            }
+            
+            // 9. Preparar respuesta según el estado del SMS
+            const response = {
+                status: smsError ? 'partial_success' : 'success',
+                message: smsError ? 'Link generado exitosamente, pero falló el envío de SMS' : 'Orden procesada exitosamente',
+                data: {
+                    inspection_order_id: inspectionOrder.id,
+                    numero: inspectionOrder.numero,
+                    placa: inspectionOrder.placa,
+                    inspection_link: finalLink,
+                    processed_at: new Date().toISOString()
+                }
+            };
+            
+            // Solo incluir información de SMS si se intentó enviar
+            if (process.env.FLAG_SEND_SMS_OIN_CREATE === 'true') {
+                response.data.sms_sent = smsSent;
+                if (smsSent) {
+                    response.data.sms_recipient = inspectionOrder.celular_contacto;
+                }
+                if (smsError) {
+                    response.data.sms_error = smsError;
+                }
+            }
+            
+            console.log(`✅ handleInspectionOrderProcessExisting completado:`, response);
+            return response;
             
         } catch (error) {
             console.error(`❌ Error en handleInspectionOrderProcessExisting:`, error);
