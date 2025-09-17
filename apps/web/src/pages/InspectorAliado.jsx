@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, RefreshCw, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, RefreshCw, AlertTriangle, CheckCircle, Copy, Download, FileSpreadsheet } from 'lucide-react';
 import { useNotificationContext } from '@/contexts/notification-context';
 import { API_ROUTES } from '@/config/api';
 import { useAuth } from '@/contexts/auth-context';
@@ -31,6 +32,12 @@ const InspectorAliado = () => {
     const [appointments, setAppointments] = useState([]);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    
+    // Estados para el reporte histórico
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportStartDate, setReportStartDate] = useState('');
+    const [reportEndDate, setReportEndDate] = useState('');
+    const [downloadingReport, setDownloadingReport] = useState(false);
     
 
     
@@ -247,11 +254,142 @@ const InspectorAliado = () => {
         }
     };
     
+    const handleDownloadReport = async () => {
+        if (!reportStartDate || !reportEndDate) {
+            showToast('Por favor selecciona las fechas de inicio y fin', 'error');
+            return;
+        }
+        
+        if (new Date(reportStartDate) > new Date(reportEndDate)) {
+            showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
+            return;
+        }
+        
+        try {
+            setDownloadingReport(true);
+            
+            const response = await fetch(`${API_ROUTES.INSPECTOR_ALIADO.REPORTS.HISTORICAL}?sede_id=${user.sede_id}&start_date=${reportStartDate}&end_date=${reportEndDate}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            });
+            
+            if (response.ok) {
+                // Obtener el blob del archivo
+                const blob = await response.blob();
+                
+                // Crear URL temporal para descarga
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Obtener nombre del archivo del header Content-Disposition
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `reporte-historico-cda-${reportStartDate}-${reportEndDate}.xlsx`;
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showToast('Reporte descargado exitosamente', 'success');
+                setShowReportModal(false);
+                setReportStartDate('');
+                setReportEndDate('');
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al generar el reporte');
+            }
+        } catch (error) {
+            console.error('Error downloading report:', error);
+            showToast(error.message || 'Error al descargar el reporte', 'error');
+        } finally {
+            setDownloadingReport(false);
+        }
+    };
+    
     return (
         <div className="">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Inspector Aliado</h1>
-                <p className="text-gray-600">Gestión de inspecciones y agendamientos</p>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Inspector Aliado</h1>
+                        <p className="text-gray-600">Gestión de inspecciones y agendamientos</p>
+                    </div>
+                    <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="flex items-center gap-2">
+                                <FileSpreadsheet className="h-4 w-4" />
+                                Descargar Reporte
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <Download className="h-5 w-5" />
+                                    Descargar Reporte Histórico
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div>
+                                    <Label htmlFor="startDate">Fecha de Inicio</Label>
+                                    <Input
+                                        id="startDate"
+                                        type="date"
+                                        value={reportStartDate}
+                                        onChange={(e) => setReportStartDate(e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="endDate">Fecha de Fin</Label>
+                                    <Input
+                                        id="endDate"
+                                        type="date"
+                                        value={reportEndDate}
+                                        onChange={(e) => setReportEndDate(e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowReportModal(false)}
+                                        disabled={downloadingReport}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        onClick={handleDownloadReport}
+                                        disabled={downloadingReport || !reportStartDate || !reportEndDate}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {downloadingReport ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Generando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Download className="h-4 w-4" />
+                                                Descargar XLSX
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
             
             <div className="flex gap-2">

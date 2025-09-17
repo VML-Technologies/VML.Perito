@@ -241,6 +241,9 @@ export const API_ROUTES = {
     INSPECTOR_ALIADO: {
         APPOINTMENTS: {
             CREATE: `${API_BASE_URL}/api/inspector-aliado/appointments`
+        },
+        REPORTS: {
+            HISTORICAL: `${API_BASE_URL}/api/inspector-aliado/reports/historical`
         }
     },
     
