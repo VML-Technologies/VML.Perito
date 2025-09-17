@@ -338,7 +338,7 @@ const OrdersTable = ({
                                                                     )}
 
                                                                     {
-                                                                        (user.email.includes('segurosmundial.com.co') && order.fixedStatus.includes('Finalizado') && order.session_id) ? <>
+                                                                        (order.fixedStatus.includes('Finalizado') && order.session_id) ? <>
                                                                             <Button
                                                                                 size="sm"
                                                                                 variant="outline"
