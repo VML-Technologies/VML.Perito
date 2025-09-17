@@ -95,9 +95,12 @@ select * from users where email in (
         */
         const usuarios = await User.findAll({
             where: {
+                // email: {
+                //     [Op.in]: ['simon.bolivar@holdingvml.net']
+                // }
                 password: {
                     [Op.in]: [
-                        '$2b$10$lE8VWR2ARRSMSd1DmM7D9.JExYBnwLAeBe6QZzVjIL4IKoWsbYPHe'
+                        '$2a$10$S5NmUs9T5oIOyda5nNJzGOs2.XtSevOIJx8CyJKdlpmQQIMwgjdX2'
                     ]
                 }
             }
@@ -128,7 +131,7 @@ select * from users where email in (
             const templateVariables = {
                 user_name: name,
                 email: email,
-                PASSWORD_TEMPORAL: 'ComercialMundial#132', // Aquí deberías obtener la contraseña real
+                PASSWORD_TEMPORAL: 'CDAAliadoVML2025*', // Aquí deberías obtener la contraseña real
                 login_url: login_url,
                 current_year: current_year
             }
