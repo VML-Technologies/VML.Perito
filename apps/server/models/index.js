@@ -7,6 +7,7 @@ import Role from './role.js';
 import Permission from './permission.js';
 import RolePermission from './rolePermission.js';
 import UserRole from './userRole.js';
+import ImageCapture from './imageCapture.js';
 
 // Nuevos modelos
 import InspectionOrderStatus from './inspectionOrderStatus.js';
@@ -828,6 +829,16 @@ InspectionQueue.belongsTo(User, {
     as: 'inspector'
 });
 
+// Appointment -> ImageCapture (1:N)
+Appointment.hasMany(ImageCapture, {
+    foreignKey: 'appointment_id',
+    as: 'imageCaptures',
+});
+ImageCapture.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+});
+
 export {
     Department,
     City,
@@ -838,6 +849,7 @@ export {
     Permission,
     RolePermission,
     UserRole,
+    ImageCapture,
     // Nuevos modelos
     InspectionOrderStatus,
     InspectionOrder,

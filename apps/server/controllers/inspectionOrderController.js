@@ -17,9 +17,11 @@ import InspectionCategory from '../models/inspectionCategory.js';
 import InspectionCategoryResponse from '../models/inspectionCategoryResponse.js';
 import MechanicalTest from '../models/mechanicalTest.js';
 import InspectionModality from '../models/inspectionModality.js';
+import ImageCapture from '../models/imageCapture.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 import fs from 'fs';
+import ImageProcessor from '../utils/imageProcessor.js';
 
 
 // Función para generar número de orden incremental
@@ -1162,6 +1164,7 @@ class InspectionOrderController extends BaseController {
                 'POLITICAS DE ASEGURABILIDAD "Sistema de identificación"'
             ];
 
+
             // Verificar si hay alguna respuesta marcada en estas categorías
             for (const [part_id, response] of Object.entries(partResponses)) {
                 const part = parts.find(p => p.id.toString() === part_id.toString());
@@ -1209,7 +1212,9 @@ class InspectionOrderController extends BaseController {
 
         // Verificar puntaje mínimo no cumplido
         const hasMinScoreRejection = () => {
-            if (!partResponses || !parts) return false;
+            if (!partResponses || !parts) {
+                return false;
+            }
 
             // Agrupar partes por categoría
             const groupedParts = parts.reduce((acc, part) => {
@@ -1222,6 +1227,7 @@ class InspectionOrderController extends BaseController {
                 acc[categoria].push(part);
                 return acc;
             }, {});
+
 
             // Verificar cada categoría
             for (const [categoria, parts] of Object.entries(groupedParts)) {
@@ -1237,27 +1243,43 @@ class InspectionOrderController extends BaseController {
                 parts.forEach(part => {
                     const value = partResponses[part.id];
 
-                    if (Array.isArray(part.opciones) && part.opciones.length > 0) {
-                        const opt = part.opciones.find(opt => String(opt.value) === String(value));
-                        if (value !== undefined && value !== "") {
-                            sumSelected += opt ? Number(opt.value) : 0;
+                    // Parsear opciones si vienen como string JSON
+                    let opciones = part.opciones;
+                    if (typeof part.opciones === 'string') {
+                        try {
+                            opciones = JSON.parse(part.opciones);
+                        } catch (e) {
+                            opciones = [];
                         }
-                        const maxOpt = part.opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
+                    }
+
+                    if (Array.isArray(opciones) && opciones.length > 0) {
+                        const opt = opciones.find(opt => String(opt.value) === String(value));
+                        if (value !== undefined && value !== "") {
+                            const selectedValue = opt ? Number(opt.value) : 0;
+                            sumSelected += selectedValue;
+                        }
+                        const maxOpt = opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
                         sumMax += maxOpt;
                     } else {
                         if (value === 'bueno') {
-                            sumSelected += Number(part.bueno || 100);
+                            const buenoValue = Number(part.bueno || 100);
+                            sumSelected += buenoValue;
                         } else if (value === 'regular') {
-                            sumSelected += Number(part.regular || 50);
+                            const regularValue = Number(part.regular || 50);
+                            sumSelected += regularValue;
                         } else if (value === 'malo') {
-                            sumSelected += Number(part.malo || 0);
+                            const maloValue = Number(part.malo || 0);
+                            sumSelected += maloValue;
                         }
-                        sumMax += Number(part.bueno || 100);
+                        const buenoMax = Number(part.bueno || 100);
+                        sumMax += buenoMax;
                     }
                 });
 
                 const percent = sumMax > 0 ? (sumSelected / sumMax) * 100 : 0;
                 const minRequired = parts[0]?.minimo;
+
 
                 if (minRequired && percent < minRequired) {
                     return true;
@@ -1272,6 +1294,7 @@ class InspectionOrderController extends BaseController {
         const mechanicalFailures = hasMechanicalFailures();
         const minScoreRejection = hasMinScoreRejection();
 
+
         const isAsegurable = !rejectionCriteria && !mechanicalFailures && !minScoreRejection;
 
         let reason = '';
@@ -1284,6 +1307,7 @@ class InspectionOrderController extends BaseController {
         } else {
             reason = 'Vehículo cumple todos los criterios';
         }
+
 
         return { isAsegurable, reason };
     }
@@ -1536,6 +1560,10 @@ class InspectionOrderController extends BaseController {
                                 model: Sede,
                                 as: 'sede',
                                 attributes: ['name'],
+                            }, {
+                                model: ImageCapture,
+                                as: 'imageCaptures',
+                                attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
                             }
                         ]
                     }
@@ -1549,9 +1577,19 @@ class InspectionOrderController extends BaseController {
                     message: 'Orden de inspección no encontrada'
                 });
             }
-            // save in a file the inspectionOrder
-            // fs.writeFileSync('inspectionOrder.json', JSON.stringify(inspectionOrder, null, 2));
-            // Validar que tenga appointments
+
+            console.log(`🔍 Orden encontrada: ${inspectionOrder.id}, Appointments: ${inspectionOrder.appointments?.length || 0}`);
+            if (inspectionOrder.appointments && inspectionOrder.appointments.length > 0) {
+                inspectionOrder.appointments.forEach((appointment, index) => {
+                    console.log(`📋 Appointment ${index + 1}: ${appointment.session_id}, ImageCaptures: ${appointment.imageCaptures?.length || 0}`);
+                    if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                        appointment.imageCaptures.forEach((img, imgIndex) => {
+                            console.log(`📸 Imagen ${imgIndex + 1}: ID=${img.id}, slot=${img.slot}, name=${img.name}, hasBlobName=${!!img.blob_name}`);
+                        });
+                    }
+                });
+            }
+            
             if (!inspectionOrder.appointments || inspectionOrder.appointments.length === 0) {
                 return res.json({
                     success: true,
@@ -1562,7 +1600,7 @@ class InspectionOrderController extends BaseController {
                 });
             }
 
-            // Extender con respuestas
+            // Extender con respuestas e imágenes
             const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
                 // Obtener respuestas de partes de inspección
                 const responsesData = await this.getResponsesData(appointment.session_id);
@@ -1575,6 +1613,41 @@ class InspectionOrderController extends BaseController {
                 
                 // Obtener comentarios de categorías
                 const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
+                
+                // Procesar imágenes si existen
+                let processedImages = null;
+                if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                    try {
+                        console.log(`📸 Procesando imágenes para appointment ${appointment.session_id}:`);
+                        console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
+                            id: img.id,
+                            slot: img.slot,
+                            name: img.name,
+                            category: img.category,
+                            hasBlobName: !!img.blob_name,
+                            hasImageUrl: !!img.image_url
+                        })));
+                        
+                        // remover imagenes adicionales img.slot.startsWith('adicional_')
+                        appointment.imageCaptures = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
+
+
+                        const imageProcessor = new ImageProcessor();
+                        processedImages = await imageProcessor.processInspectionImages(appointment.imageCaptures, 60);
+                        console.log(`📸 Imágenes procesadas para appointment ${appointment.session_id}: ${processedImages.total_count} total`);
+                    } catch (error) {
+                        console.error('❌ Error procesando imágenes:', error);
+                        console.error('❌ Stack trace:', error.stack);
+                        processedImages = {
+                            main_images: [],
+                            additional_images: [],
+                            total_count: 0,
+                            error: error.message
+                        };
+                    }
+                } else {
+                    console.log(`📭 No hay imágenes para appointment ${appointment.session_id}`);
+                }
                 
                 // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
                 const partsData = await sequelize.query(`
@@ -1672,7 +1745,9 @@ class InspectionOrderController extends BaseController {
                         }
                     },
                     // Datos de pruebas mecánicas (solo si existen)
-                    mechanicalTests: mechanicalTestsData && Object.keys(mechanicalTestsData).length > 0 ? mechanicalTestsData : null
+                    mechanicalTests: mechanicalTestsData && Object.keys(mechanicalTestsData).length > 0 ? mechanicalTestsData : null,
+                    // Imágenes procesadas con URLs de Azure Blob Storage
+                    images: processedImages
                 };
             }));
 
@@ -1709,13 +1784,33 @@ class InspectionOrderController extends BaseController {
                 } : null
             };
 
-            res.json({
+            const response = {
                 success: true,
                 data: {
                     ...plainInspectionOrder,
                     appointments: fullInspectionOrderAppointments
                 }
+            };
+
+            // Log de la respuesta final para debugging
+            console.log('📤 Respuesta final enviada:');
+            console.log(`📤 - Orden ID: ${response.data.id}`);
+            console.log(`📤 - Appointments: ${response.data.appointments.length}`);
+            response.data.appointments.forEach((appointment, index) => {
+                console.log(`📤 - Appointment ${index + 1}: ${appointment.session_id}`);
+                if (appointment.images) {
+                    console.log(`📤   - Imágenes: ${appointment.images.total_count} total`);
+                    console.log(`📤   - Principales: ${appointment.images.main_images?.length || 0}`);
+                    console.log(`📤   - Adicionales: ${appointment.images.additional_images?.length || 0}`);
+                    if (appointment.images.error) {
+                        console.log(`📤   - Error: ${appointment.images.error}`);
+                    }
+                } else {
+                    console.log(`📤   - Sin imágenes procesadas`);
+                }
             });
+
+            res.json(response);
         } catch (error) {
             console.error('Error al obtener orden de inspección completa:', error);
             res.status(500).json({
