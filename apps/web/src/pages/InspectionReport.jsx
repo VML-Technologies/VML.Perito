@@ -1,1133 +1,945 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, FileText, Car, User, Calendar, MapPin, CheckCircle, XCircle, Clock, Camera, Wrench, Star, Download, FileTextIcon } from 'lucide-react';
-import { API_ROUTES } from '@/config/api';
-import { useAuth } from '@/contexts/auth-context';
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
+import { API_ROUTES } from "@/config/api"
+import Logo from "@/assets/logo.svg"
+import "@/styles/print.css"
+// Using browser print function for tabloid landscape format
+import {
+  Loader2,
+  FileText,
+  Car,
+  User,
+  Calendar,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Camera,
+  Gauge,
+  Download,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
 const InspectionReport = () => {
-    const { session_id } = useParams();
-    const [inspection, setInspection] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [exporting, setExporting] = useState(false);
-    const reportRef = useRef(null);
-    const { user } = useAuth();
+  const { session_id } = useParams()
+  const [loading, setLoading] = useState(true)
+  const [reportData, setReportData] = useState(null)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [previewMedia, setPreviewMedia] = useState(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const allowDownload = false
 
-    // Nuevo estado para respuestas del checklist
-    const [inspectionParts, setInspectionParts] = useState([]);
-    const [partResponses, setPartResponses] = useState({});
-    const [partComments, setPartComments] = useState({});
-    const [categoryResponses, setCategoryResponses] = useState({});
-    const [mechanicalTests, setMechanicalTests] = useState({});
-    const [vehicleImages, setVehicleImages] = useState({});
-    const [accessories, setAccessories] = useState([]);
-    const [recordings, setRecordings] = useState([]);
-    const [_checklist, setChecklist] = useState({});
-    const [categoryComments, setCategoryComments] = useState({});
-    const [vehicleImagesBySection, setVehicleImagesBySection] = useState({});
-    const [_inspectionDetails, setInspectionDetails] = useState({});
-
-    // Función para agrupar partes por categoría
-    const groupPartsByCategory = () => {
-        const grouped = {};
-        inspectionParts.forEach(part => {
-            // console.log(part)
-            if (!part.category) return;
-
-            const categoriaNombre = part.category.categoria;
-            if (!grouped[categoriaNombre]) {
-                grouped[categoriaNombre] = [];
-            }
-            grouped[categoriaNombre].push(part);
-        });
-        return grouped;
-    };
-
-    // Función para calcular puntajes del checklist
-    const calculateChecklistScores = () => {
-        const groupedParts = groupPartsByCategory();
-        const categoryScores = {};
-        let totalPercentSum = 0;
-        let totalPercentCount = 0;
-        let hasRejectionCriteria = false;
-        let hasMinScoreRejection = false;
-
-        Object.entries(groupedParts).forEach(([categoria, parts]) => {
-            // Casos especiales: categorías de rechazo inmediato
-            if (categoria === 'POLITICAS DE ASEGURABILIDAD "Estructura y Carroceria"' ||
-                categoria === 'POLITICAS DE ASEGURABILIDAD "Sistema de identificación"') {
-                const hasAnySelected = parts.some(part => {
-                    const value = partResponses[part.id];
-                    return value !== undefined && value !== "" && value !== null;
-                });
-
-                if (hasAnySelected) {
-                    categoryScores[categoria] = 0; // 0% si hay alguna marcada
-                    hasRejectionCriteria = true;
-                } else {
-                    categoryScores[categoria] = 100; // 100% si no hay ninguna marcada
-                }
-
-                // No sumar al total general, se maneja por separado
-                return;
-            }
-
-            // Caso especial: POLITICAS DE ASEGURABILIDAD solo para observaciones
-            if (categoria === 'POLITICAS DE ASEGURABILIDAD') {
-                categoryScores[categoria] = null; // null indica que no tiene puntaje
-                return;
-            }
-
-            let sumSelected = 0;
-            let sumMax = 0;
-
-            parts.forEach(part => {
-                const value = partResponses[part.id];
-
-                if (Array.isArray(part.opciones) && part.opciones.length > 0) {
-                    // Para partes con opciones múltiples
-                    const opt = part.opciones.find(opt => String(opt.value) === String(value));
-                    if (value !== undefined && value !== "") {
-                        const selectedValue = opt ? Number(opt.value) : 0;
-                        sumSelected += selectedValue;
-                    }
-                    // Para máximo, tomamos el mayor value numérico
-                    const maxOpt = part.opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
-                    sumMax += maxOpt;
-                } else {
-                    // Para partes con bueno/regular/malo
-                    if (value === 'bueno') {
-                        sumSelected += Number(part.bueno);
-                    } else if (value === 'regular') {
-                        sumSelected += Number(part.regular);
-                    } else if (value === 'malo') {
-                        sumSelected += Number(part.malo);
-                    }
-                    // Usamos bueno como máximo para estas partes
-                    sumMax += Number(part.bueno);
-                }
-            });
-
-            // Calculamos porcentaje basado en valores seleccionados vs máximo posible
-            const percent = sumMax > 0 ? (sumSelected / sumMax) * 100 : 0;
-            categoryScores[categoria] = percent;
-
-            // Verificar si la categoría cumple con el mínimo requerido
-            const categoryMin = parts[0]?.minimo;
-            if (categoryMin !== undefined && categoryMin > 0 && percent < categoryMin) {
-                hasMinScoreRejection = true;
-            }
-
-            if (sumMax > 0) {
-                totalPercentSum += percent;
-                totalPercentCount++;
-            }
-        });
-
-        // Si hay criterios de rechazo marcados o alguna categoría no cumple el mínimo, el puntaje general es 0%
-        const generalScore = (hasRejectionCriteria || hasMinScoreRejection) ? 0 : (totalPercentCount > 0 ? (totalPercentSum / totalPercentCount) : 0);
-
-        return { categoryScores, generalScore };
-    };
-
-    // Función para obtener el valor de respuesta formateado
-    const getResponseValue = (part) => {
-        // console.log(JSON.stringify(part, null, 2))
-        const value = partResponses[part.id];
-        if (!value) return 'No presenta';
-
-        if (Array.isArray(part.opciones) && part.opciones.length > 0) {
-            const opt = part.opciones.find(opt => String(opt.value) === String(value));
-            return opt ? opt.label : value;
-        } else {
-            return value === 'bueno' ? 'Bueno' : value === 'regular' ? 'Regular' : value === 'malo' ? 'Malo' : value;
+  const fetchInspectionReport = async () => {
+    try {
+      const response = await fetch(API_ROUTES.INSPECTION_ORDERS.FULL_REPORT(session_id))
+      const data = await response.json()
+      if (data?.data?.appointments?.[0]?.images) {
+        const images = data.data.appointments[0].images
+        if (images.error) {
+          console.error("🔍 [InspectionReport] Error en imágenes:", images.error)
         }
-    };
+      }
+      setReportData(data)
+    } catch (error) {
+      console.error("Error al cargar el reporte:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+  const formatImageLabel = (imgLabel) => {
+    // split by _ andcapitalize
+    const parts = imgLabel.split('_')
+    return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+  }
+  const handlePrint = () => {
+    // Abrir ventana de impresión del navegador
+    // Los estilos de impresión ya están definidos en print.css
+    window.print()
+  }
 
-    // Función para calcular asegurabilidad basada en los datos reales
-    const calculateAsegurabilidad = () => {
+  const getStatusInfo = (estado) => {
+    switch (estado) {
+      case "aprobado":
+        return { color: "text-green-600 bg-green-50", icon: CheckCircle, text: "Aprobado" }
+      case "rechazado":
+        return { color: "text-red-600 bg-red-50", icon: XCircle, text: "Rechazado" }
+      case "observacion":
+        return { color: "text-yellow-600 bg-yellow-50", icon: AlertCircle, text: "Observación" }
+      default:
+        return { color: "text-gray-600 bg-gray-50", icon: AlertCircle, text: "N/A" }
+    }
+  }
 
-        // Verificar criterios de rechazo inmediato del checklist
-        const hasRejectionCriteria = () => {
-            if (!partResponses || Object.keys(partResponses).length === 0) {
-                return false;
-            }
+  const getOptionLabel = (opciones, responseValue) => {
+    if (!opciones || !responseValue) return responseValue || "Sin respuesta"
 
-            // Buscar respuestas en categorías de rechazo inmediato
-            const rejectionCategories = [
-                'POLITICAS DE ASEGURABILIDAD "Estructura y Carroceria"',
-                'POLITICAS DE ASEGURABILIDAD "Sistema de identificación"'
-            ];
+    try {
+      const options = JSON.parse(opciones)
+      const matchingOption = options.find((option) => option.value.toString() === responseValue.toString())
+      return matchingOption ? matchingOption.label : responseValue
+    } catch (error) {
+      console.error("Error parsing opciones:", error)
+      return responseValue || "Sin respuesta"
+    }
+  }
 
-            // Verificar si hay alguna respuesta marcada en estas categorías
-            for (const [part_id, response] of Object.entries(partResponses)) {
-                const part = inspectionParts.find(p => p.id.toString() === part_id.toString());
-                if (part && part.category && rejectionCategories.includes(part.category.categoria)) {
-                    if (response === 'checked' || response === true || response === 'si') {
-                        return true;
-                    }
-                }
-            }
+  const getActualScore = (result) => {
+    // Si el puntaje calculado es 0 pero hay respuestas válidas, calcular el puntaje real
+    if (result.puntaje === 0 && result.parts && result.parts.length > 0) {
+      const validParts = result.parts.filter(part => part.hasResponse && part.responseValue)
+      if (validParts.length > 0) {
+        const totalScore = validParts.reduce((sum, part) => {
+          const score = parseInt(part.responseValue) || 0
+          return sum + score
+        }, 0)
+        return Math.round(totalScore / validParts.length)
+      }
+    }
+    return result.puntaje
+  }
 
-            return false;
-        };
+  const getScoreLabel = (result) => {
+    // Solo aplicar esta lógica a las 4 categorías específicas
+    const specificCategories = ["Tapicería", "Llantas", "Pintura", "Fluidos"]
 
-        // Verificar fallas en pruebas mecanizadas
-        const hasMechanicalFailures = () => {
-            if (!mechanicalTests) return false;
-
-            // Verificar suspensión
-            if (mechanicalTests.suspension) {
-                const suspensionValues = Object.values(mechanicalTests.suspension);
-                if (suspensionValues.some(item => item.status && item.status !== 'BUENO')) {
-                    return true;
-                }
-            }
-
-            // Verificar frenos
-            if (mechanicalTests.brakes) {
-                if (mechanicalTests.brakes.eficaciaTotal && mechanicalTests.brakes.eficaciaTotal.status !== 'BUENO') {
-                    return true;
-                }
-                if (mechanicalTests.brakes.frenoAuxiliar && mechanicalTests.brakes.frenoAuxiliar.status !== 'BUENO') {
-                    return true;
-                }
-            }
-
-            // Verificar alineación
-            if (mechanicalTests.alignment && mechanicalTests.alignment.axes) {
-                if (mechanicalTests.alignment.axes.some(axis => axis.status && axis.status !== 'BUENO')) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        // Verificar puntaje mínimo no cumplido
-        const hasMinScoreRejection = () => {
-            if (!partResponses || !inspectionParts) return false;
-
-            // Agrupar partes por categoría
-            const groupedParts = inspectionParts.reduce((acc, part) => {
-                if (!part.category) return acc;
-
-                const categoria = part.category.categoria;
-                if (!acc[categoria]) {
-                    acc[categoria] = [];
-                }
-                acc[categoria].push(part);
-                return acc;
-            }, {});
-
-            // Verificar cada categoría
-            for (const [categoria, parts] of Object.entries(groupedParts)) {
-                // Saltar categorías de rechazo inmediato y observaciones
-                if (categoria.includes('POLITICAS DE ASEGURABILIDAD') || categoria === 'OBSERVACIONES') {
-                    continue;
-                }
-
-                // Calcular puntaje de la categoría
-                let sumSelected = 0;
-                let sumMax = 0;
-
-                parts.forEach(part => {
-                    const value = partResponses[part.id];
-
-                    if (Array.isArray(part.opciones) && part.opciones.length > 0) {
-                        const opt = part.opciones.find(opt => String(opt.value) === String(value));
-                        if (value !== undefined && value !== "") {
-                            sumSelected += opt ? Number(opt.value) : 0;
-                        }
-                        const maxOpt = part.opciones.reduce((max, opt) => Number(opt.value) > max ? Number(opt.value) : max, 0);
-                        sumMax += maxOpt;
-                    } else {
-                        if (value === 'bueno') {
-                            sumSelected += Number(part.bueno || 100);
-                        } else if (value === 'regular') {
-                            sumSelected += Number(part.regular || 50);
-                        } else if (value === 'malo') {
-                            sumSelected += Number(part.malo || 0);
-                        }
-                        sumMax += Number(part.bueno || 100);
-                    }
-                });
-
-                const percent = sumMax > 0 ? (sumSelected / sumMax) * 100 : 0;
-                const minRequired = parts[0]?.minimo;
-
-                if (minRequired && percent < minRequired) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        // Determinar asegurabilidad
-        const rejectionCriteria = hasRejectionCriteria();
-        const mechanicalFailures = hasMechanicalFailures();
-        const minScoreRejection = hasMinScoreRejection();
-
-        const isAsegurable = !rejectionCriteria && !mechanicalFailures && !minScoreRejection;
-
-        let reason = '';
-        if (rejectionCriteria) {
-            reason = 'Criterios de rechazo inmediato detectados';
-        } else if (mechanicalFailures) {
-            reason = 'Fallas en pruebas mecanizadas';
-        } else if (minScoreRejection) {
-            reason = 'Puntaje mínimo no cumplido';
-        } else {
-            reason = 'Vehículo cumple todos los criterios';
+    if (specificCategories.includes(result.categoria) && result.parts && result.parts.length > 0) {
+      const part = result.parts[0] // Usar siempre la primera parte para estas categorías
+      if (part.hasResponse && part.responseValue && part.opciones) {
+        try {
+          const options = JSON.parse(part.opciones)
+          const matchingOption = options.find((option) => option.value.toString() === part.responseValue.toString())
+          return matchingOption ? matchingOption.label : part.responseValue
+        } catch (error) {
+          console.error("Error parsing opciones:", error)
+          return part.responseValue
         }
+      }
+    }
+    return null
+  }
 
-        return { isAsegurable, reason };
-    };
+  const getPartMinimo = (result) => {
+    // Solo aplicar esta lógica a las 4 categorías específicas
+    const specificCategories = ["Tapicería", "Llantas", "Pintura", "Fluidos"]
 
+    if (specificCategories.includes(result.categoria) && result.parts && result.parts.length > 0) {
+      const part = result.parts[0] // Usar siempre la primera parte para estas categorías
+      return part.minimo || result.minimo
+    }
+    return result.minimo
+  }
 
-    // Cargar datos de la inspección
-    useEffect(() => {
-        const loadInspectionData = async () => {
-            try {
-                setLoading(true);
-                const token = localStorage.getItem('authToken');
-                const headers = {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                };
+  const getCorrectStatus = (result) => {
+    // Solo aplicar esta lógica a las 4 categorías específicas
+    const specificCategories = ["Tapicería", "Llantas", "Pintura", "Fluidos"]
 
-                const response = await fetch(API_ROUTES.INSPECTION_ORDERS.INSPECTION_REPORT(session_id), { headers });
+    if (specificCategories.includes(result.categoria)) {
+      const actualScore = getActualScore(result)
+      const partMinimo = getPartMinimo(result)
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-
-                setInspection(data.inspectionData);
-
-                // Procesar resultados de Promise.allSettled
-                const partsResult = data.partsData;
-                const responsesResult = data.responsesData;
-                const categoryResponsesResult = data.categoryResponsesData;
-                const mechanicalTestsResult = data.mechanicalTestsData;
-                const imagesResult = data.imagesData;
-                const accessoriesResult = data.accessoriesData;
-                const recordingsResult = data.recordingsData;
-                const checklistResult = data.checklistData;
-                const categoryCommentsResult = data.categoryCommentsData;
-                // vehicleImagesResult ya no se usa, se procesa en el endpoint unificado
-                // const inspectionResult = inspectionData.status === 'fulfilled' ? inspectionData.value : {}; // Ya no se usa
-
-
-                // Usar inspectionData que contiene la información completa de la inspección
-                // El endpoint devuelve { success: true, appointment: { ... } }
-                const inspectionDataToUse = data.inspectionData;
-
-                setInspection(inspectionDataToUse);
-                setInspectionParts(partsResult);
-
-                // Procesar respuestas de partes
-                const processedResponses = {};
-                const processedPartComments = {};
-
-                responsesResult.forEach(r => {
-                    // Usar part_id en lugar de part_id
-                    if (r.part_id && r.value) {
-                        processedResponses[r.part_id] = r.value;
-                    }
-
-                    // Procesar comentarios de partes
-                    if (r.comment && r.part_id) {
-                        processedPartComments[r.part_id] = r.comment;
-                    }
-                });
-
-                setPartResponses(processedResponses);
-                setPartComments(processedPartComments);
-
-                // Procesar respuestas de categorías
-                const processedCategoryResponses = {};
-                categoryResponsesResult.forEach(c => {
-                    if (c.comment) {
-                        processedCategoryResponses[c.category_id] = c.comment;
-                    }
-                });
-                setCategoryResponses(processedCategoryResponses);
-
-                // Procesar datos adicionales
-                setMechanicalTests(mechanicalTestsResult);
-
-                // Procesar imágenes del endpoint unificado
-                if (imagesResult && imagesResult.success && imagesResult.data) {
-                    // Procesar imágenes principales
-                    const mainImages = {};
-                    imagesResult.data.main_images.forEach(img => {
-                        if (img.image_url) {
-                            mainImages[img.slot] = {
-                                url: img.image_url,
-                                description: img.name || img.slot
-                            };
-                        }
-                    });
-
-                    // Procesar imágenes adicionales
-                    const additionalImages = {};
-                    imagesResult.data.additional_images.forEach(img => {
-                        if (img.image_url) {
-                            const key = `adicional_${img.id}`;
-                            additionalImages[key] = {
-                                url: img.image_url,
-                                description: img.name || img.slot,
-                                category: img.category
-                            };
-                        }
-                    });
-
-                    // Combinar todas las imágenes
-                    const allImages = { ...mainImages, ...additionalImages };
-
-                    setVehicleImages(allImages);
-                    setVehicleImagesBySection({
-                        'Imágenes Principales': Object.keys(mainImages).length,
-                        'Imágenes Adicionales': Object.keys(additionalImages).length
-                    });
-
-                    console.log('✅ [PDFGenerator] Imágenes iniciales procesadas:', {
-                        main: Object.keys(mainImages).length,
-                        additional: Object.keys(additionalImages).length,
-                        total: Object.keys(allImages).length
-                    });
-                } else {
-                    console.warn('⚠️ [PDFGenerator] No se recibieron datos de imágenes válidos');
-                    setVehicleImages({});
-                    setVehicleImagesBySection({});
-                }
-
-                // Agregar nuevos estados para datos adicionales
-                setAccessories(accessoriesResult);
-                setRecordings(recordingsResult);
-                setChecklist(checklistResult);
-                setCategoryComments(categoryCommentsResult);
-                // setVehicleImagesBySection ya se establece en el procesamiento de imágenes unificado
-                setInspectionDetails(inspectionDataToUse);
-
-                setLoading(false);
-
-            } catch (error) {
-                console.error('Error cargando datos de inspección:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (session_id) {
-            try {
-                loadInspectionData();
-            } catch (error) {
-                console.clear();
-                console.error('Error cargando datos de inspección:', error);
-            }
-        }
-    }, [session_id]);
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-                <div className="text-center bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-blue-200">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-gray-700 font-medium">Cargando datos de la inspección...</p>
-                    <div className="mt-2 text-sm text-gray-500">Preparando reporte detallado</div>
-                </div>
-            </div>
-        );
+      // Si el puntaje real está por encima del mínimo, es aprobado
+      if (actualScore >= partMinimo) {
+        return "aprobado"
+      } else {
+        return "rechazado"
+      }
     }
 
-    if (!inspection) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex justify-center items-center">
-                <div className="text-center bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-2xl border border-red-200 max-w-md">
-                    <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-gray-800 mb-3">No se encontró la inspección</h2>
-                    <p className="text-gray-600 mb-6">La inspección con ID {session_id} no existe o no tienes permisos para verla.</p>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center mx-auto"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Volver
-                    </button>
-                </div>
-            </div>
-        );
+    // Para otras categorías, usar el estado original
+    return result.estado
+  }
+
+  // Función para obtener el estado de asegurabilidad desde el backend
+  const getAsegurabilidadStatus = () => {
+    if (!calculatedData?.asegurabilidad) {
+      return { isAsegurable: false, reason: 'Datos no disponibles' }
+    }
+    return calculatedData.asegurabilidad
+  }
+
+  // Funciones para manejo de imágenes
+  const handleMediaClick = (media) => {
+    setPreviewMedia(media)
+    setShowPreviewModal(true)
+
+    // Encontrar el índice de la imagen actual
+    const allImages = [...(appointment?.images?.main_images || []), ...(appointment?.images?.additional_images || [])]
+    const index = allImages.findIndex(img => img.id === media.id)
+    setCurrentImageIndex(index >= 0 ? index : 0)
+  }
+
+  const closePreviewModal = () => {
+    setShowPreviewModal(false)
+    setPreviewMedia(null)
+    setCurrentImageIndex(0)
+  }
+
+  const navigateImage = (direction) => {
+    const allImages = [...(appointment?.images?.main_images || []), ...(appointment?.images?.additional_images || [])]
+    if (allImages.length <= 1) return
+
+    let newIndex
+    if (direction === 'next') {
+      newIndex = (currentImageIndex + 1) % allImages.length
+    } else {
+      newIndex = currentImageIndex === 0 ? allImages.length - 1 : currentImageIndex - 1
     }
 
+    setCurrentImageIndex(newIndex)
+    setPreviewMedia(allImages[newIndex])
+  }
+
+  const downloadMedia = async (media) => {
+    try {
+      if (!media.url || typeof media.url !== 'string' || media.url.trim() === '') {
+        console.error('❌ URL inválida para descarga:', media)
+        return
+      }
+
+      // Crear enlace temporal para descarga
+      const a = document.createElement('a')
+      a.href = media.url
+      a.download = media.name || `imagen_${media.id}`
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+    } catch (error) {
+      console.error('❌ Error descargando archivo:', error)
+    }
+  }
+
+  const downloadAllImages = async (imagesData) => {
+    try {
+      const allImages = [...(imagesData.main_images || []), ...(imagesData.additional_images || [])]
+
+      for (const image of allImages) {
+        if (image.url) {
+          await downloadMedia(image)
+          // Pequeño delay entre descargas
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+
+    } catch (error) {
+      console.error('Error descargando imágenes:', error)
+    }
+  }
+
+  const formatImageDate = (dateString) => {
+    if (!dateString) return 'N/A'
+    const date = new Date(dateString)
+    return date.toLocaleString('es-CO')
+  }
+
+  useEffect(() => {
+    fetchInspectionReport()
+  }, [])
+
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando reporte de inspección...</span>
+      </div>
+    )
+  }
 
-            <div className="max-w-7xl mx-auto p-6">
-                {/* Contenido del reporte para PDF */}
-                <div ref={reportRef} className="bg-white" data-report-content>
-                    {/* Header Principal */}
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-white">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <div className="bg-white/20 p-3 rounded-xl">
-                                    <FileText className="h-8 w-8" />
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-bold">INSPECCIÓN DE ASEGURABILIDAD</h1>
-                                    <p className="text-blue-100 mt-1">Reporte detallado de evaluación vehicular</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-sm text-blue-100">N° de Inspección</div>
-                                <div className="text-xl font-bold">{inspection?.inspectionOrder?.numero || inspection?.inspectionOrder?.id || 'N/A'}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Información de la inspección */}
-                    <div className="p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-blue-600 p-2 rounded-lg">
-                                        <Calendar className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-blue-600 font-medium">Fecha</div>
-                                        <div className="font-semibold text-gray-800">{inspection?.scheduled_date ? inspection.scheduled_date : 'N/A'}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-green-600 p-2 rounded-lg">
-                                        <Clock className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-green-600 font-medium">Hora</div>
-                                        <div className="font-semibold text-gray-800">{inspection?.scheduled_time ? inspection.scheduled_time : 'N/A'}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-purple-600 p-2 rounded-lg">
-                                        <MapPin className="h-5 w-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-purple-600 font-medium">Centro</div>
-                                        <div className="font-semibold text-gray-800">{inspection?.Sede?.name || 'N/A'}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-                                <div className="flex items-center space-x-3">
-                                    <div className="bg-orange-600 p-2 rounded-lg">
-                                        {(() => {
-                                            const { isAsegurable } = calculateAsegurabilidad();
-                                            return isAsegurable ? <CheckCircle className="h-5 w-5 text-white" /> : <XCircle className="h-5 w-5 text-white" />;
-                                        })()}
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-orange-600 font-medium">Asegurable</div>
-                                        <div className="font-semibold text-gray-800">
-                                            {(() => {
-                                                const { isAsegurable } = calculateAsegurabilidad();
-                                                return isAsegurable ? 'SI' : 'NO';
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Datos generales */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                    <User className="h-5 w-5 mr-2 text-blue-600" />
-                                    DATOS DEL CLIENTE
-                                </h2>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Nombre:</span>
-                                        <span className="font-semibold text-right max-w-xs">{inspection?.inspectionOrder?.nombre_cliente || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Identificación:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.num_doc || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                        <span className="text-gray-600 font-medium">Celular:</span>
-                                        <span className="font-semibold">{inspection?.inspectionOrder?.celular_cliente || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2">
-                                        <span className="text-gray-600 font-medium">Correo:</span>
-                                        <span className="font-semibold text-right max-w-xs break-words">{inspection?.inspectionOrder?.correo_cliente || 'N/A'}</span>
-                                    </div>
-                                </div>
-
-                                {/* Información de contacto adicional si existe */}
-                                {(inspection?.inspectionOrder?.nombre_contacto || inspection?.inspectionOrder?.celular_contacto || inspection?.inspectionOrder?.correo_contacto) && (
-                                    <div className="mt-6 pt-4 border-t border-gray-300">
-                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3">
-                                            Información de Contacto Adicional
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {inspection?.inspectionOrder?.nombre_contacto && (
-                                                <div className="flex justify-between items-center py-1">
-                                                    <span className="text-gray-600 text-sm font-medium">Contacto:</span>
-                                                    <span className="font-semibold text-sm text-right max-w-xs">{inspection.inspectionOrder.nombre_contacto}</span>
-                                                </div>
-                                            )}
-                                            {inspection?.inspectionOrder?.celular_contacto && (
-                                                <div className="flex justify-between items-center py-1">
-                                                    <span className="text-gray-600 text-sm font-medium">Celular Contacto:</span>
-                                                    <span className="font-semibold text-sm">{inspection.inspectionOrder.celular_contacto}</span>
-                                                </div>
-                                            )}
-                                            {inspection?.inspectionOrder?.correo_contacto && (
-                                                <div className="flex justify-between items-center py-1">
-                                                    <span className="text-gray-600 text-sm font-medium">Correo Contacto:</span>
-                                                    <span className="font-semibold text-sm text-right max-w-xs break-words">{inspection.inspectionOrder.correo_contacto}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                    <Car className="h-5 w-5 mr-2 text-blue-600" />
-                                    DATOS DEL VEHÍCULO
-                                </h2>
-
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {/* Información Básica */}
-                                    <div className="space-y-3">
-                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
-                                            Información Básica
-                                        </h3>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Placa:</span>
-                                            <span className="font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm">
-                                                {inspection?.inspectionOrder?.placa || 'N/A'}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Marca:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.marca || 'N/A'} - {inspection?.inspectionOrder?.linea || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Clase:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.clase || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Modelo:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.modelo || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Color:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.color || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Carrocería:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.carroceria || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2">
-                                            <span className="text-gray-600 font-medium">Cilindraje:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.cilindraje ? `${inspection.inspectionOrder.cilindraje} cc` : 'N/A'}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Información Técnica */}
-                                    <div className="space-y-3">
-                                        <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide mb-3 border-b border-gray-300 pb-2">
-                                            Información Técnica
-                                        </h3>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Producto:</span>
-                                            <span className="font-semibold bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
-                                                {inspection?.inspectionOrder?.producto || 'N/A'}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Motor:</span>
-                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.motor || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Chasis:</span>
-                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.chasis || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">VIN:</span>
-                                            <span className="font-semibold font-mono text-xs">{inspection?.inspectionOrder?.vin || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Código Fasecolda:</span>
-                                            <span className="font-semibold font-mono text-sm">{inspection?.inspectionOrder?.cod_fasecolda || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Combustible:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.combustible || 'N/A'}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                            <span className="text-gray-600 font-medium">Servicio:</span>
-                                            <span className="font-semibold">{inspection?.inspectionOrder?.servicio || 'N/A'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Calificaciones y Puntuaciones */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                <Star className="h-6 w-6 mr-3 text-yellow-500" />
-                                CALIFICACIONES Y PUNTUACIONES
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 text-center">
-                                    <div className="text-3xl font-bold text-blue-600 mb-2">
-                                        {calculateChecklistScores().generalScore?.toFixed(1) || '0'}%
-                                    </div>
-                                    <div className="text-sm text-blue-600 font-medium">Puntuación General</div>
-                                    <div className="w-full bg-blue-200 rounded-full h-2 mt-3">
-                                        <div
-                                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                            style={{ width: `${calculateChecklistScores().generalScore || 0}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 text-center">
-                                    <div className="text-3xl font-bold text-green-600 mb-2">
-                                        {Object.keys(groupPartsByCategory()).length}
-                                    </div>
-                                    <div className="text-sm text-green-600 font-medium">Categorías Evaluadas</div>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 text-center">
-                                    <div className="text-3xl font-bold text-purple-600 mb-2">
-                                        {inspectionParts.length}
-                                    </div>
-                                    <div className="text-sm text-purple-600 font-medium">Partes Evaluadas</div>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200 text-center">
-                                    <div className="text-3xl font-bold text-orange-600 mb-2">
-                                        {(() => {
-                                            const { isAsegurable } = calculateAsegurabilidad();
-                                            return isAsegurable ? 'APROBADO' : 'RECHAZADO';
-                                        })()}
-                                    </div>
-                                    <div className="text-sm text-orange-600 font-medium">Estado Final</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Inspección Visual Completa */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                <Wrench className="h-6 w-6 mr-3 text-blue-600" />
-                                INSPECCIÓN VISUAL COMPLETA
-                            </h2>
-                            {(() => {
-                                const groupedParts = groupPartsByCategory();
-                                const { categoryScores, generalScore } = calculateChecklistScores();
-
-                                return (
-                                    <div className="space-y-6">
-                                        {/* Puntaje general */}
-                                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-lg font-bold text-blue-800">Puntaje General del Vehículo</span>
-                                                <span className="text-2xl font-bold text-blue-600">
-                                                    {generalScore.toFixed(1)}%
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-blue-200 rounded-full h-3">
-                                                <div
-                                                    className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500"
-                                                    style={{ width: `${generalScore}%` }}
-                                                ></div>
-                                            </div>
-                                        </div>
-
-                                        {/* Categorías */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            {Object.entries(groupedParts).map(([categoria, parts]) => (
-                                                <div key={categoria} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h3 className="font-bold text-gray-800 text-lg">{categoria}</h3>
-                                                        <div className="text-right">
-                                                            <span className="text-2xl font-bold text-blue-600">
-                                                                {categoryScores[categoria]?.toFixed(1) || 0}%
-                                                            </span>
-                                                            <div className="w-20 bg-blue-200 rounded-full h-2 mt-1">
-                                                                <div
-                                                                    className="bg-blue-600 h-2 rounded-full"
-                                                                    style={{ width: `${categoryScores[categoria] || 0}%` }}
-                                                                ></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Partes de la categoría */}
-                                                    <div className="space-y-3">
-                                                        {parts.map(part => (
-                                                            <div key={part.id} className="flex justify-between items-center py-2 px-3 bg-white rounded-lg border border-gray-100">
-                                                                <span className="text-gray-700 font-medium">{part.parte}</span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getResponseValue(part) === 'Bueno' ? 'bg-green-100 text-green-800' :
-                                                                        getResponseValue(part) === 'Regular' ? 'bg-yellow-100 text-yellow-800' :
-                                                                            getResponseValue(part) === 'Malo' ? 'bg-red-100 text-red-800' :
-                                                                                'bg-gray-100 text-gray-600'
-                                                                    }`}>
-                                                                    {getResponseValue(part)}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {/* Comentario de categoría */}
-                                                    {categoryResponses[parts[0]?.category?.id] && (
-                                                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                                            <div className="flex items-start">
-                                                                <div className="text-yellow-600 mr-2 mt-0.5">💬</div>
-                                                                <div>
-                                                                    <div className="font-medium text-yellow-800 mb-1">Comentario:</div>
-                                                                    <div className="text-sm text-yellow-700">{categoryResponses[parts[0].category.id]}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-
-                        {/* Pruebas Mecanizadas */}
-                        {mechanicalTests && Object.keys(mechanicalTests).length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                                <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <Wrench className="h-6 w-6 mr-3 text-blue-600" />
-                                    PRUEBAS MECANIZADAS
-                                </h2>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {mechanicalTests.brakes && (
-                                        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
-                                            <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                                Sistema de Frenos
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {mechanicalTests.brakes.eficaciaTotal && (
-                                                    <div className="bg-white rounded-lg p-4 border border-red-200">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-gray-700 font-medium">Eficacia Total:</span>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xl font-bold text-red-600">
-                                                                    {mechanicalTests.brakes.eficaciaTotal.value}%
-                                                                </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${mechanicalTests.brakes.eficaciaTotal.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                                        mechanicalTests.brakes.eficaciaTotal.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                            'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                    {mechanicalTests.brakes.eficaciaTotal.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {mechanicalTests.brakes.frenoAuxiliar && (
-                                                    <div className="bg-white rounded-lg p-4 border border-red-200">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-gray-700 font-medium">Freno Auxiliar:</span>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xl font-bold text-red-600">
-                                                                    {mechanicalTests.brakes.frenoAuxiliar.value}%
-                                                                </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${mechanicalTests.brakes.frenoAuxiliar.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                                        mechanicalTests.brakes.frenoAuxiliar.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                            'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                    {mechanicalTests.brakes.frenoAuxiliar.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {mechanicalTests.suspension && (
-                                        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
-                                            <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                                Sistema de Suspensión
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {Object.entries(mechanicalTests.suspension).map(([key, value]) => (
-                                                    <div key={key} className="bg-white rounded-lg p-4 border border-green-200">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-gray-700 font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xl font-bold text-green-600">
-                                                                    {value.value}%
-                                                                </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${value.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                                        value.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                            'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                    {value.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {mechanicalTests.alignment && (
-                                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-                                            <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                                Alineación
-                                            </h3>
-                                            <div className="space-y-4">
-                                                {mechanicalTests.alignment.axes && mechanicalTests.alignment.axes.map((axis, index) => (
-                                                    <div key={index} className="bg-white rounded-lg p-4 border border-blue-200">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-gray-700 font-medium">{axis.name}:</span>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xl font-bold text-blue-600">
-                                                                    {axis.value} {axis.unit}
-                                                                </span>
-                                                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${axis.status === 'BUENO' ? 'bg-green-100 text-green-800' :
-                                                                        axis.status === 'REGULAR' ? 'bg-yellow-100 text-yellow-800' :
-                                                                            'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                    {axis.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {mechanicalTests.observations && (
-                                    <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                                        <h3 className="font-bold text-yellow-800 mb-3 flex items-center">
-                                            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                                            Observaciones
-                                        </h3>
-                                        <div className="text-gray-700 bg-white rounded-lg p-4 border border-yellow-200">
-                                            {mechanicalTests.observations}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Fotografías */}
-                        {vehicleImages && Object.keys(vehicleImages).length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                                <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <Camera className="h-6 w-6 mr-3 text-blue-600" />
-                                    FOTOGRAFÍAS ANEXAS
-                                </h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {Object.entries(vehicleImages).map(([key, image]) => (
-                                        <div key={key} className="bg-gray-50 rounded-xl p-3 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                                            <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                                {image.url ? (
-                                                    <img
-                                                        src={image.url}
-                                                        alt={image.description || key}
-                                                        className="w-full h-full object-cover rounded-lg hover:scale-105 transition-transform duration-200"
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            e.target.nextSibling.style.display = 'flex';
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                <div className="text-center text-gray-500 text-xs flex flex-col items-center justify-center" style={{ display: image.url ? 'none' : 'flex' }}>
-                                                    <div className="w-12 h-12 bg-gray-300 rounded-lg mb-2 flex items-center justify-center">
-                                                        <Camera className="h-6 w-6 text-gray-400" />
-                                                    </div>
-                                                    {image.description || key}
-                                                </div>
-                                            </div>
-                                            <div className="text-xs text-center mt-2 text-gray-600 font-medium">
-                                                {image.description || key}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Listado de Accesorios */}
-                        {Array.isArray(accessories) && accessories.length > 0 && (
-                            <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                                <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <Car className="h-6 w-6 mr-3 text-blue-600" />
-                                    LISTADO DE ACCESORIOS
-                                </h2>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full bg-white rounded-xl overflow-hidden border border-gray-200">
-                                        <thead className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                    Descripción
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                    Marca
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                    Referencia
-                                                </th>
-                                                <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
-                                                    Cantidad
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                            {accessories.map((accessory, index) => (
-                                                <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                                                    <td className="px-6 py-4">
-                                                        <div>
-                                                            <div className="font-medium text-gray-900">{accessory.description || 'N/A'}</div>
-                                                            {accessory.notes && (
-                                                                <div className="text-xs text-gray-500 mt-1">
-                                                                    Notas: {accessory.notes}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-900">{accessory.brand || 'N/A'}</td>
-                                                    <td className="px-6 py-4 text-gray-900">{accessory.reference || 'N/A'}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                            {accessory.quantity || 1} {accessory.unit || 'UN'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Observaciones */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-blue-200 p-8 mb-8">
-                            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                <FileText className="h-6 w-6 mr-3 text-blue-600" />
-                                OBSERVACIONES
-                            </h2>
-                            <div className="space-y-6">
-                                {/* Comentarios de partes individuales */}
-                                {(() => {
-                                    const commentsList = [];
-                                    Object.entries(partComments).forEach(([part_id, comment]) => {
-                                        const part = inspectionParts.find(p => p.id === parseInt(part_id));
-                                        if (part && comment) {
-                                            commentsList.push({
-                                                partName: part.parte,
-                                                categoryName: part.category?.categoria,
-                                                comment: comment
-                                            });
-                                        }
-                                    });
-
-                                    if (commentsList.length > 0) {
-                                        return (
-                                            <div>
-                                                <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                                                    Comentarios por Parte
-                                                </h3>
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                    {commentsList.map((item, index) => (
-                                                        <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                                                            <div className="font-semibold text-blue-800 mb-2">
-                                                                {item.partName}
-                                                            </div>
-                                                            <div className="text-sm text-blue-600 mb-1">
-                                                                Categoría: {item.categoryName}
-                                                            </div>
-                                                            <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
-                                                                {item.comment}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-
-                                {/* Si no hay observaciones */}
-                                {Object.keys(categoryResponses).length === 0 &&
-                                    Object.keys(partComments).length === 0 &&
-                                    (!mechanicalTests.observations || mechanicalTests.observations.trim() === '') && (
-                                        <div className="text-center py-12">
-                                            <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
-                                                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                                <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
-                                                <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
-                                            </div>
-                                        </div>
-                                    )}
-                            </div>
-                        </div>
-
-                        {/* Footer con Políticas */}
-                        <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
-                            <div className="text-center">
-                                <div className="font-bold text-blue-700 mb-3 text-lg">POLÍTICAS INSPECCIÓN</div>
-                                <p className="text-gray-600 leading-relaxed">
-                                    El análisis de los sistemas de identificación es única y exclusivamente para fines internos de MUNDIAL DE SEGUROS.
-                                    Este documento es confidencial y de uso interno.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  if (!reportData?.data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-600">No se encontró el reporte</h2>
+          <p className="text-gray-500">El reporte de inspección no está disponible</p>
         </div>
-    );
-};
+      </div>
+    )
+  }
 
-export default InspectionReport;
+  const leadZero = (number) => {
+    return number < 10 ? `0${number}` : number
+  }
+
+  const formatDate = (dateString) => {
+    let date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const day = date.getDate()
+    return <>
+      {`${year}-${leadZero(month)}-${leadZero(day)}`}
+    </>
+  }
+
+  // Format time
+  const formatTime = (dateString) => {
+    let date = new Date(dateString)
+    const hours = date.getHours()
+    const minutes = date.getMinutes()
+    const seconds = date.getSeconds()
+    return <>
+      {`${leadZero(hours)}:${leadZero(minutes)}:${leadZero(seconds)}`}
+    </>
+  }
+
+  const data = reportData.data
+  const appointment = data.appointments?.[0]
+  const inspectionResults = appointment?.inspectionResults || []
+  const mechanicalTests = appointment?.mechanicalTests || {}
+  const calculatedData = appointment?.calculatedData || {}
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto mb-4">
+        <div className="flex justify-end">
+          <button
+            onClick={handlePrint}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Imprimir Reporte</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="inspection-report-content" className="max-w-7xl mx-auto space-y-6">
+        {/* Header Section */}
+        <div className="flex justify-between">
+          <div className="text-2xl font-bold">
+            <div>
+              Movilidad Mundial
+            </div>
+            <div className="text-sm text-gray-500">
+              Reporte de inspeccion
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-end gap-2">
+
+              <img src={Logo} alt="Movilidad Mundial" className="h-10" />
+            </div>
+            <div>
+              Orden de inspeccion #{data.numero}
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Detalles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-base font-bold text-blue-600">Creacion de la orden</div>
+              <div className="text-xs text-gray-700 mb-1">Fecha</div>
+              {/* YYY-mm-dd */}
+              <div className="text-xs text-gray-500 mb-1">{formatDate(data.fecha_creacion)}</div>
+              <div className="text-xs text-gray-700 mb-1">Hora</div>
+              <div className="text-xs text-gray-500 mb-1">{formatTime(data.fecha_creacion)}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-base font-bold text-blue-600">Inspeccion programada</div>
+              <div className="text-xs text-gray-700 mb-1">Fecha</div>
+              <div className="text-xs text-gray-500 mb-1">{appointment?.scheduled_date}</div>
+
+              <div className="text-xs text-gray-700 mb-1">Hora</div>
+              <div className="text-xs text-gray-500 mb-1">{appointment?.scheduled_time}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-base font-bold text-blue-600">Contacto Principal</div>
+              <div className="text-xs text-gray-500 mb-1">{data.nombre_contacto}</div>
+              <div className="text-xs text-gray-500 mb-1">{data.celular_contacto}</div>
+              <div className="text-xs text-gray-500 mb-1">{data.correo_contacto}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-base font-bold text-blue-600">Cliente</div>
+              <div className="text-xs text-gray-500 mb-1">{data.nombre_cliente}</div>
+              <div className="text-xs text-gray-500 mb-1">{data.celular_cliente}</div>
+              <div className="text-xs text-gray-500 mb-1">{data.correo_cliente}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="rounded-lg">
+                <div className="text-center">
+                  <div className="text-base font-bold text-blue-600">Estado de Asegurabilidad</div>
+                  {(() => {
+                    const asegurabilidad = getAsegurabilidadStatus()
+                    return (
+                      <>
+                        <div
+                          className={`text-2xl font-bold ${asegurabilidad.isAsegurable ? "text-green-600" : "text-red-600"}`}>
+                          {asegurabilidad.isAsegurable ? "ASEGURABLE" : "NO ASEGURABLE"}
+                        </div>
+                        {asegurabilidad.reason && (
+                          <div className="text-sm text-gray-600 mt-1 font-mono">{asegurabilidad.reason}</div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Vehicle Information Dashboard */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-gray-900">Resumen de Inspección</h2>
+          </div>
+
+          {/* Bento Box Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto">
+            
+            {/* Imagen del Vehículo - Ocupa 4 columnas */}
+            <div className="lg:col-span-4">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm h-full">
+                <div className="aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-inner">
+                  <img
+                    src={appointment.images?.main_images?.find(image => image.slot === 'esquina_frontal_izq')?.url}
+                    alt="Vehículo inspeccionado"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Características del Vehículo - Ocupa 4 columnas */}
+            <div className="lg:col-span-4">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  Características del Vehículo
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-blue-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-2xl font-bold text-blue-600 mb-1">{data.modelo}</div>
+                    <div className="text-xs text-gray-500 font-medium">Año</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-green-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-2xl font-bold text-green-600 mb-1">{data.cilindraje}</div>
+                    <div className="text-xs text-gray-500 font-medium">CC</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-purple-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-lg font-bold text-purple-600 mb-1">{data.color}</div>
+                    <div className="text-xs text-gray-500 font-medium">Color</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-sm font-bold text-gray-700 mb-1">{data.carroceria}</div>
+                    <div className="text-xs text-gray-500 font-medium">Carrocería</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-sm font-bold text-gray-700 mb-1">{data.servicio}</div>
+                    <div className="text-xs text-gray-500 font-medium">Servicio</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-sm font-bold text-gray-700 mb-1">{data.combustible || "N/A"}</div>
+                    <div className="text-xs text-gray-500 font-medium">Combustible</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Evaluaciones Específicas - Ocupa 4 columnas */}
+            <div className="lg:col-span-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-6 border border-blue-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  Evaluaciones Específicas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {inspectionResults
+                    .filter(result => ["Tapicería", "Llantas", "Pintura", "Fluidos"].includes(result.categoria))
+                    .map((result, index) => {
+                      const correctStatus = getCorrectStatus(result)
+                      const statusInfo = getStatusInfo(correctStatus)
+                      const StatusIcon = statusInfo.icon
+                      const actualScore = getActualScore(result)
+                      const scoreLabel = getScoreLabel(result)
+
+                      return (
+                        <div key={index} className={`bg-white rounded-xl p-4 shadow-sm border-2 ${statusInfo.color} transition-all duration-300 hover:shadow-md hover:-translate-y-1`}>
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="p-1 bg-white/80 rounded-lg">
+                              <StatusIcon className="h-4 w-4" />
+                            </div>
+                            <h4 className="font-semibold text-sm text-gray-900">{result.categoria}</h4>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-xl font-bold mb-1 text-gray-900">{actualScore}%</div>
+                            {scoreLabel && (
+                              <div className="text-xs text-blue-600 font-medium">{scoreLabel}</div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            </div>
+
+            {/* Información Técnica - Ocupa 6 columnas */}
+            <div className="lg:col-span-5">
+              <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-6 border border-gray-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+                  Información Técnica
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">VIN</div>
+                    <div className="font-mono text-sm font-semibold text-gray-900 break-all">{data.vin}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Motor</div>
+                    <div className="font-mono text-sm font-semibold text-gray-900">{data.motor}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Chasis</div>
+                    <div className="font-mono text-sm font-semibold text-gray-900 break-all">{data.chasis}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Código Fasecolda</div>
+                    <div className="font-mono text-sm font-semibold text-gray-900">{data.cod_fasecolda}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detalles de la Inspección - Ocupa 3 columnas */}
+            <div className="lg:col-span-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                  Detalles de la Inspección
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Sede</div>
+                    <div className="font-semibold text-sm text-gray-900">{appointment?.sede?.name || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Modalidad</div>
+                    <div className="font-semibold text-sm text-gray-900">{appointment?.inspectionModality?.name || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Estado Orden</div>
+                    <div className="font-semibold text-sm text-gray-900">{data.InspectionOrderStatus?.name || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-2">Hora Programada</div>
+                    <div className="font-semibold text-sm text-gray-900">{appointment?.scheduled_time || "N/A"}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pruebas Mecanizadas - Ocupa 3 columnas */}
+            <div className="lg:col-span-3">
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-6 border border-purple-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                  Pruebas Mecanizadas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-purple-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-1">Frenos</div>
+                    <div className="font-semibold text-sm text-gray-900">{mechanicalTests.brakes || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-purple-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-1">Suspensión</div>
+                    <div className="font-semibold text-sm text-gray-900">{mechanicalTests.suspension || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-purple-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-1">Llantas</div>
+                    <div className="font-semibold text-sm text-gray-900">{mechanicalTests.tires || "N/A"}</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-purple-100 hover:shadow-md transition-all duration-300">
+                    <div className="text-xs text-gray-500 font-medium mb-1">Alineación</div>
+                    <div className="font-semibold text-sm text-gray-900">{mechanicalTests.alignment || "N/A"}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        {/* Images Section */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Fotografías de Inspección</h2>
+            <span className="text-sm text-gray-500 font-mono">
+              Click en la imagen para ver detalles
+            </span>
+          </div>
+
+          {appointment?.images ? (
+            <div className="space-y-6">
+              {/* Imágenes principales */}
+              {appointment.images.main_images && appointment.images.main_images.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-gray-900">Fotografías Principales</h3>
+                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {appointment.images.main_images.length} imágenes
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {appointment.images.main_images.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300 transform hover:-translate-y-1"
+                        onClick={() => handleMediaClick(image)}
+                      >
+                        {/* Contenedor de imagen con aspect ratio */}
+                        <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                          <img
+                            src={image.url}
+                            alt={image.description || image.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            onLoad={() => console.log('✅ Imagen principal cargada:', image.url)}
+                            onError={(e) => {
+                              console.error('❌ Error cargando imagen principal:', image.url, e)
+                              e.target.style.display = 'none'
+                              e.target.nextSibling.style.display = 'flex'
+                            }}
+                          />
+
+                          {/* Estado de error */}
+                          <div className="hidden absolute inset-0 bg-gray-100">
+                            <div className="flex flex-col items-center justify-center h-full">
+                              <Camera className="h-8 w-8 text-gray-400 mb-2" />
+                              <span className="text-xs text-gray-500">Error al cargar</span>
+                            </div>
+                          </div>
+
+                          {/* Indicador de hover */}
+                          <div className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Información de la imagen */}
+                        <div className="p-3">
+                          <div className="text-xs font-medium text-gray-900 truncate mb-1">
+                            {formatImageLabel(image.slot)}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {image.name}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Imágenes adicionales */}
+              {appointment.images.additional_images && appointment.images.additional_images.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1 h-6 bg-green-600 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-gray-900">Fotografías Adicionales</h3>
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {appointment.images.additional_images.length} imágenes
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    {appointment.images.additional_images.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md hover:border-green-300 transition-all duration-300 transform hover:-translate-y-0.5"
+                        onClick={() => handleMediaClick(image)}
+                      >
+                        {/* Contenedor de imagen compacto */}
+                        <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                          <img
+                            src={image.url}
+                            alt={image.description || image.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.nextSibling.style.display = 'flex'
+                            }}
+                          />
+
+                          {/* Estado de error */}
+                          <div className="hidden absolute inset-0 bg-gray-100">
+                            <div className="flex flex-col items-center justify-center h-full">
+                              <Camera className="h-5 w-5 text-gray-400 mb-1" />
+                              <span className="text-xs text-gray-500">Error</span>
+                            </div>
+                          </div>
+
+                          {/* Overlay sutil */}
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+
+                          {/* Indicador de hover */}
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <svg className="w-2 h-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Información compacta */}
+                        <div className="p-2">
+                          <div className="text-xs text-gray-600 truncate font-medium">
+                            {image.name}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botones de descarga */}
+              {appointment.images.total_count > 0 && allowDownload && (
+                <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => downloadAllImages(appointment.images)}
+                    className="group flex items-center space-x-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    <div className="p-1 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-300">
+                      <Download className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-semibold">Descargar Todas las Imágenes</span>
+                      <span className="text-xs text-blue-100">{appointment.images.total_count} archivos</span>
+                    </div>
+                  </button>
+
+                  {appointment.images.main_images && appointment.images.main_images.length > 0 && (
+                    <button
+                      onClick={() => downloadAllImages({ main_images: appointment.images.main_images })}
+                      className="group flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Principales ({appointment.images.main_images.length})</span>
+                    </button>
+                  )}
+
+                  {appointment.images.additional_images && appointment.images.additional_images.length > 0 && (
+                    <button
+                      onClick={() => downloadAllImages({ additional_images: appointment.images.additional_images })}
+                      className="group flex items-center space-x-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Adicionales ({appointment.images.additional_images.length})</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Mostrar error si existe */}
+              {appointment.images.error && (
+                <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-red-800 mb-1">Error al cargar imágenes</h4>
+                      <p className="text-red-700 text-sm leading-relaxed">
+                        {appointment.images.error}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                <Camera className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay imágenes disponibles</h3>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                Las imágenes de esta inspección aún no han sido cargadas o procesadas.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Inspection Results */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Resultados de Inspección</h2>
+
+          {/* Regular inspection results for other categories */}
+          <div className="space-y-4">
+            {inspectionResults
+              .filter(result => !["Tapicería", "Llantas", "Pintura", "Fluidos"].includes(result.categoria))
+              .map((result, index) => {
+                const statusInfo = getStatusInfo(result.estado)
+                const StatusIcon = statusInfo.icon
+                const actualScore = getActualScore(result)
+
+                return (
+                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className={`p-4 ${statusInfo.color} border-b border-gray-200`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <StatusIcon className="h-5 w-5" />
+                          <h3 className="font-semibold">{result.categoria}</h3>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          {actualScore !== null && (
+                            <div className="text-right">
+                              <div className="text-2xl font-bold">{actualScore}%</div>
+                              <div className="text-sm">Puntaje</div>
+                              {result.puntaje === 0 && actualScore > 0 && (
+                                <div className="text-xs text-orange-600">*Calculado</div>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-right">
+                            <div className="font-medium">{statusInfo.text}</div>
+                            <div className="text-sm">Estado</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {result.parts && result.parts.length > 0 && (
+                      <div className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {result.parts.map((part, partIndex) => (
+                            <div key={partIndex} className="bg-gray-50 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-900 mb-1">{part.parte}</div>
+                              <div className="text-sm text-gray-600">
+                                {getOptionLabel(part.opciones, part.responseValue)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+
+        {/* Observations */}
+        {appointment?.observaciones && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Observaciones</h2>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-gray-700 whitespace-pre-line">{appointment.observaciones}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="text-center text-sm text-gray-500">
+            <p>Este reporte fue generado automáticamente el {new Date().toLocaleString()}</p>
+            <p className="mt-2">
+              Inspección N° {data.numero} - Placa: {data.placa}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Vista Previa de Imágenes */}
+      {showPreviewModal && previewMedia && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60] p-2">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Botón de cerrar */}
+            <button
+              onClick={closePreviewModal}
+              className="absolute top-2 right-2 z-10 p-1.5 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Controles de navegación */}
+            {(() => {
+              const allImages = [...(appointment?.images?.main_images || []), ...(appointment?.images?.additional_images || [])]
+              return allImages.length > 1 && (
+                <>
+                  <button
+                    onClick={() => navigateImage('prev')}
+                    className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-10 p-1.5 sm:p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                  <button
+                    onClick={() => navigateImage('next')}
+                    className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-10 p-1.5 sm:p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                </>
+              )
+            })()}
+
+            {/* Imagen */}
+            <div className="w-full max-w-4xl max-h-[90vh] mx-2">
+              <img
+                src={previewMedia.url}
+                alt={previewMedia.description || 'Vista previa'}
+                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+                onError={(e) => {
+                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04MCAxMDBDODAgODkuNTcyOSA4Ny41NzI5IDgyIDk4IDgyQzEwOC40MjcgODIgMTE2IDg5LjU3MjkgMTE2IDEwMEMxMTYgMTEwLjQyNyAxMDguNDI3IDExOCA5OCAxMThDOC41NzI5IDExOCAwIDExMC40MjcgMCAxMDBaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xNjAgMTQwSDBWMTIwQzAgMTEwLjQyNyA3LjU3Mjg5IDEwMiAxOCAxMDJIMTgyQzE5Mi40MjcgMTAyIDIwMCAxMTAuNDI3IDIwMCAxMjBWMTQwWiIgZmlsbD0iIzlCOUJBMCIvPgo8L3N2Zz4K'
+                }}
+              />
+
+              {/* Información de la imagen */}
+              <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-75 text-white p-2 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{previewMedia.description || 'Imagen'}</p>
+                    <p className="text-xs text-gray-300">
+                      {formatImageDate(previewMedia.created_at)}
+                    </p>
+                  </div>
+                  {
+                    allowDownload && <button
+                      onClick={() => downloadMedia(previewMedia)}
+                      className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0 ml-2"
+                      title="Descargar"
+                    >
+                      <Download className="h-3 w-3" />
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Contador de imágenes */}
+            {(() => {
+              const allImages = [...(appointment?.images?.main_images || []), ...(appointment?.images?.additional_images || [])]
+              return allImages.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-full text-xs">
+                  {currentImageIndex + 1} de {allImages.length}
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default InspectionReport
