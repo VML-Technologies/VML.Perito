@@ -710,7 +710,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <SelectContent>
                                         <SelectItem value="Virtual">Virtual</SelectItem>
                                         <SelectItem value="Presencial">Presencial</SelectItem>
-                                        <SelectItem value="A Domicilio">A Domicilio</SelectItem>
+                                        {/* <SelectItem value="A Domicilio">A Domicilio</SelectItem> */}
                                     </SelectContent>
                                 </Select>
                                 {errors.metodo_inspeccion_recomendado && (
