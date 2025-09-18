@@ -363,17 +363,12 @@ const InspeccionEspera = () => {
                                     <div className="text-sm text-green-700 space-y-2 mb-4">
                                         {existingAppointment.scheduled_date && (
                                             <p>
-                                                <strong>Fecha:</strong> {new Date(existingAppointment.scheduled_date).toLocaleDateString('es-ES')}
+                                                <strong>Fecha:</strong> {existingAppointment.scheduled_date}
                                             </p>
                                         )}
                                         {existingAppointment.scheduled_time && (
                                             <p>
                                                 <strong>Hora:</strong> {existingAppointment.scheduled_time}
-                                            </p>
-                                        )}
-                                        {existingAppointment.sede && (
-                                            <p>
-                                                <strong>Sede:</strong> {existingAppointment.sede.name}
                                             </p>
                                         )}
                                         {existingAppointment.modality && (
@@ -382,12 +377,7 @@ const InspeccionEspera = () => {
                                             </p>
                                         )}
                                     </div>
-
-                                    {/* Contador o botón según el tiempo */}
-                                    {/* Debug: mostrar valores */}
-                                    <div className="text-xs text-gray-500 mb-2">
-                                        Debug: timeUntilAppointment = {timeUntilAppointment}, existingAppointment = {existingAppointment ? 'exists' : 'null'}
-                                    </div>
+                                    
                                     {timeUntilAppointment !== null ? (
                                         <div className="text-center">
                                             {timeUntilAppointment <= 5 ? (
@@ -435,10 +425,6 @@ const InspeccionEspera = () => {
                                             </div>
                                         </div>
                                     )}
-                                    
-                                    <p className="text-xs text-green-600 mt-2 text-center">
-                                        {isConnected ? 'Conectado en tiempo real' : 'Conectando...'}
-                                    </p>
                                 </div>
                                 <Separator />
                             </>
@@ -449,16 +435,12 @@ const InspeccionEspera = () => {
                             <div className="text-center bg-blue-50 p-6 rounded-lg">
                                 <div className="flex items-center justify-center mb-4">
                                     <Clock className="h-12 w-12 text-blue-600 mr-3" />
-                                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                 </div>
                                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
                                     ¡Pronto un inspector iniciará tu inspección!
                                 </h2>
                                 <p className="text-gray-600">
                                     Tu orden está en la cola de espera. Un inspector te atenderá en breve.
-                                </p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    {isConnected ? 'Conectado en tiempo real' : 'Conectando...'}
                                 </p>
                             </div>
                         )}
@@ -515,9 +497,9 @@ const InspeccionEspera = () => {
                                         <p className="text-blue-900 font-bold text-2xl">
                                             #{position}
                                         </p>
-                                        <p className="text-blue-600 text-xs mt-1">
+                                        {/* <p className="text-blue-600 text-xs mt-1">
                                             Tiempo estimado: {position * 5} min
-                                        </p>
+                                        </p> */}
                                     </div>
                                 )}
                             </div>

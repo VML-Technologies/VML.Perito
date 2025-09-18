@@ -198,27 +198,12 @@ const Inspeccion = () => {
                                         </p>
                                         {existingAppointment.scheduled_date && (
                                             <p>
-                                                <strong>Fecha:</strong> {new Date(existingAppointment.scheduled_date).toLocaleDateString('es-ES')}
+                                                <strong>Fecha:</strong> {existingAppointment.scheduled_date}
                                             </p>
                                         )}
                                         {existingAppointment.scheduled_time && (
                                             <p>
                                                 <strong>Hora:</strong> {existingAppointment.scheduled_time}
-                                            </p>
-                                        )}
-                                        {existingAppointment.sede && (
-                                            <p>
-                                                <strong>Sede:</strong> {existingAppointment.sede.name}
-                                            </p>
-                                        )}
-                                        {existingAppointment.modality && (
-                                            <p>
-                                                <strong>Modalidad:</strong> {existingAppointment.modality.name}
-                                            </p>
-                                        )}
-                                        {existingAppointment.session_id && (
-                                            <p>
-                                                <strong>Sesión:</strong> {existingAppointment.session_id}
                                             </p>
                                         )}
                                     </div>
