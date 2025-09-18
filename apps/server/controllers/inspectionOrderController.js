@@ -142,7 +142,30 @@ class InspectionOrderController extends BaseController {
         this.calculateAsegurabilidad = this.calculateAsegurabilidad.bind(this);
     }
 
-    getFixedStatus(statusId, statusName, result, comentariosAnulacion, placa) {
+    getFixedStatus(statusId, statusName, result, comentariosAnulacion, appointments) {
+        if (statusId == 4) {
+            let retryStates = ["ineffective_with_retry", "failed"]
+            let noRetryStates = ["ineffective_no_retry"]
+            if (retryStates.includes(appointments[0].status)) {
+                return {
+                    fixedStatus: 'Reagendar',
+                    badgeColor: 'default',
+                    comentariosAnulacion: null
+                }
+            } else if (noRetryStates.includes(appointments[0].status)) {
+                return {
+                    fixedStatus: 'No reagendar',
+                    badgeColor: 'default',
+                    comentariosAnulacion: null
+                }
+            } else {
+                return {
+                    fixedStatus: appointments[0].status,
+                    badgeColor: 'default',
+                    comentariosAnulacion: null
+                }
+            }
+        }
         const statusBadgeColorMap = {
             1: 'outline',
             2: 'outline',
@@ -160,7 +183,21 @@ class InspectionOrderController extends BaseController {
         return {
             fixedStatus: finalLabel,
             badgeColor: badgeLabel == 'Creada' ? 'outline' : badgeColor,
-            comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO'|| finalLabel == 'Pendiente de reinspección' ?comentariosAnulacion:null)
+            comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO' || finalLabel == 'Pendiente de reinspección' ? comentariosAnulacion : null)
+        }
+    }
+
+    getFinalFixedStatus(statusId, appointments) {
+        let retryStates = ["ineffective_with_retry", "failed"]
+        let noRetryStates = ["ineffective_no_retry"]
+        if (statusId == 4) {
+            if (retryStates.includes(appointments[0].status)) {
+                return 'Reagendar'
+            } else if (noRetryStates.includes(appointments[0].status)) {
+                return 'No reagendar'
+            } else {
+                return appointments[0].status
+            }
         }
     }
 
@@ -182,7 +219,9 @@ class InspectionOrderController extends BaseController {
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
             // Construir condiciones WHERE según el contexto
-            const whereConditions = {};
+            const whereConditions = {
+                deleted_at: null
+            };
 
             const user = await User.findByPk(req.user.id, {
                 include: [{
@@ -369,11 +408,29 @@ class InspectionOrderController extends BaseController {
                     appointments: sortedAppointments,
                     metodo_inspeccion_recomendado: order.metodo_inspeccion_recomendado,
                     session_id: sortedAppointments.length > 0 ? sortedAppointments[0].session_id : null,
-                    fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, order.placa).fixedStatus,
-                    badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).badgeColor,
-                    comentariosAnulacion: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details).comentariosAnulacion,
+                    fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).fixedStatus,
+                    badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).badgeColor,
+                    comentariosAnulacion: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).comentariosAnulacion,
+                    extras: {
+                        id: order.InspectionOrderStatus?.id,
+                        nameStatus: order.InspectionOrderStatus?.name,
+                        result: order.inspection_result,
+                        resultDetails: order.inspection_result_details,
+                        conteoApointments: order.appointments.length,
+                        finalEstado: this.getFinalFixedStatus(order.InspectionOrderStatus?.id, order.appointments),
+                        appointments: order.appointments.map(el => {
+                            return {
+                                estado: el.status,
+                                id: el.id,
+                                created_at: el.created_at,
+                                updated_at: el.updated_at,
+                                deleted_at: el.deleted_at
+                            }
+                        })
+                    }
+
                 };
-            });
+            })
 
             res.json({
                 success: true,
@@ -1589,7 +1646,7 @@ class InspectionOrderController extends BaseController {
                     }
                 });
             }
-            
+
             if (!inspectionOrder.appointments || inspectionOrder.appointments.length === 0) {
                 return res.json({
                     success: true,
@@ -1604,16 +1661,16 @@ class InspectionOrderController extends BaseController {
             const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
                 // Obtener respuestas de partes de inspección
                 const responsesData = await this.getResponsesData(appointment.session_id);
-                
+
                 // Obtener respuestas de categorías de inspección
                 const categoryResponsesData = await this.getCategoryResponsesData(inspectionOrder.id);
-                
+
                 // Obtener datos de pruebas mecánicas
                 const mechanicalTestsData = await this.getMechanicalTestsData(appointment.session_id);
-                
+
                 // Obtener comentarios de categorías
                 const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
-                
+
                 // Procesar imágenes si existen
                 let processedImages = null;
                 if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
@@ -1627,7 +1684,7 @@ class InspectionOrderController extends BaseController {
                             hasBlobName: !!img.blob_name,
                             hasImageUrl: !!img.image_url
                         })));
-                        
+
                         // remover imagenes adicionales img.slot.startsWith('adicional_')
                         appointment.imageCaptures = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
 
@@ -1648,7 +1705,7 @@ class InspectionOrderController extends BaseController {
                 } else {
                     console.log(`📭 No hay imágenes para appointment ${appointment.session_id}`);
                 }
-                
+
                 // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
                 const partsData = await sequelize.query(`
                     SELECT 
@@ -1711,21 +1768,21 @@ class InspectionOrderController extends BaseController {
                 const inspectionResults = Object.entries(groupedParts).map(([categoria, parts]) => {
                     const categoryScore = categoryScores[categoria];
                     const categoryComment = categoryCommentsData.find(c => c.categoryName === categoria);
-                    
-                return {
+
+                    return {
                         categoria,
                         puntaje: categoryScore,
                         minimo: parts[0]?.minimo || 0,
                         cumpleMinimo: categoryScore !== null ? (categoryScore >= (parts[0]?.minimo || 0)) : true,
-                        parts: processedParts.filter(el=>el.categoria == categoria),
+                        parts: processedParts.filter(el => el.categoria == categoria),
                         comentario: categoryComment ? categoryComment.comentario : null,
                         // Solo lo esencial para el render visual
-                        estado: categoryScore === null ? 'observacion' : 
-                               categoryScore >= (parts[0]?.minimo || 0) ? 'aprobado' : 'rechazado',
-                        color: categoryScore === null ? 'gray' : 
-                              categoryScore >= (parts[0]?.minimo || 0) ? 'green' : 'red'
-                };
-            });
+                        estado: categoryScore === null ? 'observacion' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'aprobado' : 'rechazado',
+                        color: categoryScore === null ? 'gray' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'green' : 'red'
+                    };
+                });
 
                 return {
                     ...plainAppointment,
@@ -1826,146 +1883,146 @@ class InspectionOrderController extends BaseController {
      */
     async startVirtualInspection(req, res) {
         // try {
-            console.log('🔍 === INICIO startVirtualInspection ===');
-            console.log('👤 Usuario autenticado:', req.user ? { id: req.user.id, email: req.user.email } : 'No autenticado');
-            console.log('🎭 Roles del usuario:', req.user?.roles?.map(r => r.name) || 'Sin roles');
-            
-            const { id } = req.params;
-            const { inspector_id, sede_id } = req.body;
-            
-            console.log('📋 Parámetros recibidos:', { id, inspector_id, sede_id });
+        console.log('🔍 === INICIO startVirtualInspection ===');
+        console.log('👤 Usuario autenticado:', req.user ? { id: req.user.id, email: req.user.email } : 'No autenticado');
+        console.log('🎭 Roles del usuario:', req.user?.roles?.map(r => r.name) || 'Sin roles');
 
-            if (!inspector_id || !sede_id) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El inspector y la sede son requeridos'
-                });
-            }
+        const { id } = req.params;
+        const { inspector_id, sede_id } = req.body;
 
-            // Buscar la orden
-            const order = await InspectionOrder.findByPk(id, {
-                include: [
-                    {
-                        model: InspectionOrderStatus,
-                        as: 'InspectionOrderStatus',
-                        attributes: ['id', 'name', 'description']
-                    }
-                ]
+        console.log('📋 Parámetros recibidos:', { id, inspector_id, sede_id });
+
+        if (!inspector_id || !sede_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'El inspector y la sede son requeridos'
             });
+        }
 
-            if (!order) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Orden de inspección no encontrada'
-                });
-            }
-
-            // Verificar que la orden esté en estado válido
-            if (order.status != 1) {
-                return res.status(400).json({
-                    order: order,
-                    success: false,
-                    message: 'La orden no está en estado válido para iniciar inspección'
-                });
-            }
-
-            // Obtener modalidad virtual
-            const virtualModality = await InspectionModality.findOne({
-                where: { code: 'VIRTUAL' }
-            });
-
-            if (!virtualModality) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Modalidad virtual no encontrada'
-                });
-            }
-
-            // Generar session_id único
-            const generateSessionId = () => {
-                const timestamp = Date.now();
-                const random = Math.random().toString(36).substring(2, 10);
-                return `session_${timestamp}_${random}`;
-            };
-
-            const sessionId = generateSessionId();
-
-            // Crear agendamiento
-            const appointment = await Appointment.create({
-                sede_id: sede_id,
-                inspection_order_id: order.id,
-                inspection_modality_id: virtualModality.id,
-                user_id: inspector_id,
-                scheduled_date: new Date().toISOString().split('T')[0],
-                scheduled_time: new Date().toTimeString().split(' ')[0],
-                session_id: sessionId,
-                status: 'pending'
-            });
-
-            // Actualizar estado de la orden
-            await order.update({
-                status: 3, // En Proceso
-                assigned_agent_id: inspector_id,
-                fecha_inicio_inspeccion: new Date()
-            });
-
-            // Obtener información del inspector y sede
-            const inspector = await User.findByPk(inspector_id, {
-                attributes: ['id', 'name', 'email']
-            });
-
-            const sede = await Sede.findByPk(sede_id, {
-                include: [
-                    {
-                        model: City,
-                        as: 'city',
-                        attributes: ['id', 'name']
-                    }
-                ],
-                attributes: ['id', 'name', 'address']
-            });
-
-            // Emitir evento WebSocket para notificar al usuario
-            try {
-                const socketManager = await import('../websocket/socketManager.js');
-                const hash = order.inspection_link?.replace('/inspeccion/', '');
-                
-                if (hash) {
-                    // Emitir actualización de estado de cola
-                    socketManager.default.emitQueueStatusUpdate(hash, {
-                        session_id: sessionId,
-                        inspector: inspector,
-                        sede: sede,
-                        redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`,
-                        estado: 'en_proceso'
-                    });
-                    
-                    // Emitir evento específico de inspector asignado
-                    socketManager.default.emitInspectorAssigned(hash, {
-                        inspector: inspector,
-                        status: 'en_proceso',
-                        session_id: sessionId,
-                        sede: sede
-                    });
+        // Buscar la orden
+        const order = await InspectionOrder.findByPk(id, {
+            include: [
+                {
+                    model: InspectionOrderStatus,
+                    as: 'InspectionOrderStatus',
+                    attributes: ['id', 'name', 'description']
                 }
-            } catch (wsError) {
-                console.warn('⚠️ Error emitiendo evento WebSocket:', wsError);
-            }
+            ]
+        });
 
-            console.log('✅ Inspección virtual iniciada exitosamente');
-            console.log('🔍 === FIN startVirtualInspection ===');
-            
-            res.json({
-                success: true,
-                message: 'Inspección virtual iniciada exitosamente',
-                data: {
-                    appointment_id: appointment.id,
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Orden de inspección no encontrada'
+            });
+        }
+
+        // Verificar que la orden esté en estado válido
+        if (order.status != 1) {
+            return res.status(400).json({
+                order: order,
+                success: false,
+                message: 'La orden no está en estado válido para iniciar inspección'
+            });
+        }
+
+        // Obtener modalidad virtual
+        const virtualModality = await InspectionModality.findOne({
+            where: { code: 'VIRTUAL' }
+        });
+
+        if (!virtualModality) {
+            return res.status(500).json({
+                success: false,
+                message: 'Modalidad virtual no encontrada'
+            });
+        }
+
+        // Generar session_id único
+        const generateSessionId = () => {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2, 10);
+            return `session_${timestamp}_${random}`;
+        };
+
+        const sessionId = generateSessionId();
+
+        // Crear agendamiento
+        const appointment = await Appointment.create({
+            sede_id: sede_id,
+            inspection_order_id: order.id,
+            inspection_modality_id: virtualModality.id,
+            user_id: inspector_id,
+            scheduled_date: new Date().toISOString().split('T')[0],
+            scheduled_time: new Date().toTimeString().split(' ')[0],
+            session_id: sessionId,
+            status: 'pending'
+        });
+
+        // Actualizar estado de la orden
+        await order.update({
+            status: 3, // En Proceso
+            assigned_agent_id: inspector_id,
+            fecha_inicio_inspeccion: new Date()
+        });
+
+        // Obtener información del inspector y sede
+        const inspector = await User.findByPk(inspector_id, {
+            attributes: ['id', 'name', 'email']
+        });
+
+        const sede = await Sede.findByPk(sede_id, {
+            include: [
+                {
+                    model: City,
+                    as: 'city',
+                    attributes: ['id', 'name']
+                }
+            ],
+            attributes: ['id', 'name', 'address']
+        });
+
+        // Emitir evento WebSocket para notificar al usuario
+        try {
+            const socketManager = await import('../websocket/socketManager.js');
+            const hash = order.inspection_link?.replace('/inspeccion/', '');
+
+            if (hash) {
+                // Emitir actualización de estado de cola
+                socketManager.default.emitQueueStatusUpdate(hash, {
                     session_id: sessionId,
                     inspector: inspector,
                     sede: sede,
-                    redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`
-                }
-            });
+                    redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`,
+                    estado: 'en_proceso'
+                });
+
+                // Emitir evento específico de inspector asignado
+                socketManager.default.emitInspectorAssigned(hash, {
+                    inspector: inspector,
+                    status: 'en_proceso',
+                    session_id: sessionId,
+                    sede: sede
+                });
+            }
+        } catch (wsError) {
+            console.warn('⚠️ Error emitiendo evento WebSocket:', wsError);
+        }
+
+        console.log('✅ Inspección virtual iniciada exitosamente');
+        console.log('🔍 === FIN startVirtualInspection ===');
+
+        res.json({
+            success: true,
+            message: 'Inspección virtual iniciada exitosamente',
+            data: {
+                appointment_id: appointment.id,
+                session_id: sessionId,
+                inspector: inspector,
+                sede: sede,
+                redirect_url: `${process.env.FRONTEND_URL}/inspection/${sessionId}`
+            }
+        });
 
         // } catch (error) {
         //     console.error('❌ Error iniciando inspección virtual:', error);
