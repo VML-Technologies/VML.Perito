@@ -279,7 +279,7 @@ const OrdersTable = ({
                                                 </td>
                                                 <td className="p-2">
                                                     <Badge variant={order.badgeColor}>
-                                                        {order.fixedStatus}
+                                                        {(order.fixedStatus == 'Agendado' ?'Activo':(order.fixedStatus.toLowerCase() == 'inspeccion en curso' ? 'Activo' : order.fixedStatus))}
                                                     </Badge>
                                                 </td>
                                                 {showAgentColumn && (
