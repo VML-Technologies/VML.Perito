@@ -299,7 +299,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                     const smsService = await import('../services/channels/smsService.js');
                     
                     // const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, cuando estés listo para tu inspección de asegurabilidad ingresa a este link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
-                    const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
+                    const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
                     
                     await smsService.default.send({
                         recipient_phone: inspectionOrder.celular_contacto,
