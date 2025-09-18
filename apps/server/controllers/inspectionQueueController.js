@@ -43,7 +43,8 @@ class InspectionQueueController extends BaseController {
     // Obtener todas las entradas en cola
     async getQueue(req, res) {
         try {
-            const { page = 1, limit = 10, estado = 'en_cola' } = req.query;
+            let { page = 1, limit = 10, estado = 'en_cola' } = req.query;
+            limit = 100000
 
             console.log('🔍 Obteniendo datos de cola desde memoria con filtros:', { page, limit, estado });
 

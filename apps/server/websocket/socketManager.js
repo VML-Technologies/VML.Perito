@@ -295,7 +295,7 @@ class SocketManager {
                 const queueData = inspectionQueueMemoryService.getQueueEntries({
                     estado: data?.filters?.estado || 'en_cola',
                     page: data?.filters?.page || 1,
-                    limit: data?.filters?.limit || 10
+                    limit: 100000//data?.filters?.limit || 10
                 });
                 
                 // Obtener estadísticas
