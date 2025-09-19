@@ -119,7 +119,7 @@ export default function ComercialMundial() {
             </div>
 
             {/* Statistics Cards */}
-            <StatsCards stats={stats} variant="colorful" />
+            {/* <StatsCards stats={stats} variant="colorful" /> */}
 
             {/* Main Content */}
             {/* Filtros y Búsqueda */}
