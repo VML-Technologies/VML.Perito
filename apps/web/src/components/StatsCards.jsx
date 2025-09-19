@@ -82,8 +82,13 @@ const cardConfigurations = {
     ],
 }
 
-const StatsCards = ({ stats = {}, variant = "simple" }) => {
-    const cards = cardConfigurations[variant] || cardConfigurations.simple
+const StatsCards = ({ stats = {}, variant = "simple", role = null }) => {
+    let cards = cardConfigurations[variant] || cardConfigurations.simple
+
+    // comercial mostrar solo total
+    if (role === "comercial") {
+        cards = cards.filter((card) => card.key === "total")
+    }
 
     return (
         <div className="flex gap-4 md:flex-row flex-col">

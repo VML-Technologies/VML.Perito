@@ -112,14 +112,7 @@ export default function ComercialMundial() {
                         Gestiona órdenes de inspección y revisa estadísticas de rendimiento
                     </p>
                 </div>
-                <Button onClick={() => setShowCreateModal(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Nueva Orden
-                </Button>
             </div>
-
-            {/* Statistics Cards */}
-            {/* <StatsCards stats={stats} variant="colorful" /> */}
 
             {/* Main Content */}
             {/* Filtros y Búsqueda */}
@@ -129,6 +122,9 @@ export default function ComercialMundial() {
                 onClearFilters={handleClearFiltersWrapper}
                 gridCols="md:grid-cols-5"
                 showAgentFilter={false}
+                role="comercial"
+                stats={stats}
+                showCreateModal={setShowCreateModal}
             />
 
             {/* Orders Table */}

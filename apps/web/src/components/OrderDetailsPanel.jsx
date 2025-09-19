@@ -145,14 +145,6 @@ const OrderDetailsPanel = ({
                                                     {inspection?.inspectionData?.inspectionOrder?.cod_fasecolda || 'N/A'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className='font-bold'>Valor Fasecolda:</span>
-                                                <span className='font-mono'>{inspection?.inspectionData?.inspectionOrder?.avaluo || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className='font-bold'>Valor Accesorios:</span>
-                                                <span className='font-mono'>{inspection?.inspectionData?.inspectionOrder?.vlr_accesorios || 'N/A'}</span>
-                                            </div>
                                         </div>
                                         <div className='flex justify-between gap-2 w-full'>
                                             <div className="w-full border border-gray-200 rounded-md p-4">
