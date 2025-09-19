@@ -289,6 +289,18 @@ export const useCoordinatorWebSocket = () => {
             console.log('📊 Estadísticas actualizadas:', data);
         });
 
+        // Evento para recibir lista de inspectores
+        newSocket.on('inspectorsList', (data) => {
+            console.log('👥 Lista de inspectores recibida:', data);
+            // Este evento se manejará en el componente que lo necesite
+        });
+
+        // Evento para recibir lista de sedes CDA
+        newSocket.on('sedesCDAList', (data) => {
+            console.log('🏢 Lista de sedes CDA recibida:', data);
+            // Este evento se manejará en el componente que lo necesite
+        });
+
         newSocket.on('error', (error) => {
             console.error('❌ Error en WebSocket del coordinador:', error);
             setError(error.message || 'Error de conexión');
@@ -338,6 +350,20 @@ export const useCoordinatorWebSocket = () => {
         }
     }, [socket]);
 
+    // Función para solicitar lista de inspectores
+    const requestInspectors = useCallback(() => {
+        if (socket && socket.connected) {
+            socket.emit('getInspectors');
+        }
+    }, [socket]);
+
+    // Función para solicitar lista de sedes CDA
+    const requestSedesCDA = useCallback(() => {
+        if (socket && socket.connected) {
+            socket.emit('getSedesCDA');
+        }
+    }, [socket]);
+
     // Efecto para conectar/desconectar
     useEffect(() => {
         connect();
@@ -363,6 +389,8 @@ export const useCoordinatorWebSocket = () => {
         disconnect,
         requestData,
         updateQueueStatus,
-        requestStats
+        requestStats,
+        requestInspectors,
+        requestSedesCDA
     };
 };

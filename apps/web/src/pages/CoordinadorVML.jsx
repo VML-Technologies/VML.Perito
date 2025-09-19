@@ -16,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Clock, User, Car, Phone, Calendar, AlertCircle, CheckCircle, Play, Pause, Building, MapPin } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useCoordinatorWebSocket } from '@/hooks/use-inspection-queue-websocket';
-import { API_ROUTES } from '@/config/api';
 
 const CoordinadorVML = () => {
     const { showToast } = useNotifications();
@@ -27,7 +26,9 @@ const CoordinadorVML = () => {
         error: wsError,
         requestData,
         updateQueueStatus: wsUpdateQueueStatus,
-        requestStats
+        requestStats,
+        requestInspectors,
+        requestSedesCDA
     } = useCoordinatorWebSocket();
 
     // Estados para inspecciones virtuales (cola de inspecciones)
@@ -76,181 +77,96 @@ const CoordinadorVML = () => {
     const [selectedSedeInspector, setSelectedSedeInspector] = useState(null);
     const [loadingAssignModal, setLoadingAssignModal] = useState(false);
 
-    const fetchQueueData = useCallback(async () => {
-        try {
-            setLoading(true);
-            console.log('🔍 Solicitando datos de la cola con filtros:', filters);
-
-            const token = localStorage.getItem('authToken');
-            console.log('🔑 Token presente:', !!token);
-
-            const response = await fetch(`${API_ROUTES.INSPECTION_QUEUE.GET_QUEUE}?${new URLSearchParams(filters)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-
-            if (!response.ok) {
-                throw new Error('Error al obtener datos de la cola');
-            }
-
-            const data = await response.json();
-            console.log('📊 Datos recibidos:', data);
-
-            setQueueData(data.data);
-            setPagination(data.pagination);
-        } catch (error) {
-            console.error('Error fetching queue data:', error);
-            showToast('Error al cargar la cola de inspecciones', 'error');
-        } finally {
-            setLoading(false);
+    // Función para solicitar datos de la cola via WebSocket
+    const requestQueueData = useCallback(() => {
+        if (isConnected && socket) {
+            console.log('🔍 Solicitando datos de la cola via WebSocket con filtros:', filters);
+            requestData(filters);
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se pueden solicitar datos');
+            showToast('Sin conexión WebSocket. Intentando reconectar...', 'warning');
         }
-    }, [filters, showToast]);
+    }, [filters, isConnected, socket, requestData, showToast]);
 
-    const fetchStats = useCallback(async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(API_ROUTES.INSPECTION_QUEUE.GET_STATS, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching stats:', error);
+    // Función para solicitar estadísticas via WebSocket
+    const requestStatsData = useCallback(() => {
+        if (isConnected && socket) {
+            console.log('📊 Solicitando estadísticas via WebSocket');
+            requestStats();
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se pueden solicitar estadísticas');
         }
-    }, []);
+    }, [isConnected, socket, requestStats]);
 
-    // Función para cargar agendamientos en sede
-    const fetchSedeAppointments = useCallback(async () => {
-        try {
-            setLoadingSedeAppointments(true);
-            const token = localStorage.getItem('authToken');
-
-            // Usar la nueva ruta específica para coordinador que filtra por status 1,2,3
-            const response = await fetch(API_ROUTES.APPOINTMENTS.SEDE_COORDINATOR, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('🏢 Appointments en sede recibidos:', data.data);
-                setSedeAppointments(data.data);
-
-                // Calcular estadísticas
-                const stats = {
-                    pending: data.data.filter(a => a.status === 'pending').length,
-                    active: data.data.filter(a => a.status === 'active').length,
-                    completed: data.data.filter(a => a.status === 'completed').length,
-                    total: data.data.length
-                };
-                setSedeStats(stats);
-            } else {
-                throw new Error('Error al obtener agendamientos en sede');
-            }
-        } catch (error) {
-            console.error('Error fetching sede appointments:', error);
-            showToast('Error al cargar agendamientos en sede', 'error');
-        } finally {
-            setLoadingSedeAppointments(false);
+    // Función para solicitar agendamientos en sede via WebSocket
+    const requestSedeAppointments = useCallback(() => {
+        if (isConnected && socket) {
+            console.log('🏢 Solicitando agendamientos en sede via WebSocket');
+            // Los agendamientos en sede se incluyen en los datos del coordinador
+            requestData({ includeSedeAppointments: true });
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se pueden solicitar agendamientos en sede');
+            showToast('Sin conexión WebSocket. Intentando reconectar...', 'warning');
         }
-    }, [showToast]);
+    }, [isConnected, socket, requestData, showToast]);
 
-    // useEffect para cargar datos iniciales
+    // useEffect para cargar datos iniciales via WebSocket
     useEffect(() => {
-        fetchQueueData();
-        fetchStats();
-        fetchSedeAppointments();
-    }, [fetchQueueData, fetchStats, fetchSedeAppointments]);
-
-    // Cargar inspectores y sedes cuando se abre el modal
-    const loadModalData = useCallback(async () => {
-        try {
-            console.log('🔄 Cargando datos del modal...');
-            const token = localStorage.getItem('authToken');
-            console.log('🔑 Token disponible:', !!token);
-
-            // Verificar el token decodificándolo para ver los roles
-            if (token) {
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    console.log('👤 Usuario actual:', payload);
-                    console.log('🎭 Roles del usuario:', payload.roles);
-                } catch (e) {
-                    console.log('⚠️ No se pudo decodificar el token');
-                }
-            }
-
-            // Cargar inspectores
-            console.log('👥 Cargando inspectores desde:', API_ROUTES.USERS.INSPECTORS);
-            const inspectorsResponse = await fetch(API_ROUTES.USERS.INSPECTORS, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            console.log('📊 Respuesta inspectores:', inspectorsResponse.status, inspectorsResponse.statusText);
-
-            if (inspectorsResponse.ok) {
-                const inspectorsData = await inspectorsResponse.json();
-                console.log('👥 Datos de inspectores:', inspectorsData);
-                setInspectors(inspectorsData.data || []);
-            } else {
-                const errorText = await inspectorsResponse.text();
-                console.error('❌ Error cargando inspectores:', errorText);
-                console.error('❌ Status:', inspectorsResponse.status);
-                console.error('❌ Headers:', Object.fromEntries(inspectorsResponse.headers.entries()));
-            }
-
-            // Cargar sedes CDA
-            console.log('🏢 Cargando sedes CDA desde:', API_ROUTES.SEDES.CDA);
-            const sedesResponse = await fetch(API_ROUTES.SEDES.CDA, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            console.log('📊 Respuesta sedes:', sedesResponse.status, sedesResponse.statusText);
-
-            if (sedesResponse.ok) {
-                const sedesData = await sedesResponse.json();
-                console.log('🏢 Datos de sedes:', sedesData);
-                setSedes(sedesData.data || []);
-            } else {
-                const errorText = await sedesResponse.text();
-                console.error('❌ Error cargando sedes:', errorText);
-                console.error('❌ Status:', sedesResponse.status);
-                console.error('❌ Headers:', Object.fromEntries(sedesResponse.headers.entries()));
-            }
-        } catch (error) {
-            console.error('❌ Error cargando datos del modal:', error);
-            showToast('Error al cargar datos del modal', 'error');
+        if (isConnected) {
+            console.log('🚀 WebSocket conectado, solicitando datos iniciales');
+            // Reiniciar estados de loading
+            setLoading(true);
+            setLoadingSedeAppointments(true);
+            
+            // Solicitar datos
+            requestQueueData();
+            requestStatsData();
+            requestSedeAppointments();
+        } else {
+            // Si no hay conexión, mantener loading
+            setLoading(true);
+            setLoadingSedeAppointments(true);
         }
-    }, [showToast]);
+    }, [isConnected, requestQueueData, requestStatsData, requestSedeAppointments]);
+
+    // Cargar inspectores y sedes cuando se abre el modal via WebSocket
+    const loadModalData = useCallback(() => {
+        if (isConnected && socket) {
+            console.log('🔄 Cargando datos del modal via WebSocket...');
+            requestInspectors();
+            requestSedesCDA();
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se pueden cargar datos del modal');
+            showToast('Sin conexión WebSocket. No se pueden cargar datos del modal', 'error');
+        }
+    }, [isConnected, socket, requestInspectors, requestSedesCDA, showToast]);
 
     // useEffect para manejar datos del WebSocket
     useEffect(() => {
         if (isConnected && coordinatorData) {
             console.log('📊 Datos del coordinador recibidos:', coordinatorData);
+            
+            // Actualizar datos de la cola
             if (coordinatorData.queueData) {
+                console.log('📊 Actualizando datos de cola:', coordinatorData.queueData);
                 setQueueData(coordinatorData.queueData.data);
                 setPagination(coordinatorData.queueData.pagination);
+                setLoading(false); // ✅ Quitar loading cuando llegan datos de cola
+                console.log('✅ Loading de cola desactivado');
             }
+            
+            // Actualizar estadísticas
             if (coordinatorData.stats) {
                 setStats(coordinatorData.stats);
             }
-            // Si hay nuevos agendamientos en sede, actualizar la tabla
+            
+            // Actualizar agendamientos en sede
             if (coordinatorData.sedeAppointments) {
                 console.log('🏢 Actualizando appointments en sede desde WebSocket:', coordinatorData.sedeAppointments);
                 setSedeAppointments(coordinatorData.sedeAppointments);
+                setLoadingSedeAppointments(false); // ✅ Quitar loading cuando llegan datos de sede
+                console.log('✅ Loading de sede desactivado');
+                
                 // Recalcular estadísticas
                 const stats = {
                     pending: coordinatorData.sedeAppointments.filter(a => a.status === 'pending').length,
@@ -263,85 +179,74 @@ const CoordinadorVML = () => {
         }
     }, [isConnected, coordinatorData]);
 
-    const updateQueueStatus = async (id, newStatus) => {
-        try {
-            // Usar WebSocket para actualizar estado
-            if (isConnected) {
-                wsUpdateQueueStatus(id, newStatus);
-                showToast('Estado actualizado correctamente', 'success');
-            } else {
-                // Fallback a API si no hay WebSocket
-                const response = await fetch(`${API_ROUTES.INSPECTION_QUEUE.UPDATE_STATUS(id)}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                    },
-                    body: JSON.stringify({ estado: newStatus })
-                });
+    // useEffect para manejar eventos de inspectores y sedes
+    useEffect(() => {
+        if (socket) {
+            const handleInspectorsList = (data) => {
+                console.log('👥 Lista de inspectores recibida:', data);
+                setInspectors(data.data || []);
+            };
 
-                if (!response.ok) {
-                    throw new Error('Error al actualizar el estado');
-                }
+            const handleSedesCDAList = (data) => {
+                console.log('🏢 Lista de sedes CDA recibida:', data);
+                setSedes(data.data || []);
+            };
 
-                showToast('Estado actualizado correctamente', 'success');
-                fetchQueueData();
-                fetchStats();
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            showToast('Error al actualizar el estado', 'error');
+            socket.on('inspectorsList', handleInspectorsList);
+            socket.on('sedesCDAList', handleSedesCDAList);
+
+            return () => {
+                socket.off('inspectorsList', handleInspectorsList);
+                socket.off('sedesCDAList', handleSedesCDAList);
+            };
         }
-    };
+    }, [socket]);
 
-    // Función para actualizar estado de agendamiento en sede
-    const updateSedeAppointmentStatus = async (appointmentId, newStatus) => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_ROUTES.APPOINTMENTS.UPDATE(appointmentId)}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
+    // useEffect para debuggear estados de loading
+    useEffect(() => {
+        console.log('🔄 Estado de loading actualizado:', { loading, loadingSedeAppointments });
+    }, [loading, loadingSedeAppointments]);
 
-            if (!response.ok) {
-                throw new Error('Error al actualizar el estado');
-            }
-
+    const updateQueueStatus = (id, newStatus) => {
+        if (isConnected && socket) {
+            console.log(`🔄 Actualizando estado via WebSocket: ${id} -> ${newStatus}`);
+            wsUpdateQueueStatus(id, newStatus);
             showToast('Estado actualizado correctamente', 'success');
-            fetchSedeAppointments();
-        } catch (error) {
-            console.error('Error updating sede appointment status:', error);
-            showToast('Error al actualizar el estado', 'error');
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se puede actualizar estado');
+            showToast('Sin conexión WebSocket. No se puede actualizar el estado', 'error');
         }
     };
 
-    // Función para asignar inspector a una cita en sede
-    const assignInspectorToSedeAppointment = async (appointmentId, inspectorId) => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_ROUTES.APPOINTMENTS.ASSIGN_INSPECTOR(appointmentId)}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ inspector_id: inspectorId })
+    // Función para actualizar estado de agendamiento en sede via WebSocket
+    const updateSedeAppointmentStatus = (appointmentId, newStatus) => {
+        if (isConnected && socket) {
+            console.log(`🏢 Actualizando estado de agendamiento via WebSocket: ${appointmentId} -> ${newStatus}`);
+            // Emitir evento para actualizar estado de agendamiento
+            socket.emit('updateSedeAppointmentStatus', {
+                appointmentId,
+                status: newStatus
             });
+            showToast('Estado actualizado correctamente', 'success');
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se puede actualizar estado de agendamiento');
+            showToast('Sin conexión WebSocket. No se puede actualizar el estado', 'error');
+        }
+    };
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al asignar inspector');
-            }
-
+    // Función para asignar inspector a una cita en sede via WebSocket
+    const assignInspectorToSedeAppointment = (appointmentId, inspectorId) => {
+        if (isConnected && socket) {
+            console.log(`👨‍🔧 Asignando inspector via WebSocket: ${appointmentId} -> ${inspectorId}`);
+            // Emitir evento para asignar inspector
+            socket.emit('assignInspectorToSedeAppointment', {
+                appointmentId,
+                inspectorId
+            });
             showToast('Inspector asignado correctamente', 'success');
-            fetchSedeAppointments();
-        } catch (error) {
-            console.error('Error asignando inspector:', error);
-            showToast(error.message || 'Error al asignar inspector', 'error');
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se puede asignar inspector');
+            showToast('Sin conexión WebSocket. No se puede asignar inspector', 'error');
         }
     };
 
@@ -354,52 +259,35 @@ const CoordinadorVML = () => {
         loadModalData();
     };
 
-    // Función para iniciar inspección virtual
-    const handleStartInspection = async () => {
+    // Función para iniciar inspección virtual via WebSocket
+    const handleStartInspection = () => {
         if (!selectedInspector || !selectedSede) {
             showToast('Debes seleccionar un inspector y una sede', 'error');
             return;
         }
 
-        try {
+        if (isConnected && socket) {
             setLoadingModal(true);
-            const token = localStorage.getItem('authToken');
+            console.log(`🚀 Iniciando inspección virtual via WebSocket: ${selectedOrderId} -> ${selectedInspector}`);
 
-            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.START_VIRTUAL_INSPECTION(selectedOrderId), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    inspector_id: selectedInspector,
-                    sede_id: selectedSede
-                })
+            // Emitir evento para iniciar inspección
+            socket.emit('startVirtualInspection', {
+                orderId: selectedOrderId,
+                inspectorId: selectedInspector,
+                sedeId: selectedSede
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al iniciar inspección');
-            }
-
-            const data = await response.json();
-            showToast('Inspección iniciada exitosamente', 'success');
+            showToast('Iniciando inspección...', 'info');
 
             // Cerrar modal y limpiar estados
             setShowStartInspectionModal(false);
             setSelectedInspector(null);
             setSelectedSede(null);
             setSelectedOrderId(null);
-
-            // Actualizar datos
-            fetchQueueData();
-            fetchStats();
-
-        } catch (error) {
-            console.error('Error iniciando inspección:', error);
-            showToast(error.message || 'Error al iniciar inspección', 'error');
-        } finally {
             setLoadingModal(false);
+        } else {
+            console.warn('⚠️ WebSocket no conectado, no se puede iniciar inspección');
+            showToast('Sin conexión WebSocket. No se puede iniciar inspección', 'error');
         }
     };
 
@@ -468,10 +356,18 @@ const CoordinadorVML = () => {
 
     const handlePageChange = (newPage) => {
         setFilters(prev => ({ ...prev, page: newPage }));
+        // Solicitar datos actualizados con la nueva página
+        if (isConnected) {
+            requestData({ ...filters, page: newPage });
+        }
     };
 
     const handleStatusFilterChange = (newStatus) => {
         setFilters(prev => ({ ...prev, estado: newStatus, page: 1 }));
+        // Solicitar datos actualizados con el nuevo filtro
+        if (isConnected) {
+            requestData({ ...filters, estado: newStatus, page: 1 });
+        }
     };
 
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
@@ -544,6 +440,7 @@ const CoordinadorVML = () => {
                         {loading ? (
                             <div className="flex items-center justify-center h-32">
                                 <Loader2 className="h-8 w-8 animate-spin" />
+                                <span className="ml-2 text-sm text-gray-500">Cargando inspecciones virtuales...</span>
                             </div>
                         ) : (
                             <>
@@ -553,7 +450,6 @@ const CoordinadorVML = () => {
                                             <TableHead>Placa y Orden</TableHead>
                                             <TableHead>Cliente</TableHead>
                                             <TableHead>Estado</TableHead>
-                                            <TableHead>Inspector</TableHead>
                                             <TableHead>Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -584,19 +480,12 @@ const CoordinadorVML = () => {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {getStatusBadge(item.estado)}
-                                                    <div className="flex gap-2">
-                                                        <span className="text-sm font-mono ps-2">
+                                                    <div className="flex flex-col gap-1">
+                                                        {getStatusBadge(item.estado)}
+                                                        <span className="text-sm font-mono text-gray-500">
                                                             {formatTimeAgo(item.tiempo_ingreso)}
                                                         </span>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {item.inspector ? (
-                                                        <span className="text-sm">{item.inspector.name}</span>
-                                                    ) : (
-                                                        <span className="text-sm text-gray-500">Sin asignar</span>
-                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
@@ -607,16 +496,6 @@ const CoordinadorVML = () => {
                                                             >
                                                                 <Play className="h-4 w-4 mr-1" />
                                                                 Iniciar
-                                                            </Button>
-                                                        )}
-                                                        {item.estado === 'en_proceso' && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => updateQueueStatus(item.id, 'completada')}
-                                                            >
-                                                                <CheckCircle className="h-4 w-4 mr-1" />
-                                                                Completar
                                                             </Button>
                                                         )}
                                                     </div>
@@ -668,6 +547,7 @@ const CoordinadorVML = () => {
                         {loadingSedeAppointments ? (
                             <div className="flex items-center justify-center h-32">
                                 <Loader2 className="h-8 w-8 animate-spin" />
+                                <span className="ml-2 text-sm text-gray-500">Cargando inspecciones en sede...</span>
                             </div>
                         ) : (
                             <>
@@ -749,7 +629,14 @@ const CoordinadorVML = () => {
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {getSedeStatusBadge(appointment.status)}
+                                                    <div className="flex flex-col gap-1">
+                                                        {getSedeStatusBadge(appointment.status)}
+                                                        {appointment.statusInspectionOrder && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                Orden: {appointment.statusInspectionOrder}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
@@ -903,23 +790,18 @@ const CoordinadorVML = () => {
                             Cancelar
                         </Button>
                         <Button
-                            onClick={async () => {
+                            onClick={() => {
                                 if (!selectedSedeInspector) {
                                     showToast('Debes seleccionar un inspector', 'error');
                                     return;
                                 }
 
                                 setLoadingAssignModal(true);
-                                try {
-                                    await assignInspectorToSedeAppointment(selectedSedeAppointmentId, selectedSedeInspector);
-                                    setShowAssignInspectorModal(false);
-                                    setSelectedSedeInspector(null);
-                                    setSelectedSedeAppointmentId(null);
-                                } catch (error) {
-                                    console.error('Error en asignación:', error);
-                                } finally {
-                                    setLoadingAssignModal(false);
-                                }
+                                assignInspectorToSedeAppointment(selectedSedeAppointmentId, selectedSedeInspector);
+                                setShowAssignInspectorModal(false);
+                                setSelectedSedeInspector(null);
+                                setSelectedSedeAppointmentId(null);
+                                setLoadingAssignModal(false);
                             }}
                             disabled={!selectedSedeInspector || loadingAssignModal}
                         >

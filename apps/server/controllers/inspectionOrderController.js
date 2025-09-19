@@ -135,6 +135,7 @@ class InspectionOrderController extends BaseController {
         this.checkPlate = this.checkPlate.bind(this);
         this.getFixedStatus = this.getFixedStatus.bind(this);
         this.getFullInspectionOrder = this.getFullInspectionOrder.bind(this);
+        this.resendInspectionSMS = this.resendInspectionSMS.bind(this);
         // Bind métodos de cálculo
         this.groupPartsByCategory = this.groupPartsByCategory.bind(this);
         this.getResponseValue = this.getResponseValue.bind(this);
@@ -2088,6 +2089,104 @@ class InspectionOrderController extends BaseController {
                 success: false,
                 message: 'Error interno del servidor',
                 error: error.message
+            });
+        }
+    }
+
+    /**
+     * Reenviar SMS de inspección
+     */
+    async resendInspectionSMS(req, res) {
+        try {
+            const { id } = req.params;
+            
+            console.log(`📱 Reenviando SMS para orden de inspección: ${id}`);
+            
+            // Buscar la orden de inspección
+            const inspectionOrder = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name', 'description']
+                    }
+                ]
+            });
+            
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+            
+            // Verificar que la orden tenga inspection_link
+            if (!inspectionOrder.inspection_link) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La orden no tiene link de inspección generado'
+                });
+            }
+            
+            // Verificar que tenga datos de contacto
+            if (!inspectionOrder.celular_contacto || !inspectionOrder.nombre_contacto) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La orden no tiene datos de contacto completos'
+                });
+            }
+            
+            // Importar servicio de SMS
+            const smsService = await import('../services/channels/smsService.js');
+            
+            // Crear mensaje SMS (mismo formato que en inspectionOrder.js)
+            const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+            
+            // Enviar SMS
+            const smsResult = await smsService.default.send({
+                recipient_phone: inspectionOrder.celular_contacto,
+                content: smsMessage,
+                priority: 'normal',
+                metadata: {
+                    inspection_order_id: inspectionOrder.id,
+                    placa: inspectionOrder.placa,
+                    nombre_contacto: inspectionOrder.nombre_contacto,
+                    channel_data: {
+                        sms: {
+                            message: smsMessage
+                        }
+                    },
+                    resend: true, // Marcar como reenvío
+                    resend_by: req.user?.id || 'system',
+                    resend_at: new Date().toISOString()
+                }
+            });
+            
+            console.log(`✅ SMS reenviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+            
+            // Respuesta exitosa
+            return res.json({
+                success: true,
+                message: 'SMS reenviado exitosamente',
+                data: {
+                    inspection_order_id: inspectionOrder.id,
+                    numero: inspectionOrder.numero,
+                    placa: inspectionOrder.placa,
+                    nombre_contacto: inspectionOrder.nombre_contacto,
+                    celular_contacto: inspectionOrder.celular_contacto,
+                    inspection_link: inspectionOrder.inspection_link,
+                    sms_sent: true,
+                    sms_result: smsResult,
+                    resent_at: new Date().toISOString(),
+                    resent_by: req.user?.id || 'system'
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ Error reenviando SMS:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error reenviando SMS: ' + error.message
             });
         }
     }

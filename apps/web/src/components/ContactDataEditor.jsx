@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
-import { User, Phone, Mail, Save, AlertCircle, History, CheckCircle } from 'lucide-react';
+import { User, Phone, Mail, Save, AlertCircle, History, CheckCircle, MessageSquare } from 'lucide-react';
 import { useContactHistory } from '../hooks/use-comments';
 import { useNotificationContext } from '../contexts/notification-context';
 import { API_ROUTES } from '../config/api';
@@ -21,6 +21,7 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
     const [error, setError] = useState('');
     const [hasChanges, setHasChanges] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [isResendingSMS, setIsResendingSMS] = useState(false);
     const { contactHistory, loading: historyLoading, fetchContactHistory, updateContactData } = useContactHistory(orderId);
     const { showToast } = useNotificationContext();
 
@@ -142,6 +143,39 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
         setShowHistory(!showHistory);
     };
 
+    const handleResendSMS = async () => {
+        if (!orderId) {
+            showToast('No se puede reenviar SMS: ID de orden no disponible', 'error');
+            return;
+        }
+
+        setIsResendingSMS(true);
+        setError('');
+
+        try {
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.RESEND_SMS(orderId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showToast('SMS reenviado exitosamente', 'success');
+            } else {
+                throw new Error(result.message || 'Error reenviando SMS');
+            }
+        } catch (error) {
+            console.error('Error reenviando SMS:', error);
+            showToast(error.message || 'Error de conexión. Intente nuevamente.', 'error');
+        } finally {
+            setIsResendingSMS(false);
+        }
+    };
+
     // Cargar historial inicial cuando se muestra
     useEffect(() => {
         if (showHistory && contactHistory.length === 0) {
@@ -169,6 +203,25 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                         Datos de Contacto
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleResendSMS}
+                            disabled={isResendingSMS || !formData.celular_contacto}
+                            className="flex items-center gap-1"
+                        >
+                            {isResendingSMS ? (
+                                <>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                    Enviando...
+                                </>
+                            ) : (
+                                <>
+                                    <MessageSquare className="h-4 w-4" />
+                                    Reenviar SMS
+                                </>
+                            )}
+                        </Button>
                         <Button
                             variant="outline"
                             size="sm"

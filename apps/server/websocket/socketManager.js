@@ -286,80 +286,22 @@ class SocketManager {
         // Evento para solicitar datos del coordinador
         socket.on('requestCoordinatorData', async (data) => {
             try {
-                console.log('📊 Solicitando datos para coordinador');
+                console.log('📊 Solicitando datos para coordinador desde DB');
                 
-                // Importar el servicio de memoria
-                const inspectionQueueMemoryService = (await import('../services/inspectionQueueMemoryService.js')).default;
+                // Importar el nuevo servicio de datos del coordinador
+                const coordinatorDataService = (await import('../services/coordinatorDataService.js')).default;
                 
-                // Obtener datos de la cola
-                const queueData = inspectionQueueMemoryService.getQueueEntries({
+                // Obtener todos los datos desde la base de datos
+                const coordinatorData = await coordinatorDataService.getCoordinatorData({
                     estado: data?.filters?.estado || 'en_cola',
                     page: data?.filters?.page || 1,
-                    limit: 100000//data?.filters?.limit || 10
+                    limit: data?.filters?.limit || 1000
                 });
-                
-                // Obtener estadísticas
-                const stats = inspectionQueueMemoryService.getStats();
-                
-                // Obtener appointments en sede para coordinador
-                const { Appointment, InspectionOrder, Sede, City, InspectionModality, User, Role } = await import('../models/index.js');
-                
-                const sedeAppointments = await Appointment.findAll({
-                    where: {
-                        deleted_at: null // Solo appointments activos
-                    },
-                    include: [
-                        {
-                            model: InspectionOrder,
-                            as: 'inspectionOrder',
-                            where: {
-                                status: [1, 2, 3] // Solo órdenes con status 1, 2, 3
-                            },
-                            required: true
-                        },
-                        {
-                            model: Sede,
-                            as: 'sede',
-                            include: [{
-                                model: City,
-                                as: 'city'
-                            }]
-                        },
-                        {
-                            model: InspectionModality,
-                            as: 'inspectionModality',
-                            where: {
-                                code: 'SEDE' // Solo modalidad SEDE
-                            },
-                            required: true
-                        },
-                        {
-                            model: User,
-                            as: 'user',
-                            attributes: ['id', 'name', 'email'],
-                            required: false, // LEFT JOIN para incluir appointments sin inspector asignado
-                            include: [{
-                                model: Role,
-                                as: 'roles',
-                                attributes: ['id', 'name', 'description'],
-                                through: { attributes: [] } // Excluir tabla intermedia
-                            }]
-                        }
-                    ],
-                    order: [['created_at', 'DESC']]
-                });
-                
-                console.log(`🏢 Encontrados ${sedeAppointments.length} appointments en sede para coordinador`);
                 
                 // Enviar datos al coordinador
-                socket.emit('coordinatorData', {
-                    queueData,
-                    stats,
-                    sedeAppointments,
-                    timestamp: new Date().toISOString()
-                });
+                socket.emit('coordinatorData', coordinatorData);
                 
-                console.log('📊 Datos enviados al coordinador');
+                console.log('📊 Datos enviados al coordinador desde DB');
             } catch (error) {
                 console.error('❌ Error obteniendo datos para coordinador:', error);
                 socket.emit('error', {
@@ -375,11 +317,11 @@ class SocketManager {
                 const { id, estado, inspector_asignado_id, observaciones } = data;
                 console.log(`🔄 Actualizando estado de cola: ${id} -> ${estado}`);
                 
-                // Importar el servicio de memoria
-                const inspectionQueueMemoryService = (await import('../services/inspectionQueueMemoryService.js')).default;
+                // Importar el nuevo servicio de datos del coordinador
+                const coordinatorDataService = (await import('../services/coordinatorDataService.js')).default;
                 
-                // Actualizar estado
-                const result = await inspectionQueueMemoryService.updateQueueStatus(
+                // Actualizar estado usando el nuevo servicio
+                const result = await coordinatorDataService.updateVirtualInspectionStatus(
                     id, 
                     estado, 
                     inspector_asignado_id, 
@@ -417,6 +359,180 @@ class SocketManager {
                 console.error('❌ Error actualizando estado de cola:', error);
                 socket.emit('error', {
                     message: 'Error actualizando estado de la cola',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para actualizar estado de agendamiento en sede
+        socket.on('updateSedeAppointmentStatus', async (data) => {
+            try {
+                const { appointmentId, status } = data;
+                console.log(`🏢 Actualizando estado de agendamiento en sede: ${appointmentId} -> ${status}`);
+                
+                // Importar el nuevo servicio de datos del coordinador
+                const coordinatorDataService = (await import('../services/coordinatorDataService.js')).default;
+                
+                // Actualizar estado usando el nuevo servicio
+                const result = await coordinatorDataService.updateSedeAppointmentStatus(appointmentId, status);
+                
+                // Solicitar datos actualizados para todos los coordinadores
+                this.io.to('coordinador_vml').emit('requestCoordinatorData', { 
+                    includeSedeAppointments: true 
+                });
+                
+                console.log('✅ Estado de agendamiento en sede actualizado correctamente');
+            } catch (error) {
+                console.error('❌ Error actualizando estado de agendamiento en sede:', error);
+                socket.emit('error', {
+                    message: 'Error actualizando estado del agendamiento',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para asignar inspector a agendamiento en sede
+        socket.on('assignInspectorToSedeAppointment', async (data) => {
+            try {
+                const { appointmentId, inspectorId } = data;
+                console.log(`👨‍🔧 Asignando inspector a agendamiento en sede: ${appointmentId} -> ${inspectorId}`);
+                
+                // Importar el nuevo servicio de datos del coordinador
+                const coordinatorDataService = (await import('../services/coordinatorDataService.js')).default;
+                
+                // Asignar inspector usando el nuevo servicio
+                const result = await coordinatorDataService.assignInspectorToSedeAppointment(appointmentId, inspectorId);
+                
+                // Solicitar datos actualizados para todos los coordinadores
+                this.io.to('coordinador_vml').emit('requestCoordinatorData', { 
+                    includeSedeAppointments: true 
+                });
+                
+                console.log('✅ Inspector asignado a agendamiento en sede correctamente');
+            } catch (error) {
+                console.error('❌ Error asignando inspector a agendamiento en sede:', error);
+                socket.emit('error', {
+                    message: 'Error asignando inspector al agendamiento',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para iniciar inspección virtual
+        socket.on('startVirtualInspection', async (data) => {
+            try {
+                const { orderId, inspectorId, sedeId } = data;
+                console.log(`🚀 Iniciando inspección virtual: ${orderId} -> ${inspectorId}`);
+                
+                // Importar el nuevo servicio de datos del coordinador
+                const coordinatorDataService = (await import('../services/coordinatorDataService.js')).default;
+                
+                // Iniciar inspección virtual usando el nuevo servicio
+                const result = await coordinatorDataService.startVirtualInspection(orderId, inspectorId, sedeId);
+                
+                // Emitir actualización a todos los coordinadores
+                this.io.to('coordinador_vml').emit('inspectionQueueStatusUpdated', {
+                    queueEntry: result.data,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Emitir actualización a conexiones públicas si hay hash
+                if (result.data && result.data.hash_acceso) {
+                    this.emitQueueStatusUpdate(result.data.hash_acceso, result.data);
+                    
+                    // Emitir evento de inspector asignado
+                    const { User } = await import('../models/index.js');
+                    const inspector = await User.findByPk(inspectorId, {
+                        attributes: ['id', 'name', 'email']
+                    });
+                    
+                    if (inspector) {
+                        this.emitInspectorAssigned(result.data.hash_acceso, {
+                            inspector: inspector,
+                            status: 'en_proceso'
+                        });
+                    }
+                }
+                
+                console.log('✅ Inspección virtual iniciada correctamente');
+            } catch (error) {
+                console.error('❌ Error iniciando inspección virtual:', error);
+                socket.emit('error', {
+                    message: 'Error iniciando inspección virtual',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para cargar inspectores
+        socket.on('getInspectors', async () => {
+            try {
+                console.log('👥 Solicitando lista de inspectores');
+                
+                const { User, Role } = await import('../models/index.js');
+                
+                // Buscar usuarios con rol de inspector
+                const inspectors = await User.findAll({
+                    where: {
+                        deleted_at: null
+                    },
+                    include: [{
+                        model: Role,
+                        as: 'roles',
+                        where: {
+                            name: 'Inspector'
+                        },
+                        through: { attributes: [] }
+                    }],
+                    attributes: ['id', 'name', 'email']
+                });
+                
+                socket.emit('inspectorsList', {
+                    data: inspectors,
+                    timestamp: new Date().toISOString()
+                });
+                
+                console.log(`✅ Enviados ${inspectors.length} inspectores`);
+            } catch (error) {
+                console.error('❌ Error cargando inspectores:', error);
+                socket.emit('error', {
+                    message: 'Error cargando inspectores',
+                    error: error.message
+                });
+            }
+        });
+
+        // Evento para cargar sedes CDA
+        socket.on('getSedesCDA', async () => {
+            try {
+                console.log('🏢 Solicitando lista de sedes CDA');
+                
+                const { Sede, City } = await import('../models/index.js');
+                
+                // Buscar sedes tipo CDA
+                const sedes = await Sede.findAll({
+                    where: {
+                        tipo: 'CDA',
+                        deleted_at: null
+                    },
+                    include: [{
+                        model: City,
+                        as: 'city',
+                        attributes: ['id', 'name']
+                    }],
+                    attributes: ['id', 'name', 'direccion', 'telefono']
+                });
+                
+                socket.emit('sedesCDAList', {
+                    data: sedes,
+                    timestamp: new Date().toISOString()
+                });
+                
+                console.log(`✅ Enviadas ${sedes.length} sedes CDA`);
+            } catch (error) {
+                console.error('❌ Error cargando sedes CDA:', error);
+                socket.emit('error', {
+                    message: 'Error cargando sedes CDA',
                     error: error.message
                 });
             }

@@ -66,6 +66,7 @@ export const API_ROUTES = {
         // ===== HISTORIAL DE CONTACTOS =====
         CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
         UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
+        RESEND_SMS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/resend-sms`,
         
         // ===== COMENTARIOS =====
         COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,

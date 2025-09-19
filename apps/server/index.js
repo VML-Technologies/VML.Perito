@@ -268,6 +268,12 @@ app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, req
 // Rutas para actualización de datos de contacto
 app.put('/api/inspection-orders/:id/contact-data', requirePermission('inspection_orders.update'), inspectionOrderController.updateContactData);
 
+// Ruta para reenviar SMS de inspección
+app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.resendInspectionSMS);
+
+// Ruta para reenviar SMS de inspección
+// app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
+
 // Rutas para historial de contactos
 app.get('/api/inspection-orders/:orderId/contact-history', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistory);
 app.get('/api/inspection-orders/:orderId/contact-history/:historyId', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistoryItem);
