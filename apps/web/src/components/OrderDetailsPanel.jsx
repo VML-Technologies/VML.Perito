@@ -128,12 +128,6 @@ const OrderDetailsPanel = ({
                                 )}
                             </div>
                         ))}
-                        <div className='w-full'>
-                            <span className="font-medium">Estado:</span>
-                            <Badge variant={order.badgeColor}>
-                                {order.fixedStatus}
-                            </Badge>
-                        </div>
                         {
                             inspection && (
                                 loading ? (
