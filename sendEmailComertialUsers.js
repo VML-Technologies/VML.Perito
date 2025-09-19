@@ -95,14 +95,29 @@ select * from users where email in (
         */
         const usuarios = await User.findAll({
             where: {
-                // email: {
-                //     [Op.in]: ['simon.bolivar@holdingvml.net']
-                // }
-                password: {
+                email: {
                     [Op.in]: [
-                        '$2a$10$S5NmUs9T5oIOyda5nNJzGOs2.XtSevOIJx8CyJKdlpmQQIMwgjdX2'
+                        'jefetecnicocdadeitagui@cdacerticar.com',
+                        'jefetecnicocdapoblado@cdacerticar.com',
+                        'jefetecnicosinu@cdacerticar.com',
+                        'jefetecnicocdamagdalena@cdacerticar.com',
+                        'jefetecnicocdasucre@cdacerticar.com',
+                        'jefetecnicocdadeyopal@cdacerticar.com',
+                        'jefetecnicocdaderionegro@cdacerticar.com',
+                        'jefetecnicocdacentro@cdacerticar.com',
+                        'jefetecnicocdaexposiciones@cdacerticar.com',
+                        'gestion@cdahr.com',
+                        'rtmturin@cardisel.com.co',
+                        'rtmromelia@cardisel.com.co',
+                        'carlose.nuevocda@gmail.com',
+                        'simon.bolivar@holdingvml.net'
                     ]
                 }
+                // password: {
+                //     [Op.in]: [
+                //         '$2a$10$S5NmUs9T5oIOyda5nNJzGOs2.XtSevOIJx8CyJKdlpmQQIMwgjdX2'
+                //     ]
+                // }
             }
         })
 
