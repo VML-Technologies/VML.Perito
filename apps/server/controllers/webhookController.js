@@ -309,27 +309,53 @@ class WebhookController {
                 console.log(`📱 Enviando SMS automático...`);
                 try {
                     const smsService = await import('../services/channels/smsService.js');
+                    const smsLoggingService = await import('../services/smsLoggingService.js');
                     
                     const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${finalLink}`;
                     
-                    const smsResult = await smsService.default.send({
+                    // Loggear SMS con envío automático
+                    const smsData = {
+                        inspection_order_id: inspectionOrder.id,
                         recipient_phone: inspectionOrder.celular_contacto,
+                        recipient_name: inspectionOrder.nombre_contacto,
                         content: smsMessage,
                         priority: 'normal',
+                        sms_type: 'webhook',
+                        trigger_source: 'webhook',
+                        webhook_id: context?.webhook_id || null,
                         metadata: {
-                            inspection_order_id: inspectionOrder.id,
                             placa: inspectionOrder.placa,
-                            nombre_contacto: inspectionOrder.nombre_contacto,
-                            channel_data: {
-                                sms: {
-                                    message: smsMessage
+                            inspection_link: finalLink,
+                            webhook_processed: true,
+                            external_system: true
+                        }
+                    };
+
+                    const result = await smsLoggingService.default.logSmsWithSend(smsData, async () => {
+                        return await smsService.default.send({
+                            recipient_phone: inspectionOrder.celular_contacto,
+                            content: smsMessage,
+                            priority: 'normal',
+                            metadata: {
+                                inspection_order_id: inspectionOrder.id,
+                                placa: inspectionOrder.placa,
+                                nombre_contacto: inspectionOrder.nombre_contacto,
+                                channel_data: {
+                                    sms: {
+                                        message: smsMessage
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
                     
-                    console.log(`✅ SMS enviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
-                    smsSent = true;
+                    if (result.success) {
+                        console.log(`✅ SMS enviado y loggeado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+                        smsSent = true;
+                    } else {
+                        console.error(`❌ Error enviando SMS: ${result.error}`);
+                        smsError = result.error;
+                    }
                     
                 } catch (error) {
                     console.error('❌ Error enviando SMS:', error);

@@ -301,23 +301,72 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                     // const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, cuando estés listo para tu inspección de asegurabilidad ingresa a este link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
                     const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`
                     
-                    await smsService.default.send({
-                        recipient_phone: inspectionOrder.celular_contacto,
-                        content: smsMessage,
-                        priority: 'normal',
-                        metadata: {
+                    // Intentar enviar SMS con logging
+                    try {
+                        const smsLoggingService = await import('../services/smsLoggingService.js');
+                        
+                        // Loggear SMS con envío automático
+                        const smsData = {
                             inspection_order_id: inspectionOrder.id,
-                            placa: inspectionOrder.placa,
-                            nombre_contacto: inspectionOrder.nombre_contacto,
-                            channel_data: {
-                                sms: {
-                                    message: smsMessage
+                            recipient_phone: inspectionOrder.celular_contacto,
+                            recipient_name: inspectionOrder.nombre_contacto,
+                            content: smsMessage,
+                            priority: 'normal',
+                            sms_type: 'initial',
+                            trigger_source: 'model_hook',
+                            user_id: options.user_id || null,
+                            metadata: {
+                                placa: inspectionOrder.placa,
+                                inspection_link: inspectionOrder.inspection_link,
+                                auto_generated: true
+                            }
+                        };
+
+                        const result = await smsLoggingService.default.logSmsWithSend(smsData, async () => {
+                            return await smsService.default.send({
+                                recipient_phone: inspectionOrder.celular_contacto,
+                                content: smsMessage,
+                                priority: 'normal',
+                                metadata: {
+                                    inspection_order_id: inspectionOrder.id,
+                                    placa: inspectionOrder.placa,
+                                    nombre_contacto: inspectionOrder.nombre_contacto,
+                                    channel_data: {
+                                        sms: {
+                                            message: smsMessage
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        
+                        if (result.success) {
+                            console.log(`📱 SMS enviado y loggeado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
+                        } else {
+                            console.error(`❌ Error enviando SMS: ${result.error}`);
+                        }
+                    } catch (loggingError) {
+                        console.warn('⚠️ Error en logging de SMS, enviando sin log:', loggingError.message);
+                        
+                        // Enviar SMS sin logging como fallback
+                        await smsService.default.send({
+                            recipient_phone: inspectionOrder.celular_contacto,
+                            content: smsMessage,
+                            priority: 'normal',
+                            metadata: {
+                                inspection_order_id: inspectionOrder.id,
+                                placa: inspectionOrder.placa,
+                                nombre_contacto: inspectionOrder.nombre_contacto,
+                                channel_data: {
+                                    sms: {
+                                        message: smsMessage
+                                    }
                                 }
                             }
-                        }
-                    });
-                    
-                    console.log(`📱 SMS enviado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
+                        });
+                        
+                        console.log(`📱 SMS enviado sin logging a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
+                    }
                 } catch (error) {
                     console.error('❌ Error enviando SMS con link de inspección:', error);
                 }

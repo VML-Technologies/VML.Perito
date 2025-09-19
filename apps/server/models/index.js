@@ -48,6 +48,9 @@ import WebhookLog from './webhookLog.js';
 // Nuevos modelos para consultas de placas
 import PlateQuery from './plateQuery.js';
 
+// Nuevos modelos para logs de SMS
+import InspectionOrderSmsLog from './inspectionOrderSmsLog.js';
+
 // Nuevos modelos para historial de contactos y comentarios
 import InspectionOrderContactHistory from './inspectionOrderContactHistory.js';
 import InspectionOrderCommentHistory from './inspectionOrderCommentHistory.js';
@@ -819,6 +822,28 @@ InspectionQueue.belongsTo(InspectionOrder, {
     as: 'inspectionOrder'
 });
 
+// ===== RELACIONES PARA SMS LOGS =====
+
+// InspectionOrder -> InspectionOrderSmsLog (1:N) - Una orden puede tener múltiples logs de SMS
+InspectionOrder.hasMany(InspectionOrderSmsLog, {
+    foreignKey: 'inspection_order_id',
+    as: 'smsLogs'
+});
+InspectionOrderSmsLog.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder'
+});
+
+// User -> InspectionOrderSmsLog (1:N) - Un usuario puede haber iniciado múltiples SMS
+User.hasMany(InspectionOrderSmsLog, {
+    foreignKey: 'user_id',
+    as: 'smsLogs'
+});
+InspectionOrderSmsLog.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
 // User -> InspectionQueue (1:N) - Inspector asignado a la cola
 User.hasMany(InspectionQueue, {
     foreignKey: 'inspector_asignado_id',
@@ -882,6 +907,8 @@ export {
     WebhookLog,
     // Sistema de consultas de placas
     PlateQuery,
+    // Sistema de logs de SMS
+    InspectionOrderSmsLog,
     // Sistema de historial de contactos y comentarios
     InspectionOrderContactHistory,
     InspectionOrderCommentHistory,

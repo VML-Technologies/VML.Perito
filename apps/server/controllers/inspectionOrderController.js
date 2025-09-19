@@ -2123,33 +2123,58 @@ class InspectionOrderController extends BaseController {
                 });
             }
 
-            // Importar servicio de SMS
+            // Importar servicios
             const smsService = await import('../services/channels/smsService.js');
+            const smsLoggingService = await import('../services/smsLoggingService.js');
 
             // Crear mensaje SMS (mismo formato que en inspectionOrder.js)
             const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
 
-            // Enviar SMS
-            const smsResult = await smsService.default.send({
+            // Loggear SMS con envío automático
+            const smsData = {
+                inspection_order_id: inspectionOrder.id,
                 recipient_phone: inspectionOrder.celular_contacto,
+                recipient_name: inspectionOrder.nombre_contacto,
                 content: smsMessage,
                 priority: 'normal',
+                sms_type: 'resend',
+                trigger_source: 'controller',
+                user_id: req.user?.id || null,
                 metadata: {
-                    inspection_order_id: inspectionOrder.id,
                     placa: inspectionOrder.placa,
-                    nombre_contacto: inspectionOrder.nombre_contacto,
-                    channel_data: {
-                        sms: {
-                            message: smsMessage
-                        }
-                    },
-                    resend: true, // Marcar como reenvío
+                    inspection_link: inspectionOrder.inspection_link,
+                    resend: true,
                     resend_by: req.user?.id || 'system',
                     resend_at: new Date().toISOString()
                 }
+            };
+
+            const result = await smsLoggingService.default.logSmsWithSend(smsData, async () => {
+                return await smsService.default.send({
+                    recipient_phone: inspectionOrder.celular_contacto,
+                    content: smsMessage,
+                    priority: 'normal',
+                    metadata: {
+                        inspection_order_id: inspectionOrder.id,
+                        placa: inspectionOrder.placa,
+                        nombre_contacto: inspectionOrder.nombre_contacto,
+                        channel_data: {
+                            sms: {
+                                message: smsMessage
+                            }
+                        },
+                        resend: true, // Marcar como reenvío
+                        resend_by: req.user?.id || 'system',
+                        resend_at: new Date().toISOString()
+                    }
+                });
             });
 
-            console.log(`✅ SMS reenviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+            if (result.success) {
+                console.log(`✅ SMS reenviado y loggeado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
+            } else {
+                console.error(`❌ Error reenviando SMS: ${result.error}`);
+            }
 
             // Respuesta exitosa
             return res.json({
@@ -2162,8 +2187,9 @@ class InspectionOrderController extends BaseController {
                     nombre_contacto: inspectionOrder.nombre_contacto,
                     celular_contacto: inspectionOrder.celular_contacto,
                     inspection_link: inspectionOrder.inspection_link,
-                    sms_sent: true,
-                    sms_result: smsResult,
+                    sms_sent: result.success,
+                    sms_log_id: result.smsLog?.id || null,
+                    sms_result: result.sendResult || null,
                     resent_at: new Date().toISOString(),
                     resent_by: req.user?.id || 'system'
                 }
