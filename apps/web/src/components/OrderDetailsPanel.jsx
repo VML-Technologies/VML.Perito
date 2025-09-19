@@ -79,24 +79,10 @@ const OrderDetailsPanel = ({
     const orderInfo = [
         { label: 'Cliente', value: order.nombre_cliente },
         { label: 'Placa', value: order.placa, className: 'font-mono font-medium' },
-        { label: 'Teléfono', value: order.celular_cliente, className: 'font-mono' },
-        { label: 'Vehículo', value: `${order.marca} ${order.linea || ''} (${order.modelo})` },
-        { label: 'Email', value: order.correo_cliente },
-        { label: 'Documento', value: `${order.tipo_doc || ''} ${order.num_doc || ''}`, className: 'font-mono' },
-        {
-            label: 'Agente Asignado',
-            value: order.AssignedAgent ? (
-                <div className="flex items-center gap-2">
-                    <UserCheck className="h-4 w-4 text-green-600" />
-                    <span>{order.AssignedAgent.name}</span>
-                </div>
-            ) : (
-                <div className="flex items-center gap-2">
-                    <UserX className="h-4 w-4 text-red-500" />
-                    <span className="text-muted-foreground">Sin asignar</span>
-                </div>
-            )
-        }
+        { label: 'Contacto', value: order.nombre_contacto },
+        { label: 'Teléfono Contacto', value: order.celular_contacto, className: 'font-mono' },
+        { label: 'Email Contacto', value: order.correo_contacto },
+
     ];
 
     const formatObservations = (observations) => {
