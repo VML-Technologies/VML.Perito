@@ -117,7 +117,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 const data = await response.json();
                 setPlateExists(data.exists);
                 setExistingOrder(data.exists ? data.order : null);
-                
+
                 if (data.exists) {
                     showToast(data.message, 'warning');
                 }
@@ -320,7 +320,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             const timeoutId = setTimeout(() => {
                 checkPlateExists(value);
             }, 500);
-            
+
             return () => clearTimeout(timeoutId);
         }
 
@@ -625,7 +625,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                         )}
                     </SheetDescription>
                 </SheetHeader>
-                <form onSubmit={handleSubmit} className={`mt-6 space-y-6 ${loading ? 'pointer-events-none opacity-50' : ''}`}>
+                <form onSubmit={handleSubmit} className={`mt-0 space-y-4 ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                     {/* Información General de la Orden */}
                     <Card>
                         <CardHeader>
@@ -690,9 +690,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                             <div className="text-sm text-orange-800">
                                                 <p className="font-medium">Orden existente encontrada:</p>
                                                 <p>• Número: {existingOrder.numero}</p>
-                                                {/* <p>• Cliente: {existingOrder.nombre_cliente}</p>
-                                                <p>• Estado: {existingOrder.status}</p>
-                                                <p>• Fecha: {new Date(existingOrder.created_at).toLocaleDateString('es-ES')}</p> */}
                                             </div>
                                         </div>
                                     </div>
@@ -710,7 +707,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <SelectContent>
                                         <SelectItem value="Virtual">Virtual</SelectItem>
                                         <SelectItem value="Presencial">Presencial</SelectItem>
-                                        {/* <SelectItem value="A Domicilio">A Domicilio</SelectItem> */}
                                     </SelectContent>
                                 </Select>
                                 {errors.metodo_inspeccion_recomendado && (
@@ -1075,6 +1071,24 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {
+                        formData.nombre_contacto && formData.celular_contacto && <>
+                            <div className='border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 flex flex-col gap-1 justify-center items-center bg-red-50/20'>
+                                <div className='text-red-500 font-bold'>
+                                    ESTA SERÍA LA PERSONA CON LA CUAL SE VA A REALIZAR LA INSPECCIÓN
+                                </div>
+                                <div className='flex flex-col gap-0 font-medium'>
+                                    <div>
+                                        Nombre: {formData.nombre_contacto}
+                                    </div>
+                                    <div>
+                                        Celular: {formData.celular_contacto}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    }
 
                     {/* Información del Contacto */}
                     <Card>
