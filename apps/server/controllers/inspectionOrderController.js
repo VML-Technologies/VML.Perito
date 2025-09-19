@@ -149,7 +149,7 @@ class InspectionOrderController extends BaseController {
             let noRetryStates = ["ineffective_no_retry"]
             if (retryStates.includes(appointments[0].status)) {
                 return {
-                    fixedStatus: 'Reagendar',
+                    fixedStatus: 'No finalizada por novedad del cliente',
                     badgeColor: 'default',
                     comentariosAnulacion: null
                 }
@@ -162,31 +162,35 @@ class InspectionOrderController extends BaseController {
             } else {
                 return {
                     fixedStatus: appointments[0].status,
-                    badgeColor: 'default',
+                    badgeColor: 'Activa',
                     comentariosAnulacion: null
                 }
             }
         }
+
         const statusBadgeColorMap = {
             1: 'outline',
             2: 'outline',
             3: 'secondary',
-            4: 'default',
-            5: {
-                'APROBADO': 'success',
-                'RECHAZADO': 'destructive',
-            }
+            4: 'default'
+        };
+        
+        if (statusId == 5) {
+            return {
+                fixedStatus: result,
+                badgeColor: undefined,
+                comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO' || result?.includes('NO AEGURABLE PARCIAL')
+                    ? comentariosAnulacion
+                    : null)
+            };
         }
-        const resultLabel = (statusId == 5 ? (result.split(" - ")[0] == 'ANULADO' ? 'Creada' : result.split(" - ")[0]) : statusName)
-        const badgeColor = (statusId == 5 ? statusBadgeColorMap[statusId][resultLabel] : statusBadgeColorMap[statusId])
-        const badgeLabel = statusId == 5 ? (resultLabel == 'Creada' ? 'Creada' : `${statusName} - ${resultLabel}`) : resultLabel
-        const finalLabel = badgeLabel.includes('NO AEGURABLE PARCIAL') ? 'Pendiente de reinspección' : badgeLabel
         return {
-            fixedStatus: finalLabel,
-            badgeColor: badgeLabel == 'Creada' ? 'outline' : badgeColor,
-            comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO' || finalLabel == 'Pendiente de reinspección' ? comentariosAnulacion : null)
-        }
+            fixedStatus: statusName,
+            badgeColor: statusBadgeColorMap[statusId],
+            comentariosAnulacion: null
+        };
     }
+
 
     getFinalFixedStatus(statusId, appointments) {
         let retryStates = ["ineffective_with_retry", "failed"]
@@ -412,24 +416,6 @@ class InspectionOrderController extends BaseController {
                     fixedStatus: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).fixedStatus,
                     badgeColor: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).badgeColor,
                     comentariosAnulacion: this.getFixedStatus(order.InspectionOrderStatus?.id, order.InspectionOrderStatus?.name, order.inspection_result, order.inspection_result_details, sortedAppointments).comentariosAnulacion,
-                    extras: {
-                        id: order.InspectionOrderStatus?.id,
-                        nameStatus: order.InspectionOrderStatus?.name,
-                        result: order.inspection_result,
-                        resultDetails: order.inspection_result_details,
-                        conteoApointments: order.appointments.length,
-                        finalEstado: this.getFinalFixedStatus(order.InspectionOrderStatus?.id, order.appointments),
-                        appointments: order.appointments.map(el => {
-                            return {
-                                estado: el.status,
-                                id: el.id,
-                                created_at: el.created_at,
-                                updated_at: el.updated_at,
-                                deleted_at: el.deleted_at
-                            }
-                        })
-                    }
-
                 };
             })
 
@@ -2099,9 +2085,9 @@ class InspectionOrderController extends BaseController {
     async resendInspectionSMS(req, res) {
         try {
             const { id } = req.params;
-            
+
             console.log(`📱 Reenviando SMS para orden de inspección: ${id}`);
-            
+
             // Buscar la orden de inspección
             const inspectionOrder = await InspectionOrder.findByPk(id, {
                 include: [
@@ -2112,14 +2098,14 @@ class InspectionOrderController extends BaseController {
                     }
                 ]
             });
-            
+
             if (!inspectionOrder) {
                 return res.status(404).json({
                     success: false,
                     message: 'Orden de inspección no encontrada'
                 });
             }
-            
+
             // Verificar que la orden tenga inspection_link
             if (!inspectionOrder.inspection_link) {
                 return res.status(400).json({
@@ -2127,7 +2113,7 @@ class InspectionOrderController extends BaseController {
                     message: 'La orden no tiene link de inspección generado'
                 });
             }
-            
+
             // Verificar que tenga datos de contacto
             if (!inspectionOrder.celular_contacto || !inspectionOrder.nombre_contacto) {
                 return res.status(400).json({
@@ -2135,13 +2121,13 @@ class InspectionOrderController extends BaseController {
                     message: 'La orden no tiene datos de contacto completos'
                 });
             }
-            
+
             // Importar servicio de SMS
             const smsService = await import('../services/channels/smsService.js');
-            
+
             // Crear mensaje SMS (mismo formato que en inspectionOrder.js)
             const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
-            
+
             // Enviar SMS
             const smsResult = await smsService.default.send({
                 recipient_phone: inspectionOrder.celular_contacto,
@@ -2161,9 +2147,9 @@ class InspectionOrderController extends BaseController {
                     resend_at: new Date().toISOString()
                 }
             });
-            
+
             console.log(`✅ SMS reenviado exitosamente a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto})`);
-            
+
             // Respuesta exitosa
             return res.json({
                 success: true,
@@ -2181,7 +2167,7 @@ class InspectionOrderController extends BaseController {
                     resent_by: req.user?.id || 'system'
                 }
             });
-            
+
         } catch (error) {
             console.error('❌ Error reenviando SMS:', error);
             return res.status(500).json({
