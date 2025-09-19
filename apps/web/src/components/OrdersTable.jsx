@@ -301,7 +301,7 @@ const OrdersTable = ({
                                                 )}
                                                 {showActions && (
                                                     <td className="p-2">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center flex-col gap-2">
                                                             {isContactTable ? (
                                                                 // Contact table actions
                                                                 onContactOrder && (
@@ -336,9 +336,8 @@ const OrdersTable = ({
                                                                             Ver Resumen
                                                                         </Button>
                                                                     )}
-
                                                                     {
-                                                                        (order.fixedStatus.includes('Finalizado') && order.session_id) ? <>
+                                                                        (order.InspectionOrderStatus.id && order.session_id) ? <>
                                                                             <Button
                                                                                 size="sm"
                                                                                 variant="outline"

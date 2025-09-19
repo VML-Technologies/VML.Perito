@@ -366,7 +366,8 @@ const InspectionReport = () => {
               <div className="rounded-lg">
                 <div className="text-center">
                   <div className="text-base font-bold text-blue-600">Estado de Asegurabilidad</div>
-                  {(() => {
+                  <div className="text-lg text-black mt-1 font-mono font-bold">{data.inspection_result}</div>
+                  {/* {(() => {
                     const asegurabilidad = getAsegurabilidadStatus()
                     return (
                       <>
@@ -379,7 +380,7 @@ const InspectionReport = () => {
                         )}
                       </>
                     )
-                  })()}
+                  })()} */}
                 </div>
               </div>
             </div>
@@ -394,7 +395,7 @@ const InspectionReport = () => {
 
           {/* Bento Box Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto">
-            
+
             {/* Imagen del Vehículo - Ocupa 4 columnas */}
             <div className="lg:col-span-4">
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm h-full">

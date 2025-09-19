@@ -140,7 +140,7 @@ export default function ComercialMundial() {
                 sortBy={filters.sortBy}
                 sortOrder={filters.sortOrder}
                 onViewDetails={handleViewDetails}
-                showAgentColumn={true}
+                showAgentColumn={false}
                 showActions={true}
                 emptyMessage="No se encontraron órdenes"
                 emptyDescription="Crea una nueva orden para comenzar"

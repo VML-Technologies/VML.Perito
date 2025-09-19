@@ -144,22 +144,6 @@ const OrderDetailsPanel = ({
                         ))}
                         <div className='w-full'>
                             <span className="font-medium">Estado:</span>
-                            {/* {order.inspection_result == 'APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones' ? (
-                                <Badge className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600">
-                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
-                                </Badge>
-                            ) : (
-                                <Badge variant={getStatusBadgeVariant(order.InspectionOrderStatus?.name, order.inspection_result)}>
-                                    {getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result)}
-                                </Badge>
-                            )}
-                            {
-                                (getStatusDisplay(order.InspectionOrderStatus?.name, order.inspection_result).includes('RECHAZADO')) && (
-                                    <div className="text-xs text-gray-500 font-mono border border-gray-200 rounded-md p-2 bg-gray-100">
-                                        {order.inspection_result_details}
-                                    </div>
-                                )
-                            } */}
                             <Badge variant={order.badgeColor}>
                                 {order.fixedStatus}
                             </Badge>

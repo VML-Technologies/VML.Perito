@@ -1612,7 +1612,7 @@ class InspectionOrderController extends BaseController {
                         ]
                     }
                 ],
-                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at']
+                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result']
             });
 
             if (!inspectionOrder) {
@@ -1822,6 +1822,7 @@ class InspectionOrderController extends BaseController {
                 celular_contacto: inspectionOrder.celular_contacto,
                 correo_contacto: inspectionOrder.correo_contacto,
                 fecha_creacion: inspectionOrder.created_at,
+                inspection_result: inspectionOrder.inspection_result,
                 InspectionOrderStatus: inspectionOrder.InspectionOrderStatus ? {
                     id: inspectionOrder.InspectionOrderStatus.id,
                     name: inspectionOrder.InspectionOrderStatus.name
