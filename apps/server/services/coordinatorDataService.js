@@ -67,9 +67,6 @@ class CoordinatorDataService {
                     ],
                     where: {
                         deleted_at: null,
-                        status: {
-                            [Op.not]: [5]
-                        }
                     },
                     required: true,
                     include: [
@@ -79,7 +76,7 @@ class CoordinatorDataService {
                             attributes: ['id', 'status', 'scheduled_date', 'scheduled_time'],
                             where: {
                                 deleted_at: null,
-                                call_log_id: null
+                                //call_log_id: null
                             },
                             required: false // LEFT JOIN para incluir inspecciones sin appointment
                         }
@@ -391,7 +388,7 @@ class CoordinatorDataService {
     }
 
     /**
-     * Iniciar inspección virtual (asignar inspector y cambiar estado)
+     * Iniciar inspección virtual (asignar inspector, cambiar estado y crear appointment)
      */
     async startVirtualInspection(orderId, inspectorId, sedeId = null) {
         try {
@@ -402,22 +399,78 @@ class CoordinatorDataService {
                 where: {
                     inspection_order_id: orderId,
                     is_active: true
-                }
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'celular_contacto']
+                    }
+                ]
             });
 
             if (!queueEntry) {
                 throw new Error('Entrada de cola no encontrada para esta orden');
             }
 
-            // Actualizar estado y asignar inspector
-            await queueEntry.update({
-                estado: 'assigned',
-                inspector_asignado_id: inspectorId,
-                tiempo_inicio: new Date(),
-                observaciones: 'Inspección asignada'
+            // Verificar si ya existe un appointment para esta orden
+            const existingAppointment = await Appointment.findOne({
+                where: {
+                    inspection_order_id: orderId,
+                    deleted_at: null
+                }
             });
 
-            // Obtener datos actualizados
+            let appointment = null;
+
+            if (existingAppointment) {
+                // Si ya existe, eliminarlo (soft delete) y crear uno nuevo
+                console.log('📅 Appointment existente encontrado, eliminando y creando uno nuevo...');
+                await existingAppointment.update({
+                    deleted_at: new Date()
+                });
+                console.log(`🗑️ Appointment existente eliminado (ID: ${existingAppointment.id})`);
+            }
+
+            // Crear nuevo appointment
+            console.log('📅 Creando nuevo appointment para inspección virtual...');
+            
+            // Obtener modalidad virtual por código
+            const virtualModality = await InspectionModality.findOne({
+                where: { code: 'VIRTUAL' }
+            });
+
+            if (!virtualModality) {
+                throw new Error('Modalidad Virtual (code: VIRTUAL) no encontrada en el sistema');
+            }
+
+            // Usar sede por defecto si no se especifica (asumiendo sede CDA por defecto)
+            const defaultSedeId = sedeId || 3; // Sede CDA por defecto
+            const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            appointment = await Appointment.create({
+                inspection_order_id: orderId,
+                inspection_modality_id: virtualModality.id,
+                sede_id: defaultSedeId,
+                user_id: inspectorId,
+                scheduled_date: new Date().toISOString().split('T')[0], // Fecha actual
+                scheduled_time: new Date().toTimeString().split(' ')[0].substring(0, 5), // Hora actual
+                status: 'assigned',
+                assigned_at: new Date(),
+                notes: 'Inspección virtual iniciada desde coordinador',
+                session_id: sessionId
+            });
+
+            console.log(`✅ Nuevo appointment creado con ID: ${appointment.id}`);
+
+            // Actualizar estado de la cola y asignar inspector
+            await queueEntry.update({
+                estado: 'en_proceso',
+                inspector_asignado_id: inspectorId,
+                tiempo_inicio: new Date(),
+                observaciones: 'Inspección asignada y appointment creado'
+            });
+
+            // Obtener datos actualizados de la cola
             const updatedData = await InspectionQueue.findByPk(queueEntry.id, {
                 include: [
                     {
@@ -433,10 +486,11 @@ class CoordinatorDataService {
                 ]
             });
 
-            console.log('✅ Inspección virtual iniciada correctamente');
+            console.log('✅ Inspección virtual iniciada y appointment creado correctamente');
             return {
                 success: true,
-                data: updatedData
+                data: updatedData,
+                appointment: appointment
             };
         } catch (error) {
             console.error('❌ Error iniciando inspección virtual:', error);
