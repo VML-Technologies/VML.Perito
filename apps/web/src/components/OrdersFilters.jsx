@@ -72,39 +72,8 @@ const OrdersFilters = ({
                         </div>
                     )}
 
-                    {showStatusFilter && (
-                        <div className="flex flex-col space-y-2 flex-grow min-w-[200px]"> {/* flex-grow to distribute space, min-w for responsiveness */}
-                            <Label htmlFor="status" className="text-sm font-medium text-gray-700">Estado</Label>
-                            <Select
-                                value={filters.status || ''}
-                                onValueChange={(value) => handleFilterChange('status', value)}
-                            >
-                                <SelectTrigger className="w-full rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-                                    <SelectValue placeholder="Todos los estados" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-md shadow-lg">
-                                    <SelectItem value="all">Todos los estados</SelectItem>
-                                    <SelectItem value="1">Creada</SelectItem>
-                                    <SelectItem value="2">Contacto exitoso</SelectItem>
-                                    <SelectItem value="3">Agendado</SelectItem>
-                                    <SelectItem value="4">Finalizada</SelectItem>
-                                    <SelectItem value="5">No contesta</SelectItem>
-                                    <SelectItem value="6">Ocupado</SelectItem>
-                                    <SelectItem value="7">Número incorrecto</SelectItem>
-                                    <SelectItem value="8">Solicita reagendar</SelectItem>
-                                    <SelectItem value="9">En progreso</SelectItem>
-                                    <SelectItem value="10">Cancelada</SelectItem>
-                                    <SelectItem value="result_rechazado">RECHAZADO - Vehículo no asegurable</SelectItem>
-                                    <SelectItem value="result_aprobado_restricciones">APROBADO CON RESTRICCIONES - Vehículo asegurable con limitaciones</SelectItem>
-                                    <SelectItem value="result_pendiente">PENDIENTE - Inspección en proceso</SelectItem>
-                                    <SelectItem value="result_aprobado">APROBADO - Vehículo asegurable</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
                     {showAgentFilter && (
-                        <div className="flex flex-col space-y-2 flex-grow min-w-[200px]"> {/* flex-grow to distribute space, min-w for responsiveness */}
+                        <div className="flex flex-col space-y-2 flex-grow min-w-[200px]">
                             <Label htmlFor="agent" className="text-sm font-medium text-gray-700">Agente Asignado</Label>
                             <Select
                                 value={filters.assigned_agent_id || ''}
@@ -125,32 +94,6 @@ const OrdersFilters = ({
                                 </SelectContent>
                             </Select>
                         </div>
-                    )}
-
-                    {showDateFilters && (
-                        <>
-                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]">
-                                <Label htmlFor="date_from" className="text-sm font-medium text-gray-700">Fecha Desde</Label>
-                                <Input
-                                    id="date_from"
-                                    type="date"
-                                    value={filters.date_from || ''}
-                                    onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div className="flex flex-col space-y-2 flex-grow min-w-[200px]">
-                                <Label htmlFor="date_to" className="text-sm font-medium text-gray-700">Fecha Hasta</Label>
-                                <Input
-                                    id="date_to"
-                                    type="date"
-                                    value={filters.date_to || ''}
-                                    onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                                    className="w-full rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-                        </>
                     )}
 
                     {/* Clear Filters Button - positioned at the end of the flex row, aligning to the bottom */}
