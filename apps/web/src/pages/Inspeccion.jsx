@@ -20,10 +20,41 @@ const Inspeccion = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [startingInspection, setStartingInspection] = useState(false);
+    const [isWithinBusinessHours, setIsWithinBusinessHours] = useState(true);
 
     useEffect(() => {
         fetchInspectionOrder();
+        checkBusinessHours();
     }, [hash]);
+
+    const checkBusinessHours = () => {
+        // Crear fecha actual en zona horaria de Bogotá (UTC-5)
+        const now = new Date();
+        const bogotaTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Bogota"}));
+        
+        const dayOfWeek = bogotaTime.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+        const hour = bogotaTime.getHours();
+        const minute = bogotaTime.getMinutes();
+        const currentTime = hour * 60 + minute; // Convertir a minutos para facilitar comparación
+        
+        let isWithinHours = false;
+        
+        // Lunes a viernes (1-5): 8:00 AM - 4:00 PM
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            const startTime = 8 * 60; // 8:00 AM en minutos
+            const endTime = 16 * 60; // 4:00 PM en minutos
+            isWithinHours = currentTime >= startTime && currentTime <= endTime;
+        }
+        // Sábados (6): 8:00 AM - 12:00 PM
+        else if (dayOfWeek === 6) {
+            const startTime = 8 * 60; // 8:00 AM en minutos
+            const endTime = 12 * 60; // 12:00 PM en minutos
+            isWithinHours = currentTime >= startTime && currentTime <= endTime;
+        }
+        // Domingos: cerrado
+        
+        setIsWithinBusinessHours(isWithinHours);
+    };
 
     const fetchInspectionOrder = async () => {
         try {
@@ -222,6 +253,35 @@ const Inspeccion = () => {
                             </>
                         )}
 
+                        {/* Horario de atención */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <Calendar className="h-5 w-5 mr-2" />
+                                Horario de Atención
+                            </h3>
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    <strong>Lunes a viernes:</strong> 8:00 AM - 4:00 PM<br />
+                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
+                                </p>
+                            </div>
+                        </div>                        
+
+                        {/* Mensaje fuera de horario */}
+                        {!isWithinBusinessHours && (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                                <div className="flex items-center mb-2">
+                                    <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                                    <h3 className="text-lg font-semibold text-red-800">
+                                        Fuera del Horario de Atención
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-red-700">
+                                    Ten en cuenta el horario de atención para ingresar al proceso de inspección.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Recomendaciones */}
                         <div>
                             <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
@@ -255,8 +315,12 @@ const Inspeccion = () => {
                             <div className="text-center pt-4">
                                 <Button 
                                     onClick={handleStartInspection}
-                                    disabled={startingInspection}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold"
+                                    disabled={startingInspection || !isWithinBusinessHours}
+                                    className={`w-full py-3 text-lg font-semibold ${
+                                        !isWithinBusinessHours 
+                                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    }`}
                                     size="lg"
                                 >
                                     {startingInspection ? (
@@ -264,6 +328,8 @@ const Inspeccion = () => {
                                             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                                             Iniciando Inspección...
                                         </>
+                                    ) : !isWithinBusinessHours ? (
+                                        'Fuera del Horario de Atención'
                                     ) : (
                                         'Iniciar Inspección'
                                     )}
