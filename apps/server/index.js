@@ -274,6 +274,9 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
 
+// Ruta para obtener URL de descarga del PDF
+app.get('/api/inspection-orders/:id/pdf-download-url', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getPdfDownloadUrl);
+
 // Rutas para historial de contactos
 app.get('/api/inspection-orders/:orderId/contact-history', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistory);
 app.get('/api/inspection-orders/:orderId/contact-history/:historyId', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistoryItem);

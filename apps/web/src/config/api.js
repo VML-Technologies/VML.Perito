@@ -68,6 +68,9 @@ export const API_ROUTES = {
         UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
         RESEND_SMS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/resend-sms`,
         
+        // ===== DESCARGAS =====
+        PDF_DOWNLOAD_URL: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/pdf-download-url`,
+        
         // ===== COMENTARIOS =====
         COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
