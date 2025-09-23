@@ -71,8 +71,8 @@ class SMSService {
                     'X-Hablame-Key': this.apiKey
                 },
                 body: JSON.stringify({
-                    priority: true,
-                    certificate: true,
+                    priority: false,
+                    certificate: false,
                     sendDate: "Now",
                     campaignName: 'MovMundial',
                     from: '899775',
