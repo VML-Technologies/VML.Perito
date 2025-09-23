@@ -1593,7 +1593,10 @@ class InspectionOrderController extends BaseController {
                     }, {
                         model: Appointment,
                         as: 'appointments',
-                        attributes: ['id', 'session_id', 'observaciones', 'scheduled_date', 'scheduled_time', 'created_at'],
+                        attributes: ['id', 'session_id', 'observaciones', 'scheduled_date', 'scheduled_time', 'created_at', 'updated_at'],
+                        where: {
+                            deleted_at: null // Solo appointments activos
+                        },
                         include: [
                             {
                                 model: InspectionModality,
@@ -1609,7 +1612,9 @@ class InspectionOrderController extends BaseController {
                                 as: 'imageCaptures',
                                 attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
                             }
-                        ]
+                        ],
+                        order: [['updated_at', 'DESC']],
+                        required: false
                     }
                 ],
                 attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result']
@@ -1643,6 +1648,10 @@ class InspectionOrderController extends BaseController {
                     }
                 });
             }
+            
+            const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0 
+                ? inspectionOrder.appointments[0] 
+                : null;
 
             // Extender con respuestas e imágenes
             const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
@@ -1658,11 +1667,10 @@ class InspectionOrderController extends BaseController {
                 // Obtener comentarios de categorías
                 const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
 
-                // Procesar imágenes si existen
                 let processedImages = null;
-                if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                if (appointment === mostRecentAppointment && appointment.imageCaptures && appointment.imageCaptures.length > 0) {
                     try {
-                        console.log(`📸 Procesando imágenes para appointment ${appointment.session_id}:`);
+                        console.log(`📸 Procesando imágenes para appointment más reciente ${appointment.session_id}:`);
                         console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
                             id: img.id,
                             slot: img.slot,
@@ -1678,7 +1686,7 @@ class InspectionOrderController extends BaseController {
 
                         const imageProcessor = new ImageProcessor();
                         processedImages = await imageProcessor.processInspectionImages(appointment.imageCaptures, 60);
-                        console.log(`📸 Imágenes procesadas para appointment ${appointment.session_id}: ${processedImages.total_count} total`);
+                        console.log(`📸 Imágenes procesadas para appointment más reciente ${appointment.session_id}: ${processedImages.total_count} total`);
                     } catch (error) {
                         console.error('❌ Error procesando imágenes:', error);
                         console.error('❌ Stack trace:', error.stack);
@@ -1689,8 +1697,10 @@ class InspectionOrderController extends BaseController {
                             error: error.message
                         };
                     }
+                } else if (appointment === mostRecentAppointment) {
+                    console.log(`📭 No hay imágenes para appointment más reciente ${appointment.session_id}`);
                 } else {
-                    console.log(`📭 No hay imágenes para appointment ${appointment.session_id}`);
+                    console.log(`⏭️ Saltando imágenes para appointment ${appointment.session_id} (no es el más reciente)`);
                 }
 
                 // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
