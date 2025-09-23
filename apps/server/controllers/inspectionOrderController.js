@@ -144,6 +144,22 @@ class InspectionOrderController extends BaseController {
     }
 
     getFixedStatus(statusId, statusName, result, comentariosAnulacion, appointments) {
+        const statusBadgeColorMap = {
+            "ANULADO": "outline",
+            "APROBADO": "success",
+            "INSPECCION EN CURSO": "secondary",
+            "NO ASEGURABLE PARCIAL": "default",
+            "RECHAZADO": "destructive"
+        }
+        if (result) {
+            const cleanResult = result.split("-")[0].trim()
+            return {
+                fixedStatus: cleanResult=='NO ASEGURABLE PARCIAL'?'Reinspeccion':cleanResult,
+                badgeColor: statusBadgeColorMap[cleanResult],
+                comentariosAnulacion: comentariosAnulacion
+            }
+        }
+
         if (statusId == 4) {
             let retryStates = ["ineffective_with_retry", "failed"]
             let noRetryStates = ["ineffective_no_retry"]
@@ -168,22 +184,6 @@ class InspectionOrderController extends BaseController {
             }
         }
 
-        const statusBadgeColorMap = {
-            1: 'outline',
-            2: 'outline',
-            3: 'secondary',
-            4: 'default'
-        };
-        
-        if (statusId == 5) {
-            return {
-                fixedStatus: result,
-                badgeColor: undefined,
-                comentariosAnulacion: (result?.split(" - ")[0] == 'ANULADO' || result?.includes('NO AEGURABLE PARCIAL')
-                    ? comentariosAnulacion
-                    : null)
-            };
-        }
         return {
             fixedStatus: statusName,
             badgeColor: statusBadgeColorMap[statusId],
