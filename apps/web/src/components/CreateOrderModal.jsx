@@ -1071,11 +1071,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
                         </CardContent>
                     </Card>
-
+{/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
+                
                     {/* Información del Contacto */}
-                    <Card>
+                    <Card className={!sameAsClient?'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20':''}>
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
+                            <CardTitle className="text-base flex items-center gap-2 text-red-500">
                                 <Phone className="h-4 w-4" />
                                 Persona encargada de realizar la inspección
                             </CardTitle>
@@ -1148,24 +1149,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </div>
                                 </div>
                             )}
-
-                            {
-                                formData.nombre_contacto && formData.celular_contacto && !sameAsClient && <>
-                                    <div className='border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 flex flex-col gap-1 justify-center items-center bg-red-50/20'>
-                                        <div className='text-red-500 font-bold'>
-                                            ESTA SERÍA LA PERSONA CON LA CUAL SE VA A REALIZAR LA INSPECCIÓN
-                                        </div>
-                                        <div className='flex flex-col gap-0 font-medium'>
-                                            <div>
-                                                Nombre: {formData.nombre_contacto}
-                                            </div>
-                                            <div>
-                                                Celular: {formData.celular_contacto}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            }
 
                             {sameAsClient && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
