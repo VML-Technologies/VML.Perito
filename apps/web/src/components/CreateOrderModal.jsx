@@ -342,9 +342,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     };
 
     const handleSameAsClientChange = (checked) => {
-        setSameAsClient(checked);
+        setSameAsClient(!checked);
 
-        if (checked) {
+        if (!checked) {
             // Sincronizar datos del cliente al contacto usando los datos guardados
             setFormData(prev => ({
                 ...prev,
@@ -590,7 +590,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
     return (
         <Sheet open={isOpen} onOpenChange={loading ? undefined : onClose}>
-            <SheetContent 
+            <SheetContent
                 className="w-full sm:max-w-6xl overflow-y-auto px-4"
                 onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}
             >
@@ -612,7 +612,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 <TestTube className="h-4 w-4" />
                                 Datos de Prueba
                             </Button>
-                        )} 
+                        )}
                     </div>
                     <SheetDescription>
                         {loading ? (
@@ -1072,41 +1072,23 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                         </CardContent>
                     </Card>
 
-                    {
-                        formData.nombre_contacto && formData.celular_contacto && <>
-                            <div className='border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 flex flex-col gap-1 justify-center items-center bg-red-50/20'>
-                                <div className='text-red-500 font-bold'>
-                                    ESTA SERÍA LA PERSONA CON LA CUAL SE VA A REALIZAR LA INSPECCIÓN
-                                </div>
-                                <div className='flex flex-col gap-0 font-medium'>
-                                    <div>
-                                        Nombre: {formData.nombre_contacto}
-                                    </div>
-                                    <div>
-                                        Celular: {formData.celular_contacto}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    }
-
                     {/* Información del Contacto */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base flex items-center gap-2">
                                 <Phone className="h-4 w-4" />
-                                Datos del Contacto
+                                Persona encargada de realizar la inspección
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="sameAsClient"
-                                    checked={sameAsClient}
+                                    checked={!sameAsClient}
                                     onCheckedChange={handleSameAsClientChange}
                                 />
                                 <Label htmlFor="sameAsClient" className="text-sm font-medium">
-                                    Los datos de contacto son los mismos datos del cliente
+                                    Si es otra la persona que va a hacer la inspección, marca aqui
                                 </Label>
                             </div>
 
@@ -1166,6 +1148,24 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </div>
                                 </div>
                             )}
+
+                            {
+                                formData.nombre_contacto && formData.celular_contacto && !sameAsClient && <>
+                                    <div className='border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 flex flex-col gap-1 justify-center items-center bg-red-50/20'>
+                                        <div className='text-red-500 font-bold'>
+                                            ESTA SERÍA LA PERSONA CON LA CUAL SE VA A REALIZAR LA INSPECCIÓN
+                                        </div>
+                                        <div className='flex flex-col gap-0 font-medium'>
+                                            <div>
+                                                Nombre: {formData.nombre_contacto}
+                                            </div>
+                                            <div>
+                                                Celular: {formData.celular_contacto}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            }
 
                             {sameAsClient && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
