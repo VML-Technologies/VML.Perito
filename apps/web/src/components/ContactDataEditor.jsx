@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { User, Phone, Mail, Save, AlertCircle, History, CheckCircle, MessageSquare } from 'lucide-react';
 import { useContactHistory } from '../hooks/use-comments';
 import { useNotificationContext } from '../contexts/notification-context';
@@ -22,6 +23,7 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
     const [hasChanges, setHasChanges] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [isResendingSMS, setIsResendingSMS] = useState(false);
+    const [smsCountdown, setSmsCountdown] = useState(0);
     const { contactHistory, loading: historyLoading, fetchContactHistory, updateContactData } = useContactHistory(orderId);
     const { showToast } = useNotificationContext();
 
@@ -165,6 +167,7 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
 
             if (response.ok && result.success) {
                 showToast('SMS reenviado exitosamente', 'success');
+                setSmsCountdown(30); // Iniciar countdown de 30 segundos
             } else {
                 throw new Error(result.message || 'Error reenviando SMS');
             }
@@ -182,6 +185,22 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
             fetchContactHistory(5);
         }
     }, [showHistory, contactHistory.length, fetchContactHistory]);
+
+    // Manejar countdown del SMS
+    useEffect(() => {
+        let interval;
+        if (smsCountdown > 0) {
+            interval = setInterval(() => {
+                setSmsCountdown((prev) => {
+                    if (prev <= 1) {
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [smsCountdown]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -203,25 +222,39 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                         Datos de Contacto
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleResendSMS}
-                            disabled={isResendingSMS || !formData.celular_contacto}
-                            className="flex items-center gap-1"
-                        >
-                            {isResendingSMS ? (
-                                <>
-                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                                    Enviando...
-                                </>
-                            ) : (
-                                <>
-                                    <MessageSquare className="h-4 w-4" />
-                                    Reenviar SMS
-                                </>
-                            )}
-                        </Button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleResendSMS}
+                                        disabled={isResendingSMS || !formData.celular_contacto || smsCountdown > 0}
+                                        className="flex items-center gap-1"
+                                    >
+                                        {isResendingSMS ? (
+                                            <>
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                                Enviando...
+                                            </>
+                                        ) : smsCountdown > 0 ? (
+                                            <>
+                                                <MessageSquare className="h-4 w-4" />
+                                                Reenviar SMS ({smsCountdown}s)
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageSquare className="h-4 w-4" />
+                                                Reenviar SMS
+                                            </>
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Aplica solo para inspecciones virtuales</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <Button
                             variant="outline"
                             size="sm"
