@@ -93,6 +93,29 @@ class InspectionQueueMemoryService {
                 }
             }
 
+            // LÓGICA CORREGIDA: Si hay entrada activa en la cola, marcarla como inactiva
+            const { InspectionQueue } = await import('../models/index.js');
+            
+            // Buscar entradas activas en la cola para esta orden
+            const activeQueueEntries = await InspectionQueue.findAll({
+                where: { 
+                    inspection_order_id: inspectionOrderId,
+                    estado: { [Op.in]: ['en_cola', 'en_proceso'] },
+                    deleted_at: null
+                }
+            });
+
+            // Marcar entradas activas como inactivas (soft delete)
+            if (activeQueueEntries.length > 0) {
+                for (const entry of activeQueueEntries) {
+                    await entry.update({ 
+                        estado: 'cancelada',
+                        deleted_at: new Date()
+                    });
+                    console.log(`🔄 Entrada de cola ${entry.id} marcada como cancelada para orden ${inspectionOrderId}`);
+                }
+            }
+
             // Crear nueva entrada en base de datos
             const queueEntry = await InspectionQueue.create({
                 inspection_order_id: inspectionOrderId,

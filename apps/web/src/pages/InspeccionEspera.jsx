@@ -340,7 +340,7 @@ const InspeccionEspera = () => {
                         <div className="flex justify-center mb-4">
                             <div>
                                 <CardTitle className="text-2xl text-gray-800">
-                                    Esperando Inspector
+                                    Inspector Asignado
                                 </CardTitle>
                             </div>
                         </div>
@@ -353,29 +353,13 @@ const InspeccionEspera = () => {
                                 <div className="bg-green-50 border border-green-200 p-6 rounded-lg">
                                     <div className="flex items-center justify-center mb-4">
                                         <CheckCircle className="h-12 w-12 text-green-600 mr-3" />
-                                        <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                     </div>
                                     <h2 className="text-xl font-semibold text-green-800 mb-2">
-                                        ¡Tienes una inspección programada!
+                                        ¡Se ha asignado un inspector a tu inspección!
                                     </h2>
                                     
                                     {/* Información del agendamiento */}
                                     <div className="text-sm text-green-700 space-y-2 mb-4">
-                                        {existingAppointment.scheduled_date && (
-                                            <p>
-                                                <strong>Fecha:</strong> {existingAppointment.scheduled_date}
-                                            </p>
-                                        )}
-                                        {existingAppointment.scheduled_time && (
-                                            <p>
-                                                <strong>Hora:</strong> {existingAppointment.scheduled_time}
-                                            </p>
-                                        )}
-                                        {existingAppointment.modality && (
-                                            <p>
-                                                <strong>Modalidad:</strong> {existingAppointment.modality.name}
-                                            </p>
-                                        )}
                                     </div>
                                     
                                     {timeUntilAppointment !== null ? (

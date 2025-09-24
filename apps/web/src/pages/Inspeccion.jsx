@@ -202,8 +202,8 @@ const Inspeccion = () => {
 
                         <Separator />
 
-                        {/* Agendamiento existente */}
-                        {existingAppointment && (
+                        {/* Agendamiento existente - solo mostrar si NO está en estado final */}
+                        {existingAppointment && inspectionOrder.show_start_button === false && (
                             <>
                                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                                     <div className="flex items-center mb-3">
@@ -310,8 +310,9 @@ const Inspeccion = () => {
                             </div>
                         </div>
 
-                        {/* Botón de inicio - solo mostrar si no hay agendamiento existente */}
-                        {!existingAppointment && (
+
+                        {/* Botón de inicio - mostrar si no hay agendamiento o si está en estado final */}
+                        {(!existingAppointment || inspectionOrder.show_start_button === true) && (
                             <div className="text-center pt-4">
                                 <Button 
                                     onClick={handleStartInspection}

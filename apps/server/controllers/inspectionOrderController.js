@@ -1406,6 +1406,30 @@ class InspectionOrderController extends BaseController {
                 });
             }
 
+            // Determinar si se debe mostrar el botón de iniciar inspección
+            let showStartButton = true;
+            let appointmentStatus = null;
+            
+            if (order.appointments && order.appointments.length > 0) {
+                const appointment = order.appointments[0];
+                appointmentStatus = appointment.status;
+                
+                // Estados finales que requieren mostrar el botón (mismos que redirect en endpoint externo)
+                // Estos estados permiten crear una nueva inspección
+                const finalStates = [
+                    'ineffective_no_retry',
+                    'revision_supervisor', 
+                    'call_finished',
+                    'failed',
+                    'ineffective_with_retry',
+                    'completed'
+                ];
+                
+                // Si está en estado final, mostrar botón para nueva inspección
+                // Si está en estado activo, mostrar appointment existente
+                showStartButton = finalStates.includes(appointment.status);
+            }
+
             res.json({
                 success: true,
                 data: {
@@ -1416,6 +1440,7 @@ class InspectionOrderController extends BaseController {
                     celular_contacto: order.celular_contacto,
                     status: order.InspectionOrderStatus?.name || 'Sin estado',
                     created_at: order.created_at,
+                    show_start_button: showStartButton,
                     appointment: order.appointments && order.appointments.length > 0 ? {
                         id: order.appointments[0].id,
                         scheduled_date: order.appointments[0].scheduled_date,

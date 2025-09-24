@@ -62,18 +62,21 @@ class CoordinatorDataService {
                     model: InspectionOrder,
                     as: 'inspectionOrder',
                     attributes: [
-                        'id', 'numero', 'placa', 'nombre_contacto', 
+                        'id', 'numero', 'placa', 'nombre_contacto',
                         'celular_contacto', 'correo_contacto', 'created_at', 'status'
                     ],
                     where: {
                         deleted_at: null,
+                        status: {
+                            [Op.not]: [5]
+                        }
                     },
                     required: true,
                     include: [
                         {
                             model: Appointment,
                             as: 'appointments',
-                            attributes: ['id', 'status', 'scheduled_date', 'scheduled_time'],
+                            attributes: ['id', 'status', 'scheduled_date', 'scheduled_time', 'created_at'],
                             where: {
                                 deleted_at: null,
                                 //call_log_id: null
@@ -107,9 +110,20 @@ class CoordinatorDataService {
         // Formatear datos para el frontend (igual estructura que getSedeAppointments)
         return inspections.rows.map(item => {
             // Si existe appointment, usar su estado, sino usar el estado de la inspección virtual
-            const hasAppointment = item.inspectionOrder.appointments && item.inspectionOrder.appointments.length > 0;
+            let hasAppointment = item.inspectionOrder.appointments && item.inspectionOrder.appointments.length > 0;
             const appointment = hasAppointment ? item.inspectionOrder.appointments[0] : null;
-            
+            let filteredAppointments = [];
+
+            const appointmentCreatedAt = appointment?.created_at || null;
+            const queueCreatedAt = item.created_at;
+
+            if (appointmentCreatedAt < queueCreatedAt) {
+                filteredAppointments = []
+                hasAppointment = false;
+            } else {
+                filteredAppointments = item.inspectionOrder.appointments;
+            }
+
             return {
                 id: item.id,
                 placa: item.placa,
@@ -124,14 +138,16 @@ class CoordinatorDataService {
                 observaciones: item.observaciones,
                 inspectionOrder: item.inspectionOrder,
                 statusInspectionOrder: item.inspectionOrder.status,
-                appointments: item.inspectionOrder.appointments || [], // Incluir appointments relacionados
+                appointments: filteredAppointments, // Incluir appointments relacionados
                 // Campos adicionales para compatibilidad con getSedeAppointments
                 scheduled_date: appointment?.scheduled_date || null,
                 scheduled_time: appointment?.scheduled_time || null,
                 session_id: appointment?.session_id || null,
                 assigned_at: appointment?.assigned_at || null,
                 completed_at: appointment?.completed_at || null,
-                call_log_id: appointment?.call_log_id || null
+                call_log_id: appointment?.call_log_id || null,
+                queue_created_at: item.created_at,
+                appointment_created_at: appointment?.created_at || null
             };
         }).filter(el => {
             const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
@@ -147,7 +163,7 @@ class CoordinatorDataService {
             where: {
                 deleted_at: null,
                 status: {
-                    [Op.not]: ['completed', 'failed','ineffective_with_retry','ineffective_no_retry','call_finished','revision_supervisor','assigned', 'sent']
+                    [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
                 },
                 call_log_id: null
             },
