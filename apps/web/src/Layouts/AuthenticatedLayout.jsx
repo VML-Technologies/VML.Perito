@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { NotificationToast } from "@/components/notification-toast"
 import { useNotificationContext } from "@/contexts/notification-context"
 import { ProtectedRoute } from "@/components/protected-route"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
@@ -40,7 +40,12 @@ function AuthenticatedLayout({ children }) {
                     )
                 }
                 <SidebarInset>
-                    <SiteHeader />
+                    <div className="flex items-center gap-2 p-4 border-b">
+                        {(canAccessAdmin || canAccessHelpDesk) && (
+                            <SidebarTrigger />
+                        )}
+                        <SiteHeader />
+                    </div>
                     <div className="m-4">
                         {children}
                     </div>
