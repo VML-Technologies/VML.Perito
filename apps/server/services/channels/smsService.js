@@ -78,7 +78,7 @@ class SMSService {
                     from: '899775',
                     flash: false,
                     messages: [{
-                        to: '57' + phoneNumber,
+                        to: phoneNumber,
                         text: message,
                         costCenter: 0,
                         reference01: 'Agendamiento',
