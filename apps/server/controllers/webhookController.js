@@ -301,9 +301,11 @@ class WebhookController {
             
             console.log(`✅ inspection_link generado y actualizado: ${finalLink}`);
             
-            // 7. Enviar SMS automático (condicionado por FLAG_SEND_SMS_OIN_CREATE)
+            // 7. Enviar SMS y Email automáticos (condicionado por FLAG_SEND_SMS_OIN_CREATE)
             let smsSent = false;
             let smsError = null;
+            let emailSent = false;
+            let emailError = null;
             
             if (process.env.FLAG_SEND_SMS_OIN_CREATE === 'true') {
                 console.log(`📱 Enviando SMS automático...`);
@@ -361,8 +363,108 @@ class WebhookController {
                     console.error('❌ Error enviando SMS:', error);
                     smsError = error.message;
                 }
+                
+                // Enviar email si tiene correo de contacto
+                if (inspectionOrder.correo_contacto) {
+                    try {
+                        console.log(`📧 Enviando email automático a: ${inspectionOrder.correo_contacto}`);
+                        
+                        const emailService = await import('../services/channels/emailService.js');
+                        const emailLoggingService = await import('../services/emailLoggingService.js');
+                        const fs = await import('fs');
+                        const path = await import('path');
+                        
+                        // Preparar datos para email
+                        const inspectionLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+                        const emailData = {
+                            NAME: inspectionOrder.nombre_contacto,
+                            PLACA: inspectionOrder.placa,
+                            INSPECTION_LINK: inspectionLink
+                        };
+                        
+                        // Leer plantilla de email
+                        const templatePath = path.join(process.cwd(), 'mailTemplates', 'inspectionLinkNotification.html');
+                        let emailTemplate = fs.readFileSync(templatePath, 'utf8');
+                        
+                        // Reemplazar variables en la plantilla
+                        console.log(`📧 Datos para reemplazo:`, emailData);
+                        Object.keys(emailData).forEach(key => {
+                            const regex = new RegExp(`{{${key}}}`, 'g');
+                            const beforeReplace = emailTemplate.includes(`{{${key}}}`);
+                            emailTemplate = emailTemplate.replace(regex, emailData[key]);
+                            const afterReplace = emailTemplate.includes(`{{${key}}}`);
+                            console.log(`📧 Reemplazando {{${key}}} -> ${emailData[key]} (antes: ${beforeReplace}, después: ${afterReplace})`);
+                        });
+                        
+                        // Crear objeto de notificación para email
+                        const emailNotification = {
+                            recipient_email: inspectionOrder.correo_contacto,
+                            title: 'Link de Inspección - Seguros Mundial',
+                            content: smsMessage, // Contenido de respaldo
+                            priority: 'normal',
+                            metadata: {
+                                channel_data: {
+                                    email: {
+                                        subject: 'Link de Inspección de Asegurabilidad - Seguros Mundial',
+                                        html: emailTemplate
+                                    }
+                                },
+                                inspection_order_id: inspectionOrder.id,
+                                placa: inspectionOrder.placa,
+                                nombre_contacto: inspectionOrder.nombre_contacto,
+                                webhook_processed: true,
+                                external_system: true,
+                                webhook_id: context?.webhook_id || null
+                            }
+                        };
+                        
+                        // Preparar datos para logging de email
+                        const emailLogData = {
+                            inspection_order_id: inspectionOrder.id,
+                            recipient_email: inspectionOrder.correo_contacto,
+                            recipient_name: inspectionOrder.nombre_contacto,
+                            subject: emailNotification.metadata.channel_data.email.subject,
+                            content: smsMessage,
+                            html_content: emailTemplate,
+                            email_type: 'webhook',
+                            trigger_source: 'webhook',
+                            webhook_id: context?.webhook_id || null,
+                            priority: 'normal',
+                            metadata: {
+                                order_number: inspectionOrder.numero,
+                                vehicle_plate: inspectionOrder.placa,
+                                webhook_processed: true,
+                                external_system: true,
+                                processed_at: new Date().toISOString()
+                            }
+                        };
+                        
+                        // Enviar email con logging
+                        const emailLogResult = await emailLoggingService.default.sendEmailWithLogging(
+                            emailLogData,
+                            async () => {
+                                return await emailService.default.send(emailNotification, emailTemplate);
+                            }
+                        );
+                        
+                        if (emailLogResult.success) {
+                            console.log(`✅ Email enviado y loggeado exitosamente a ${inspectionOrder.correo_contacto}`);
+                            emailSent = true;
+                        } else {
+                            console.error(`❌ Error enviando email: ${emailLogResult.error}`);
+                            emailError = emailLogResult.error;
+                        }
+                        
+                    } catch (emailError) {
+                        console.error(`❌ Error procesando email:`, emailError);
+                        emailError = emailError.message;
+                    }
+                } else {
+                    console.log(`⚠️ No se envió email: la orden no tiene correo de contacto`);
+                }
+                
             } else {
-                console.log(`📱 SMS saltado por configuración FLAG_SEND_SMS_OIN_CREATE=${process.env.FLAG_SEND_SMS_OIN_CREATE} para orden ${inspectionOrder.id}`);
+                console.log(`📱 SMS y Email saltados por configuración FLAG_SEND_SMS_OIN_CREATE=${process.env.FLAG_SEND_SMS_OIN_CREATE} para orden ${inspectionOrder.id}`);
             }
             
             // 8. Disparar evento de procesamiento completado
@@ -393,10 +495,11 @@ class WebhookController {
                 console.warn('⚠️ Error disparando evento processed_external:', eventError);
             }
             
-            // 9. Preparar respuesta según el estado del SMS
+            // 9. Preparar respuesta según el estado del SMS y Email
+            const hasErrors = smsError || emailError;
             const response = {
-                status: smsError ? 'partial_success' : 'success',
-                message: smsError ? 'Link generado exitosamente, pero falló el envío de SMS' : 'Orden procesada exitosamente',
+                status: hasErrors ? 'partial_success' : 'success',
+                message: hasErrors ? 'Link generado exitosamente, pero falló el envío de notificaciones' : 'Orden procesada exitosamente',
                 data: {
                     inspection_order_id: inspectionOrder.id,
                     numero: inspectionOrder.numero,
@@ -406,7 +509,7 @@ class WebhookController {
                 }
             };
             
-            // Solo incluir información de SMS si se intentó enviar
+            // Solo incluir información de SMS y Email si se intentó enviar
             if (process.env.FLAG_SEND_SMS_OIN_CREATE === 'true') {
                 response.data.sms_sent = smsSent;
                 if (smsSent) {
@@ -414,6 +517,14 @@ class WebhookController {
                 }
                 if (smsError) {
                     response.data.sms_error = smsError;
+                }
+                
+                response.data.email_sent = emailSent;
+                if (emailSent) {
+                    response.data.email_recipient = inspectionOrder.correo_contacto;
+                }
+                if (emailError) {
+                    response.data.email_error = emailError;
                 }
             }
             

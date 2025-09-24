@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { User, Phone, Mail, Save, AlertCircle, History, CheckCircle, MessageSquare } from 'lucide-react';
+import { User, Phone, Mail, Save, AlertCircle, History, CheckCircle, MessageSquare, Mail as MailIcon } from 'lucide-react';
 import { useContactHistory } from '../hooks/use-comments';
 import { useNotificationContext } from '../contexts/notification-context';
 import { API_ROUTES } from '../config/api';
@@ -24,6 +24,8 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
     const [showHistory, setShowHistory] = useState(false);
     const [isResendingSMS, setIsResendingSMS] = useState(false);
     const [smsCountdown, setSmsCountdown] = useState(0);
+    const [isResendingEmail, setIsResendingEmail] = useState(false);
+    const [emailCountdown, setEmailCountdown] = useState(0);
     const { contactHistory, loading: historyLoading, fetchContactHistory, updateContactData } = useContactHistory(orderId);
     const { showToast } = useNotificationContext();
 
@@ -179,6 +181,45 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
         }
     };
 
+    const handleResendEmail = async () => {
+        if (!orderId) {
+            showToast('No se puede reenviar email: ID de orden no disponible', 'error');
+            return;
+        }
+
+        setIsResendingEmail(true);
+        setError('');
+
+        try {
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.RESEND_SMS(orderId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Verificar si se envió email
+                if (result.data.email_sent) {
+                    showToast('Email reenviado exitosamente', 'success');
+                    setEmailCountdown(30); // Iniciar countdown de 30 segundos
+                } else {
+                    showToast('SMS reenviado, pero no se pudo enviar email (sin correo de contacto)', 'warning');
+                }
+            } else {
+                throw new Error(result.message || 'Error reenviando email');
+            }
+        } catch (error) {
+            console.error('Error reenviando email:', error);
+            showToast(error.message || 'Error de conexión. Intente nuevamente.', 'error');
+        } finally {
+            setIsResendingEmail(false);
+        }
+    };
+
     // Cargar historial inicial cuando se muestra
     useEffect(() => {
         if (showHistory && contactHistory.length === 0) {
@@ -201,6 +242,22 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
         }
         return () => clearInterval(interval);
     }, [smsCountdown]);
+
+    // Manejar countdown del Email
+    useEffect(() => {
+        let interval;
+        if (emailCountdown > 0) {
+            interval = setInterval(() => {
+                setEmailCountdown((prev) => {
+                    if (prev <= 1) {
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [emailCountdown]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -252,6 +309,40 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>Aplica solo para inspecciones virtuales</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleResendEmail}
+                                        disabled={isResendingEmail || !formData.correo_contacto || emailCountdown > 0}
+                                        className="flex items-center gap-1"
+                                    >
+                                        {isResendingEmail ? (
+                                            <>
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                                Enviando...
+                                            </>
+                                        ) : emailCountdown > 0 ? (
+                                            <>
+                                                <MailIcon className="h-4 w-4" />
+                                                Reenviar Email ({emailCountdown}s)
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MailIcon className="h-4 w-4" />
+                                                Reenviar Email
+                                            </>
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Reenvía el link de inspección por email</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>

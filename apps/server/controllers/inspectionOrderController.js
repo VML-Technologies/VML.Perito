@@ -2161,9 +2161,21 @@ class InspectionOrderController extends BaseController {
             // Importar servicios
             const smsService = await import('../services/channels/smsService.js');
             const smsLoggingService = await import('../services/smsLoggingService.js');
+            const emailService = await import('../services/channels/emailService.js');
+            const emailLoggingService = await import('../services/emailLoggingService.js');
+            const fs = await import('fs');
+            const path = await import('path');
 
             // Crear mensaje SMS (mismo formato que en inspectionOrder.js)
             const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+
+            // Preparar datos para email
+            const inspectionLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}${inspectionOrder.inspection_link}`;
+            const emailData = {
+                NAME: inspectionOrder.nombre_contacto,
+                PLACA: inspectionOrder.placa,
+                INSPECTION_LINK: inspectionLink
+            };
 
             // Loggear SMS con envío automático
             const smsData = {
@@ -2211,20 +2223,110 @@ class InspectionOrderController extends BaseController {
                 console.error(`❌ Error reenviando SMS: ${result.error}`);
             }
 
+            // Enviar email si tiene correo de contacto
+            let emailResult = null;
+            if (inspectionOrder.correo_contacto) {
+                try {
+                    console.log(`📧 Enviando email a: ${inspectionOrder.correo_contacto}`);
+                    
+                    // Leer plantilla de email
+                    const templatePath = path.join(process.cwd(), 'mailTemplates', 'inspectionLinkNotification.html');
+                    let emailTemplate = fs.readFileSync(templatePath, 'utf8');
+                    
+                    // Reemplazar variables en la plantilla
+                    console.log(`📧 Datos para reemplazo:`, emailData);
+                    Object.keys(emailData).forEach(key => {
+                        const regex = new RegExp(`{{${key}}}`, 'g');
+                        const beforeReplace = emailTemplate.includes(`{{${key}}}`);
+                        emailTemplate = emailTemplate.replace(regex, emailData[key]);
+                        const afterReplace = emailTemplate.includes(`{{${key}}}`);
+                        console.log(`📧 Reemplazando {{${key}}} -> ${emailData[key]} (antes: ${beforeReplace}, después: ${afterReplace})`);
+                    });
+                    
+                    // Crear objeto de notificación para email
+                    const emailNotification = {
+                        recipient_email: inspectionOrder.correo_contacto,
+                        title: 'Link de Inspección - Seguros Mundial',
+                        content: smsMessage, // Contenido de respaldo
+                        priority: 'normal',
+                        metadata: {
+                            channel_data: {
+                                email: {
+                                    subject: 'Link de Inspección de Asegurabilidad - Seguros Mundial',
+                                    html: emailTemplate
+                                }
+                            },
+                            inspection_order_id: inspectionOrder.id,
+                            placa: inspectionOrder.placa,
+                            nombre_contacto: inspectionOrder.nombre_contacto,
+                            resend: true,
+                            resend_by: req.user?.id || 'system',
+                            resend_at: new Date().toISOString()
+                        }
+                    };
+                    
+                    // Preparar datos para logging de email
+                    const emailLogData = {
+                        inspection_order_id: inspectionOrder.id,
+                        recipient_email: inspectionOrder.correo_contacto,
+                        recipient_name: inspectionOrder.nombre_contacto,
+                        subject: emailNotification.metadata.channel_data.email.subject,
+                        content: smsMessage,
+                        html_content: emailTemplate,
+                        email_type: 'resend',
+                        trigger_source: 'controller',
+                        user_id: req.user?.id || null,
+                        priority: 'normal',
+                        metadata: {
+                            order_number: inspectionOrder.numero,
+                            vehicle_plate: inspectionOrder.placa,
+                            resent_by: req.user?.id || 'system',
+                            resent_at: new Date().toISOString()
+                        }
+                    };
+                    
+                    // Enviar email con logging
+                    const emailLogResult = await emailLoggingService.default.sendEmailWithLogging(
+                        emailLogData,
+                        async () => {
+                            return await emailService.default.send(emailNotification, emailTemplate);
+                        }
+                    );
+                    
+                    emailResult = emailLogResult;
+                    
+                    if (emailResult.success) {
+                        console.log(`✅ Email enviado y loggeado exitosamente a ${inspectionOrder.correo_contacto}`);
+                    } else {
+                        console.error(`❌ Error enviando email: ${emailResult.error}`);
+                    }
+                    
+                } catch (emailError) {
+                    console.error(`❌ Error procesando email:`, emailError);
+                    emailResult = { success: false, error: emailError.message };
+                }
+            } else {
+                console.log(`⚠️ No se envió email: la orden no tiene correo de contacto`);
+            }
+
             // Respuesta exitosa
             return res.json({
                 success: true,
-                message: 'SMS reenviado exitosamente',
+                message: 'SMS y Email reenviados exitosamente',
                 data: {
                     inspection_order_id: inspectionOrder.id,
                     numero: inspectionOrder.numero,
                     placa: inspectionOrder.placa,
                     nombre_contacto: inspectionOrder.nombre_contacto,
                     celular_contacto: inspectionOrder.celular_contacto,
+                    correo_contacto: inspectionOrder.correo_contacto,
                     inspection_link: inspectionOrder.inspection_link,
                     sms_sent: result.success,
                     sms_log_id: result.smsLog?.id || null,
                     sms_result: result.sendResult || null,
+                    email_sent: emailResult?.success || false,
+                    email_log_id: emailResult?.emailLog?.id || null,
+                    email_result: emailResult || null,
                     resent_at: new Date().toISOString(),
                     resent_by: req.user?.id || 'system'
                 }
