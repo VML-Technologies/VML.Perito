@@ -345,13 +345,13 @@ const CoordinadorVML = () => {
         const diffInMinutes = Math.floor((now - date) / (1000 * 60));
 
         if (diffInMinutes < 1) return { text: 'Ahora mismo', isOverdue: false };
-        if (diffInMinutes < 60) return { text: `${diffInMinutes} min`, isOverdue: diffInMinutes > 15 };
+        if (diffInMinutes < 60) return { text: `${diffInMinutes} min`, isOverdue: diffInMinutes > 10 };
 
         const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24) return { text: `${diffInHours}h ${diffInMinutes % 60}min`, isOverdue: diffInMinutes > 15 };
+        if (diffInHours < 24) return { text: `${diffInHours}h ${diffInMinutes % 60}min`, isOverdue: diffInMinutes > 10 };
 
         const diffInDays = Math.floor(diffInHours / 24);
-        return { text: `${diffInDays}d ${diffInHours % 24}h`, isOverdue: diffInMinutes > 15 };
+        return { text: `${diffInDays}d ${diffInHours % 24}h`, isOverdue: diffInMinutes > 10 };
     };
 
     const handlePageChange = (newPage) => {
