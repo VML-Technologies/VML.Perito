@@ -776,6 +776,76 @@ class AppointmentController {
         }
     }
 
+    // ===== ENDPOINT PARA VALIDAR STATUS DE APPOINTMENT POR SESSION_ID =====
+    
+    // Validar status de appointment por session_id (para app externa)
+    async validateAppointmentStatus(req, res) {
+        try {
+            const { session_id } = req.body;
+            
+            if (!session_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'session_id es requerido'
+                });
+            }
+            
+            // Buscar appointment por session_id
+            const appointment = await Appointment.findOne({
+                where: { session_id: session_id },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder'
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede'
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality'
+                    }
+                ]
+            });
+            
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Appointment no encontrado para el session_id proporcionado'
+                });
+            }
+            
+            // Estados que requieren redirect
+            const redirectStates = [
+                'ineffective_no_retry',
+                'revision_supervisor', 
+                'call_finished',
+                'failed',
+                'ineffective_with_retry',
+                'completed'
+            ];
+            
+            // Determinar acción basada en el status
+            const action = redirectStates.includes(appointment.status) ? 'redirect' : 'keep';
+            
+            return res.status(200).json({
+                success: true,
+                appointmentId: appointment.id,
+                action: action,
+                status: appointment.status
+            });
+            
+        } catch (error) {
+            console.error('Error validando status de appointment:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
     // ===== ENDPOINT DEDICADO PARA INSPECTOR ALIADO =====
     
     // Crear agendamiento para Inspector Aliado (simplificado)

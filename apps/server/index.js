@@ -27,6 +27,7 @@ import channelController from './controllers/channelController.js';
 import { requirePermission } from './middleware/rbac.js';
 import { requireAuth } from './middleware/auth.js';
 import { authenticateWebhook, webhookRateLimit, captureRawBody } from './middleware/webhookAuth.js';
+import { authenticateApiToken, apiRateLimit } from './middleware/apiTokenAuth.js';
 import contactAgentController from './controllers/contactAgentController.js';
 import coordinadorContactoController from './controllers/coordinadorContactoController.js';
 import scheduleController from './controllers/scheduleController.js';
@@ -417,6 +418,8 @@ app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermissio
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
 app.post('/api/appointments/:id/assign-inspector', requirePermission('appointments.update'), appointmentController.assignInspector);
+
+app.post('/api/external/appointment/validate-status', apiRateLimit, authenticateApiToken, appointmentController.validateAppointmentStatus);
 
 
 // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
