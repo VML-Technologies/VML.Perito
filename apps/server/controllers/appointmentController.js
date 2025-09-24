@@ -829,10 +829,18 @@ class AppointmentController {
             // Determinar acción basada en el status
             const action = redirectStates.includes(appointment.status) ? 'redirect' : 'keep';
             
+            // Construir action_target basado en la acción
+            let actionTarget = null;
+            if (action === 'redirect' && appointment.inspectionOrder?.inspection_link) {
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                actionTarget = `${frontendUrl}${appointment.inspectionOrder.inspection_link}`;
+            }
+            
             return res.status(200).json({
                 success: true,
                 appointmentId: appointment.id,
                 action: action,
+                action_target: actionTarget,
                 status: appointment.status
             });
             
