@@ -117,7 +117,7 @@ const CoordinadorVML = () => {
             // Reiniciar estados de loading
             setLoading(true);
             setLoadingSedeAppointments(true);
-            
+
             // Solicitar datos
             requestQueueData();
             requestStatsData();
@@ -145,7 +145,7 @@ const CoordinadorVML = () => {
     useEffect(() => {
         if (isConnected && coordinatorData) {
             console.log('📊 Datos del coordinador recibidos:', coordinatorData);
-            
+
             // Actualizar datos de la cola
             if (coordinatorData.queueData) {
                 console.log('📊 Actualizando datos de cola:', coordinatorData.queueData);
@@ -154,19 +154,19 @@ const CoordinadorVML = () => {
                 setLoading(false); // ✅ Quitar loading cuando llegan datos de cola
                 console.log('✅ Loading de cola desactivado');
             }
-            
+
             // Actualizar estadísticas
             if (coordinatorData.stats) {
                 setStats(coordinatorData.stats);
             }
-            
+
             // Actualizar agendamientos en sede
             if (coordinatorData.sedeAppointments) {
                 console.log('🏢 Actualizando appointments en sede desde WebSocket:', coordinatorData.sedeAppointments);
                 setSedeAppointments(coordinatorData.sedeAppointments);
                 setLoadingSedeAppointments(false); // ✅ Quitar loading cuando llegan datos de sede
                 console.log('✅ Loading de sede desactivado');
-                
+
                 // Recalcular estadísticas
                 const stats = {
                     pending: coordinatorData.sedeAppointments.filter(a => a.status === 'pending').length,
@@ -344,14 +344,14 @@ const CoordinadorVML = () => {
         const now = new Date();
         const diffInMinutes = Math.floor((now - date) / (1000 * 60));
 
-        if (diffInMinutes < 1) return 'Ahora mismo';
-        if (diffInMinutes < 60) return `${diffInMinutes} min`;
+        if (diffInMinutes < 1) return { text: 'Ahora mismo', isOverdue: false };
+        if (diffInMinutes < 60) return { text: `${diffInMinutes} min`, isOverdue: diffInMinutes > 15 };
 
         const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24) return `${diffInHours}h ${diffInMinutes % 60}min`;
+        if (diffInHours < 24) return { text: `${diffInHours}h ${diffInMinutes % 60}min`, isOverdue: diffInMinutes > 15 };
 
         const diffInDays = Math.floor(diffInHours / 24);
-        return `${diffInDays}d ${diffInHours % 24}h`;
+        return { text: `${diffInDays}d ${diffInHours % 24}h`, isOverdue: diffInMinutes > 15 };
     };
 
     const handlePageChange = (newPage) => {
@@ -402,34 +402,6 @@ const CoordinadorVML = () => {
                 </div>
             </div>
 
-            {/* <div className='border border-red-500 flex justify-between gap-2'>
-                <div className="w-full flex justify-between gap-2">
-                    {
-                        [
-                            { name: 'En Cola', value: stats.en_cola, icon: Clock, valueColor: 'text-blue-600' },
-                            { name: 'En Proceso', value: stats.en_proceso, icon: Play, valueColor: 'text-purple-600' },
-                            { name: 'Completadas', value: stats.completadas, icon: CheckCircle, valueColor: 'text-green-600' },
-                            { name: 'Total', value: stats.total, icon: Car, valueColor: 'text-gray-600' },
-                        ].map((card) => (
-                            <CardComponent key={card.name} name={card.name} value={card.value} icon={card.icon} valueColor={card.valueColor} />
-                        ))
-                    }
-                </div>
-
-                <div className="w-full flex justify-between gap-2">
-                    {
-                        [
-                            { name: 'Pendientes', value: sedeStats.pending, icon: Clock, valueColor: 'text-yellow-600' },
-                            { name: 'Activas', value: sedeStats.active, icon: Play, valueColor: 'text-purple-600' },
-                            { name: 'Completadas', value: sedeStats.completed, icon: CheckCircle, valueColor: 'text-green-600' },
-                            { name: 'Total', value: sedeStats.total, icon: Car, valueColor: 'text-gray-600' },
-                        ].map((card) => (
-                            <CardComponent key={card.name} name={card.name} value={card.value} icon={card.icon} valueColor={card.valueColor} />
-                        ))
-                    }
-                </div>
-            </div> */}
-
             <div className='flex justify-between gap-2'>
                 {/* Queue Table - Inspecciones Virtuales */}
                 <Card className='w-full'>
@@ -449,59 +421,75 @@ const CoordinadorVML = () => {
                                         <TableRow>
                                             <TableHead>Placa y Orden</TableHead>
                                             <TableHead>Cliente</TableHead>
-                                            <TableHead>Estado</TableHead>
+                                            <TableHead>Tiempo</TableHead>
                                             <TableHead>Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {queueData.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <Car className="h-4 w-4 text-gray-500" />
-                                                            <span className="font-medium">Placa: {item.placa}</span>
+                                        {queueData.map((item) => {
+                                            const timeInfo = formatTimeAgo(item.tiempo_ingreso);
+                                            const isOverdue = timeInfo.isOverdue;
+
+                                            return (
+                                                <TableRow key={item.id} className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <Car className="h-4 w-4 text-gray-500" />
+                                                                <span className="font-medium">Placa: {item.placa}</span>
+                                                            </div>
+                                                            <span className="font-mono text-sm">Orden: {item.numero_orden}</span>
                                                         </div>
-                                                        <span className="font-mono text-sm">Orden: {item.numero_orden}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <User className="h-4 w-4 text-gray-500" />
-                                                        <div>
-                                                            <p className="font-medium">{item.nombre_cliente}</p>
-                                                            {item.inspectionOrder?.celular_contacto && (
-                                                                <p className="text-sm text-gray-500 flex items-center gap-1">
-                                                                    <Phone className="h-3 w-3" />
-                                                                    {item.inspectionOrder.celular_contacto}
-                                                                </p>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="h-4 w-4 text-gray-500" />
+                                                            <div>
+                                                                <p className="font-medium">{item.nombre_cliente}</p>
+                                                                {item.inspectionOrder?.celular_contacto && (
+                                                                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                                        <Phone className="h-3 w-3" />
+                                                                        {item.inspectionOrder.celular_contacto}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-1">
+                                                            <div className="flex items-center justify-center">
+                                                                {
+                                                                    isOverdue ? <>
+                                                                        <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
+                                                                    </> : <>
+                                                                        <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
+                                                                        </>
+                                                                }
+                                                            </div>
+                                                            <span className={`text-sm font-mono px-2 py-1 rounded ${isOverdue
+                                                                    ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
+                                                                    : 'text-gray-500'
+                                                                }`}>
+                                                                {timeInfo.text}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            {item.estado === 'en_cola' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
+                                                                >
+                                                                    <Play className="h-4 w-4 mr-1" />
+                                                                    Iniciar
+                                                                </Button>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        {getStatusBadge(item.estado)}
-                                                        <span className="text-sm font-mono text-gray-500">
-                                                            {formatTimeAgo(item.tiempo_ingreso)}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex gap-2">
-                                                        {item.estado === 'en_cola' && (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
-                                                            >
-                                                                <Play className="h-4 w-4 mr-1" />
-                                                                Iniciar
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
 
@@ -608,8 +596,8 @@ const CoordinadorVML = () => {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {appointment.user && appointment.user.roles && 
-                                                     appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                    {appointment.user && appointment.user.roles &&
+                                                        appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
                                                         <div className="flex items-center gap-2">
                                                             <User className="h-4 w-4 text-gray-500" />
                                                             <div>
@@ -813,7 +801,7 @@ const CoordinadorVML = () => {
             </Dialog>
             <div className='fixed bottom-0 right-0 border-t border-gray-200 bg-white p-2 text-base font-mono w-full text-center   '>
                 <marquee behavior="scroll" direction="left" scrollamount="10" >
-                <div className='flex justify-between gap-2 text-center w-1/2 '>
+                    <div className='flex justify-between gap-2 text-center w-1/2 '>
                         <span>
                             {new Date().toLocaleDateString()}  {new Date().toLocaleTimeString()}
                         </span>
