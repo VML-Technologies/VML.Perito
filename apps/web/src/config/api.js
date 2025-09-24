@@ -22,6 +22,7 @@ export const API_ROUTES = {
         LIST: `${API_BASE_URL}/api/users`,
         WITH_ROLES: `${API_BASE_URL}/api/users/with-roles`,
         CREATE: `${API_BASE_URL}/api/users`,
+        UPDATE: (id) => `${API_BASE_URL}/api/users/${id}`,
         CREATE_WITH_EMAIL: `${API_BASE_URL}/api/users/create-with-email`,
         VALIDATE_IDENTIFICATION: `${API_BASE_URL}/api/users/validate/identification`,
         VALIDATE_EMAIL: `${API_BASE_URL}/api/users/validate/email`,

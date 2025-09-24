@@ -8,6 +8,7 @@ import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
 import { Shield, Save, RefreshCw, UserCheck, Users, Key, UserPlus, Bell, BarChart3 } from 'lucide-react';
 import { UserCreationForm } from './admin/UserCreationForm';
+import UserManagement from './UserManagement';
 import { RoleAssignments } from './admin/RoleAssignments';
 import { RoleManagement } from './admin/RoleManagement';
 import { PermissionsList } from './admin/PermissionsList';
@@ -45,7 +46,7 @@ export default function Admin() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRole, setSelectedRole] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'assignments' : 'create-user');
+    const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'assignments' : 'user-management');
 
     // Estados para notificaciones
     const [notificationTypes, setNotificationTypes] = useState([]);
@@ -362,6 +363,7 @@ export default function Admin() {
 
     // Filtrar roles para creación de usuarios (solo los tres específicos)
     const availableRoles = roles.filter(role =>
+        
         ['comercial_mundial', 'agente_contacto', 'coordinador_contacto'].includes(role.name)
     );
 
@@ -448,9 +450,9 @@ export default function Admin() {
                     }
                     {
                         isHelpDesk && <>
-                            <TabsTrigger value="create-user" className="flex items-center gap-2">
-                                <UserPlus className="h-4 w-4" />
-                                Crear Usuario
+                            <TabsTrigger value="user-management" className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Gestión de Usuarios
                             </TabsTrigger>
                         </>
                     }
@@ -486,14 +488,9 @@ export default function Admin() {
                     <PermissionsList permissions={permissions} />
                 </TabsContent>
 
-                {/* Tab de Crear Usuario */}
-                <TabsContent value="create-user">
-                    <UserCreationForm
-                        sedes={sedes}
-                        availableRoles={availableRoles}
-                        onUserCreated={handleUserCreated}
-                        showToast={showToast}
-                    />
+                {/* Tab de Gestión de Usuarios */}
+                <TabsContent value="user-management">
+                    <UserManagement />
                 </TabsContent>
 
                 {/* Tab de Notificaciones */}

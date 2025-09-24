@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,14 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, Building, Shield, Mail, RefreshCw, AlertCircle } from 'lucide-react';
+import { UserPlus, Building, Shield, Mail, RefreshCw, AlertCircle, Edit } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 
 export function UserCreationForm({ 
     sedes, 
     availableRoles, 
     onUserCreated, 
-    showToast 
+    showToast,
+    editingUser = null,
+    onCancel = null
 }) {
     const [creatingUser, setCreatingUser] = useState(false);
     const [userForm, setUserForm] = useState({
@@ -23,10 +25,49 @@ export function UserCreationForm({
         email: '',
         phone: '',
         password: '',
-        role_id: ''
+        role_id: '',
+        intermediary_key: ''
     });
     const [userFormErrors, setUserFormErrors] = useState({});
     const [validationMessages, setValidationMessages] = useState({});
+
+    // Cargar datos del usuario cuando está en modo edición
+    useEffect(() => {
+        if (editingUser) {
+            console.log('🔍 Usuario en edición:', editingUser);
+            console.log('🔍 Roles del usuario:', editingUser.roles);
+            
+            const formData = {
+                sede_id: editingUser.sede_id ? editingUser.sede_id.toString() : '',
+                identification: editingUser.identification || '',
+                name: editingUser.name || '',
+                email: editingUser.email || '',
+                phone: editingUser.phone || '',
+                password: '', // No mostrar contraseña actual
+                role_id: editingUser.roles && editingUser.roles.length > 0 ? editingUser.roles[0].id.toString() : '',
+                intermediary_key: editingUser.intermediary_key || ''
+            };
+            
+            console.log('📝 Datos del formulario:', formData);
+            console.log('🎯 Role ID seleccionado:', formData.role_id);
+            
+            setUserForm(formData);
+        } else {
+            // Limpiar formulario cuando no está editando
+            setUserForm({
+                sede_id: '',
+                identification: '',
+                name: '',
+                email: '',
+                phone: '',
+                password: '',
+                role_id: '',
+                intermediary_key: ''
+            });
+        }
+        setUserFormErrors({});
+        setValidationMessages({});
+    }, [editingUser]);
 
     // Función para validar identificación
     const validateIdentification = async (identification) => {
@@ -128,7 +169,7 @@ export function UserCreationForm({
         }
     };
 
-    // Función para crear usuario
+    // Función para crear o actualizar usuario
     const handleCreateUser = async () => {
         setCreatingUser(true);
         setUserFormErrors({});
@@ -140,7 +181,7 @@ export function UserCreationForm({
             if (!userForm.identification) errors.identification = 'Identificación es requerida';
             if (!userForm.name) errors.name = 'Nombre es requerido';
             if (!userForm.email) errors.email = 'Email es requerido';
-            if (!userForm.password) errors.password = 'Contraseña es requerida';
+            if (!editingUser && !userForm.password) errors.password = 'Contraseña es requerida';
             if (!userForm.role_id) errors.role_id = 'Selecciona un rol';
             
             if (Object.keys(errors).length > 0) {
@@ -150,74 +191,158 @@ export function UserCreationForm({
             }
 
             const token = localStorage.getItem('authToken');
-            const response = await fetch(API_ROUTES.USERS.CREATE_WITH_EMAIL, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(userForm)
-            });
+            
+            if (editingUser) {
+                // Actualizar usuario existente
+                const updateData = { ...userForm };
+                if (!updateData.password) {
+                    delete updateData.password; // No actualizar contraseña si está vacía
+                }
+                
+                // Manejar campos vacíos que deben ser null
+                if (!updateData.intermediary_key || updateData.intermediary_key.trim() === '') {
+                    updateData.intermediary_key = null;
+                }
+                
+                console.log('📤 Datos a actualizar:', updateData);
+                console.log('🔑 Intermediary key:', updateData.intermediary_key);
+                
+                const response = await fetch(API_ROUTES.USERS.UPDATE(editingUser.id), {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
 
-            const result = await response.json();
+                const result = await response.json();
 
-            if (response.ok) {
-                // Asignar rol al usuario recién creado
-                try {
-                    const roleResponse = await fetch(API_ROUTES.USERS.ASSIGN_ROLES(result.user.id), {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ roles: [parseInt(userForm.role_id)] })
-                    });
+                if (response.ok) {
+                    // Actualizar rol del usuario
+                    try {
+                        const roleResponse = await fetch(API_ROUTES.USERS.ASSIGN_ROLES(editingUser.id), {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ roles: [parseInt(userForm.role_id)] })
+                        });
 
-                    if (roleResponse.ok) {
-                        showToast(result.message + ' y rol asignado correctamente', 'success');
-                    } else {
+                        if (roleResponse.ok) {
+                            showToast('Usuario actualizado correctamente', 'success');
+                        } else {
+                            showToast('Usuario actualizado pero falló la actualización del rol', 'warning');
+                        }
+                    } catch (roleError) {
+                        console.error('Error actualizando rol:', roleError);
+                        showToast('Usuario actualizado pero falló la actualización del rol', 'warning');
+                    }
+                    
+                    // Notificar al componente padre
+                    if (onUserCreated) {
+                        onUserCreated();
+                    }
+                    
+                } else {
+                    if (result.field && result.existingUser) {
+                        setUserFormErrors({ [result.field]: result.message });
+                        setValidationMessages(prev => ({
+                            ...prev,
+                            [result.field]: {
+                                type: 'error',
+                                message: result.message,
+                                existingUser: result.existingUser
+                            }
+                        }));
+                    }
+                    showToast(result.message || 'Error al actualizar usuario', 'error');
+                }
+            } else {
+                // Crear nuevo usuario
+                const createData = { ...userForm };
+                
+                // Manejar campos vacíos que deben ser null
+                if (!createData.intermediary_key || createData.intermediary_key.trim() === '') {
+                    createData.intermediary_key = null;
+                }
+                
+                console.log('📤 Datos a crear:', createData);
+                console.log('🔑 Intermediary key:', createData.intermediary_key);
+                
+                const response = await fetch(API_ROUTES.USERS.CREATE_WITH_EMAIL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(createData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Asignar rol al usuario recién creado
+                    try {
+                        const roleResponse = await fetch(API_ROUTES.USERS.ASSIGN_ROLES(result.user.id), {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ roles: [parseInt(userForm.role_id)] })
+                        });
+
+                        if (roleResponse.ok) {
+                            showToast(result.message + ' y rol asignado correctamente', 'success');
+                        } else {
+                            showToast(result.message + ' pero falló la asignación del rol', 'warning');
+                        }
+                    } catch (roleError) {
+                        console.error('Error asignando rol:', roleError);
                         showToast(result.message + ' pero falló la asignación del rol', 'warning');
                     }
-                } catch (roleError) {
-                    console.error('Error asignando rol:', roleError);
-                    showToast(result.message + ' pero falló la asignación del rol', 'warning');
+                    
+                    // Limpiar formulario solo si no está editando
+                    if (!editingUser) {
+                        setUserForm({
+                            sede_id: '',
+                            identification: '',
+                            name: '',
+                            email: '',
+                            phone: '',
+                            password: '',
+                            role_id: '',
+                            intermediary_key: ''
+                        });
+                        setValidationMessages({});
+                    }
+                    
+                    // Notificar al componente padre
+                    if (onUserCreated) {
+                        onUserCreated();
+                    }
+                    
+                } else {
+                    if (result.field && result.existingUser) {
+                        setUserFormErrors({ [result.field]: result.message });
+                        setValidationMessages(prev => ({
+                            ...prev,
+                            [result.field]: {
+                                type: 'error',
+                                message: result.message,
+                                existingUser: result.existingUser
+                            }
+                        }));
+                    }
+                    showToast(result.message || 'Error al crear usuario', 'error');
                 }
-                
-                // Limpiar formulario
-                setUserForm({
-                    sede_id: '',
-                    identification: '',
-                    name: '',
-                    email: '',
-                    phone: '',
-                    password: '',
-                    role_id: ''
-                });
-                setValidationMessages({});
-                
-                // Notificar al componente padre
-                if (onUserCreated) {
-                    onUserCreated();
-                }
-                
-            } else {
-                if (result.field && result.existingUser) {
-                    setUserFormErrors({ [result.field]: result.message });
-                    setValidationMessages(prev => ({
-                        ...prev,
-                        [result.field]: {
-                            type: 'error',
-                            message: result.message,
-                            existingUser: result.existingUser
-                        }
-                    }));
-                }
-                showToast(result.message || 'Error al crear usuario', 'error');
             }
 
         } catch (error) {
-            console.error('Error creando usuario:', error);
-            showToast('Error de conexión al crear usuario', 'error');
+            console.error('Error procesando usuario:', error);
+            showToast('Error de conexión al procesar usuario', 'error');
         } finally {
             setCreatingUser(false);
         }
@@ -227,25 +352,39 @@ export function UserCreationForm({
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="h-5 w-5" />
-                    Crear Nuevo Usuario
+                    {editingUser ? (
+                        <>
+                            <Edit className="h-5 w-5" />
+                            Editar Usuario
+                        </>
+                    ) : (
+                        <>
+                            <UserPlus className="h-5 w-5" />
+                            Crear Nuevo Usuario
+                        </>
+                    )}
                 </CardTitle>
                 <CardDescription>
-                    Crea un nuevo usuario en el sistema. Se enviará un email de bienvenida automáticamente.
+                    {editingUser 
+                        ? `Editando usuario: ${editingUser.name}`
+                        : 'Crea un nuevo usuario en el sistema. Se enviará un email de bienvenida automáticamente.'
+                    }
                 </CardDescription>
             </CardHeader>
             <CardContent>                
                 {/* Información adicional */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Configuración por Defecto
-                    </h4>
-                    <div className="text-sm text-blue-800 space-y-1">
-                        <p>• Se marcará como contraseña temporal (debe cambiarla en el primer ingreso)</p>
-                        <p>• Se enviará automáticamente un email de bienvenida con las credenciales</p>
+                {!editingUser && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            Configuración por Defecto
+                        </h4>
+                        <div className="text-sm text-blue-800 space-y-1">
+                            <p>• Se marcará como contraseña temporal (debe cambiarla en el primer ingreso)</p>
+                            <p>• Se enviará automáticamente un email de bienvenida con las credenciales</p>
+                        </div>
                     </div>
-                </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                     {/* Columna 1 */}
                     <div className="space-y-4">
@@ -397,22 +536,38 @@ export function UserCreationForm({
                             />
                         </div>
 
-                        {/* Contraseña Temporal */}
+                        {/* Llave de Intermediario */}
                         <div>
-                            <Label htmlFor="user-password">Contraseña Temporal *</Label>
+                            <Label htmlFor="user-intermediary-key">Llave de Intermediario</Label>
+                            <Input
+                                id="user-intermediary-key"
+                                value={userForm.intermediary_key}
+                                onChange={(e) => handleUserFormChange('intermediary_key', e.target.value)}
+                                placeholder="Llave de intermediario (opcional)"
+                            />
+                        </div>
+
+                        {/* Contraseña */}
+                        <div>
+                            <Label htmlFor="user-password">
+                                {editingUser ? 'Nueva Contraseña' : 'Contraseña Temporal *'}
+                            </Label>
                             <Input
                                 id="user-password"
                                 type="password"
                                 value={userForm.password}
                                 onChange={(e) => handleUserFormChange('password', e.target.value)}
-                                placeholder="Contraseña temporal"
+                                placeholder={editingUser ? "Dejar vacío para mantener la contraseña actual" : "Contraseña temporal"}
                                 className={userFormErrors.password ? 'border-red-500' : ''}
                             />
                             {userFormErrors.password && (
                                 <p className="text-sm text-red-500 mt-1">{userFormErrors.password}</p>
                             )}
                             <p className="text-sm text-muted-foreground mt-1">
-                                Esta contraseña se enviará por email y el usuario deberá cambiarla en el primer ingreso.
+                                {editingUser 
+                                    ? "Deja vacío para mantener la contraseña actual. Si ingresas una nueva, se actualizará."
+                                    : "Esta contraseña se enviará por email y el usuario deberá cambiarla en el primer ingreso."
+                                }
                             </p>
                         </div>
                     </div>
@@ -420,25 +575,39 @@ export function UserCreationForm({
 
                 {/* Botones de acción */}
                 <div className="flex justify-end gap-4 mt-6">
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            setUserForm({
-                                sede_id: '',
-                                identification: '',
-                                name: '',
-                                email: '',
-                                phone: '',
-                                password: '',
-                                role_id: ''
-                            });
-                            setUserFormErrors({});
-                            setValidationMessages({});
-                        }}
-                        disabled={creatingUser}
-                    >
-                        Limpiar Formulario
-                    </Button>
+                    {editingUser && onCancel && (
+                        <Button
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={creatingUser}
+                        >
+                            Cancelar
+                        </Button>
+                    )}
+                    
+                    {!editingUser && (
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setUserForm({
+                                    sede_id: '',
+                                    identification: '',
+                                    name: '',
+                                    email: '',
+                                    phone: '',
+                                    password: '',
+                                    role_id: '',
+                                    intermediary_key: ''
+                                });
+                                setUserFormErrors({});
+                                setValidationMessages({});
+                            }}
+                            disabled={creatingUser}
+                        >
+                            Limpiar Formulario
+                        </Button>
+                    )}
+                    
                     <Button
                         onClick={handleCreateUser}
                         disabled={creatingUser || Object.keys(userFormErrors).length > 0}
@@ -446,10 +615,15 @@ export function UserCreationForm({
                     >
                         {creatingUser ? (
                             <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : editingUser ? (
+                            <Edit className="h-4 w-4" />
                         ) : (
                             <UserPlus className="h-4 w-4" />
                         )}
-                        {creatingUser ? 'Creando Usuario...' : 'Crear Usuario y Enviar Email'}
+                        {creatingUser 
+                            ? (editingUser ? 'Actualizando Usuario...' : 'Creando Usuario...')
+                            : (editingUser ? 'Actualizar Usuario' : 'Crear Usuario y Enviar Email')
+                        }
                     </Button>
                 </div>
             </CardContent>
