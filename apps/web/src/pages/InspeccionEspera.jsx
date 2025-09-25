@@ -16,7 +16,7 @@ const InspeccionEspera = () => {
     const { hash } = useParams();
     const navigate = useNavigate();
     const { showToast } = useNotifications();
-    
+
     const [queueStatus, setQueueStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,17 +24,17 @@ const InspeccionEspera = () => {
     const [waitingTime, setWaitingTime] = useState(0);
     const [existingAppointment, setExistingAppointment] = useState(null);
     const [timeUntilAppointment, setTimeUntilAppointment] = useState(null);
-    
+
     // Usar el hook de WebSocket para cola de inspecciones
     const { isConnected, queueStatus: wsQueueStatus, error: wsError } = useInspectionQueueWebSocket(hash);
 
     useEffect(() => {
         // Cargar estado inicial por API como fallback
         fetchQueueStatus();
-        
+
         // Verificar agendamientos existentes
         checkExistingAppointment();
-        
+
         // Agregar automáticamente a la cola si no existe
         if (hash) {
             addToQueue();
@@ -49,7 +49,7 @@ const InspeccionEspera = () => {
                 setPosition(wsQueueStatus.position);
             }
             setLoading(false);
-            
+
             // Si se asigna un inspector, redirigir a la página de inspección
             if (wsQueueStatus.inspector && wsQueueStatus.estado === 'en_proceso') {
                 console.log('🚀 Inspector asignado, redirigiendo a inspección...');
@@ -71,12 +71,12 @@ const InspeccionEspera = () => {
     useEffect(() => {
         if (queueStatus?.tiempo_ingreso) {
             const startTime = new Date(queueStatus.tiempo_ingreso).getTime();
-            
+
             // Inicializar el tiempo inmediatamente
             const currentTime = Date.now();
             const elapsed = Math.floor((currentTime - startTime) / 1000);
             setWaitingTime(elapsed);
-            
+
             const timer = setInterval(() => {
                 setWaitingTime(prev => prev + 1);
             }, 1000);
@@ -94,29 +94,29 @@ const InspeccionEspera = () => {
                     const appointmentDate = new Date(existingAppointment.scheduled_date);
                     const [hours, minutes] = existingAppointment.scheduled_time.split(':');
                     appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                    
+
                     const timeDiff = appointmentDate.getTime() - now.getTime();
                     const minutesDiff = Math.floor(timeDiff / (1000 * 60));
-                    
+
                     console.log('🕐 Calculando tiempo hasta agendamiento:', {
                         now: now.toISOString(),
                         appointment: appointmentDate.toISOString(),
                         minutesDiff
                     });
-                    
+
                     setTimeUntilAppointment(minutesDiff);
                 } catch (error) {
                     console.error('Error calculando tiempo hasta agendamiento:', error);
                     setTimeUntilAppointment(0); // Fallback: mostrar botón
                 }
             };
-            
+
             // Actualizar inmediatamente
             updateTimeUntilAppointment();
-            
+
             // Actualizar cada minuto
             const timer = setInterval(updateTimeUntilAppointment, 60000);
-            
+
             return () => clearInterval(timer);
         } else {
             // Si no hay fecha/hora, asumir que está listo
@@ -142,7 +142,7 @@ const InspeccionEspera = () => {
         } catch (error) {
             console.error('Error checking existing appointment:', error);
         }
-        
+
         // MODO PRUEBA: Descomentar para probar diferentes escenarios
         // const testAppointment = testScenarios.future3(); // Cambiar por: future10, future3, future1, now, past2, past10
         // setExistingAppointment(testAppointment);
@@ -153,7 +153,7 @@ const InspeccionEspera = () => {
     const addToQueue = async () => {
         try {
             console.log('🔄 Agregando a la cola de inspecciones...');
-            
+
             // Primero obtener la orden para obtener el ID correcto
             const orderResponse = await fetch(API_ROUTES.INSPECTION_ORDERS.ORDER_BY_HASH(hash), {
                 method: 'GET',
@@ -169,7 +169,7 @@ const InspeccionEspera = () => {
 
             const orderData = await orderResponse.json();
             const orderId = orderData.data.id;
-            
+
             const response = await fetch(API_ROUTES.INSPECTION_QUEUE.ADD_TO_QUEUE_PUBLIC, {
                 method: 'POST',
                 headers: {
@@ -193,7 +193,7 @@ const InspeccionEspera = () => {
 
             const data = await response.json();
             console.log('✅ Agregado a la cola exitosamente:', data);
-            
+
         } catch (error) {
             console.error('Error adding to queue:', error);
             // No mostrar error al usuario, solo log
@@ -215,14 +215,14 @@ const InspeccionEspera = () => {
             }
 
             const data = await response.json();
-            
+
             if (data.success && data.data) {
                 setQueueStatus(data.data);
                 // La posición ya viene incluida en la respuesta del endpoint público
                 if (data.data.position) {
                     setPosition(data.data.position);
                 }
-                
+
                 // Si se asigna un inspector, redirigir a la página de inspección
                 if (data.data.inspector && data.data.estado === 'en_proceso') {
                     console.log('🚀 Inspector asignado (API), redirigiendo a inspección...');
@@ -258,7 +258,7 @@ const InspeccionEspera = () => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        
+
         if (hours > 0) {
             return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
@@ -269,10 +269,10 @@ const InspeccionEspera = () => {
         if (minutes <= 0) {
             return '¡Ya es hora!';
         }
-        
+
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
-        
+
         if (hours > 0) {
             return `${hours}h ${remainingMinutes}m`;
         }
@@ -357,11 +357,11 @@ const InspeccionEspera = () => {
                                     <h2 className="text-xl font-semibold text-green-800 mb-2">
                                         ¡Se ha asignado un inspector a tu inspección!
                                     </h2>
-                                    
+
                                     {/* Información del agendamiento */}
                                     <div className="text-sm text-green-700 space-y-2 mb-4">
                                     </div>
-                                    
+
                                     {timeUntilAppointment !== null ? (
                                         <div className="text-center">
                                             {timeUntilAppointment <= 5 ? (
@@ -369,7 +369,7 @@ const InspeccionEspera = () => {
                                                     <p className="text-green-800 font-medium mb-3">
                                                         ¡Es hora de tu inspección!
                                                     </p>
-                                                    <Button 
+                                                    <Button
                                                         onClick={handleGoToInspection}
                                                         className="w-full bg-green-600 hover:bg-green-700 text-white"
                                                         size="lg"
@@ -398,7 +398,7 @@ const InspeccionEspera = () => {
                                                 <p className="text-green-800 font-medium mb-3">
                                                     ¡Tu inspección está lista!
                                                 </p>
-                                                <Button 
+                                                <Button
                                                     onClick={handleGoToInspection}
                                                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                                                     size="lg"
@@ -474,18 +474,18 @@ const InspeccionEspera = () => {
                                 </div>
 
                                 {/* Posición en la cola */}
-                                {position && (
+                                {/* {position && (
                                     <div className="bg-blue-50 p-4 rounded-lg text-center">
                                         <User className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                                         <p className="text-blue-800 font-medium text-sm">Posición en Cola</p>
                                         <p className="text-blue-900 font-bold text-2xl">
                                             #{position}
                                         </p>
-                                        {/* <p className="text-blue-600 text-xs mt-1">
+                                        <p className="text-blue-600 text-xs mt-1">
                                             Tiempo estimado: {position * 5} min
-                                        </p> */}
+                                        </p>
                                     </div>
-                                )}
+                                )} */}
                             </div>
                         )}
 
@@ -543,7 +543,7 @@ const InspeccionEspera = () => {
 
                         {/* Botón de regreso */}
                         <div className="text-center pt-4">
-                            <Button 
+                            <Button
                                 onClick={handleGoBack}
                                 variant="outline"
                                 className="w-full"
