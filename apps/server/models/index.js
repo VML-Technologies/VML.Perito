@@ -69,6 +69,9 @@ import AppointmentStatus from './appointmentStatus.js';
 // Nuevos modelos para queue de inspecciones
 import InspectionQueue from './inspectionQueue.js';
 
+// Nuevos modelos para accesorios
+import Accessory from './accessory.js';
+
 // Definir relaciones existentes
 
 // Department -> Cities (1:N)
@@ -864,6 +867,25 @@ ImageCapture.belongsTo(Appointment, {
     as: 'appointment',
 });
 
+// ===== RELACIONES PARA ACCESORIOS =====
+
+// Appointment -> Accessory (1:N) - Un appointment puede tener múltiples accesorios
+// Relación especial: Accessory.inspection_id hace referencia a Appointment.session_id
+Appointment.hasMany(Accessory, {
+    foreignKey: 'inspection_id',
+    sourceKey: 'session_id',
+    as: 'accessories',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Accessory.belongsTo(Appointment, {
+    foreignKey: 'inspection_id',
+    targetKey: 'session_id',
+    as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
 export {
     Department,
     City,
@@ -922,5 +944,7 @@ export {
     // Sistema de estados de inspección
     InspectionState,
     InspectionOrdersStatusInternal,
-    AppointmentStatus
+    AppointmentStatus,
+    // Sistema de accesorios
+    Accessory
 }; 
