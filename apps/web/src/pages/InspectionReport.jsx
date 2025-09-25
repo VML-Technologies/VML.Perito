@@ -406,6 +406,13 @@ const InspectionReport = () => {
                     className="w-full h-full object-contain"
                   />
                 </div>
+                <div>
+                  <div className="flex justify-center text-3xl font-bold mt-4">
+                    <span className="border-4 border-black px-2 py-3 rounded-lg">
+                      {data?.placa}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -567,6 +574,44 @@ const InspectionReport = () => {
                 </div>
               </div>
             </div>
+
+            {/* Accesorios */}
+            <div className="lg:col-span-12">
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-6 border border-purple-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-cyan-600 rounded-full"></div>
+                  Accesorios
+                </h3>
+                <div className="">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th>Descripción</th>
+                        <th>Marca</th>
+                        <th>Referencia</th>
+                        <th>Cantidad</th>
+                        <th>Valor</th>
+                        <th>Notas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {appointment?.accessories.map((accessory) => (
+                        <tr key={accessory.id} className="border-b border-gray-300">
+                          <td className="border px-2 py-1">{accessory.description}</td>
+                          <td className="border px-2 py-1">{accessory.brand}</td>
+                          <td className="border px-2 py-1">{accessory.reference}</td>
+                          <td className="border px-2 py-1 text-right">{accessory.quantity}</td>
+                          <td className="border px-2 py-1 text-right">{accessory.value}</td>
+                          <td className="border px-2 py-1">{accessory.notes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+
           </div>
         </div>
 
