@@ -6,6 +6,7 @@ import CallStatus from '../models/callStatus.js';
 import Appointment from '../models/appointment.js';
 import Sede from '../models/sede.js';
 import City from '../models/city.js';
+import Accessory from '../models/accessory.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
@@ -1636,6 +1637,10 @@ class InspectionOrderController extends BaseController {
                                 model: ImageCapture,
                                 as: 'imageCaptures',
                                 attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
+                            }, {
+                                model: Accessory,
+                                as: 'accessories',
+                                attributes: ['id', 'description', 'brand', 'reference', 'unit', 'value', 'quantity', 'total_value', 'notes', 'created_at', 'updated_at']
                             }
                         ],
                         order: [['updated_at', 'DESC']],
@@ -1776,6 +1781,7 @@ class InspectionOrderController extends BaseController {
                     scheduled_time: appointment.scheduled_time,
                     created_at: appointment.created_at,
                     observaciones: appointment.observaciones,
+                    accessories: appointment.accessories,
                     inspectionModality: appointment.inspectionModality ? {
                         id: appointment.inspectionModality.id,
                         name: appointment.inspectionModality.name
