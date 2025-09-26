@@ -728,10 +728,7 @@ const InspectionReport = () => {
                               <Camera className="h-5 w-5 text-gray-400 mb-1" />
                               <span className="text-xs text-gray-500">Error</span>
                             </div>
-                          </div>
-
-                          {/* Overlay sutil */}
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                          </div>                         
 
                           {/* Indicador de hover */}
                           <div className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
