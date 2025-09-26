@@ -93,17 +93,15 @@ class InspectionQueueController extends BaseController {
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
                 
-                if (tiempoMinutos <= 5) {
-                    // Si es reciente (≤ 5 minutos), usar la misma entrada
-                    return this.success(res, {
-                        message: 'La orden ya está en la cola. Usando entrada existente.',
-                        data: existingEntry,
-                        tiempo_en_cola: tiempoMinutos
-                    });
-                } else {
-                    // Si es más antiguo (> 5 minutos), marcar como vencida y crear nueva
-                    await existingEntry.destroy(); // Esto usa paranoid (soft delete)
-                }
+                // ✅ CORRECIÓN: Siempre usar entrada existente, mantener posición original
+                // Solo actualizar timestamp de actividad
+                await existingEntry.update({ updated_at: new Date() });
+                
+                return this.success(res, {
+                    message: 'La orden ya está en la cola. Manteniendo posición original.',
+                    data: existingEntry,
+                    tiempo_en_cola: tiempoMinutos
+                });
             }
 
             // Crear entrada en la cola

@@ -35,25 +35,26 @@ const InspeccionEspera = () => {
         // Verificar agendamientos existentes
         checkExistingAppointment();
 
-        // Agregar automáticamente a la cola si no existe
-        if (hash) {
-            addToQueue();
-        }
+        // ✅ CORRECIÓN: NO agregar automáticamente a la cola
+        // Solo Inspeccion.jsx debe manejar el agregado a cola
     }, [hash]);
 
     // Efecto para actualizar estado desde WebSocket
     useEffect(() => {
         if (wsQueueStatus) {
-            setQueueStatus(wsQueueStatus);
-            if (wsQueueStatus.position) {
-                setPosition(wsQueueStatus.position);
+            // ✅ CORRECIÓN: WebSocket puede venir con estructura diferente
+            const queueData = wsQueueStatus.data || wsQueueStatus;
+            setQueueStatus(queueData);
+            
+            if (queueData.position) {
+                setPosition(queueData.position);
             }
             setLoading(false);
 
             // Si se asigna un inspector, redirigir a la página de inspección
-            if (wsQueueStatus.inspector && wsQueueStatus.estado === 'en_proceso') {
+            if (queueData.inspector && queueData.estado === 'en_proceso') {
                 console.log('🚀 Inspector asignado, redirigiendo a inspección...');
-                console.log('📊 Estado actual:', wsQueueStatus);
+                console.log('📊 Estado actual:', queueData);
                 navigate(`/inspeccion/${hash}`);
             }
         }
@@ -62,15 +63,17 @@ const InspeccionEspera = () => {
     // Efecto para manejar errores de WebSocket
     useEffect(() => {
         if (wsError) {
-            setError(wsError);
-            setLoading(false);
+            console.error('WebSocket error:', wsError);
+            // ✅ CORRECIÓN: Si hay error de WebSocket, redirigir a Inspeccion.jsx
+            console.log('❌ Error de WebSocket, redirigiendo a página de inspección...');
+            navigate(`/inspeccion/${hash}`);
         }
-    }, [wsError]);
+    }, [wsError, navigate, hash]);
 
-    // Contador de tiempo de espera
+    // Contador de tiempo de espera - solo si hay cola activa
     useEffect(() => {
-        if (queueStatus?.tiempo_ingreso) {
-            const startTime = new Date(queueStatus.tiempo_ingreso).getTime();
+        if (queueStatus?.data?.tiempo_ingreso) {
+            const startTime = new Date(queueStatus.data.tiempo_ingreso).getTime();
 
             // Inicializar el tiempo inmediatamente
             const currentTime = Date.now();
@@ -83,7 +86,7 @@ const InspeccionEspera = () => {
 
             return () => clearInterval(timer);
         }
-    }, [queueStatus?.tiempo_ingreso]);
+    }, [queueStatus?.data?.tiempo_ingreso]);
 
     // Contador para tiempo hasta el agendamiento
     useEffect(() => {
@@ -150,55 +153,8 @@ const InspeccionEspera = () => {
         // setTimeUntilAppointment(testTime);
     };
 
-    const addToQueue = async () => {
-        try {
-            console.log('🔄 Agregando a la cola de inspecciones...');
-
-            // Primero obtener la orden para obtener el ID correcto
-            const orderResponse = await fetch(API_ROUTES.INSPECTION_ORDERS.ORDER_BY_HASH(hash), {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (!orderResponse.ok) {
-                console.log('❌ No se pudo obtener la orden, saltando agregado a cola');
-                return;
-            }
-
-            const orderData = await orderResponse.json();
-            const orderId = orderData.data.id;
-
-            const response = await fetch(API_ROUTES.INSPECTION_QUEUE.ADD_TO_QUEUE_PUBLIC, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    inspection_order_id: orderId,
-                    hash_acceso: hash
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                // Si ya existe en la cola, no es un error
-                if (errorData.message && errorData.message.includes('Ya existe')) {
-                    console.log('✅ Ya existe en la cola');
-                    return;
-                }
-                throw new Error(errorData.message || 'Error al agregar a la cola');
-            }
-
-            const data = await response.json();
-            console.log('✅ Agregado a la cola exitosamente:', data);
-
-        } catch (error) {
-            console.error('Error adding to queue:', error);
-            // No mostrar error al usuario, solo log
-        }
-    };
+    // ✅ FUNCIÓN ELIMINADA: addToQueue ya no se usa
+    // Solo Inspeccion.jsx debe manejar el agregado a cola
 
     const fetchQueueStatus = async () => {
         try {
@@ -217,23 +173,30 @@ const InspeccionEspera = () => {
             const data = await response.json();
 
             if (data.success && data.data) {
-                setQueueStatus(data.data);
+                // ✅ CORRECIÓN: La estructura viene como data.data
+                const queueData = data.data;
+                setQueueStatus(queueData);
+                
                 // La posición ya viene incluida en la respuesta del endpoint público
-                if (data.data.position) {
-                    setPosition(data.data.position);
+                if (queueData.position) {
+                    setPosition(queueData.position);
                 }
 
                 // Si se asigna un inspector, redirigir a la página de inspección
-                if (data.data.inspector && data.data.estado === 'en_proceso') {
+                if (queueData.inspector && queueData.estado === 'en_proceso') {
                     console.log('🚀 Inspector asignado (API), redirigiendo a inspección...');
                     navigate(`/inspeccion/${hash}`);
                 }
             } else {
-                setError('No se encontró la orden en la cola');
+                // ✅ CORRECIÓN: Si no hay cola activa, redirigir a Inspeccion.jsx
+                console.log('❌ No se encontró cola activa, redirigiendo a página de inspección...');
+                navigate(`/inspeccion/${hash}`);
             }
         } catch (error) {
             console.error('Error fetching queue status:', error);
-            setError(error.message);
+            // ✅ CORRECIÓN: Si hay error al consultar cola, redirigir a Inspeccion.jsx
+            console.log('❌ Error consultando cola, redirigiendo a página de inspección...');
+            navigate(`/inspeccion/${hash}`);
         } finally {
             setLoading(false);
         }
@@ -345,8 +308,7 @@ const InspeccionEspera = () => {
                             </div>
                         </div>
                     </CardHeader>
-
-                    <CardContent className="space-y-6">
+                      <CardContent className="space-y-6">
                         {/* Agendamiento existente */}
                         {existingAppointment && (
                             <>
@@ -463,7 +425,7 @@ const InspeccionEspera = () => {
 
                         {/* Contador de tiempo y posición - solo mostrar si no hay agendamiento */}
                         {!existingAppointment && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                                 {/* Tiempo de espera */}
                                 <div className="bg-yellow-50 p-4 rounded-lg text-center">
                                     <Clock className="h-8 w-8 mx-auto mb-2 text-yellow-600" />

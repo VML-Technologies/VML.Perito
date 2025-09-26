@@ -799,7 +799,7 @@ const CoordinadorVML = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <div className='fixed bottom-0 right-0 border-t border-gray-200 bg-white p-2 text-base font-mono w-full text-center   '>
+            {/* <div className='fixed bottom-0 right-0 border-t border-gray-200 bg-white p-2 text-base font-mono w-full text-center   '>
                 <marquee behavior="scroll" direction="left" scrollamount="10" >
                     <div className='flex justify-between gap-2 text-center w-1/2 '>
                         <span>
@@ -819,7 +819,7 @@ const CoordinadorVML = () => {
                         </span>
                     </div>
                 </marquee>
-            </div>
+            </div> */}
         </div>
     );
 };

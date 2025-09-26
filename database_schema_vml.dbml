@@ -1,0 +1,1000 @@
+// ============================================
+// DIAGRAMA DE BASE DE DATOS VML.PERITO
+// Sistema de Gestión de Inspecciones Vehiculares
+// Movilidad Mundial - Colombia
+// ============================================
+
+Project VML_Perito_Sistema {
+  database_type: 'MSSQL'
+  Note: '''
+    Modelo de base de datos de las aplicaciones Movilidad Mundial e InspectYa.
+  '''
+}
+
+// ============================================
+// TABLAS DE GEOGRAFÍA Y ORGANIZACIÓN
+// ============================================
+
+Table departments {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Departamentos/Estados de Colombia'
+}
+
+Table cities {
+  id bigint [pk, increment]
+  name varchar(100) [not null]
+  department_id bigint [not null, ref: > departments.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Ciudades por departamento'
+}
+
+Table companies {
+  id bigint [pk, increment]
+  name varchar(150) [not null]
+  nit varchar(20) [unique]
+  city_id bigint [not null, ref: > cities.id]
+  address varchar(255)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Empresas del sistema'
+}
+
+Table sede_types {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Tipos de sede: CDA, Comercial, Soporte'
+}
+
+Table sedes {
+  id bigint [pk, increment]
+  company_id bigint [not null, ref: > companies.id]
+  sede_type_id bigint [not null, ref: > sede_types.id]
+  name varchar(150) [not null]
+  email varchar(150)
+  phone varchar(50)
+  city_id bigint [not null, ref: > cities.id]
+  address varchar(255)
+  latitude decimal(10,8) [note: 'Latitud GPS']
+  longitude decimal(11,8) [note: 'Longitud GPS']
+  active boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Sedes/oficinas de las empresas'
+}
+
+// ============================================
+// SISTEMA RBAC (Role-Based Access Control)
+// ============================================
+
+Table users {
+  id bigint [pk, increment]
+  sede_id bigint [ref: > sedes.id]
+  identification varchar(50) [unique]
+  name varchar(150) [not null]
+  email varchar(150) [not null, unique]
+  phone varchar(50)
+  office varchar(50)
+  password varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  notification_channel_in_app_enabled boolean [default: true]
+  notification_channel_sms_enabled boolean [default: true]
+  notification_channel_email_enabled boolean [default: true]
+  notification_channel_whatsapp_enabled boolean [default: true]
+  intermediary_key varchar(255)
+  temporary_password boolean [default: false]
+  password_reset_token varchar(255) [unique]
+  password_reset_expires timestamp
+  password_reset_attempts integer [default: 0]
+  password_reset_locked_until timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Usuarios del sistema con configuración de notificaciones'
+}
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  is_active boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Roles del sistema RBAC'
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  resource varchar(100) [not null, note: 'Recurso: users, departments, etc.']
+  action varchar(50) [not null, note: 'Acción: create, read, update, delete']
+  endpoint varchar(200) [note: 'Endpoint específico']
+  method varchar(10) [note: 'Método HTTP: GET, POST, PUT, DELETE']
+  is_active boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Permisos granulares del sistema'
+}
+
+Table user_roles {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  role_id bigint [not null, ref: > roles.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    (user_id, role_id) [unique]
+  }
+  
+  Note: 'Tabla pivot Usuario-Rol (N:N)'
+}
+
+Table role_permissions {
+  id bigint [pk, increment]
+  role_id bigint [not null, ref: > roles.id]
+  permission_id bigint [not null, ref: > permissions.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    (role_id, permission_id) [unique]
+  }
+  
+  Note: 'Tabla pivot Rol-Permiso (N:N)'
+}
+
+// ============================================
+// SISTEMA DE INSPECCIONES PRINCIPALES
+// ============================================
+
+Table inspection_orders_statuses {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Estados principales de órdenes de inspección'
+}
+
+Table inspection_orders {
+  id bigint [pk, increment]
+  user_id bigint [not null, ref: > users.id]
+  sede_id bigint [ref: > sedes.id]
+  assigned_agent_id bigint [ref: > users.id, note: 'Agente del contact center asignado']
+  commercial_user_id bigint [ref: > users.id, note: 'Usuario comercial creador']
+  producto varchar(50) [not null]
+  callback_url text [not null]
+  numero varchar(50) [not null]
+  intermediario varchar(50) [not null]
+  clave_intermediario varchar(255) [not null]
+  sucursal varchar(50)
+  cod_oficina varchar(10)
+  fecha date [not null]
+  vigencia varchar(10)
+  avaluo varchar(50)
+  vlr_accesorios varchar(50)
+  placa varchar(6) [not null]
+  marca varchar(100)
+  linea varchar(100)
+  modelo varchar(4)
+  color varchar(50)
+  numero_motor varchar(100)
+  numero_chasis varchar(100)
+  numero_serie varchar(100)
+  cilindraje varchar(50)
+  combustible varchar(50)
+  tipo_vehiculo varchar(50)
+  clase_vehiculo varchar(50)
+  numero_puertas varchar(2)
+  numero_pasajeros varchar(3)
+  peso_bruto varchar(10)
+  peso_neto varchar(10)
+  longitud varchar(10)
+  altura varchar(10)
+  ancho varchar(10)
+  numero_ejes varchar(2)
+  importado varchar(2)
+  blindado varchar(2)
+  polarizado varchar(2)
+  ensenanza varchar(2)
+  particular varchar(2)
+  taxi varchar(2)
+  diplomatico varchar(2)
+  numero_licencia varchar(50)
+  categoria_licencia varchar(10)
+  fecha_expedicion_licencia date
+  fecha_vencimiento_licencia date
+  restricciones_licencia text
+  nombre_propietario varchar(250)
+  tipo_propietario varchar(20)
+  numero_propietario varchar(50)
+  nombre_contacto varchar(250) [not null]
+  celular_contacto varchar(10) [not null]
+  correo_contacto varchar(150) [not null]
+  comentarios text
+  status varchar(100) [not null, ref: > inspection_orders_statuses.name]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    placa [name: 'idx_inspection_orders_placa']
+    status [name: 'idx_inspection_orders_status']
+    assigned_agent_id [name: 'idx_inspection_orders_assigned_agent']
+    (intermediario, clave_intermediario) [name: 'idx_inspection_orders_intermediario']
+    created_at [name: 'idx_inspection_orders_created_at']
+  }
+  
+  Note: 'Órdenes de inspección - tabla central del sistema'
+}
+
+Table inspection_modalities {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Modalidades: En Sede, A Domicilio, Virtual'
+}
+
+Table vehicle_types {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Tipos de vehículos: Livianos, Pesados, Motos'
+}
+
+Table sede_vehicle_types {
+  id bigint [pk, increment]
+  sede_id bigint [not null, ref: > sedes.id]
+  vehicle_type_id bigint [not null, ref: > vehicle_types.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    (sede_id, vehicle_type_id) [unique]
+  }
+  
+  Note: 'Tabla pivot Sede-TipoVehículo (N:N)'
+}
+
+Table sede_modality_availability {
+  id bigint [pk, increment]
+  sede_id bigint [not null, ref: > sedes.id]
+  inspection_modality_id bigint [not null, ref: > inspection_modalities.id]
+  is_available boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Disponibilidad de modalidades por sede'
+}
+
+// ============================================
+// SISTEMA DE CITAS Y AGENDAMIENTO
+// ============================================
+
+Table appointment_statuses {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Estados específicos de citas'
+}
+
+Table appointments {
+  id bigint [pk, increment]
+  sede_id bigint [not null, ref: > sedes.id]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  inspection_modality_id bigint [not null, ref: > inspection_modalities.id]
+  user_id bigint [ref: > users.id]
+  call_log_id bigint [ref: > call_logs.id, note: 'Llamada asociada al agendamiento']
+  scheduled_date date [not null]
+  scheduled_time time [not null]
+  status appointment_status_enum [not null, default: 'pending']
+  notes text
+  direccion_inspeccion varchar(1000) [note: 'Dirección para inspección a domicilio']
+  observaciones varchar(1000) [note: 'Observaciones del agendamiento']
+  session_id varchar(100) [unique, note: 'ID único de sesión para la inspección']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    (scheduled_date, scheduled_time) [name: 'idx_appointments_schedule']
+    sede_id [name: 'idx_appointments_sede']
+    status [name: 'idx_appointments_status']
+  }
+  
+  Note: 'Citas programadas para inspecciones'
+}
+
+Enum appointment_status_enum {
+  pending
+  assigned
+  sent
+  delivered
+  read
+  completed
+  failed
+  revision_supervisor
+}
+
+Table schedule_templates {
+  id bigint [pk, increment]
+  sede_id bigint [not null, ref: > sedes.id]
+  inspection_modality_id bigint [not null, ref: > inspection_modalities.id]
+  day_of_week integer [not null, note: '0=domingo, 1=lunes, ..., 6=sábado']
+  start_time time [not null]
+  end_time time [not null]
+  slot_duration integer [not null, default: 30, note: 'Duración del slot en minutos']
+  max_appointments integer [not null, default: 1, note: 'Máx citas por slot']
+  is_active boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Plantillas de horarios por sede y modalidad'
+}
+
+Table schedule_exclusions {
+  id bigint [pk, increment]
+  schedule_template_id bigint [not null, ref: > schedule_templates.id]
+  name varchar(200) [not null, note: 'Nombre descriptivo del período de exclusión']
+  start_time time [not null, note: 'Hora de inicio del período de exclusión']
+  end_time time [not null, note: 'Hora de fin del período de exclusión']
+  days_pattern varchar(50) [note: 'Patrón de días específicos para la exclusión']
+  active boolean [not null, default: true, note: 'Si la exclusión está activa']
+  exclusion_type varchar(20) [not null, default: 'CUSTOM', note: 'Tipo: BREAK, LUNCH, MAINTENANCE, CUSTOM']
+  priority integer [not null, default: 0, note: 'Prioridad de la exclusión']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Exclusiones y bloques en horarios específicos'
+}
+
+// ============================================
+// SISTEMA DE CONTACT CENTER
+// ============================================
+
+Table call_statuses {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  creates_schedule boolean [not null, default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Estados de llamadas del contact center'
+}
+
+Table call_logs {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  agent_id bigint [ref: > users.id, note: 'Agente que realizó la llamada']
+  call_time timestamp [not null, default: `now()`]
+  status_id bigint [not null, ref: > call_statuses.id]
+  comments text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    inspection_order_id [name: 'idx_call_logs_order']
+    agent_id [name: 'idx_call_logs_agent']
+    call_time [name: 'idx_call_logs_time']
+  }
+  
+  Note: 'Registro de llamadas del contact center'
+}
+
+Table inspection_order_contact_history {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  nombre_contacto varchar(250) [not null, note: 'Nombre anterior']
+  celular_contacto varchar(10) [not null, note: 'Celular anterior']
+  correo_contacto varchar(150) [not null, note: 'Correo anterior']
+  user_id bigint [not null, ref: > users.id, note: 'Usuario que realizó el cambio']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    inspection_order_id [name: 'idx_contact_history_inspection_order']
+    user_id [name: 'idx_contact_history_user']
+  }
+  
+  Note: 'Historial de cambios de contacto'
+}
+
+Table inspection_order_comment_history {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  comentarios text [not null, note: 'Contenido del comentario']
+  user_id bigint [not null, ref: > users.id, note: 'Usuario que creó el comentario']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    inspection_order_id [name: 'idx_comment_history_inspection_order']
+    user_id [name: 'idx_comment_history_user']
+    created_at [name: 'idx_comment_history_created_at']
+  }
+  
+  Note: 'Historial de comentarios en órdenes'
+}
+
+Table inspection_order_sms_logs {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  user_id bigint [not null, ref: > users.id]
+  phone_number varchar(20) [not null]
+  message text [not null]
+  provider varchar(50) [not null]
+  provider_response text
+  status sms_status_enum [not null, default: 'pending']
+  sent_at timestamp
+  delivered_at timestamp
+  error_message text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Logs de SMS enviados'
+}
+
+Table inspection_order_email_logs {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  user_id bigint [not null, ref: > users.id]
+  to_email varchar(255) [not null]
+  cc_emails text
+  bcc_emails text
+  subject varchar(500) [not null]
+  html_body text [not null]
+  text_body text
+  template_name varchar(100)
+  template_data text
+  provider varchar(50) [not null]
+  provider_message_id varchar(255)
+  provider_response text
+  status email_status_enum [not null, default: 'pending']
+  sent_at timestamp
+  delivered_at timestamp
+  opened_at timestamp
+  clicked_at timestamp
+  bounced_at timestamp
+  complained_at timestamp
+  error_message text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Logs de emails enviados'
+}
+
+Enum sms_status_enum {
+  pending
+  sent
+  delivered
+  failed
+  expired
+}
+
+Enum email_status_enum {
+  pending
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  complained
+  failed
+  expired
+}
+
+// ============================================
+// SISTEMA DE NOTIFICACIONES
+// ============================================
+
+Table notification_channels {
+  id bigint [pk, increment]
+  name varchar(50) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Canales: email, sms, in_app, whatsapp'
+}
+
+Table notification_types {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Tipos de notificación del sistema'
+}
+
+Table notification_config {
+  id bigint [pk, increment]
+  notification_type_id bigint [not null, ref: > notification_types.id]
+  notification_channel_id bigint [not null, ref: > notification_channels.id]
+  is_enabled boolean [not null, default: true]
+  template text
+  subject varchar(255)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Configuración tipo-canal de notificaciones'
+}
+
+Table notifications {
+  id bigint [pk, increment]
+  notification_config_id bigint [not null, ref: > notification_config.id]
+  recipient_user_id bigint [ref: > users.id]
+  appointment_id bigint [ref: > appointments.id]
+  inspection_order_id bigint [ref: > inspection_orders.id]
+  recipient_email varchar(255)
+  recipient_phone varchar(20)
+  subject varchar(255)
+  content text [not null]
+  status notification_status_enum [not null, default: 'pending']
+  sent_at timestamp
+  delivered_at timestamp
+  read_at timestamp
+  error_message text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    status [name: 'idx_notifications_status']
+    recipient_user_id [name: 'idx_notifications_recipient']
+    sent_at [name: 'idx_notifications_sent_at']
+  }
+  
+  Note: 'Notificaciones enviadas/pendientes'
+}
+
+Enum notification_status_enum {
+  pending
+  sent
+  delivered
+  read
+  failed
+  expired
+}
+
+Table notification_queue {
+  id bigint [pk, increment]
+  notification_id bigint [not null, ref: > notifications.id]
+  priority integer [not null, default: 0]
+  scheduled_for timestamp
+  attempts integer [not null, default: 0]
+  max_attempts integer [not null, default: 3]
+  last_attempt_at timestamp
+  status queue_status_enum [not null, default: 'pending']
+  error_message text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Cola de procesamiento de notificaciones'
+}
+
+Enum queue_status_enum {
+  pending
+  processing
+  completed
+  failed
+  expired
+}
+
+// ============================================
+// SISTEMA DE EVENTOS Y PLANTILLAS
+// ============================================
+
+Table events {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  is_active boolean [not null, default: true]
+  created_by bigint [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Eventos del sistema para triggers'
+}
+
+Table event_listeners {
+  id bigint [pk, increment]
+  event_id bigint [not null, ref: > events.id]
+  notification_type_id bigint [not null, ref: > notification_types.id]
+  is_active boolean [not null, default: true]
+  conditions text [note: 'Condiciones JSON para activar']
+  created_by bigint [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Escuchadores de eventos para notificaciones'
+}
+
+Table notification_templates {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description text
+  is_active boolean [not null, default: true]
+  created_by bigint [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Plantillas base de notificación'
+}
+
+Table template_versions {
+  id bigint [pk, increment]
+  template_id bigint [not null, ref: > notification_templates.id]
+  version_number integer [not null]
+  subject varchar(255)
+  content text [not null]
+  variables text [note: 'Variables disponibles JSON']
+  is_active boolean [not null, default: true]
+  created_by bigint [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Versiones de plantillas con control de cambios'
+}
+
+Table channel_configs {
+  id bigint [pk, increment]
+  channel_name varchar(50) [not null]
+  config_key varchar(100) [not null]
+  config_value text
+  is_encrypted boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  description text
+  created_by bigint [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Configuración específica por canal'
+}
+
+// ============================================
+// SISTEMA DE WEBHOOKS
+// ============================================
+
+Table webhook_api_keys {
+  id bigint [pk, increment]
+  key_name varchar(100) [not null]
+  api_key varchar(255) [not null, unique]
+  description text
+  is_active boolean [not null, default: true]
+  created_by bigint [not null, ref: > users.id]
+  last_used_at timestamp
+  expires_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Claves API para webhooks externos'
+}
+
+Table webhook_logs {
+  id bigint [pk, increment]
+  api_key_id bigint [not null, ref: > webhook_api_keys.id]
+  endpoint varchar(255) [not null]
+  method varchar(10) [not null]
+  payload text
+  response_status integer
+  response_body text
+  processing_time_ms integer
+  ip_address varchar(45)
+  user_agent text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Logs de uso de webhooks'
+}
+
+// ============================================
+// SISTEMA DE CONSULTAS Y LOGS
+// ============================================
+
+Table plate_queries {
+  id bigint [pk, increment]
+  order_id bigint [not null, ref: > inspection_orders.id]
+  plate varchar(6) [not null]
+  query_type varchar(50) [not null]
+  response_data text
+  status query_status_enum [not null, default: 'pending']
+  queried_at timestamp [default: `now()`]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Consultas de placas vehiculares'
+}
+
+Enum query_status_enum {
+  pending
+  completed
+  failed
+  timeout
+}
+
+// ============================================
+// SISTEMA DE INSPECCIÓN DETALLADA
+// ============================================
+
+Table inspection_categories {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Categorías de elementos a inspeccionar'
+}
+
+Table inspection_parts {
+  id bigint [pk, increment]
+  categoria_id bigint [not null, ref: > inspection_categories.id]
+  nombre varchar(100) [not null]
+  description text
+  is_required boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Partes específicas de inspección por categoría'
+}
+
+Table inspection_category_responses {
+  id bigint [pk, increment]
+  category_id bigint [not null, ref: > inspection_categories.id]
+  response_text varchar(255) [not null]
+  is_pass boolean [not null, default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Respuestas posibles por categoría'
+}
+
+Table mechanical_tests {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Pruebas mecánicas específicas'
+}
+
+Table inspection_orders_status_internal {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Estados internos detallados de inspección'
+}
+
+Table inspection_states {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  appointment_id bigint [ref: > appointments.id]
+  inspection_order_status varchar(100) [not null, ref: > inspection_orders_statuses.name]
+  inspection_order_status_internal varchar(100) [ref: > inspection_orders_status_internal.name]
+  appointment_status varchar(100) [ref: > appointment_statuses.name]
+  user_id bigint [not null, ref: > users.id]
+  notes text
+  changed_at timestamp [not null, default: `now()`]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Estados detallados y cambios de inspección'
+}
+
+Table inspection_queue {
+  id bigint [pk, increment]
+  inspection_order_id bigint [not null, ref: > inspection_orders.id]
+  placa varchar(10) [not null]
+  numero_orden varchar(50) [not null]
+  nombre_cliente varchar(100) [not null]
+  hash_acceso varchar(100) [not null]
+  estado queue_inspection_enum [not null, default: 'en_cola']
+  inspector_asignado_id bigint [ref: > users.id]
+  tiempo_ingreso timestamp [not null, default: `now()`]
+  tiempo_inicio timestamp
+  tiempo_fin timestamp
+  prioridad integer [default: 1]
+  observaciones text
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  indexes {
+    estado [name: 'idx_inspection_queue_estado']
+    inspector_asignado_id [name: 'idx_inspection_queue_inspector']
+    tiempo_ingreso [name: 'idx_inspection_queue_tiempo_ingreso']
+  }
+  
+  Note: 'Cola de inspecciones para asignación'
+}
+
+Enum queue_inspection_enum {
+  en_cola
+  en_proceso
+  completada
+  cancelada
+}
+
+Table image_captures {
+  id bigint [pk, increment]
+  appointment_id bigint [not null, ref: > appointments.id]
+  image_url varchar(500) [not null]
+  image_type varchar(50)
+  description text
+  captured_at timestamp [default: `now()`]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp [null]
+  
+  Note: 'Capturas de imágenes durante inspecciones'
+}
+
+// ============================================
+// NOTAS FINALES
+// ============================================
+
+// Todos los índices están integrados en las definiciones de tabla
+// El esquema incluye soft deletes (deleted_at) en todas las tablas principales
+// Las relaciones están completamente definidas con foreign keys
+// Los enums proporcionan valores consistentes para estados
+
+Table "dbo"."accessories" {
+  "id" "BIGINT IDENTITY(1,1)" [not null]
+  "created_at" DATETIMEOFFSET(7)
+  "updated_at" DATETIMEOFFSET(7)
+  "inspection_id" NVARCHAR(100) [not null]
+  "description" NVARCHAR(255) [not null]
+  "brand" NVARCHAR(100)
+  "reference" NVARCHAR(100)
+  "unit" NVARCHAR(20) [not null, default: `N'UN'`]
+  "[value]" DECIMAL(15,2) [not null, default: 0]
+  "quantity" INT [not null, default: 1]
+  "total_value" DECIMAL(15,2) [not null, default: 0]
+  "notes" NVARCHAR(MAX)
+  "deleted_at" DATETIMEOFFSET(7)
+
+  Indexes {
+    id [pk]
+    description [name: "accessory_description_idx"]
+    inspection_id [name: "accessory_inspection_idx"]
+    deleted_at [name: "accessories_deleted_at_idx"]
+  }
+}
+
+Table "dbo"."checklists" {
+  "id" "BIGINT IDENTITY(1,1)" [not null]
+  "created_at" DATETIMEOFFSET(7)
+  "updated_at" DATETIMEOFFSET(7)
+  "name" NVARCHAR(255) [not null]
+  "description" NVARCHAR(MAX)
+  "deleted_at" DATETIMEOFFSET(7)
+
+  Indexes {
+    id [pk]
+    deleted_at [name: "checklists_deleted_at_idx"]
+  }
+}
+
+Table "dbo"."inspection_categories" {
+  "id" "BIGINT IDENTITY(1,1)" [not null]
+  "created_at" DATETIMEOFFSET(7)
+  "updated_at" DATETIMEOFFSET(7)
+  "categoria" NVARCHAR(100) [not null]
+  "deleted_at" DATETIMEOFFSET(7)
+
+  Indexes {
+    id [pk]
+    categoria [unique]
+    deleted_at [name: "inspection_categories_deleted_at_idx"]
+  }
+}
+
+Table "dbo"."inspection_parts" {
+  "id" "BIGINT IDENTITY(1,1)" [not null]
+  "created_at" DATETIMEOFFSET(7)
+  "updated_at" DATETIMEOFFSET(7)
+  "categoria" NVARCHAR(100) [not null]
+  "parte" NVARCHAR(200) [not null]
+  "malo" DECIMAL(10,2) [not null, default: 0]
+  "regular" DECIMAL(10,2) [not null, default: 0]
+  "bueno" DECIMAL(10,2) [not null, default: 0]
+  "minimo" INT [not null, default: 0]
+  "opciones" NVARCHAR(MAX)
+  "deleted_at" DATETIMEOFFSET(7)
+  "categoria_id" bigint [not null, ref: > inspection_categories.id]
+  Indexes {
+    id [pk]
+    deleted_at [name: "inspection_parts_deleted_at_idx"]
+  }
+}
+
+Table "dbo"."inspection_part_responses" {
+  "id" "BIGINT IDENTITY(1,1)" [not null]
+  "created_at" DATETIMEOFFSET(7)
+  "updated_at" DATETIMEOFFSET(7)
+  "part_id" bigint [not null, ref: > inspection_parts.id]
+  "inspection_id" NVARCHAR(100)
+  "[value]" NVARCHAR(50)
+  "timestamp" DATETIMEOFFSET(7)
+  "comment" NVARCHAR(MAX)
+  "category" NVARCHAR(100)
+  "part_name" NVARCHAR(200)
+  "comment_part" NVARCHAR(MAX)
+  "comment_category" NVARCHAR(MAX)
+  "deleted_at" DATETIMEOFFSET(7)
+
+  Indexes {
+    id [pk]
+    part_id [name: "inspection_part_response_part_idx"]
+    inspection_id [name: "inspection_part_response_inspection_idx"]
+    deleted_at [name: "inspection_part_responses_deleted_at_idx"]
+  }
+}

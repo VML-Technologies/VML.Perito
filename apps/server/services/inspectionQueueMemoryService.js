@@ -80,17 +80,20 @@ class InspectionQueueMemoryService {
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
                 
-                if (tiempoMinutos <= 5) {
-                    return {
-                        success: true,
-                        data: existingEntry,
-                        tiempo_en_cola: tiempoMinutos,
-                        message: 'La orden ya está en la cola. Usando entrada existente.'
-                    };
-                } else {
-                    // Remover entrada antigua
-                    await this.removeFromQueue(existingEntry.id);
-                }
+                // ✅ CORRECIÓN: Siempre usar entrada existente, sin importar el tiempo
+                // Solo actualizar el último acceso para indicar actividad
+                const { InspectionQueue } = await import('../models/index.js');
+                await InspectionQueue.update(
+                    { updated_at: new Date() },
+                    { where: { id: existingEntry.id } }
+                );
+                
+                return {
+                    success: true,
+                    data: existingEntry,
+                    tiempo_en_cola: tiempoMinutos,
+                    message: 'La orden ya está en la cola. Manteniendo posición original.'
+                };
             }
 
             // LÓGICA CORREGIDA: Si hay entrada activa en la cola, marcarla como inactiva
