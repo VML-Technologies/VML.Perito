@@ -259,15 +259,48 @@ class InspectionQueueController extends BaseController {
         try {
             const { hash } = req.params;
 
-            // Usar el servicio de memoria
-            const queueStatus = inspectionQueueMemoryService.getQueueStatusByHash(hash);
+            // ✅ CORRECIÓN: Consulta directa a DB como en coordinatorDataService
+            const queueEntry = await InspectionQueue.findOne({
+                where: {
+                    hash_acceso: hash,
+                    is_active: true,
+                    deleted_at: null
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'celular_contacto']
+                    },
+                    {
+                        model: User,
+                        as: 'inspector',
+                        attributes: ['id', 'name', 'email']
+                    }
+                ]
+            });
 
-            if (!queueStatus) {
+            if (!queueEntry) {
                 return this.error(res, 'Entrada en cola no encontrada', null, 404);
             }
 
+            // Calcular posición en la cola
+            const position = await InspectionQueue.count({
+                where: {
+                    estado: 'en_cola',
+                    tiempo_ingreso: { [Op.lte]: queueEntry.tiempo_ingreso },
+                    is_active: true,
+                    deleted_at: null
+                }
+            });
+
+            const queueData = {
+                ...queueEntry.toJSON(),
+                position
+            };
+
             return this.success(res, {
-                data: queueStatus
+                data: queueData
             });
 
         } catch (error) {
