@@ -51,11 +51,18 @@ const InspeccionEspera = () => {
             }
             setLoading(false);
 
-            // Si se asigna un inspector, redirigir a la página de inspección
+            // ✅ CORRECIÓN: Si se asigna un inspector, redirigir a la página de inspección
             if (queueData.inspector && queueData.estado === 'en_proceso') {
                 console.log('🚀 Inspector asignado, redirigiendo a inspección...');
                 console.log('📊 Estado actual:', queueData);
-                navigate(`/inspeccion/${hash}`);
+                // Redirigir a la página de inspección del appointment
+                if (existingAppointment && existingAppointment.session_id) {
+                    const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
+                    const inspectionUrl = `${base}/inspection/${existingAppointment.session_id}`;
+                    window.location.href = inspectionUrl;
+                } else {
+                    navigate(`/inspeccion/${hash}`);
+                }
             }
         }
     }, [wsQueueStatus, navigate, hash]);
@@ -64,16 +71,19 @@ const InspeccionEspera = () => {
     useEffect(() => {
         if (wsError) {
             console.error('WebSocket error:', wsError);
-            // ✅ CORRECIÓN: Si hay error de WebSocket, redirigir a Inspeccion.jsx
-            console.log('❌ Error de WebSocket, redirigiendo a página de inspección...');
-            navigate(`/inspeccion/${hash}`);
+            // ✅ CORRECIÓN: Si hay error de WebSocket, mostrar página de espera
+            console.log('❌ Error de WebSocket, mostrando página de espera...');
+            // No hacer redirect, mostrar la página de espera con mensaje azul
         }
     }, [wsError, navigate, hash]);
 
     // Contador de tiempo de espera - solo si hay cola activa
     useEffect(() => {
-        if (queueStatus?.data?.tiempo_ingreso) {
-            const startTime = new Date(queueStatus.data.tiempo_ingreso).getTime();
+        // ✅ CORRECIÓN: Usar la estructura correcta de queueStatus
+        const tiempoIngreso = queueStatus?.tiempo_ingreso || queueStatus?.data?.tiempo_ingreso;
+        
+        if (tiempoIngreso) {
+            const startTime = new Date(tiempoIngreso).getTime();
 
             // Inicializar el tiempo inmediatamente
             const currentTime = Date.now();
@@ -86,7 +96,7 @@ const InspeccionEspera = () => {
 
             return () => clearInterval(timer);
         }
-    }, [queueStatus?.data?.tiempo_ingreso]);
+    }, [queueStatus?.tiempo_ingreso, queueStatus?.data?.tiempo_ingreso]);
 
     // Contador para tiempo hasta el agendamiento
     useEffect(() => {
@@ -138,8 +148,16 @@ const InspeccionEspera = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.data.appointment) {
+                // ✅ CORRECIÓN: Solo considerar appointments activos (no finales)
+                // El backend ya aplica la lógica correcta, solo usar si show_start_button es false
+                if (data.data.appointment && !data.data.show_start_button) {
+                    console.log('🚀 Appointment activo encontrado:', data.data.appointment);
                     setExistingAppointment(data.data.appointment);
+                } else {
+                    console.log('🚀 No hay appointment activo, usuario debe esperar en cola');
+                    setExistingAppointment(null);
+                    // ✅ CORRECIÓN: NO hacer redirect automático, mostrar página de espera
+                    console.log('🚀 Mostrando página de espera con mensaje azul');
                 }
             }
         } catch (error) {
@@ -182,21 +200,28 @@ const InspeccionEspera = () => {
                     setPosition(queueData.position);
                 }
 
-                // Si se asigna un inspector, redirigir a la página de inspección
-                if (queueData.inspector && queueData.estado === 'en_proceso') {
-                    console.log('🚀 Inspector asignado (API), redirigiendo a inspección...');
+            // ✅ CORRECIÓN: Si se asigna un inspector, redirigir a la página de inspección
+            if (queueData.inspector && queueData.estado === 'en_proceso') {
+                console.log('🚀 Inspector asignado (API), redirigiendo a inspección...');
+                // Redirigir a la página de inspección del appointment
+                if (existingAppointment && existingAppointment.session_id) {
+                    const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
+                    const inspectionUrl = `${base}/inspection/${existingAppointment.session_id}`;
+                    window.location.href = inspectionUrl;
+                } else {
                     navigate(`/inspeccion/${hash}`);
                 }
+            }
             } else {
-                // ✅ CORRECIÓN: Si no hay cola activa, redirigir a Inspeccion.jsx
-                console.log('❌ No se encontró cola activa, redirigiendo a página de inspección...');
-                navigate(`/inspeccion/${hash}`);
+                // ✅ CORRECIÓN: Si no hay cola activa, mostrar página de espera
+                console.log('❌ No se encontró cola activa, mostrando página de espera...');
+                // No hacer redirect, mostrar la página de espera con mensaje azul
             }
         } catch (error) {
             console.error('Error fetching queue status:', error);
-            // ✅ CORRECIÓN: Si hay error al consultar cola, redirigir a Inspeccion.jsx
-            console.log('❌ Error consultando cola, redirigiendo a página de inspección...');
-            navigate(`/inspeccion/${hash}`);
+            // ✅ CORRECIÓN: Si hay error al consultar cola, mostrar página de espera
+            console.log('❌ Error consultando cola, mostrando página de espera...');
+            // No hacer redirect, mostrar la página de espera con mensaje azul
         } finally {
             setLoading(false);
         }
@@ -308,6 +333,7 @@ const InspeccionEspera = () => {
                             </div>
                         </div>
                     </CardHeader>
+
                       <CardContent className="space-y-6">
                         {/* Agendamiento existente */}
                         {existingAppointment && (

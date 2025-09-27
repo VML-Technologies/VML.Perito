@@ -1383,7 +1383,7 @@ class InspectionOrderController extends BaseController {
                     {
                         model: Appointment,
                         as: 'appointments',
-                        attributes: ['id', 'scheduled_date', 'scheduled_time', 'session_id', 'status'],
+                        // attributes: ['id', 'scheduled_date', 'scheduled_time', 'session_id', 'status'],
                         include: [
                             {
                                 model: Sede,
@@ -1407,28 +1407,66 @@ class InspectionOrderController extends BaseController {
                 });
             }
 
+            // ✅ CORRECIÓN: Aplicar la misma lógica que en inspectionQueueController
+            // Verificar si ya existe un appointment activo (no en estados finales)
+            const activeAppointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id: order.id,
+                    deleted_at: null,
+                    status: {
+                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
+                    }
+                }
+            });
+
+            console.log('🚀 activeAppointments encontrados:', activeAppointments.length);
+
             // Determinar si se debe mostrar el botón de iniciar inspección
             let showStartButton = true;
             let appointmentStatus = null;
+            let activeAppointment = null;
             
-            if (order.appointments && order.appointments.length > 0) {
+            if (activeAppointments.length > 0) {
+                // ✅ HAY appointment activo - Usuario debe ir al APPOINTMENT (redirigir a inspección)
+                activeAppointment = activeAppointments[0];
+                appointmentStatus = activeAppointment.status;
+                showStartButton = false; // NO mostrar botón, debe ir directo al appointment
+                console.log('🚀 Appointment activo encontrado, usuario debe ir al APPOINTMENT');
+            } else if (order.appointments && order.appointments.length > 0) {
+                // Solo hay appointments en estados finales - Usuario debe ESPERAR (puede iniciar nueva)
                 const appointment = order.appointments[0];
                 appointmentStatus = appointment.status;
-                
-                // Estados finales que requieren mostrar el botón (mismos que redirect en endpoint externo)
-                // Estos estados permiten crear una nueva inspección
-                const finalStates = [
-                    'ineffective_no_retry',
-                    'revision_supervisor', 
-                    'call_finished',
-                    'failed',
-                    'ineffective_with_retry',
-                    'completed'
-                ];
-                
-                // Si está en estado final, mostrar botón para nueva inspección
-                // Si está en estado activo, mostrar appointment existente
-                showStartButton = finalStates.includes(appointment.status);
+                showStartButton = true; // SÍ mostrar botón para iniciar nueva inspección
+                console.log('🚀 Solo appointments finales, usuario debe ESPERAR (puede iniciar nueva)');
+            } else {
+                // No hay appointments - Usuario debe ESPERAR (puede iniciar inspección)
+                showStartButton = true; // SÍ mostrar botón para iniciar inspección
+                console.log('🚀 No hay appointments, usuario debe ESPERAR (puede iniciar inspección)');
+            }
+
+            // Preparar datos del appointment para la respuesta
+            let appointmentData = null;
+            if (activeAppointment) {
+                // Si hay appointment activo, usar ese
+                appointmentData = {
+                    id: activeAppointment.id,
+                    scheduled_date: activeAppointment.scheduled_date,
+                    scheduled_time: activeAppointment.scheduled_time,
+                    session_id: activeAppointment.session_id,
+                    status: activeAppointment.status
+                };
+            } else if (order.appointments && order.appointments.length > 0) {
+                // Si no hay appointment activo pero sí hay appointments finales, usar el primero
+                const appointment = order.appointments[0];
+                appointmentData = {
+                    id: appointment.id,
+                    scheduled_date: appointment.scheduled_date,
+                    scheduled_time: appointment.scheduled_time,
+                    session_id: appointment.session_id,
+                    status: appointment.status,
+                    sede: appointment.sede,
+                    modality: appointment.inspectionModality
+                };
             }
 
             res.json({
@@ -1442,15 +1480,7 @@ class InspectionOrderController extends BaseController {
                     status: order.InspectionOrderStatus?.name || 'Sin estado',
                     created_at: order.created_at,
                     show_start_button: showStartButton,
-                    appointment: order.appointments && order.appointments.length > 0 ? {
-                        id: order.appointments[0].id,
-                        scheduled_date: order.appointments[0].scheduled_date,
-                        scheduled_time: order.appointments[0].scheduled_time,
-                        session_id: order.appointments[0].session_id,
-                        status: order.appointments[0].status,
-                        sede: order.appointments[0].sede,
-                        modality: order.appointments[0].inspectionModality
-                    } : null
+                    appointment: appointmentData
                 }
             });
 

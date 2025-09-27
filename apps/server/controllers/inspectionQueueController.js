@@ -1,5 +1,5 @@
 import { BaseController } from './baseController.js';
-import { InspectionQueue, InspectionOrder, User, Role } from '../models/index.js';
+import { InspectionQueue, InspectionOrder, User, Role, Appointment } from '../models/index.js';
 import { Op } from 'sequelize';
 import inspectionQueueMemoryService from '../services/inspectionQueueMemoryService.js';
 import socketManager from '../websocket/socketManager.js';
@@ -88,7 +88,20 @@ class InspectionQueueController extends BaseController {
                 }
             });
 
-            if (existingEntry) {
+            const appointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id,
+                    deleted_at: null,
+                    status: {
+                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
+                    }
+                }
+            });
+
+            console.log('🚀 appointments:', appointments);
+
+            if (existingEntry && appointments.length == 0) {                
+
                 // Calcular tiempo transcurrido desde el ingreso
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
@@ -141,6 +154,8 @@ class InspectionQueueController extends BaseController {
 
     // Agregar entrada a la cola (versión pública sin autenticación)
     async addToQueuePublic(req, res) {
+        console.log("############################# DEBUG #############################");
+        console.log('🚀 addToQueuePublic');
         try {
             const { inspection_order_id, hash_acceso } = req.body;
 
@@ -150,24 +165,119 @@ class InspectionQueueController extends BaseController {
                 return this.error(res, 'Orden de inspección no encontrada', null, 404);
             }
 
-            // Usar el servicio de memoria
-            const result = await inspectionQueueMemoryService.addToQueue(
-                inspection_order_id, 
-                hash_acceso, 
-                inspectionOrder
-            );
+            // ✅ CORRECIÓN: Consulta directa a DB en lugar de servicio en memoria
+            // Verificar si ya existe una entrada en la cola para esta orden
+            const existingEntry = await InspectionQueue.findOne({
+                where: {
+                    inspection_order_id,
+                    estado: { [Op.in]: ['en_cola', 'en_proceso'] },
+                    is_active: true,
+                    deleted_at: null
+                }
+            });
+            console.log('🚀 existingEntry:', existingEntry);
+
+            // Verificar si ya existe un appointment activo
+            const appointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id,
+                    deleted_at: null,
+                    status: {
+                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
+                    }
+                }
+            });
+            console.log('🚀 appointments:', appointments);
+            console.log('🚀 appointments encontrados:', appointments.length);
+            console.log('🚀 existingEntry && appointments.length != 0:', existingEntry && appointments.length != 0);
+            if (existingEntry && appointments.length == 0) {
+                // Calcular tiempo transcurrido desde el ingreso
+                const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
+                const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
+                
+                // Actualizar timestamp de actividad
+                await existingEntry.update({ updated_at: new Date() });
+                
+                // Calcular posición en la cola
+                const position = await InspectionQueue.count({
+                    where: {
+                        estado: 'en_cola',
+                        tiempo_ingreso: { [Op.lte]: existingEntry.tiempo_ingreso },
+                        is_active: true,
+                        deleted_at: null
+                    }
+                });
+
+                const queueData = {
+                    ...existingEntry.toJSON(),
+                    position
+                };
+
+                return this.success(res, {
+                    message: 'La orden ya está en la cola. Manteniendo posición original.',
+                    data: queueData,
+                    tiempo_en_cola: tiempoMinutos
+                });
+            }
+
+            // Si hay appointments activos, no agregar a la cola
+            if (appointments.length > 0) {
+                return this.error(res, 'Ya existe un agendamiento activo para esta orden', null, 400);
+            }
+
+            // Crear nueva entrada en la cola
+            const queueEntry = await InspectionQueue.create({
+                inspection_order_id,
+                placa: inspectionOrder.placa,
+                numero_orden: inspectionOrder.numero,
+                nombre_cliente: inspectionOrder.nombre_contacto,
+                hash_acceso,
+                estado: 'en_cola',
+                tiempo_ingreso: new Date()
+            });
+
+            // Obtener datos completos con relaciones
+            const fullEntry = await InspectionQueue.findByPk(queueEntry.id, {
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'celular_contacto']
+                    },
+                    {
+                        model: User,
+                        as: 'inspector',
+                        attributes: ['id', 'name', 'email']
+                    }
+                ]
+            });
+
+            // Calcular posición en la cola
+            const position = await InspectionQueue.count({
+                where: {
+                    estado: 'en_cola',
+                    tiempo_ingreso: { [Op.lte]: queueEntry.tiempo_ingreso },
+                    is_active: true,
+                    deleted_at: null
+                }
+            });
+
+            const queueData = {
+                ...fullEntry.toJSON(),
+                position
+            };
 
             // Emitir evento WebSocket para nueva entrada
             if (req.io) {
                 req.io.to('coordinador_vml').emit('inspectionAddedToQueue', {
-                    queueEntry: result.data
+                    queueEntry: queueData
                 });
             }
 
             // Emitir evento a través del socketManager para coordinadores
             try {
                 socketManager.io.to('coordinador_vml').emit('newQueueEntry', {
-                    queueEntry: result.data,
+                    queueEntry: queueData,
                     timestamp: new Date().toISOString()
                 });
             } catch (wsError) {
@@ -176,18 +286,14 @@ class InspectionQueueController extends BaseController {
 
             // Emitir actualización a conexiones públicas
             try {
-                socketManager.emitQueueStatusUpdate(hash_acceso, {
-                    ...result.data,
-                    position: result.position || 1
-                });
+                socketManager.emitQueueStatusUpdate(hash_acceso, queueData);
             } catch (wsError) {
                 console.warn('⚠️ Error emitiendo WebSocket público:', wsError);
             }
 
             return this.success(res, {
-                message: result.message,
-                data: result.data,
-                ...(result.tiempo_en_cola && { tiempo_en_cola: result.tiempo_en_cola })
+                message: 'Entrada agregada a la cola exitosamente',
+                data: queueData
             });
 
         } catch (error) {
@@ -271,6 +377,7 @@ class InspectionQueueController extends BaseController {
                         model: InspectionOrder,
                         as: 'inspectionOrder',
                         attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'celular_contacto']
+                        
                     },
                     {
                         model: User,
