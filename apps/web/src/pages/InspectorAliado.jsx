@@ -44,7 +44,7 @@ const InspectorAliado = () => {
     // Generar opciones de tiempo de espera
     const generateWaitTimeOptions = () => {
         const options = [];
-        const inicio = 20;
+        const inicio = 10;
         const fin = 140;
         const intervalo = 5;
         
