@@ -209,34 +209,8 @@ const Inspeccion = () => {
                                     <div className="flex items-center mb-3">
                                         <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
                                         <h3 className="text-lg font-semibold text-green-800">
-                                            ¡Ya tienes una inspección programada!
+                                            ¡Un inspector te esta esperando!
                                         </h3>
-                                    </div>
-                                    <div className="text-sm text-green-700 space-y-2">
-                                        <p>
-                                            <strong>Estado:</strong> 
-                                            <span className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                                existingAppointment.status === 'pending' 
-                                                    ? 'bg-yellow-100 text-yellow-800' 
-                                                    : existingAppointment.status === 'active'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-gray-100 text-gray-800'
-                                            }`}>
-                                                {existingAppointment.status === 'pending' ? 'Pendiente' : 
-                                                 existingAppointment.status === 'active' ? 'Activa' : 
-                                                 existingAppointment.status}
-                                            </span>
-                                        </p>
-                                        {existingAppointment.scheduled_date && (
-                                            <p>
-                                                <strong>Fecha:</strong> {existingAppointment.scheduled_date}
-                                            </p>
-                                        )}
-                                        {existingAppointment.scheduled_time && (
-                                            <p>
-                                                <strong>Hora:</strong> {existingAppointment.scheduled_time}
-                                            </p>
-                                        )}
                                     </div>
                                     <div className="mt-4">
                                         <Button 
