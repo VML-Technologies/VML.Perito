@@ -178,7 +178,7 @@ class InspectionOrderController extends BaseController {
                 }
             } else {
                 return {
-                    fixedStatus: appointments[0].status,
+                    fixedStatus: 'Activa',
                     badgeColor: 'Activa',
                     comentariosAnulacion: null
                 }
@@ -202,7 +202,7 @@ class InspectionOrderController extends BaseController {
             } else if (noRetryStates.includes(appointments[0].status)) {
                 return 'No reagendar'
             } else {
-                return appointments[0].status
+                return 'Activa'
             }
         }
     }
