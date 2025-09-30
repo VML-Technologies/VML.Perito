@@ -1595,7 +1595,7 @@ class InspectionOrderController extends BaseController {
             const existingOrder = await InspectionOrder.findOne({
                 where: {
                     placa: plate.toUpperCase(),
-                    status: { [Op.ne]: 5 } // No igual a 5 (Finalizado)
+                    status: { [Op.ne]: 5, [Op.ne]: 6 } // No igual a 5 (Finalizado)
                 },
                 include: [
                     {
