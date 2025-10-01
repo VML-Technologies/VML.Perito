@@ -170,7 +170,7 @@ class InspectionQueueController extends BaseController {
             const existingEntry = await InspectionQueue.findOne({
                 where: {
                     inspection_order_id,
-                    estado: { [Op.in]: ['en_cola', 'en_proceso'] },
+                    estado: { [Op.in]: ['en_cola'] },
                     is_active: true,
                     deleted_at: null
                 }
@@ -384,7 +384,8 @@ class InspectionQueueController extends BaseController {
                         as: 'inspector',
                         attributes: ['id', 'name', 'email']
                     }
-                ]
+                ],
+                order: [['created_at', 'DESC']]
             });
 
             if (!queueEntry) {
