@@ -15,10 +15,10 @@ class CoordinatorDataService {
 
             // 1. Inspecciones Virtuales (InspectionQueue)
             const virtualInspections = await this.getVirtualInspections(filters);
-            
+
             // 2. Inspecciones en Sede (Appointment)
             const sedeAppointments = await this.getSedeAppointments();
-            
+
             // 3. Estadísticas
             const stats = await this.getStats();
 
@@ -151,7 +151,7 @@ class CoordinatorDataService {
             };
         }).filter(el => {
             // const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
-            
+
             const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
             return !statusToRemove.includes(el.estado)
         })
@@ -166,7 +166,7 @@ class CoordinatorDataService {
                 deleted_at: null,
                 status: {
                     // [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
-                    
+
                     [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
                 },
                 call_log_id: null
@@ -182,7 +182,7 @@ class CoordinatorDataService {
                     where: {
                         deleted_at: null,
                         status: {
-                            [Op.not]: [5]
+                            [Op.not]: [5, 6]
                         }
                     },
                     required: true
@@ -454,7 +454,7 @@ class CoordinatorDataService {
 
             // Crear nuevo appointment
             console.log('📅 Creando nuevo appointment para inspección virtual...');
-            
+
             // Obtener modalidad virtual por código
             const virtualModality = await InspectionModality.findOne({
                 where: { code: 'VIRTUAL' }
