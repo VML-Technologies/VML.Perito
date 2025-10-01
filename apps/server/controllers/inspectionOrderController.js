@@ -1414,7 +1414,7 @@ class InspectionOrderController extends BaseController {
                     inspection_order_id: order.id,
                     deleted_at: null,
                     status: {
-                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
+                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor','ineffective_with_retry']
                     }
                 }
             });
@@ -1432,13 +1432,7 @@ class InspectionOrderController extends BaseController {
                 appointmentStatus = activeAppointment.status;
                 showStartButton = false; // NO mostrar botón, debe ir directo al appointment
                 console.log('🚀 Appointment activo encontrado, usuario debe ir al APPOINTMENT');
-            } else if (order.appointments && order.appointments.length > 0) {
-                // Solo hay appointments en estados finales - Usuario debe ESPERAR (puede iniciar nueva)
-                const appointment = order.appointments[0];
-                appointmentStatus = appointment.status;
-                showStartButton = true; // SÍ mostrar botón para iniciar nueva inspección
-                console.log('🚀 Solo appointments finales, usuario debe ESPERAR (puede iniciar nueva)');
-            } else {
+            }  else {
                 // No hay appointments - Usuario debe ESPERAR (puede iniciar inspección)
                 showStartButton = true; // SÍ mostrar botón para iniciar inspección
                 console.log('🚀 No hay appointments, usuario debe ESPERAR (puede iniciar inspección)');
@@ -1478,7 +1472,7 @@ class InspectionOrderController extends BaseController {
                     nombre_contacto: order.nombre_contacto,
                     celular_contacto: order.celular_contacto,
                     status: order.InspectionOrderStatus?.name || 'Sin estado',
-                    created_at: order.created_at,
+                    created_at: new Date(),
                     show_start_button: showStartButton,
                     appointment: appointmentData
                 }
