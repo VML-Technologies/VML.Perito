@@ -15,6 +15,7 @@ import NotificationType from '../models/notificationType.js';
 import NotificationChannel from '../models/notificationChannel.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { Op } from 'sequelize';
+import coordinatorDataService from '../services/coordinatorDataService.js';
 
 // Registrar permisos
 registerPermission({
@@ -44,6 +45,15 @@ registerPermission({
     description: 'Ver estadísticas de órdenes',
 });
 
+registerPermission({
+    name: 'reports.read',
+    resource: 'reports',
+    action: 'read',
+    endpoint: '/api/coordinador-vml/reports/coordinator',
+    method: 'GET',
+    description: 'Generar reportes del coordinador VML',
+});
+
 class CoordinadorContactoController {
     constructor() {
         // Bind methods
@@ -52,6 +62,7 @@ class CoordinadorContactoController {
         this.getStats = this.getStats.bind(this);
         this.getAgents = this.getAgents.bind(this);
         this.assignAgent = this.assignAgent.bind(this);
+        this.getCoordinatorReport = this.getCoordinatorReport.bind(this);
     }
 
     // Obtener órdenes con paginación, filtros y sorting
@@ -760,6 +771,60 @@ class CoordinadorContactoController {
         } catch (error) {
             console.error('Error creando notificación de asignación:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Generar reporte completo del coordinador
+     */
+    async getCoordinatorReport(req, res) {
+        try {
+            const { start_date, end_date } = req.query;
+            
+            // Validar parámetros requeridos
+            if (!start_date || !end_date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Faltan parámetros requeridos: start_date, end_date'
+                });
+            }
+
+            // Validar formato de fechas
+            const startDate = new Date(start_date);
+            const endDate = new Date(end_date);
+            
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Formato de fecha inválido'
+                });
+            }
+
+            if (startDate > endDate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La fecha de inicio no puede ser mayor a la fecha de fin'
+                });
+            }
+
+            // Generar reporte usando el servicio
+            const reportResult = await coordinatorDataService.getCoordinatorReport(start_date, end_date);
+
+            // Configurar headers para descarga
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${reportResult.filename}"`);
+            res.setHeader('Content-Length', reportResult.buffer.length);
+
+            // Enviar archivo
+            res.send(reportResult.buffer);
+
+        } catch (error) {
+            console.error('❌ Error generando reporte del coordinador:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor al generar el reporte',
+                error: error.message
+            });
         }
     }
 }

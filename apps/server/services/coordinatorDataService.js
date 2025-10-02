@@ -526,6 +526,207 @@ class CoordinatorDataService {
             throw error;
         }
     }
+
+    /**
+     * Generar reporte completo del coordinador (inspecciones virtuales y en sede)
+     */
+    async getCoordinatorReport(startDate, endDate) {
+        try {
+            console.log('📊 Generando reporte completo del coordinador...');
+
+            // Validar fechas
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                throw new Error('Formato de fecha inválido');
+            }
+
+            if (start > end) {
+                throw new Error('La fecha de inicio no puede ser mayor a la fecha de fin');
+            }
+
+            // 1. Obtener inspecciones virtuales (InspectionQueue)
+            const virtualInspections = await InspectionQueue.findAll({
+                where: {
+                    is_active: true,
+                    created_at: {
+                        [Op.between]: [startDate, endDate]
+                    }
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'producto', 'celular_contacto', 'correo_contacto', 'created_at'],
+                        include: [
+                            {
+                                model: InspectionOrderStatus,
+                                as: 'InspectionOrderStatus',
+                                attributes: ['id', 'name', 'description']
+                            }
+                        ]
+                    },
+                    {
+                        model: User,
+                        as: 'inspector',
+                        attributes: ['id', 'name', 'email'],
+                        include: [{
+                            model: Role,
+                            as: 'roles',
+                            attributes: ['name'],
+                            through: { attributes: [] }
+                        }]
+                    }
+                ],
+                order: [['created_at', 'ASC']]
+            });
+
+            // 2. Obtener agendamientos en sede (Appointment)
+            const sedeAppointments = await Appointment.findAll({
+                where: {
+                    deleted_at: null,
+                    created_at: {
+                        [Op.between]: [startDate, endDate]
+                    }
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                        attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'producto', 'celular_contacto', 'correo_contacto', 'created_at'],
+                        include: [
+                            {
+                                model: InspectionOrderStatus,
+                                as: 'InspectionOrderStatus',
+                                attributes: ['id', 'name', 'description']
+                            }
+                        ]
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email'],
+                        include: [{
+                            model: Role,
+                            as: 'roles',
+                            attributes: ['name'],
+                            through: { attributes: [] }
+                        }]
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['id', 'name', 'address'],
+                        include: [{
+                            model: City,
+                            as: 'city',
+                            attributes: ['id', 'name']
+                        }]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['id', 'name', 'code']
+                    }
+                ],
+                order: [['created_at', 'ASC']]
+            });
+
+            // 3. Preparar datos para Excel - Inspecciones Virtuales
+            const virtualData = virtualInspections.map((inspection, index) => {
+                return {
+                    'Placa': inspection.inspectionOrder?.placa || '-',
+                    'Número Orden': inspection.inspectionOrder?.numero || '-',
+                    'Producto': inspection.inspectionOrder?.producto || '-',
+                    'Cliente': inspection.inspectionOrder?.nombre_contacto || '-',
+                    'Teléfono': inspection.inspectionOrder?.celular_contacto || '-',
+                    'Email': inspection.inspectionOrder?.correo_contacto || '-',
+                    'Estado': inspection.estado,
+                    'Inspector': inspection.inspector?.name || 'Sin asignar',
+                    'Email Inspector': inspection.inspector?.email || '-'
+                };
+            });
+
+            // 4. Preparar datos para Excel - Agendamientos en Sede
+            const sedeData = sedeAppointments.map((appointment, index) => {
+                return {
+                    'Placa': appointment.inspectionOrder?.placa || '-',
+                    'Número Orden': appointment.inspectionOrder?.numero || '-',
+                    'Producto': appointment.inspectionOrder?.producto || '-',
+                    'Cliente': appointment.inspectionOrder?.nombre_contacto || '-',
+                    'Teléfono': appointment.inspectionOrder?.celular_contacto || '-',
+                    'Email': appointment.inspectionOrder?.correo_contacto || '-',
+                    'Estado': appointment.status,
+                    'Inspector': appointment.user?.name || 'Sin asignar',
+                    'Email Inspector': appointment.user?.email || '-'
+                };
+            });
+
+            // 5. Combinar todos los datos
+            const allData = [...virtualData, ...sedeData];
+
+            // 6. Crear workbook de Excel
+            const workbook = XLSX.utils.book_new();
+            
+            // Hoja principal con todos los datos
+            const worksheet = XLSX.utils.json_to_sheet(allData);
+            
+            // Ajustar ancho de columnas
+            const columnWidths = [
+                { wch: 10 },  // Placa
+                { wch: 15 },  // Número Orden
+                { wch: 25 },  // Producto
+                { wch: 25 },  // Cliente
+                { wch: 15 },  // Teléfono
+                { wch: 30 },  // Email
+                { wch: 12 },  // Estado
+                { wch: 20 },  // Inspector
+                { wch: 30 }   // Email Inspector
+            ];
+            worksheet['!cols'] = columnWidths;
+
+            // Añadir hoja al workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte Completo');
+
+            // Hoja de resumen
+            const summaryData = [
+                { 'Métrica': 'Total Inspecciones Virtuales', 'Valor': virtualInspections.length },
+                { 'Métrica': 'Total Agendamientos en Sede', 'Valor': sedeAppointments.length },
+                { 'Métrica': 'Total General', 'Valor': allData.length },
+                { 'Métrica': 'Período', 'Valor': `${startDate} a ${endDate}` },
+                { 'Métrica': 'Fecha Generación', 'Valor': new Date().toLocaleString('es-ES') },
+                { 'Métrica': 'Generado por', 'Valor': 'Coordinador VML' }
+            ];
+
+            const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+            summaryWorksheet['!cols'] = [{ wch: 25 }, { wch: 30 }];
+            XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen');
+
+            // Generar buffer del archivo
+            const excelBuffer = XLSX.write(workbook, { 
+                type: 'buffer', 
+                bookType: 'xlsx',
+                compression: true
+            });
+
+            console.log('✅ Reporte del coordinador generado exitosamente');
+            return {
+                success: true,
+                buffer: excelBuffer,
+                filename: `reporte-coordinador-vml-${startDate}-${endDate}.xlsx`,
+                stats: {
+                    virtual: virtualInspections.length,
+                    sede: sedeAppointments.length,
+                    total: allData.length
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error generando reporte del coordinador:', error);
+            throw error;
+        }
+    }
 }
 
 export default new CoordinatorDataService();

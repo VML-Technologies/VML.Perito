@@ -578,6 +578,14 @@ const seedRBAC = async () => {
                 action: 'read',
                 endpoint: '/api/reports',
                 method: 'GET'
+            },
+            {
+                name: 'reports.download',
+                description: 'Descargar reportes',
+                resource: 'reports',
+                action: 'download',
+                endpoint: '/api/reports/download',
+                method: 'GET'
             }
         ];
 
@@ -868,7 +876,9 @@ const seedRBAC = async () => {
                 'departments.read',     // Para datos geográficos
                 'cities.read',          // Para datos geográficos
                 'inspections.read',     // Para ver cola de inspecciones
-                'inspections.update'    // Para actualizar estados
+                'inspections.update',    // Para actualizar estados
+                'reports.read',          // Para ver reportes
+                'reports.download'      // Para descargar reportes
             ];
             
             const coordinadorVMLPermissions = createdPermissions.filter(p =>
