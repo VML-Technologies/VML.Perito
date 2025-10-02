@@ -150,7 +150,7 @@ class InspectorAliadoController extends BaseController {
                     {
                         model: InspectionOrder,
                         as: 'inspectionOrder',
-                        attributes: ['id', 'placa', 'numero', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at'],
+                        attributes: ['id', 'placa', 'numero', 'nombre_contacto', 'producto', 'celular_contacto', 'correo_contacto', 'created_at'],
                         include: [
                             {
                                 model: InspectionOrderStatus,
@@ -211,6 +211,7 @@ class InspectorAliadoController extends BaseController {
                 return {
                     'Placa': appointment.inspectionOrder?.placa || '-',
                     'Número': appointment.inspectionOrder?.numero || '-',
+                    'Producto': appointment.inspectionOrder?.producto || '-',
                     'Nombre Contacto': appointment.inspectionOrder?.nombre_contacto || '-',
                     'Fecha Agendamiento': appointment.scheduled_date ? 
                         new Date(appointment.scheduled_date).toLocaleDateString('es-ES') : '-',
@@ -228,6 +229,7 @@ class InspectorAliadoController extends BaseController {
             const columnWidths = [
                 { wch: 10 },  // Placa
                 { wch: 15 },  // Número
+                { wch: 25 },  // Producto
                 { wch: 25 },  // Nombre Contacto
                 { wch: 15 },  // Fecha Agendamiento
                 { wch: 12 }   // Hora Agendamiento
