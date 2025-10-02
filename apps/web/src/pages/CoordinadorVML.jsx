@@ -13,9 +13,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Loader2, Clock, User, Car, Phone, Calendar, AlertCircle, CheckCircle, Play, Pause, Building, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, Clock, User, Car, Phone, Calendar, AlertCircle, CheckCircle, Play, Pause, Building, MapPin, FileSpreadsheet, Download } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useCoordinatorWebSocket } from '@/hooks/use-inspection-queue-websocket';
+import { API_ROUTES } from '@/config/api';
 
 const CoordinadorVML = () => {
     const { showToast } = useNotifications();
@@ -76,6 +78,12 @@ const CoordinadorVML = () => {
     const [selectedSedeAppointmentId, setSelectedSedeAppointmentId] = useState(null);
     const [selectedSedeInspector, setSelectedSedeInspector] = useState(null);
     const [loadingAssignModal, setLoadingAssignModal] = useState(false);
+
+    // Estados para el reporte histórico
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportStartDate, setReportStartDate] = useState('');
+    const [reportEndDate, setReportEndDate] = useState('');
+    const [downloadingReport, setDownloadingReport] = useState(false);
 
     // Función para solicitar datos de la cola via WebSocket
     const requestQueueData = useCallback(() => {
@@ -370,6 +378,69 @@ const CoordinadorVML = () => {
         }
     };
 
+    const handleDownloadReport = async () => {
+        if (!reportStartDate || !reportEndDate) {
+            showToast('Por favor selecciona las fechas de inicio y fin', 'error');
+            return;
+        }
+        
+        if (new Date(reportStartDate) > new Date(reportEndDate)) {
+            showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
+            return;
+        }
+        
+        try {
+            setDownloadingReport(true);
+            
+            const response = await fetch(`${API_ROUTES.COORDINADOR_CONTACTO.REPORTS.COORDINATOR}?start_date=${reportStartDate}&end_date=${reportEndDate}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            });
+            
+            if (response.ok) {
+                // Obtener el blob del archivo
+                const blob = await response.blob();
+                
+                // Crear URL temporal para descarga
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Obtener nombre del archivo del header Content-Disposition
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `reporte-coordinador-vml-${reportStartDate}-${reportEndDate}.xlsx`;
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                showToast('Reporte descargado exitosamente', 'success');
+                setShowReportModal(false);
+                setReportStartDate('');
+                setReportEndDate('');
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al generar el reporte');
+            }
+        } catch (error) {
+            console.error('Error downloading report:', error);
+            showToast(error.message || 'Error al descargar el reporte', 'error');
+        } finally {
+            setDownloadingReport(false);
+        }
+    };
+
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
         return (
             <Card className="w-full">
@@ -394,11 +465,21 @@ const CoordinadorVML = () => {
                     <h1 className="text-3xl font-bold text-gray-900">Coordinador VML</h1>
                     <p className="text-gray-600">Gestión de cola de inspecciones</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm text-gray-600">
-                        {isConnected ? 'Conectado' : 'Desconectado'}
-                    </span>
+                <div className="flex items-center gap-4">
+                    {/* <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => setShowReportModal(true)}
+                    >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Descargar Reporte
+                    </Button> */}
+                    <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-sm text-gray-600">
+                            {isConnected ? 'Conectado' : 'Desconectado'}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -553,7 +634,7 @@ const CoordinadorVML = () => {
                                     <TableBody>
                                         {sedeAppointments.map((appointment) => {
                                             // Verificar si la cita está vencida
-                                            const scheduledDateTime = new Date(`${new Date().toLocaleDateString('es-ES')} ${appointment.scheduled_time}`);
+                                            const scheduledDateTime = new Date(`${new Date(appointment.scheduled_date).toISOString().split('T')[0]} ${appointment.scheduled_time}`);
                                             const currentDateTime = new Date();
                                             const isOverdue = scheduledDateTime < currentDateTime;
 
@@ -820,6 +901,69 @@ const CoordinadorVML = () => {
                             Confirmar Asignación
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog de Descarga de Reporte */}
+            <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Download className="h-5 w-5" />
+                            Descargar Reporte Completo
+                        </DialogTitle>
+                        <DialogDescription>
+                            Genera un reporte completo con todas las inspecciones virtuales y agendamientos en sede del período seleccionado.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="startDate">Fecha de Inicio</Label>
+                            <Input
+                                id="startDate"
+                                type="date"
+                                value={reportStartDate}
+                                onChange={(e) => setReportStartDate(e.target.value)}
+                                className="mt-1"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="endDate">Fecha de Fin</Label>
+                            <Input
+                                id="endDate"
+                                type="date"
+                                value={reportEndDate}
+                                onChange={(e) => setReportEndDate(e.target.value)}
+                                className="mt-1"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowReportModal(false)}
+                                disabled={downloadingReport}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={handleDownloadReport}
+                                disabled={downloadingReport || !reportStartDate || !reportEndDate}
+                                className="flex items-center gap-2"
+                            >
+                                {downloadingReport ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Generando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="h-4 w-4" />
+                                        Descargar XLSX
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
             {/* <div className='fixed bottom-0 right-0 border-t border-gray-200 bg-white p-2 text-base font-mono w-full text-center   '>
