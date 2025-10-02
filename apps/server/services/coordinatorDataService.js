@@ -1,5 +1,6 @@
-import { InspectionQueue, InspectionOrder, Appointment, User, Sede, City, InspectionModality, Role } from '../models/index.js';
+import { InspectionQueue, InspectionOrder, Appointment, User, Sede, City, InspectionModality, Role, InspectionOrderStatus } from '../models/index.js';
 import { Op } from 'sequelize';
+import XLSX from 'xlsx';
 
 class CoordinatorDataService {
     constructor() {
@@ -226,7 +227,7 @@ class CoordinatorDataService {
             console.log(appointment.get('scheduled_date'))
             console.log(appointment.scheduled_date)
             // add 1 day to the scheduled_date
-            appointment.scheduled_date = new Date(appointment.scheduled_date).setDate(new Date(appointment.scheduled_date).getDate() + 2)
+            appointment.scheduled_date = new Date(appointment.scheduled_date).setDate(new Date(appointment.scheduled_date).getDate())
             console.log(appointment.scheduled_date)
             return {
                 id: appointment.id,
