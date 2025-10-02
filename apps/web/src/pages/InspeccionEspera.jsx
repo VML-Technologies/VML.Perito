@@ -37,6 +37,18 @@ const InspeccionEspera = () => {
 
         // ✅ CORRECIÓN: NO agregar automáticamente a la cola
         // Solo Inspeccion.jsx debe manejar el agregado a cola
+
+        // Actualizar información cada 30 segundos
+        const intervalId = setInterval(() => {
+            console.log('🔄 Actualizando información cada 30 segundos...');
+            fetchQueueStatus();
+            checkExistingAppointment();
+        }, 30000); // 30 segundos
+
+        // Limpiar el intervalo cuando el componente se desmonte
+        return () => {
+            clearInterval(intervalId);
+        };
     }, [hash]);
 
     // Efecto para actualizar estado desde WebSocket

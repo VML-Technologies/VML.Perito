@@ -463,12 +463,12 @@ const CoordinadorVML = () => {
                                                                         <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
                                                                     </> : <>
                                                                         <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
-                                                                        </>
+                                                                    </>
                                                                 }
                                                             </div>
                                                             <span className={`text-sm font-mono px-2 py-1 rounded ${isOverdue
-                                                                    ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
-                                                                    : 'text-gray-500'
+                                                                ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
+                                                                : 'text-gray-500'
                                                                 }`}>
                                                                 {timeInfo.text}
                                                             </span>
@@ -551,120 +551,147 @@ const CoordinadorVML = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {sedeAppointments.map((appointment) => (
-                                            <TableRow key={appointment.id}>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <Car className="h-4 w-4 text-gray-500" />
-                                                            <span className="font-medium">{appointment.inspectionOrder?.placa}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Building className="h-4 w-4 text-gray-500" />
-                                                            <span className="text-sm">{appointment.sede?.name}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div>
-                                                            <p className="font-medium">{appointment.inspectionOrder?.nombre_contacto}</p>
-                                                            {appointment.inspectionOrder?.celular_contacto && (
-                                                                <p className="text-sm text-gray-500 flex items-center gap-1">
-                                                                    <Phone className="h-3 w-3" />
-                                                                    {appointment.inspectionOrder.celular_contacto}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <Calendar className="h-4 w-4 text-gray-500" />
-                                                            <span className="text-sm">
-                                                                {appointment.scheduled_date ?
-                                                                    new Date(appointment.scheduled_date).toLocaleDateString('es-ES') :
-                                                                    '-'
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Clock className="h-4 w-4 text-gray-500" />
-                                                            <span className="text-sm">{appointment.scheduled_time || '-'}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {appointment.user && appointment.user.roles &&
-                                                        appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="h-4 w-4 text-gray-500" />
-                                                            <div>
-                                                                <p className="font-medium text-sm">{appointment.user.name}</p>
-                                                                <p className="text-xs text-gray-500">{appointment.user.email}</p>
-                                                                <div className="flex gap-1 mt-1">
-                                                                    {appointment.user.roles.map((role, index) => (
-                                                                        <Badge key={index} variant="outline" className="text-xs">
-                                                                            {role.name}
-                                                                        </Badge>
-                                                                    ))}
-                                                                </div>
+                                        {sedeAppointments.map((appointment) => {
+                                            // Verificar si la cita está vencida
+                                            const scheduledDateTime = new Date(`${new Date().toLocaleDateString('es-ES')} ${appointment.scheduled_time}`);
+                                            const currentDateTime = new Date();
+                                            const isOverdue = scheduledDateTime < currentDateTime;
+
+                                            return (
+                                                <TableRow key={appointment.id} className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <Car className="h-4 w-4 text-gray-500" />
+                                                                <span className="font-medium">{appointment.inspectionOrder?.placa}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Building className="h-4 w-4 text-gray-500" />
+                                                                <span className="text-sm">{appointment.sede?.name}</span>
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        <span className="text-sm text-gray-500">Sin asignar</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        {getSedeStatusBadge(appointment.status)}
-                                                        {appointment.statusInspectionOrder && (
-                                                            <Badge variant="outline" className="text-xs">
-                                                                Orden: {appointment.statusInspectionOrder}
-                                                            </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <div>
+                                                                <p className="font-medium">{appointment.inspectionOrder?.nombre_contacto}</p>
+                                                                {appointment.inspectionOrder?.celular_contacto && (
+                                                                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                                        <Phone className="h-3 w-3" />
+                                                                        {appointment.inspectionOrder.celular_contacto}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex items-center justify-center">
+                                                                    {
+                                                                        isOverdue ? <>
+                                                                            <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
+                                                                        </> : <>
+                                                                            <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
+                                                                        </>
+                                                                    }
+                                                                </div>
+                                                                <span className={`text-sm font-mono px-2 py-1 rounded ${isOverdue
+                                                                    ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
+                                                                    : 'text-gray-500'
+                                                                    }`}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Calendar className="h-4 w-4 text-gray-500" />
+                                                                        <span className="text-sm">
+                                                                            {appointment.scheduled_date ?
+                                                                                new Date(appointment.scheduled_date).toISOString().split('T')[0] :
+                                                                                '-'
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Clock className="h-4 w-4 text-gray-500" />
+                                                                        <span className="text-sm">{appointment.scheduled_time || '-'}</span>
+                                                                    </div>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {appointment.user && appointment.user.roles &&
+                                                            appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="h-4 w-4 text-gray-500" />
+                                                                <div>
+                                                                    <p className="font-medium text-sm">{appointment.user.name}</p>
+                                                                    <p className="text-xs text-gray-500">{appointment.user.email}</p>
+                                                                    <div className="flex gap-1 mt-1">
+                                                                        {appointment.user.roles.map((role, index) => (
+                                                                            <Badge key={index} variant="outline" className="text-xs">
+                                                                                {role.name}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-500">Sin asignar</span>
                                                         )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex gap-2">
-                                                        {appointment.status === 'pending' && (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    setSelectedSedeAppointmentId(appointment.id);
-                                                                    setShowAssignInspectorModal(true);
-                                                                    loadModalData(); // Cargar inspectores
-                                                                }}
-                                                            >
-                                                                <Play className="h-4 w-4 mr-1" />
-                                                                Asignar
-                                                            </Button>
-                                                        )}
-                                                        {appointment.status === 'active' && (
-                                                            <>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-1">
+                                                            {getSedeStatusBadge(appointment.status)}
+                                                            {appointment.statusInspectionOrder && (
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    Orden: {appointment.statusInspectionOrder}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            {appointment.status === 'pending' && (
                                                                 <Button
                                                                     size="sm"
-                                                                    onClick={() => handleStartSedeInspection(appointment)}
-                                                                    disabled={!appointment.session_id}
+                                                                    onClick={() => {
+                                                                        setSelectedSedeAppointmentId(appointment.id);
+                                                                        setShowAssignInspectorModal(true);
+                                                                        loadModalData(); // Cargar inspectores
+                                                                    }}
                                                                 >
                                                                     <Play className="h-4 w-4 mr-1" />
-                                                                    Iniciar
+                                                                    Asignar
                                                                 </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => updateSedeAppointmentStatus(appointment.id, 'completed')}
-                                                                >
-                                                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                                                    Completar
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                            )}
+                                                            {appointment.status === 'active' && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleStartSedeInspection(appointment)}
+                                                                        disabled={!appointment.session_id}
+                                                                    >
+                                                                        <Play className="h-4 w-4 mr-1" />
+                                                                        Iniciar
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => updateSedeAppointmentStatus(appointment.id, 'completed')}
+                                                                    >
+                                                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                                                        Completar
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        <pre>
+                                                            {JSON.stringify(appointment.allData, null, 2)}
+                                                        </pre>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </>

@@ -152,7 +152,7 @@ class CoordinatorDataService {
         }).filter(el => {
             // const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
 
-            const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
+            const statusToRemove = ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
             return !statusToRemove.includes(el.estado)
         })
     }
@@ -222,24 +222,32 @@ class CoordinatorDataService {
         });
 
         // Formatear datos para el frontend
-        return appointments.map(appointment => ({
-            id: appointment.id,
-            status: appointment.status,
-            scheduled_date: appointment.scheduled_date,
-            scheduled_time: appointment.scheduled_time,
-            notes: appointment.notes,
-            direccion_inspeccion: appointment.direccion_inspeccion,
-            observaciones: appointment.observaciones,
-            session_id: appointment.session_id,
-            assigned_at: appointment.assigned_at,
-            completed_at: appointment.completed_at,
-            inspectionOrder: appointment.inspectionOrder,
-            call_log_id: appointment.call_log_id,
-            statusInspectionOrder: appointment.inspectionOrder.status,
-            user: appointment.user,
-            sede: appointment.sede,
-            inspectionModality: appointment.inspectionModality
-        }));
+        return appointments.map(appointment => {
+            console.log(appointment.get('scheduled_date'))
+            console.log(appointment.scheduled_date)
+            // add 1 day to the scheduled_date
+            appointment.scheduled_date = new Date(appointment.scheduled_date).setDate(new Date(appointment.scheduled_date).getDate() + 2)
+            console.log(appointment.scheduled_date)
+            return {
+                id: appointment.id,
+                status: appointment.status,
+                scheduled_date: appointment.scheduled_date,
+                scheduled_time: appointment.get('scheduled_time'),
+                notes: appointment.notes,
+                direccion_inspeccion: appointment.direccion_inspeccion,
+                observaciones: appointment.observaciones,
+                session_id: appointment.session_id,
+                assigned_at: appointment.assigned_at,
+                completed_at: appointment.completed_at,
+                inspectionOrder: appointment.inspectionOrder,
+                call_log_id: appointment.call_log_id,
+                statusInspectionOrder: appointment.inspectionOrder.status,
+                user: appointment.user,
+                sede: appointment.sede,
+                inspectionModality: appointment.inspectionModality,
+                allData: appointment
+            }
+        });
     }
 
     /**
