@@ -1414,7 +1414,7 @@ class InspectionOrderController extends BaseController {
                     inspection_order_id: order.id,
                     deleted_at: null,
                     status: {
-                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor','ineffective_with_retry']
+                        [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
                     }
                 }
             });
