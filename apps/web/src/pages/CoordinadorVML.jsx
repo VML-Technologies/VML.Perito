@@ -684,10 +684,6 @@ const CoordinadorVML = () => {
                                                                 </>
                                                             )}
                                                         </div>
-
-                                                        <pre>
-                                                            {JSON.stringify(appointment.allData, null, 2)}
-                                                        </pre>
                                                     </TableCell>
                                                 </TableRow>
                                             );
