@@ -1432,7 +1432,23 @@ class InspectionOrderController extends BaseController {
                 appointmentStatus = activeAppointment.status;
                 showStartButton = false; // NO mostrar botón, debe ir directo al appointment
                 console.log('🚀 Appointment activo encontrado, usuario debe ir al APPOINTMENT');
-            }  else {
+            } else {
+                // vamos a buscar los active inspectionQueue y como ya no tenemos un appointment activo
+                //  marcaremos como is_active el inspectionQueue como false
+                const queueRecord = await InspectionQueue.findOne({
+                    where: {
+                        inspection_order_id: order.id,
+                        is_active: true
+                    }
+                });
+                if (queueRecord && queueRecord.appointment_id) {
+                    console.log('🚀 Marcando inspectionQueue como inactiva');
+                    queueRecord.is_active = false;
+                    await queueRecord.save();
+                } else {
+                    console.log('🚀 No se encontró inspectionQueue');
+                }
+
                 // No hay appointments - Usuario debe ESPERAR (puede iniciar inspección)
                 showStartButton = true; // SÍ mostrar botón para iniciar inspección
                 console.log('🚀 No hay appointments, usuario debe ESPERAR (puede iniciar inspección)');

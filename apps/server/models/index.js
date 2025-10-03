@@ -857,6 +857,20 @@ InspectionQueue.belongsTo(User, {
     as: 'inspector'
 });
 
+// Appointment -> InspectionQueue (1:N) - Un appointment puede tener múltiples entradas en la cola
+Appointment.hasMany(InspectionQueue, {
+    foreignKey: 'appointment_id',
+    as: 'queueEntries',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+InspectionQueue.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+
 // Appointment -> ImageCapture (1:N)
 Appointment.hasMany(ImageCapture, {
     foreignKey: 'appointment_id',

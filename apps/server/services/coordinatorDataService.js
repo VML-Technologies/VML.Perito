@@ -496,7 +496,8 @@ class CoordinatorDataService {
                 estado: 'en_proceso',
                 inspector_asignado_id: inspectorId,
                 tiempo_inicio: new Date(),
-                observaciones: 'Inspección asignada y appointment creado'
+                observaciones: 'Inspección asignada y appointment creado',
+                appointment_id: appointment.id // ✅ Agregar referencia al appointment
             });
 
             // Obtener datos actualizados de la cola

@@ -21,7 +21,6 @@ import NotificationAdmin from "@/pages/NotificationAdmin"
 import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
 import InspectionReport from "@/pages/InspectionReport"
 import Inspeccion from "@/pages/Inspeccion"
-import InspeccionEspera from "@/pages/InspeccionEspera"
 import InspectorAliado from "@/pages/InspectorAliado"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
@@ -112,11 +111,12 @@ function AppContent() {
           element={<Inspeccion />}
         />
 
-        {/* Ruta pública para estado de espera de inspección */}
+        {/* Ruta de fallback para usuarios que puedan estar "pegados" en la ruta de espera */}
         <Route
           path="/espera/inspeccion/:hash"
-          element={<InspeccionEspera />}
+          element={<Inspeccion />}
         />
+
 
         {/* Rutas protegidas */}
         <Route

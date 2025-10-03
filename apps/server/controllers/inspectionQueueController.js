@@ -111,7 +111,7 @@ class InspectionQueueController extends BaseController {
                 await existingEntry.update({ updated_at: new Date() });
                 
                 return this.success(res, {
-                    message: 'La orden ya está en la cola. Manteniendo posición original.',
+                    message: 'La orden ya está en la cola. Manteniendo posición original private?.',
                     data: existingEntry,
                     tiempo_en_cola: tiempoMinutos
                 });
@@ -189,7 +189,7 @@ class InspectionQueueController extends BaseController {
             });
             console.log('🚀 appointments:', appointments);
             console.log('🚀 appointments encontrados:', appointments.length);
-            console.log('🚀 existingEntry && appointments.length != 0:', existingEntry && appointments.length != 0);
+            console.log('🚀 existingEntry && appointments.length == 0:', existingEntry && appointments.length == 0);
             if (existingEntry && appointments.length == 0) {
                 // Calcular tiempo transcurrido desde el ingreso
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
@@ -214,7 +214,7 @@ class InspectionQueueController extends BaseController {
                 };
 
                 return this.success(res, {
-                    message: 'La orden ya está en la cola. Manteniendo posición original.',
+                    message: 'La orden ya está en la cola. Manteniendo posición original public.',
                     data: queueData,
                     tiempo_en_cola: tiempoMinutos
                 });

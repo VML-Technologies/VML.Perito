@@ -71,6 +71,15 @@ const InspectionQueue = sequelize.define('InspectionQueue', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
         allowNull: false
+    },
+    appointment_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: 'appointments',
+            key: 'id'
+        },
+        comment: 'ID del appointment asociado a esta entrada de cola'
     }
 }, {
     tableName: 'inspection_queue',
@@ -91,6 +100,9 @@ const InspectionQueue = sequelize.define('InspectionQueue', {
         },
         {
             fields: ['tiempo_ingreso']
+        },
+        {
+            fields: ['appointment_id']
         }
     ]
 });

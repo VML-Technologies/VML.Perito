@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Car, User, Phone, Mail, Calendar, MapPin, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
+import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { API_ROUTES } from '@/config/api';
-import logo_mundial from '@/assets/logo_mundial.svg';
+import { useInspectionQueueWebSocket } from '@/hooks/use-inspection-queue-websocket';
+import { Landing, Wait, InspectorAssigned } from '@/components/queues';
 
 const Inspeccion = () => {
     const { hash } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useNotifications();
+    
+    // Detectar si estamos en la ruta de fallback
+    const isFallbackRoute = location.pathname.includes('/espera/inspeccion/');
     
     const [inspectionOrder, setInspectionOrder] = useState(null);
     const [existingAppointment, setExistingAppointment] = useState(null);
@@ -21,11 +22,89 @@ const Inspeccion = () => {
     const [error, setError] = useState(null);
     const [startingInspection, setStartingInspection] = useState(false);
     const [isWithinBusinessHours, setIsWithinBusinessHours] = useState(true);
+    
+    // Estados para el sistema de colas
+    const [currentView, setCurrentView] = useState('landing'); // 'landing', 'wait', 'inspectorAssigned'
+    const [queueStatus, setQueueStatus] = useState(null);
+    const [waitingTime, setWaitingTime] = useState(0);
+    const [timeUntilAppointment, setTimeUntilAppointment] = useState(null);
+
+    // WebSocket para cola de inspecciones
+    const { isConnected, queueStatus: wsQueueStatus, error: wsError } = useInspectionQueueWebSocket(hash);
 
     useEffect(() => {
         fetchInspectionOrder();
         checkBusinessHours();
-    }, [hash]);
+        
+        // Si estamos en la ruta de fallback, mostrar mensaje informativo
+        if (isFallbackRoute) {
+            showToast('Has sido redirigido automáticamente. El sistema ahora maneja todo en una sola página.', 'info');
+        }
+    }, [hash, isFallbackRoute]);
+
+    // Efecto para manejar cambios de estado desde WebSocket
+    useEffect(() => {
+        if (wsQueueStatus) {
+            const queueData = wsQueueStatus.data || wsQueueStatus;
+            setQueueStatus(queueData);
+
+            // Si se asigna un inspector, cambiar a vista de inspector asignado
+            if (queueData.inspector && queueData.estado === 'en_proceso') {
+                setCurrentView('inspectorAssigned');
+            }
+        }
+    }, [wsQueueStatus]);
+
+    // Efecto para manejar errores de WebSocket
+    useEffect(() => {
+        if (wsError) {
+            console.error('WebSocket error:', wsError);
+            // Si hay error de WebSocket, mantener la vista actual
+        }
+    }, [wsError]);
+
+    // Contador de tiempo de espera
+    useEffect(() => {
+        if (queueStatus?.tiempo_ingreso) {
+            const startTime = new Date(queueStatus.tiempo_ingreso).getTime();
+            const currentTime = Date.now();
+            const elapsed = Math.floor((currentTime - startTime) / 1000);
+            setWaitingTime(elapsed);
+
+            const timer = setInterval(() => {
+                setWaitingTime(prev => prev + 1);
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [queueStatus?.tiempo_ingreso]);
+
+    // Contador para tiempo hasta el agendamiento
+    useEffect(() => {
+        if (existingAppointment?.scheduled_date && existingAppointment?.scheduled_time) {
+            const updateTimeUntilAppointment = () => {
+                try {
+                    const now = new Date();
+                    const appointmentDate = new Date(existingAppointment.scheduled_date);
+                    const [hours, minutes] = existingAppointment.scheduled_time.split(':');
+                    appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+                    const timeDiff = appointmentDate.getTime() - now.getTime();
+                    const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+                    setTimeUntilAppointment(minutesDiff);
+                } catch (error) {
+                    console.error('Error calculando tiempo hasta agendamiento:', error);
+                    setTimeUntilAppointment(0);
+                }
+            };
+
+            updateTimeUntilAppointment();
+            const timer = setInterval(updateTimeUntilAppointment, 60000);
+            return () => clearInterval(timer);
+        } else {
+            setTimeUntilAppointment(0);
+        }
+    }, [existingAppointment]);
 
     const checkBusinessHours = () => {
         // Crear fecha actual en zona horaria de Bogotá (UTC-5)
@@ -74,14 +153,44 @@ const Inspeccion = () => {
             setInspectionOrder(data.data);
             
             // Verificar si ya existe un agendamiento para esta orden
-            if (data.data.appointment) {
+            if (data.data.appointment && !data.data.show_start_button) {
                 setExistingAppointment(data.data.appointment);
+                setCurrentView('inspectorAssigned');
+            } else {
+                // Verificar si ya está en cola
+                await checkQueueStatus();
             }
         } catch (error) {
             console.error('Error fetching inspection order:', error);
             setError(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkQueueStatus = async () => {
+        try {
+            const response = await fetch(API_ROUTES.INSPECTION_QUEUE.GET_STATUS_BY_HASH_PUBLIC(hash), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    // El endpoint devuelve {data: {data: {...}}}
+                    // Necesitamos acceder a data.data para obtener los datos reales
+                    const actualQueueData = data.data.data || data.data;
+                    setQueueStatus(actualQueueData);
+                    setCurrentView('wait');
+                }
+            }
+        } catch (error) {
+            console.error('Error checking queue status:', error);
+            // Mantener vista de landing si no hay cola
         }
     };
 
@@ -114,8 +223,10 @@ const Inspeccion = () => {
                 showToast('Has sido agregado a la cola de inspecciones. Un inspector te atenderá pronto.', 'success');
             }
             
-            // Redirigir a una página de espera
-            navigate(`/espera/inspeccion/${hash}`);
+            // Cambiar a vista de espera
+            const actualQueueData = responseData.data?.data || responseData.data || responseData;
+            setQueueStatus(actualQueueData);
+            setCurrentView('wait');
         } catch (error) {
             console.error('Error starting inspection:', error);
             showToast(error.message || 'Error al iniciar la inspección', 'error');
@@ -130,6 +241,35 @@ const Inspeccion = () => {
             const inspectionUrl = `${base}/inspection/${existingAppointment.session_id}`;
             window.open(inspectionUrl, '_blank');
         }
+    };
+
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
+    const formatWaitingTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const formatTimeUntilAppointment = (minutes) => {
+        if (minutes <= 0) {
+            return '¡Ya es hora!';
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${remainingMinutes}m`;
+        }
+        return `${remainingMinutes} minutos`;
     };
 
     if (loading) {
@@ -169,153 +309,63 @@ const Inspeccion = () => {
         );
     }
 
+    // Renderizar componente según la vista actual
+    const renderCurrentView = () => {
+        switch (currentView) {
+            case 'wait':
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-            <div className="max-w-2xl mx-auto">
-                <Card className="shadow-lg">
-                    <CardHeader className="text-center pb-4">
-                        <div className="flex justify-start mb-4">
-                            <img src={logo_mundial} alt="logo_mundial" className="h-6 text-blue-600 mr-3" />
-                        </div>
-                        <div className="flex justify-center mb-4">
-                            <div>
-                                <CardTitle className="text-2xl text-gray-800">
-                                    Inspección de Asegurabilidad
-                                </CardTitle>
-                            </div>
-                        </div>
-                    </CardHeader>
+                    <Wait 
+                        queueStatus={queueStatus}
+                        waitingTime={waitingTime}
+                        onGoBack={handleGoBack}
+                        formatWaitingTime={formatWaitingTime}
+                    />
+                );
+            
+            case 'inspectorAssigned':
+                return (
+                    <InspectorAssigned 
+                        existingAppointment={existingAppointment}
+                        timeUntilAppointment={timeUntilAppointment}
+                        onGoToInspection={handleGoToExistingInspection}
+                        onGoBack={handleGoBack}
+                        formatTimeUntilAppointment={formatTimeUntilAppointment}
+                    />
+                );
+            
+            case 'landing':
+            default:
+                return (
+                    <Landing 
+                        inspectionOrder={inspectionOrder}
+                        existingAppointment={existingAppointment}
+                        isWithinBusinessHours={isWithinBusinessHours}
+                        startingInspection={startingInspection}
+                        onStartInspection={handleStartInspection}
+                        onGoToExistingInspection={handleGoToExistingInspection}
+                    />
+                );
+        }
+    };
 
-                    <CardContent className="space-y-6">
-                        {/* Mensaje de bienvenida */}
-                        <div className="text-center bg-blue-50 p-4 rounded-lg">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                                ¡Hola {inspectionOrder.nombre_contacto}!
-                            </h2>
-                            <p className="text-gray-700">
-                                Estás a punto de iniciar la inspección de asegurabilidad de la placa: 
-                                <span className="font-bold text-blue-600 ml-1">
-                                    {inspectionOrder.placa}
-                                </span>
-                            </p>
-                        </div>
-
-                        <Separator />
-
-                        {/* Agendamiento existente - solo mostrar si NO está en estado final */}
-                        {existingAppointment && inspectionOrder.show_start_button === false && (
-                            <>
-                                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                                    <div className="flex items-center mb-3">
-                                        <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                                        <h3 className="text-lg font-semibold text-green-800">
-                                            ¡Un inspector te esta esperando!
-                                        </h3>
-                                    </div>
-                                    <div className="mt-4">
-                                        <Button 
-                                            onClick={handleGoToExistingInspection}
-                                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                                            size="lg"
-                                        >
-                                            <ExternalLink className="h-4 w-4 mr-2" />
-                                            Ir a la Inspección
-                                        </Button>
-                                    </div>
-                                </div>
-                                <Separator />
-                            </>
-                        )}
-
-                        {/* Horario de atención */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                                <Calendar className="h-5 w-5 mr-2" />
-                                Horario de Atención
-                            </h3>
-                            <div className="bg-blue-50 p-4 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                    <strong>Lunes a viernes:</strong> 8:00 AM - 4:00 PM<br />
-                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
-                                </p>
-                            </div>
-                        </div>                        
-
-                        {/* Mensaje fuera de horario */}
-                        {!isWithinBusinessHours && (
-                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                                <div className="flex items-center mb-2">
-                                    <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
-                                    <h3 className="text-lg font-semibold text-red-800">
-                                        Fuera del Horario de Atención
-                                    </h3>
-                                </div>
-                                <p className="text-sm text-red-700">
-                                    Ten en cuenta el horario de atención para ingresar al proceso de inspección.
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Recomendaciones */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                                <CheckCircle className="h-5 w-5 mr-2" />
-                                Recomendaciones
-                            </h3>
-                            <div className="bg-yellow-50 p-4 rounded-lg">
-                                <ul className="text-sm text-gray-700 space-y-2">
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Asegúrate de tener buena iluminación para las fotos
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        El vehículo debe estar limpio y sin objetos que obstaculicen la vista
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Ten a mano la documentación del vehículo
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Asegúrate de tener una conexión estable a internet
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-
-                        {/* Botón de inicio - mostrar si no hay agendamiento o si está en estado final */}
-                        {(!existingAppointment || inspectionOrder.show_start_button === true) && (
-                            <div className="text-center pt-4">
-                                <Button 
-                                    onClick={handleStartInspection}
-                                    disabled={startingInspection || !isWithinBusinessHours}
-                                    className={`w-full py-3 text-lg font-semibold ${
-                                        !isWithinBusinessHours 
-                                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    }`}
-                                    size="lg"
-                                >
-                                    {startingInspection ? (
-                                        <>
-                                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                                            Iniciando Inspección...
-                                        </>
-                                    ) : !isWithinBusinessHours ? (
-                                        'Fuera del Horario de Atención'
-                                    ) : (
-                                        'Iniciar Inspección'
-                                    )}
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+    // Si estamos en la ruta de fallback, mostrar mensaje informativo
+    if (isFallbackRoute) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+                <div className="max-w-md mx-auto">
+                    <Alert className="mb-4">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                            Has sido redirigido automáticamente. El sistema ahora maneja todo el proceso de inspección en una sola página para una mejor experiencia.
+                        </AlertDescription>
+                    </Alert>
+                    {renderCurrentView()}
             </div>
         </div>
     );
+    }
+
+    return renderCurrentView();
 };
 
 export default Inspeccion;

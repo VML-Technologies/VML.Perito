@@ -142,6 +142,11 @@ export const API_ROUTES = {
         // ===== HISTORIAL Y COMENTARIOS (SOLO LECTURA) =====
         ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/contact-history`,
         ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/comments`,
+        
+        // ===== REPORTES =====
+        REPORTS: {
+            COORDINATOR: `${API_BASE_URL}/api/coordinador-vml/reports/coordinator`
+        }
     },
     // ===== RUTAS DE AGENDAMIENTO =====
     SCHEDULES: {
