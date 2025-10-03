@@ -13,7 +13,8 @@
     "migrate:rollback:all": "npx sequelize-cli db:migrate:undo:all",
     "migrate:status": "npx sequelize-cli db:migrate:status",
     "migrate:create": "npx sequelize-cli migration:generate --name",
-    "seed:create": "npx sequelize-cli seed:generate --name"
+    "seed:create": "npx sequelize-cli seed:generate --name",
+    "test:scheduled-tasks": "node scripts/testScheduledTasks.js"
   },
   "author": "",
   "license": "ISC",

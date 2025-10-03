@@ -38,6 +38,7 @@ import commentHistoryController from './controllers/commentHistoryController.js'
 import inspectionQueueController from './controllers/inspectionQueueController.js';
 import inspectionModalityController from './controllers/inspectionModalityController.js';
 import inspectorAliadoController from './controllers/inspectorAliadoController.js';
+import scheduledTasksController from './controllers/scheduledTasksController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -59,6 +60,7 @@ import eventService from './services/eventService.js';
 import automatedEventTriggers from './services/automatedEventTriggers.js';
 import webSocketSystem from './websocket/index.js';
 import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
+import scheduledTasksService from './services/scheduledTasksService.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -485,6 +487,14 @@ app.delete('/api/webhooks/api-keys/:id', requirePermission('webhooks.admin'), we
 // Logs de webhooks
 app.get('/api/webhooks/logs', requirePermission('webhooks.admin'), webhookController.getLogs);
 
+// ===== RUTAS DE TAREAS PROGRAMADAS =====
+
+// Rutas para gestión de tareas programadas
+app.get('/api/scheduled-tasks/status', readLimiter, requirePermission('system.read'), scheduledTasksController.getStatus);
+app.get('/api/scheduled-tasks/available', readLimiter, requirePermission('system.read'), scheduledTasksController.getAvailableTasks);
+app.get('/api/scheduled-tasks/logs', readLimiter, requirePermission('system.read'), scheduledTasksController.getLogs);
+app.post('/api/scheduled-tasks/execute/:taskName', requirePermission('system.admin'), scheduledTasksController.executeTask);
+
 // Rutas WebSocket para pruebas y administración
 app.get('/api/websocket/stats', requirePermission('system.read'), (req, res) => {
     if (webSocketSystem.isInitialized()) {
@@ -871,6 +881,10 @@ const startServer = async () => {
         console.log('🎯 Inicializando servicio de memoria para cola de inspecciones...');
         await inspectionQueueMemoryService.initialize();
 
+        // DÉCIMO: Inicializar servicio de tareas programadas
+        console.log('⏰ Inicializando servicio de tareas programadas...');
+        scheduledTasksService.start();
+
         // DÉCIMO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
         
@@ -916,6 +930,63 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
+// Manejo de cierre graceful
+process.on('SIGINT', async () => {
+    console.log('\n🛑 Recibida señal SIGINT. Cerrando servidor gracefully...');
+    
+    try {
+        // Detener servicio de tareas programadas
+        if (scheduledTasksService) {
+            scheduledTasksService.stop();
+        }
+        
+        // Cerrar conexión a base de datos
+        await sequelize.close();
+        console.log('✅ Conexión a base de datos cerrada');
+        
+        // Cerrar servidor HTTP
+        if (server) {
+            server.close(() => {
+                console.log('✅ Servidor HTTP cerrado');
+                process.exit(0);
+            });
+        } else {
+            process.exit(0);
+        }
+    } catch (error) {
+        console.error('❌ Error durante el cierre graceful:', error);
+        process.exit(1);
+    }
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n🛑 Recibida señal SIGTERM. Cerrando servidor gracefully...');
+    
+    try {
+        // Detener servicio de tareas programadas
+        if (scheduledTasksService) {
+            scheduledTasksService.stop();
+        }
+        
+        // Cerrar conexión a base de datos
+        await sequelize.close();
+        console.log('✅ Conexión a base de datos cerrada');
+        
+        // Cerrar servidor HTTP
+        if (server) {
+            server.close(() => {
+                console.log('✅ Servidor HTTP cerrado');
+                process.exit(0);
+            });
+        } else {
+            process.exit(0);
+        }
+    } catch (error) {
+        console.error('❌ Error durante el cierre graceful:', error);
+        process.exit(1);
+    }
+});
 
 startServer();
 
