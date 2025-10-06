@@ -73,7 +73,7 @@ class ScheduledTasksController {
             const availableTasks = [
                 {
                     name: 'marcar-ordenes-vencidas',
-                    description: 'Marca órdenes de inspección como vencidas (más de 31 días)',
+                    description: 'Marca órdenes de inspección como vencidas (más de 30 días)',
                     schedule: '0 0 * * * (Diario a medianoche)',
                     timezone: 'America/Bogota'
                 }

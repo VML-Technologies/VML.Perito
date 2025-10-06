@@ -109,7 +109,7 @@ class ScheduledTasksService {
             
             // Calcular fecha de hace 31 días
             const fechaLimite = new Date();
-            fechaLimite.setDate(fechaLimite.getDate() - 31);
+            fechaLimite.setDate(fechaLimite.getDate() - 30);
             
             console.log(`📅 Marcando órdenes creadas antes de: ${fechaLimite.toISOString()}`);
             
