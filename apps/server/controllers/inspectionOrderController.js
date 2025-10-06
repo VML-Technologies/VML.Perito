@@ -1631,14 +1631,8 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             });
 
             if (existingOrder) {
-                // Verificar lógica adicional: si status == 5, verificar que el appointment más reciente no sea ineffective_with_retry
-                if (existingOrder.status === 5 && existingOrder.appointments && existingOrder.appointments.length > 0) {
-                    const latestAppointment = existingOrder.appointments[0];
-                    if (latestAppointment.status === 'ineffective_with_retry') {
-                        // Si el appointment más reciente es ineffective_with_retry, no considerar la orden como existente
-                        // Continuar con la lógica normal (no retornar aquí)
-                    } else {
-                        // El appointment no es ineffective_with_retry, la orden existe
+                const latestAppointment = existingOrder.appointments[0];
+                if (existingOrder.status != 5 || (existingOrder.status === 5 && existingOrder.appointments && existingOrder.appointments.length > 0 && latestAppointment?.status == 'ineffective_with_retry')) {
                         return res.json({
                             success: true,
                             exists: true,
@@ -1651,21 +1645,6 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                                 nombre_cliente: existingOrder.nombre_cliente
                             }
                         });
-                    }
-                } else {
-                    // Para otros status o si no hay appointments, la orden existe
-                    return res.json({
-                        success: true,
-                        exists: true,
-                        message: `Ya existe una orden de inspección activa para la placa ${plate.toUpperCase()}`,
-                        order: {
-                            id: existingOrder.id,
-                            numero: existingOrder.numero,
-                            status: existingOrder.InspectionOrderStatus?.name || 'Sin estado',
-                            created_at: existingOrder.created_at,
-                            nombre_cliente: existingOrder.nombre_cliente
-                        }
-                    });
                 }
             }
 
@@ -1674,7 +1653,6 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                 exists: false,
                 message: `La placa ${plate.toUpperCase()} está disponible para crear una nueva orden`
             });
-
         } catch (error) {
             console.error('❌ Error verificando placa:', error);
             res.status(500).json({
