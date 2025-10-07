@@ -164,7 +164,7 @@ class CoordinatorDataService {
     async getSedeAppointments() {
         const appointments = await Appointment.findAll({
             where: {
-                deleted_at: null,
+                deleted_at: null,               
                 status: {
                     // [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
 
@@ -400,7 +400,7 @@ class CoordinatorDataService {
 
             await appointment.update({
                 user_id: inspectorId,
-                status: 'active', // Cambiar a activo cuando se asigna inspector
+                status: 'assigned', // Cambiar a assigned cuando se asigna inspector
                 assigned_at: new Date(),
                 sent_at: new Date()
             });

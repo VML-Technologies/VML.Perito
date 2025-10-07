@@ -403,6 +403,14 @@ class SocketManager {
                 // Asignar inspector usando el nuevo servicio
                 const result = await coordinatorDataService.assignInspectorToSedeAppointment(appointmentId, inspectorId);
                 
+                // Emitir confirmación al usuario que hizo la asignación
+                socket.emit('inspectorAssigned', {
+                    success: true,
+                    appointmentId: appointmentId,
+                    inspectorId: inspectorId,
+                    message: 'Inspector asignado correctamente'
+                });
+                
                 // Solicitar datos actualizados para todos los coordinadores
                 this.io.to('coordinador_vml').emit('requestCoordinatorData', { 
                     includeSedeAppointments: true 
@@ -507,20 +515,38 @@ class SocketManager {
             try {
                 console.log('🏢 Solicitando lista de sedes CDA');
                 
-                const { Sede, City } = await import('../models/index.js');
+                const { Sede, City, SedeType } = await import('../models/index.js');
                 
-                // Buscar sedes tipo CDA
+                // Primero buscar el tipo de sede CDA
+                const sedeType = await SedeType.findOne({
+                    where: {
+                        code: 'CDA'
+                    },
+                    attributes: ['id', 'name', 'code'],
+                    raw: true
+                });
+                
+                if (!sedeType) {
+                    console.log('⚠️ No se encontró el tipo de sede CDA');
+                    socket.emit('sedesCDAList', {
+                        data: [],
+                        timestamp: new Date().toISOString()
+                    });
+                    return;
+                }
+                
+                // Buscar sedes con este tipo
                 const sedes = await Sede.findAll({
                     where: {
-                        tipo: 'CDA',
-                        deleted_at: null
+                        sede_type_id: sedeType.id,
+                        active: true
                     },
                     include: [{
                         model: City,
                         as: 'city',
                         attributes: ['id', 'name']
                     }],
-                    attributes: ['id', 'name', 'direccion', 'telefono']
+                    attributes: ['id', 'name', 'address', 'phone']
                 });
                 
                 socket.emit('sedesCDAList', {

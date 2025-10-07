@@ -301,6 +301,16 @@ export const useCoordinatorWebSocket = () => {
             // Este evento se manejará en el componente que lo necesite
         });
 
+        // Evento de confirmación de asignación de inspector
+        newSocket.on('inspectorAssigned', (data) => {
+            console.log('👨‍🔧 Inspector asignado confirmado:', data);
+            // Solicitar datos actualizados inmediatamente
+            newSocket.emit('requestCoordinatorData', { 
+                includeSedeAppointments: true,
+                includeStats: true 
+            });
+        });
+
         newSocket.on('error', (error) => {
             console.error('❌ Error en WebSocket del coordinador:', error);
             setError(error.message || 'Error de conexión');

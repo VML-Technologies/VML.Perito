@@ -178,7 +178,7 @@ const CoordinadorVML = () => {
                 // Recalcular estadísticas
                 const stats = {
                     pending: coordinatorData.sedeAppointments.filter(a => a.status === 'pending').length,
-                    active: coordinatorData.sedeAppointments.filter(a => a.status === 'active').length,
+                    active: coordinatorData.sedeAppointments.filter(a => a.status === 'assigned').length,
                     completed: coordinatorData.sedeAppointments.filter(a => a.status === 'completed').length,
                     total: coordinatorData.sedeAppointments.length
                 };
@@ -200,15 +200,24 @@ const CoordinadorVML = () => {
                 setSedes(data.data || []);
             };
 
+            const handleInspectorAssigned = (data) => {
+                console.log('👨‍🔧 Inspector asignado confirmado:', data);
+                if (data.success) {
+                    showToast('Inspector asignado correctamente', 'success');
+                }
+            };
+
             socket.on('inspectorsList', handleInspectorsList);
             socket.on('sedesCDAList', handleSedesCDAList);
+            socket.on('inspectorAssigned', handleInspectorAssigned);
 
             return () => {
                 socket.off('inspectorsList', handleInspectorsList);
                 socket.off('sedesCDAList', handleSedesCDAList);
+                socket.off('inspectorAssigned', handleInspectorAssigned);
             };
         }
-    }, [socket]);
+    }, [socket, showToast]);
 
     // useEffect para debuggear estados de loading
     useEffect(() => {
@@ -251,7 +260,7 @@ const CoordinadorVML = () => {
                 appointmentId,
                 inspectorId
             });
-            showToast('Inspector asignado correctamente', 'success');
+            showToast('Asignando inspector...', 'info');
         } else {
             console.warn('⚠️ WebSocket no conectado, no se puede asignar inspector');
             showToast('Sin conexión WebSocket. No se puede asignar inspector', 'error');
@@ -331,7 +340,7 @@ const CoordinadorVML = () => {
     const getSedeStatusBadge = (status) => {
         const statusConfig = {
             pending: { variant: 'secondary', icon: Clock, text: 'Pendiente' },
-            active: { variant: 'default', icon: Play, text: 'Activa' },
+            assigned: { variant: 'default', icon: Play, text: 'Asignada' },
             completed: { variant: 'success', icon: CheckCircle, text: 'Completada' },
             cancelled: { variant: 'destructive', icon: AlertCircle, text: 'Cancelada' }
         };
@@ -744,7 +753,7 @@ const CoordinadorVML = () => {
                                                                     Asignar
                                                                 </Button>
                                                             )}
-                                                            {appointment.status === 'active' && (
+                                                            {appointment.status === 'assigned' && (
                                                                 <>
                                                                     <Button
                                                                         size="sm"
