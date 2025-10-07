@@ -10,9 +10,9 @@ import { useRoles } from '@/hooks/use-roles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
-function AuthenticatedLayout({ children }) {
+function AuthenticatedLayout({ children, routesMap }) {
     const { user, logout } = useAuth();
-    const { hasRole, loading } = useRoles();
+    const { hasRole, loading, roles } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
     const canAccessHelpDesk = hasRole('help_desk') || hasRole('super_admin');
     const { toast, hideToast } = useNotificationContext();
@@ -20,6 +20,14 @@ function AuthenticatedLayout({ children }) {
     const location = useLocation();
 
     useWebSocket();
+
+    // Filtrar rutas disponibles según los roles del usuario
+    const availableRoutes = routesMap ? Object.values(routesMap).filter(route => 
+        route.roles.some(role => roles.includes(role))
+    ) : [];
+    
+    // Mostrar sidebar solo si tiene más de 1 módulo disponible O es admin/help_desk
+    const shouldShowSidebar = (canAccessAdmin || canAccessHelpDesk) || availableRoutes.length > 1;
 
     useEffect(() => {
         if (user?.temporary_password && location.pathname !== '/forced-password-change') {
@@ -34,14 +42,12 @@ function AuthenticatedLayout({ children }) {
     return (
         <ProtectedRoute>
             <SidebarProvider>
-                {
-                    (canAccessAdmin || canAccessHelpDesk) && (
-                        <AppSidebar />
-                    )
-                }
+                {shouldShowSidebar && (
+                    <AppSidebar routesMap={routesMap} />
+                )}
                 <SidebarInset>
                     <div className="flex items-center gap-2 p-4 border-b">
-                        {(canAccessAdmin || canAccessHelpDesk) && (
+                        {shouldShowSidebar && (
                             <SidebarTrigger />
                         )}
                         <SiteHeader />

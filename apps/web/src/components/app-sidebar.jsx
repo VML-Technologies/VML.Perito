@@ -51,16 +51,17 @@ const data = {
 }
 
 export function AppSidebar({
+  routesMap,
   ...props
 }) {
-  const { hasRole } = useRoles();
+  const { hasRole, roles } = useRoles();
   const canAccessAdmin = hasRole('admin') || hasRole('super_admin') || hasRole('help_desk');
-  const canAccessComercial = hasRole('comercial_mundial') || hasRole('super_admin') || hasRole('help_desk');
-  const canAccessAgente = hasRole('agente_contacto') || hasRole('super_admin');
-  const canAccessCoordinador = hasRole('coordinador_contacto') || hasRole('super_admin') || hasRole('help_desk');
-  const canAccessCoordinadorVML = hasRole('coordinador_vml') || hasRole('super_admin') || hasRole('help_desk');
-  const canAccessInspectorAliado = hasRole('inspector_aliado') || hasRole('super_admin');
   const appName = import.meta.env.VITE_APP_NAME
+
+  // Filtrar rutas disponibles según los roles del usuario
+  const availableRoutes = routesMap ? Object.values(routesMap).filter(route => 
+    route.roles.some(role => roles.includes(role))
+  ) : [];
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -80,61 +81,40 @@ export function AppSidebar({
         <NavMain items={data.navMain} />
 
         {/* Sistema de Inspecciones */}
-        {(canAccessComercial || canAccessAgente || canAccessCoordinador || canAccessCoordinadorVML || canAccessInspectorAliado) && (
+        {availableRoutes.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Sistema de Inspecciones</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {canAccessComercial && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Dashboard Comercial">
-                      <Link to="/comercial-mundial">
-                        <Building />
-                        <span>Dashboard Comercial</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {canAccessCoordinador && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Coordinador de Contact Center">
-                      <Link to="/coordinador-contacto">
-                        <UserCog />
-                        <span>Coordinador de Contact Center</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {canAccessCoordinadorVML && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Coordinador VML">
-                      <Link to="/coordinador-vml">
-                        <ClipboardList />
-                        <span>Coordinador VML</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {canAccessAgente && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Agente de Contact Center">
-                      <Link to="/agente-contacto">
-                        <Phone />
-                        <span>Agente de Contact Center</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {canAccessInspectorAliado && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Inspector Aliado">
-                      <Link to="/inspector-aliado">
-                        <Camera />
-                        <span>Inspector Aliado</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+                {availableRoutes.map((route, index) => {
+                  const Icon = route.icon;
+                  
+                  // Función para manejar el clic en el sidebar
+                  const handleSidebarClick = (e) => {
+                    if (route.type === 'redirect') {
+                      e.preventDefault();
+                      if (route.redirectUrl) {
+                        console.log('Redirigiendo desde sidebar a URL externa:', route.redirectUrl);
+                        window.location.href = route.redirectUrl;
+                      }
+                    }
+                    // Si es type: 'navigate', no hacemos nada, el Link se encarga
+                  };
+                  
+                  return (
+                    <SidebarMenuItem key={index}>
+                      <SidebarMenuButton asChild tooltip={route.name}>
+                        <Link 
+                          to={route.route}
+                          onClick={handleSidebarClick}
+                        >
+                          <Icon />
+                          <span>{route.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

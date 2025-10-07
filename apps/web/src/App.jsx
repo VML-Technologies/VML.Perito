@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
@@ -26,6 +26,90 @@ import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 import { useMatomo } from "@/hooks/use-matomo"
 import { analytics, getPageName } from "@/utils/analytics"
+import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react'
+
+// Mapa centralizado de rutas del sistema
+const routesMap = {
+    '/coordinador-contacto': {
+        name: 'Coordinador de Contact Center',
+        description: 'Supervisa y asigna agentes a las órdenes de inspección',
+        route: '/coordinador-contacto',
+        icon: Users,
+        gradientClass: 'bg-gradient-to-r from-purple-500 to-purple-600',
+        textClass: 'text-purple-100',
+        buttonClass: 'text-purple-600 hover:text-purple-700',
+        type: 'navigate',
+        roles: ['coordinador_contacto']
+    },
+    '/comercial-mundial': {
+        name: 'Comercial Mundial',
+        description: 'Crea y gestiona órdenes de inspección vehicular',
+        route: '/comercial-mundial',
+        icon: Building,
+        gradientClass: 'bg-gradient-to-r from-green-500 to-green-600',
+        textClass: 'text-green-100',
+        buttonClass: 'text-green-600 hover:text-green-700',
+        type: 'navigate',
+        roles: ['comercial_mundial', 'comercial_mundial_4']
+    },
+    '/agente-contacto': {
+        name: 'Agente de Contact Center',
+        description: 'Gestiona llamadas y agendamientos de inspecciones',
+        route: '/agente-contacto',
+        icon: Phone,
+        gradientClass: 'bg-gradient-to-r from-orange-500 to-orange-600',
+        textClass: 'text-orange-100',
+        buttonClass: 'text-orange-600 hover:text-orange-700',
+        type: 'navigate',
+        roles: ['agente_contacto']
+    },
+    '/coordinador-vml': {
+        name: 'Coordinador de VML',
+        description: 'Supervisa y asigna agentes a las órdenes de inspección',
+        route: '/coordinador-vml',
+        icon: Users,
+        gradientClass: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+        textClass: 'text-indigo-100',
+        buttonClass: 'text-indigo-600 hover:text-indigo-700',
+        type: 'navigate',
+        roles: ['coordinador_vml']
+    },
+    '/inspector-aliado': {
+        name: 'Inspector Aliado',
+        description: 'Supervisa y asigna agentes a las órdenes de inspección',
+        route: '/inspector-aliado',
+        icon: Users,
+        gradientClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
+        textClass: 'text-blue-100',
+        buttonClass: 'text-blue-600 hover:text-blue-700',
+        type: 'navigate',
+        roles: ['inspector_aliado']
+    },
+    '/inspector': {
+        name: 'Inspector',
+        description: 'InspectYA | Realiza inspecciones vehiculares',
+        route: '/inspector',
+        icon: Users,
+        gradientClass: 'bg-gradient-to-r from-red-500 to-red-600',
+        textClass: 'text-red-100',
+        buttonClass: 'text-red-600 hover:text-red-700',
+        type: 'redirect',
+        redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
+        roles: ['inspector']
+    },
+    '/supervisor': {
+        name: 'Supervisor',
+        description: 'InspectYA | Supervisa inspecciones vehiculares',
+        route: '/supervisor',
+        icon: Users,
+        gradientClass: 'bg-gradient-to-r from-pink-500 to-pink-600',
+        textClass: 'text-pink-100',
+        buttonClass: 'text-pink-600 hover:text-pink-700',
+        type: 'redirect',
+        redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
+        roles: ['supervisor']
+    }
+}
 
 // Componente para trackear rutas automáticamente
 function RouteTracker() {
@@ -77,6 +161,9 @@ function AppContent() {
   // Inicializar Matomo Analytics
   useMatomo();
 
+  // Memoizar routesMap para evitar recreaciones innecesarias
+  const memoizedRoutesMap = useMemo(() => routesMap, []);
+
   return (
     <Router>
       <RouteTracker />
@@ -122,8 +209,8 @@ function AppContent() {
         <Route
           path="/dashboard"
           element={
-            <AuthenticatedLayout>
-              <Dashboard />
+            <AuthenticatedLayout routesMap={memoizedRoutesMap}>
+              <Dashboard routesMap={memoizedRoutesMap} />
             </AuthenticatedLayout>
           }
         />
@@ -133,7 +220,7 @@ function AppContent() {
           path="/admin"
           element={
             <RoleBasedRoute requiredRoles={['admin', 'super_admin', 'help_desk']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <Admin />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -145,7 +232,7 @@ function AppContent() {
           path="/notification-templates"
           element={
             <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <NotificationTemplates />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -157,7 +244,7 @@ function AppContent() {
           path="/channel-configurations"
           element={
             <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <ChannelConfigurations />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -169,7 +256,7 @@ function AppContent() {
           path="/notification-admin"
           element={
             <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <NotificationAdmin />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -180,7 +267,7 @@ function AppContent() {
         <Route
           path="/profile"
           element={
-            <AuthenticatedLayout>
+            <AuthenticatedLayout routesMap={memoizedRoutesMap}>
               <Profile />
             </AuthenticatedLayout>
           }
@@ -199,7 +286,7 @@ function AppContent() {
           path="/comercial-mundial"
           element={
             <RoleBasedRoute requiredRoles={['comercial_mundial', 'comercial_mundial_4', 'super_admin', 'help_desk']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <ComercialMundial />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -223,7 +310,7 @@ function AppContent() {
           path="/coordinador-contacto"
           element={
             <RoleBasedRoute requiredRoles={['coordinador_contacto', 'super_admin', 'help_desk']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <CoordinadorContacto />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -235,7 +322,7 @@ function AppContent() {
           path="/coordinador-vml"
           element={
             <RoleBasedRoute requiredRoles={['coordinador_vml', 'super_admin', 'help_desk']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <CoordinadorVML />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -247,7 +334,7 @@ function AppContent() {
           path="/agente-contacto"
           element={
             <RoleBasedRoute requiredRoles={['agente_contacto', 'super_admin']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <AgenteContacto />
               </AuthenticatedLayout>
             </RoleBasedRoute>
@@ -259,7 +346,7 @@ function AppContent() {
           path="/inspector-aliado"
           element={
             <RoleBasedRoute requiredRoles={['inspector_aliado', 'super_admin']}>
-              <AuthenticatedLayout>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <InspectorAliado />
               </AuthenticatedLayout>
             </RoleBasedRoute>
