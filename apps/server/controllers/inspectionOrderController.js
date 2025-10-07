@@ -242,7 +242,7 @@ class InspectionOrderController extends BaseController {
             }
 
             // Contexto específico para Comercial Mundial
-            if (user.roles.some(role => role.name == 'comercial_mundial' && !req.user.email.includes('segurosmundial.com.co')) && req.user.intermediary_key) {
+            if ((user.roles.some(role => role.name == 'comercial_mundial_4')) || (user.roles.some(role => role.name == 'comercial_mundial' && !req.user.email.includes('segurosmundial.com.co')) && req.user.intermediary_key)) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
