@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import StatsCards from '@/components/StatsCards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const OrdersFilters = ({
     filters = {},
@@ -35,6 +36,7 @@ const OrdersFilters = ({
         onFilterChange(key, backendValue);
     };
 
+    const { hasPermission, loading } = usePermissions();
     /**
      * Clears all filters and resets them to their default values.
      */
@@ -132,14 +134,18 @@ const OrdersFilters = ({
                     }
                 </div>
                 <div>
-                    <Button onClick={() => showCreateModal(true)} className="flex items-center gap-2 px-2 border py-8 rounded-md">
-                        <div className="flex items-center gap-2 px-4">
-                            <PlusCircle className="h-8 w-8" />
-                            <span className="text-lg font-medium">
-                                Nueva Orden
-                            </span>
-                        </div>
-                    </Button>
+                    {
+                        hasPermission('inspections.create') && (
+                            <Button onClick={() => showCreateModal(true)} className="flex items-center gap-2 px-2 border py-8 rounded-md">
+                                <div className="flex items-center gap-2 px-4">
+                                    <PlusCircle className="h-8 w-8" />
+                                    <span className="text-lg font-medium">
+                                        Nueva Orden
+                                    </span>
+                                </div>
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
         </>

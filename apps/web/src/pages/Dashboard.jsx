@@ -9,7 +9,7 @@ export const Dashboard = () => {
     const { hasRole, loading } = useRoles();
     const canAccessAdmin = hasRole('admin') || hasRole('super_admin');
     const isCoordinador = hasRole('coordinador_contacto');
-    const isComercial = hasRole('comercial_mundial');
+    const isComercial = hasRole('comercial_mundial') || hasRole('comercial_mundial_4');
     const isAgente = hasRole('agente_contacto');
     const isCoordinadorVml = hasRole('coordinador_vml');
     const isInspectorAliado = hasRole('inspector_aliado');

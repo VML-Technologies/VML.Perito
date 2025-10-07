@@ -198,7 +198,7 @@ function AppContent() {
         <Route
           path="/comercial-mundial"
           element={
-            <RoleBasedRoute requiredRoles={['comercial_mundial', 'super_admin', 'help_desk']}>
+            <RoleBasedRoute requiredRoles={['comercial_mundial', 'comercial_mundial_4', 'super_admin', 'help_desk']}>
               <AuthenticatedLayout>
                 <ComercialMundial />
               </AuthenticatedLayout>

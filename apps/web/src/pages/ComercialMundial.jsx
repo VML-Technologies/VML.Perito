@@ -16,8 +16,10 @@ import OrderDetailsPanel from '@/components/OrderDetailsPanel';
 import { useOrders } from '@/hooks/use-orders';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/contexts/auth-context';
+import { useRoles } from '@/hooks/use-roles';
 
-export default function ComercialMundial() {
+export default function ComercialMundial() {    
+    const { hasRole } = useRoles();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
