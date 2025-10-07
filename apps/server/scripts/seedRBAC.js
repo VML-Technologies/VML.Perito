@@ -586,6 +586,14 @@ const seedRBAC = async () => {
                 action: 'download',
                 endpoint: '/api/reports/download',
                 method: 'GET'
+            },
+            {
+                name: 'inspections.create',
+                description: 'Crear inspecciones',
+                resource: 'inspections',
+                action: 'create',
+                endpoint: '/api/inspections',
+                method: 'POST'
             }
         ];
 
@@ -631,6 +639,10 @@ const seedRBAC = async () => {
             {
                 name: 'comercial_mundial',
                 description: 'Comercial Mundial - Puede crear y gestionar órdenes de inspección'
+            },
+            {
+                name: 'comercial_mundial_4',
+                description: 'Comercial Mundial - Puede ver las órdenes de inspección'
             },
             {
                 name: 'agente_contacto',
@@ -756,6 +768,7 @@ const seedRBAC = async () => {
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
+                p.name.startsWith('inspections.create') ||
                 p.name == 'users.read' // Necesario para acceder al perfil
             );
             for (const permission of comercialPermissions) {
@@ -767,6 +780,26 @@ const seedRBAC = async () => {
                 });
             }
             console.log(`✅ Permisos de comercial asignados a ${comercialRole.name}`);
+        }
+
+        const comercialRole4 = createdRoles.find(r => r.name == 'comercial_mundial_4');
+        if (comercialRole) {
+            const comercialPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspection_orders.') ||
+                p.name.startsWith('departments.read') ||
+                p.name.startsWith('cities.read') ||
+                p.name.startsWith('sedes.read') ||
+                p.name == 'users.read' // Necesario para acceder al perfil
+            );
+            for (const permission of comercialPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: comercialRole4.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de comercial asignados a ${comercialRole4.name}`);
         }
 
         // Agente de Contact Center: Permisos para gestión de llamadas y agendamientos
