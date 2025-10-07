@@ -5,14 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserPlus, Building, Shield, Mail, RefreshCw, AlertCircle, Edit } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 
-export function UserCreationForm({ 
-    sedes, 
-    availableRoles, 
-    onUserCreated, 
+export function UserCreationForm({
+    sedes,
+    availableRoles,
+    onUserCreated,
     showToast,
     editingUser = null,
     onCancel = null
@@ -25,7 +26,7 @@ export function UserCreationForm({
         email: '',
         phone: '',
         password: '',
-        role_id: '',
+        role_ids: [], // Cambiar a array para múltiples roles
         intermediary_key: ''
     });
     const [userFormErrors, setUserFormErrors] = useState({});
@@ -36,7 +37,7 @@ export function UserCreationForm({
         if (editingUser) {
             console.log('🔍 Usuario en edición:', editingUser);
             console.log('🔍 Roles del usuario:', editingUser.roles);
-            
+
             const formData = {
                 sede_id: editingUser.sede_id ? editingUser.sede_id.toString() : '',
                 identification: editingUser.identification || '',
@@ -44,13 +45,15 @@ export function UserCreationForm({
                 email: editingUser.email || '',
                 phone: editingUser.phone || '',
                 password: '', // No mostrar contraseña actual
-                role_id: editingUser.roles && editingUser.roles.length > 0 ? editingUser.roles[0].id.toString() : '',
+                role_ids: editingUser.roles && editingUser.roles.length > 0
+                    ? editingUser.roles.map(role => role.id.toString())
+                    : [],
                 intermediary_key: editingUser.intermediary_key || ''
             };
-            
+
             console.log('📝 Datos del formulario:', formData);
-            console.log('🎯 Role ID seleccionado:', formData.role_id);
-            
+            console.log('🎯 Role IDs seleccionados:', formData.role_ids);
+
             setUserForm(formData);
         } else {
             // Limpiar formulario cuando no está editando
@@ -61,7 +64,7 @@ export function UserCreationForm({
                 email: '',
                 phone: '',
                 password: '',
-                role_id: '',
+                role_ids: [],
                 intermediary_key: ''
             });
         }
@@ -72,15 +75,15 @@ export function UserCreationForm({
     // Función para validar identificación
     const validateIdentification = async (identification) => {
         if (!identification) return;
-        
+
         try {
             const token = localStorage.getItem('authToken');
             const response = await fetch(`${API_ROUTES.USERS.VALIDATE_IDENTIFICATION}?identification=${encodeURIComponent(identification)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             const result = await response.json();
-            
+
             if (!result.isValid) {
                 setValidationMessages(prev => ({
                     ...prev,
@@ -112,15 +115,15 @@ export function UserCreationForm({
     // Función para validar email
     const validateEmail = async (email) => {
         if (!email) return;
-        
+
         try {
             const token = localStorage.getItem('authToken');
             const response = await fetch(`${API_ROUTES.USERS.VALIDATE_EMAIL}?email=${encodeURIComponent(email)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             const result = await response.json();
-            
+
             if (!result.isValid) {
                 setValidationMessages(prev => ({
                     ...prev,
@@ -152,7 +155,7 @@ export function UserCreationForm({
     // Función para manejar cambios en el formulario
     const handleUserFormChange = (field, value) => {
         setUserForm(prev => ({ ...prev, [field]: value }));
-        
+
         // Limpiar errores al cambiar
         if (userFormErrors[field]) {
             setUserFormErrors(prev => {
@@ -160,7 +163,7 @@ export function UserCreationForm({
                 return rest;
             });
         }
-        
+
         // Validación en tiempo real para identificación y email
         if (field === 'identification' && value.length >= 3) {
             setTimeout(() => validateIdentification(value), 500);
@@ -169,11 +172,38 @@ export function UserCreationForm({
         }
     };
 
+    // Función para manejar selección múltiple de roles
+    const handleRoleToggle = (roleId) => {
+        setUserForm(prev => {
+            const currentRoles = prev.role_ids || [];
+            const isSelected = currentRoles.includes(roleId);
+
+            let newRoles;
+            if (isSelected) {
+                // Remover rol si ya está seleccionado
+                newRoles = currentRoles.filter(id => id !== roleId);
+            } else {
+                // Agregar rol si no está seleccionado
+                newRoles = [...currentRoles, roleId];
+            }
+
+            return { ...prev, role_ids: newRoles };
+        });
+
+        // Limpiar errores de roles
+        if (userFormErrors.role_ids) {
+            setUserFormErrors(prev => {
+                const { role_ids, ...rest } = prev;
+                return rest;
+            });
+        }
+    };
+
     // Función para crear o actualizar usuario
     const handleCreateUser = async () => {
         setCreatingUser(true);
         setUserFormErrors({});
-        
+
         try {
             // Validaciones básicas
             const errors = {};
@@ -182,8 +212,8 @@ export function UserCreationForm({
             if (!userForm.name) errors.name = 'Nombre es requerido';
             if (!userForm.email) errors.email = 'Email es requerido';
             if (!editingUser && !userForm.password) errors.password = 'Contraseña es requerida';
-            if (!userForm.role_id) errors.role_id = 'Selecciona un rol';
-            
+            if (!userForm.role_ids || userForm.role_ids.length === 0) errors.role_ids = 'Selecciona al menos un rol';
+
             if (Object.keys(errors).length > 0) {
                 setUserFormErrors(errors);
                 showToast('Por favor completa todos los campos requeridos', 'error');
@@ -191,22 +221,22 @@ export function UserCreationForm({
             }
 
             const token = localStorage.getItem('authToken');
-            
+
             if (editingUser) {
                 // Actualizar usuario existente
                 const updateData = { ...userForm };
                 if (!updateData.password) {
                     delete updateData.password; // No actualizar contraseña si está vacía
                 }
-                
+
                 // Manejar campos vacíos que deben ser null
                 if (!updateData.intermediary_key || updateData.intermediary_key.trim() === '') {
                     updateData.intermediary_key = null;
                 }
-                
+
                 console.log('📤 Datos a actualizar:', updateData);
                 console.log('🔑 Intermediary key:', updateData.intermediary_key);
-                
+
                 const response = await fetch(API_ROUTES.USERS.UPDATE(editingUser.id), {
                     method: 'PUT',
                     headers: {
@@ -219,7 +249,7 @@ export function UserCreationForm({
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Actualizar rol del usuario
+                    // Actualizar roles del usuario
                     try {
                         const roleResponse = await fetch(API_ROUTES.USERS.ASSIGN_ROLES(editingUser.id), {
                             method: 'POST',
@@ -227,7 +257,7 @@ export function UserCreationForm({
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ roles: [parseInt(userForm.role_id)] })
+                            body: JSON.stringify({ roles: userForm.role_ids.map(id => parseInt(id)) })
                         });
 
                         if (roleResponse.ok) {
@@ -239,12 +269,12 @@ export function UserCreationForm({
                         console.error('Error actualizando rol:', roleError);
                         showToast('Usuario actualizado pero falló la actualización del rol', 'warning');
                     }
-                    
+
                     // Notificar al componente padre
                     if (onUserCreated) {
                         onUserCreated();
                     }
-                    
+
                 } else {
                     if (result.field && result.existingUser) {
                         setUserFormErrors({ [result.field]: result.message });
@@ -262,15 +292,15 @@ export function UserCreationForm({
             } else {
                 // Crear nuevo usuario
                 const createData = { ...userForm };
-                
+
                 // Manejar campos vacíos que deben ser null
                 if (!createData.intermediary_key || createData.intermediary_key.trim() === '') {
                     createData.intermediary_key = null;
                 }
-                
+
                 console.log('📤 Datos a crear:', createData);
                 console.log('🔑 Intermediary key:', createData.intermediary_key);
-                
+
                 const response = await fetch(API_ROUTES.USERS.CREATE_WITH_EMAIL, {
                     method: 'POST',
                     headers: {
@@ -283,7 +313,7 @@ export function UserCreationForm({
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Asignar rol al usuario recién creado
+                    // Asignar roles al usuario recién creado
                     try {
                         const roleResponse = await fetch(API_ROUTES.USERS.ASSIGN_ROLES(result.user.id), {
                             method: 'POST',
@@ -291,19 +321,19 @@ export function UserCreationForm({
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ roles: [parseInt(userForm.role_id)] })
+                            body: JSON.stringify({ roles: userForm.role_ids.map(id => parseInt(id)) })
                         });
 
                         if (roleResponse.ok) {
-                            showToast(result.message + ' y rol asignado correctamente', 'success');
+                            showToast(result.message + ' y roles asignados correctamente', 'success');
                         } else {
-                            showToast(result.message + ' pero falló la asignación del rol', 'warning');
+                            showToast(result.message + ' pero falló la asignación de los roles', 'warning');
                         }
                     } catch (roleError) {
                         console.error('Error asignando rol:', roleError);
-                        showToast(result.message + ' pero falló la asignación del rol', 'warning');
+                        showToast(result.message + ' pero falló la asignación de los roles', 'warning');
                     }
-                    
+
                     // Limpiar formulario solo si no está editando
                     if (!editingUser) {
                         setUserForm({
@@ -313,17 +343,17 @@ export function UserCreationForm({
                             email: '',
                             phone: '',
                             password: '',
-                            role_id: '',
+                            role_ids: [],
                             intermediary_key: ''
                         });
                         setValidationMessages({});
                     }
-                    
+
                     // Notificar al componente padre
                     if (onUserCreated) {
                         onUserCreated();
                     }
-                    
+
                 } else {
                     if (result.field && result.existingUser) {
                         setUserFormErrors({ [result.field]: result.message });
@@ -365,13 +395,13 @@ export function UserCreationForm({
                     )}
                 </CardTitle>
                 <CardDescription>
-                    {editingUser 
+                    {editingUser
                         ? `Editando usuario: ${editingUser.name}`
                         : 'Crea un nuevo usuario en el sistema. Se enviará un email de bienvenida automáticamente.'
                     }
                 </CardDescription>
             </CardHeader>
-            <CardContent>                
+            <CardContent>
                 {/* Información adicional */}
                 {!editingUser && (
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -388,11 +418,95 @@ export function UserCreationForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                     {/* Columna 1 */}
                     <div className="space-y-4">
-                        {/* Selector de Sede */}
+
+
+                        {/* Selector de Roles Múltiples */}
+                        <div>
+                            <Label htmlFor="user-roles">Roles *</Label>
+                            <div className={`space-y-3 p-3 border rounded-md ${userFormErrors.role_ids ? 'border-red-500' : 'border-gray-200'}`}>
+                                {availableRoles.map(role => (
+                                    <div key={role.id} className="flex items-center space-x-3">
+                                        <Checkbox
+                                            id={`role-${role.id}`}
+                                            checked={userForm.role_ids?.includes(role.id.toString()) || false}
+                                            onCheckedChange={() => handleRoleToggle(role.id.toString())}
+                                        />
+                                        <Label
+                                            htmlFor={`role-${role.id}`}
+                                            className="flex items-center gap-2 cursor-pointer flex-1"
+                                        >
+                                            <Shield className="h-4 w-4" />
+                                            <span className="font-medium">{role.name}</span>
+                                            {role.description && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    - {role.description}
+                                                </span>
+                                            )}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
+                            {userFormErrors.role_ids && (
+                                <p className="text-sm text-red-500 mt-1">{userFormErrors.role_ids}</p>
+                            )}
+                            {userForm.role_ids && userForm.role_ids.length > 0 && (
+                                <p className="text-sm text-green-600 mt-1">
+                                    {userForm.role_ids.length} rol(es) seleccionado(s)
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Columna 2 */}
+                    <div className="space-y-4">
+
+                        {/* Nombre */}
+                        <div>
+                            <Label htmlFor="user-name">Nombre Completo *</Label>
+                            <Input
+                                id="user-name"
+                                value={userForm.name}
+                                onChange={(e) => handleUserFormChange('name', e.target.value)}
+                                placeholder="Nombre completo del usuario"
+                                className={userFormErrors.name ? 'border-red-500' : ''}
+                            />
+                            {userFormErrors.name && (
+                                <p className="text-sm text-red-500 mt-1">{userFormErrors.name}</p>
+                            )}
+                        </div>
+
+                        {/* Email */}
+                        <div>
+                            <Label htmlFor="user-email">Email *</Label>
+                            <Input
+                                id="user-email"
+                                type="email"
+                                value={userForm.email}
+                                onChange={(e) => handleUserFormChange('email', e.target.value)}
+                                placeholder="email@ejemplo.com"
+                                className={userFormErrors.email ? 'border-red-500' : ''}
+                            />
+                            {validationMessages.email && (
+                                <Alert className={`mt-2 ${validationMessages.email.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription>
+                                        {validationMessages.email.message}
+                                        {validationMessages.email.existingUser && (
+                                            <div className="mt-2 text-sm">
+                                                <strong>Usuario existente:</strong> {validationMessages.email.existingUser.name} ({validationMessages.email.existingUser.email})
+                                            </div>
+                                        )}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            {userFormErrors.email && !validationMessages.email && (
+                                <p className="text-sm text-red-500 mt-1">{userFormErrors.email}</p>
+                            )}
+                        </div>{/* Selector de Sede */}
                         <div>
                             <Label htmlFor="user-sede">Sede *</Label>
-                            <Select 
-                                value={userForm.sede_id} 
+                            <Select
+                                value={userForm.sede_id}
                                 onValueChange={(value) => handleUserFormChange('sede_id', value)}
                             >
                                 <SelectTrigger className={userFormErrors.sede_id ? 'border-red-500' : ''}>
@@ -416,37 +530,6 @@ export function UserCreationForm({
                             </Select>
                             {userFormErrors.sede_id && (
                                 <p className="text-sm text-red-500 mt-1">{userFormErrors.sede_id}</p>
-                            )}
-                        </div>
-
-                        {/* Selector de Rol */}
-                        <div>
-                            <Label htmlFor="user-role">Rol *</Label>
-                            <Select 
-                                value={userForm.role_id} 
-                                onValueChange={(value) => handleUserFormChange('role_id', value)}
-                            >
-                                <SelectTrigger className={userFormErrors.role_id ? 'border-red-500' : ''}>
-                                    <SelectValue placeholder="Selecciona un rol" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableRoles.map(role => (
-                                        <SelectItem key={role.id} value={role.id.toString()}>
-                                            <div className="flex items-center gap-2">
-                                                <Shield className="h-4 w-4" />
-                                                <span>{role.name}</span>
-                                                {role.description && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        - {role.description}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {userFormErrors.role_id && (
-                                <p className="text-sm text-red-500 mt-1">{userFormErrors.role_id}</p>
                             )}
                         </div>
 
@@ -475,53 +558,6 @@ export function UserCreationForm({
                             )}
                             {userFormErrors.identification && !validationMessages.identification && (
                                 <p className="text-sm text-red-500 mt-1">{userFormErrors.identification}</p>
-                            )}
-                        </div>
-
-                        {/* Nombre */}
-                        <div>
-                            <Label htmlFor="user-name">Nombre Completo *</Label>
-                            <Input
-                                id="user-name"
-                                value={userForm.name}
-                                onChange={(e) => handleUserFormChange('name', e.target.value)}
-                                placeholder="Nombre completo del usuario"
-                                className={userFormErrors.name ? 'border-red-500' : ''}
-                            />
-                            {userFormErrors.name && (
-                                <p className="text-sm text-red-500 mt-1">{userFormErrors.name}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Columna 2 */}
-                    <div className="space-y-4">
-                        {/* Email */}
-                        <div>
-                            <Label htmlFor="user-email">Email *</Label>
-                            <Input
-                                id="user-email"
-                                type="email"
-                                value={userForm.email}
-                                onChange={(e) => handleUserFormChange('email', e.target.value)}
-                                placeholder="email@ejemplo.com"
-                                className={userFormErrors.email ? 'border-red-500' : ''}
-                            />
-                            {validationMessages.email && (
-                                <Alert className={`mt-2 ${validationMessages.email.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>
-                                        {validationMessages.email.message}
-                                        {validationMessages.email.existingUser && (
-                                            <div className="mt-2 text-sm">
-                                                <strong>Usuario existente:</strong> {validationMessages.email.existingUser.name} ({validationMessages.email.existingUser.email})
-                                            </div>
-                                        )}
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            {userFormErrors.email && !validationMessages.email && (
-                                <p className="text-sm text-red-500 mt-1">{userFormErrors.email}</p>
                             )}
                         </div>
 
@@ -564,7 +600,7 @@ export function UserCreationForm({
                                 <p className="text-sm text-red-500 mt-1">{userFormErrors.password}</p>
                             )}
                             <p className="text-sm text-muted-foreground mt-1">
-                                {editingUser 
+                                {editingUser
                                     ? "Deja vacío para mantener la contraseña actual. Si ingresas una nueva, se actualizará."
                                     : "Esta contraseña se enviará por email y el usuario deberá cambiarla en el primer ingreso."
                                 }
@@ -584,7 +620,7 @@ export function UserCreationForm({
                             Cancelar
                         </Button>
                     )}
-                    
+
                     {!editingUser && (
                         <Button
                             variant="outline"
@@ -596,7 +632,7 @@ export function UserCreationForm({
                                     email: '',
                                     phone: '',
                                     password: '',
-                                    role_id: '',
+                                    role_ids: [],
                                     intermediary_key: ''
                                 });
                                 setUserFormErrors({});
@@ -607,7 +643,7 @@ export function UserCreationForm({
                             Limpiar Formulario
                         </Button>
                     )}
-                    
+
                     <Button
                         onClick={handleCreateUser}
                         disabled={creatingUser || Object.keys(userFormErrors).length > 0}
@@ -620,7 +656,7 @@ export function UserCreationForm({
                         ) : (
                             <UserPlus className="h-4 w-4" />
                         )}
-                        {creatingUser 
+                        {creatingUser
                             ? (editingUser ? 'Actualizando Usuario...' : 'Creando Usuario...')
                             : (editingUser ? 'Actualizar Usuario' : 'Crear Usuario y Enviar Email')
                         }
