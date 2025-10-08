@@ -11,7 +11,9 @@ const Landing = ({
     isWithinBusinessHours, 
     startingInspection, 
     onStartInspection, 
-    onGoToExistingInspection 
+    onGoToExistingInspection,
+    isHolidayToday,
+    holidayName
 }) => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -81,12 +83,28 @@ const Landing = ({
                                 <p className="text-sm text-gray-700">
                                     <strong>Lunes a viernes:</strong> 8:00 AM - 4:00 PM<br />
                                     <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
+                                    <strong className="text-blue-800">Solo días hábiles</strong> (no festivos ni domingos)
                                 </p>
                             </div>
                         </div>                        
 
+                        {/* Mensaje de festivo */}
+                        {isHolidayToday && (
+                            <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                                <div className="flex items-center mb-2">
+                                    <Calendar className="h-5 w-5 text-purple-600 mr-2" />
+                                    <h3 className="text-lg font-semibold text-purple-800">
+                                        Día Festivo
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-purple-700">
+                                    Hoy es <strong>{holidayName}</strong>. El servicio de inspecciones no está disponible en días festivos.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Mensaje fuera de horario */}
-                        {!isWithinBusinessHours && (
+                        {!isWithinBusinessHours && !isHolidayToday && (
                             <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                                 <div className="flex items-center mb-2">
                                     <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
@@ -147,7 +165,7 @@ const Landing = ({
                                             Iniciando Inspección...
                                         </>
                                     ) : !isWithinBusinessHours ? (
-                                        'Fuera del Horario de Atención'
+                                        isHolidayToday ? 'Día Festivo - Servicio No Disponible' : 'Fuera del Horario de Atención'
                                     ) : (
                                         'Iniciar Inspección'
                                     )}

@@ -6,6 +6,7 @@ import { useNotifications } from '@/hooks/use-notifications';
 import { API_ROUTES } from '@/config/api';
 import { useInspectionQueueWebSocket } from '@/hooks/use-inspection-queue-websocket';
 import { Landing, Wait, InspectorAssigned } from '@/components/queues';
+import { isHoliday } from '@/utils/holidays';
 
 const Inspeccion = () => {
     const { hash } = useParams();
@@ -22,6 +23,9 @@ const Inspeccion = () => {
     const [error, setError] = useState(null);
     const [startingInspection, setStartingInspection] = useState(false);
     const [isWithinBusinessHours, setIsWithinBusinessHours] = useState(true);
+    const [businessHoursTimer, setBusinessHoursTimer] = useState(null);
+    const [isHolidayToday, setIsHolidayToday] = useState(false);
+    const [holidayName, setHolidayName] = useState('');
     
     // Estados para el sistema de colas
     const [currentView, setCurrentView] = useState('landing'); // 'landing', 'wait', 'inspectorAssigned'
@@ -42,6 +46,62 @@ const Inspeccion = () => {
         }
     }, [hash, isFallbackRoute]);
 
+    // Efecto para validación continua de ventana horaria cada segundo
+    useEffect(() => {
+        // Validar inmediatamente al cargar
+        checkBusinessHours();
+        
+        // Configurar timer para validar cada segundo
+        const timer = setInterval(() => {
+            checkBusinessHours();
+        }, 1000);
+        
+        setBusinessHoursTimer(timer);
+        
+        // Cleanup del timer
+        return () => {
+            if (timer) {
+                clearInterval(timer);
+            }
+        };
+    }, []);
+
+    // Efecto para manejar cambios de visibilidad de la pestaña
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                // Cuando la pestaña vuelve a estar visible, validar inmediatamente
+                checkBusinessHours();
+                console.log('Pestaña restaurada - validando ventana horaria');
+            }
+        };
+
+        const handleFocus = () => {
+            // Cuando la ventana recibe foco, validar inmediatamente
+            checkBusinessHours();
+            console.log('Ventana enfocada - validando ventana horaria');
+        };
+
+        const handleBeforeUnload = () => {
+            // Limpiar timer antes de salir
+            if (businessHoursTimer) {
+                clearInterval(businessHoursTimer);
+            }
+        };
+
+        // Agregar event listeners
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        // Cleanup de event listeners
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [businessHoursTimer]);
+
     // Efecto para manejar cambios de estado desde WebSocket
     useEffect(() => {
         if (wsQueueStatus) {
@@ -49,8 +109,29 @@ const Inspeccion = () => {
             setQueueStatus(queueData);
 
             // Si se asigna un inspector, cambiar a vista de inspector asignado
-            if (queueData.inspector && queueData.estado === 'en_proceso') {
-                setCurrentView('inspectorAssigned');
+            if (queueData.inspector && (queueData.estado === 'en_proceso' || queueData.status === 'en_proceso')) {
+                console.log('🔔 Inspector asignado detectado, actualizando estado:', queueData);
+                
+                // Actualizar existingAppointment con los datos del appointment si existen
+                if (queueData.appointment) {
+                    console.log('📋 Actualizando existingAppointment con datos del WebSocket:', queueData.appointment);
+                    setExistingAppointment(queueData.appointment);
+                    setCurrentView('inspectorAssigned');
+                } else if (queueData.session_id) {
+                    // Si viene session_id directamente en queueData, crear appointment temporal
+                    console.log('📋 Creando appointment temporal con session_id:', queueData.session_id);
+                    setExistingAppointment({
+                        session_id: queueData.session_id,
+                        inspector: queueData.inspector,
+                        estado: queueData.estado || queueData.status,
+                        sede: queueData.sede
+                    });
+                    setCurrentView('inspectorAssigned');
+                } else {
+                    // Si no hay appointment ni session_id, hacer fetch de la orden completa para obtenerlos
+                    console.log('🔄 No hay session_id en WebSocket, haciendo fetch de la orden completa...');
+                    fetchInspectionOrderSilent();
+                }
             }
         }
     }, [wsQueueStatus]);
@@ -116,12 +197,41 @@ const Inspeccion = () => {
         const minute = bogotaTime.getMinutes();
         const currentTime = hour * 60 + minute; // Convertir a minutos para facilitar comparación
         
-        let isWithinHours = false;
+        // Verificar si hoy es festivo
+        const year = bogotaTime.getFullYear();
+        const month = String(bogotaTime.getMonth() + 1).padStart(2, '0');
+        const day = String(bogotaTime.getDate()).padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
         
+        const holidayCheck = isHoliday(todayString);
+        const previousHolidayState = isHolidayToday;
+        
+        // Actualizar estado de festivo si cambió
+        if (holidayCheck.isHoliday !== previousHolidayState) {
+            setIsHolidayToday(holidayCheck.isHoliday);
+            setHolidayName(holidayCheck.celebration || '');
+            
+            if (holidayCheck.isHoliday) {
+                console.log(`¡Hoy es festivo! ${holidayCheck.celebration}`);
+            }
+        }
+        
+        let isWithinHours = false;
+        let previousState = isWithinBusinessHours;
+        
+        // Si es festivo, no está disponible el servicio
+        if (holidayCheck.isHoliday) {
+            isWithinHours = false;
+        }
+        // Si es domingo, cerrado
+        else if (dayOfWeek === 0) {
+            isWithinHours = false;
+        }
         // Lunes a viernes (1-5): 8:00 AM - 4:00 PM
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        else if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             const startTime = 8 * 60; // 8:00 AM en minutos
-            const endTime = 16 * 60; // 4:00 PM en minutos
+            const endTime = 14 * 60; // 4:00 PM en minutos
+            console.log(endTime - currentTime);
             isWithinHours = currentTime >= startTime && currentTime <= endTime;
         }
         // Sábados (6): 8:00 AM - 12:00 PM
@@ -130,9 +240,22 @@ const Inspeccion = () => {
             const endTime = 12 * 60; // 12:00 PM en minutos
             isWithinHours = currentTime >= startTime && currentTime <= endTime;
         }
-        // Domingos: cerrado
         
-        setIsWithinBusinessHours(isWithinHours);
+        // Solo actualizar si el estado cambió para evitar renders innecesarios
+        if (previousState !== isWithinHours) {
+            setIsWithinBusinessHours(isWithinHours);
+            
+            // Mostrar notificación cuando cambie el estado
+            if (holidayCheck.isHoliday) {
+                showToast(`Hoy es festivo: ${holidayCheck.celebration}. El servicio no está disponible.`, 'warning');
+            } else if (isWithinHours) {
+                showToast('¡El servicio de inspecciones está disponible!', 'success');
+            } else {
+                showToast('El servicio de inspecciones está fuera del horario de atención', 'warning');
+            }
+            
+            console.log(`Estado de ventana horaria cambió: ${isWithinHours ? 'ABIERTO' : 'CERRADO'}${holidayCheck.isHoliday ? ' (Festivo)' : ''}`);
+        }
     };
 
     const fetchInspectionOrder = async () => {
@@ -165,6 +288,40 @@ const Inspeccion = () => {
             setError(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Fetch silencioso para actualizar datos sin cambiar el estado de loading
+    const fetchInspectionOrderSilent = async () => {
+        try {
+            console.log('🔄 Haciendo fetch silencioso de la orden de inspección...');
+            const response = await fetch(`${API_ROUTES.INSPECTION_ORDERS.ORDER_BY_HASH(hash)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Orden de inspección no encontrada');
+            }
+
+            const data = await response.json();
+            console.log('📦 Datos de la orden recibidos:', data.data);
+            setInspectionOrder(data.data);
+            
+            // Si ahora tiene un appointment con session_id, actualizar y cambiar vista
+            if (data.data.appointment && data.data.appointment.session_id) {
+                console.log('✅ Appointment con session_id encontrado, actualizando estado:', data.data.appointment);
+                setExistingAppointment(data.data.appointment);
+                setCurrentView('inspectorAssigned');
+                showToast('¡Inspector asignado! Ya puedes ingresar a la inspección.', 'success');
+            } else {
+                console.warn('⚠️ No se encontró appointment con session_id en la orden');
+            }
+        } catch (error) {
+            console.error('Error en fetch silencioso:', error);
+            // No mostrar error al usuario, solo loguear
         }
     };
 
@@ -343,6 +500,8 @@ const Inspeccion = () => {
                         startingInspection={startingInspection}
                         onStartInspection={handleStartInspection}
                         onGoToExistingInspection={handleGoToExistingInspection}
+                        isHolidayToday={isHolidayToday}
+                        holidayName={holidayName}
                     />
                 );
         }
