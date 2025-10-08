@@ -9,6 +9,8 @@ import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
 import { Op } from 'sequelize';
 import XLSX from 'xlsx';
 import InspectionModality from '../models/inspectionModality.js';
+import socketManager from '../websocket/socketManager.js';
+import coordinatorDataService from '../services/coordinatorDataService.js';
 
 class InspectorAliadoController extends BaseController {
     constructor() {
@@ -72,7 +74,14 @@ class InspectorAliadoController extends BaseController {
                     {
                         model: Sede,
                         as: 'sede',
-                        attributes: ['id', 'name', 'address']
+                        attributes: ['id', 'name', 'address'],
+                        include: [
+                            {
+                                model: City,
+                                as: 'city',
+                                attributes: ['id', 'name']
+                            }
+                        ]
                     },
                     {
                         model: User,
@@ -85,9 +94,33 @@ class InspectorAliadoController extends BaseController {
                                 attributes: ['id', 'name']
                             }
                         ]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['id', 'name', 'code']
                     }
                 ]
             });
+
+            // Emitir evento WebSocket para actualizar CoordinadorVML
+            try {
+                console.log('📡 Emitiendo evento WebSocket de nuevo agendamiento en sede...');
+                
+                // 🔥 USAR EL SERVICIO para garantizar 100% de consistencia
+                const allSedeAppointments = await coordinatorDataService.getSedeAppointments();
+
+                // Emitir evento a la sala del coordinador
+                socketManager.sendToRoom('coordinador_vml', 'sedeAppointmentCreated', {
+                    appointment: createdAppointment,
+                    allSedeAppointments: allSedeAppointments
+                });
+
+                console.log(`✅ WebSocket: Evento sedeAppointmentCreated emitido (${allSedeAppointments.length} appointments) al coordinador desde Inspector Aliado`);
+            } catch (wsError) {
+                console.error('❌ Error emitiendo WebSocket:', wsError);
+                // No fallar la respuesta si falla el WebSocket
+            }
 
             res.status(201).json({
                 success: true,
