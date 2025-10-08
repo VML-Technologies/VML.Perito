@@ -230,8 +230,7 @@ const Inspeccion = () => {
         // Lunes a viernes (1-5): 8:00 AM - 4:00 PM
         else if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             const startTime = 8 * 60; // 8:00 AM en minutos
-            const endTime = 14 * 60; // 4:00 PM en minutos
-            console.log(endTime - currentTime);
+            const endTime = 16 * 60; // 4:00 PM en minutos
             isWithinHours = currentTime >= startTime && currentTime <= endTime;
         }
         // Sábados (6): 8:00 AM - 12:00 PM
