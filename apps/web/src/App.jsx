@@ -186,12 +186,6 @@ function AppContent() {
           element={<ResetPassword />}
         />
 
-        {/* Ruta pública para consulta de placas */}
-        <Route
-          path="/checkinspectionorder"
-          element={<CheckInspectionOrder />}
-        />
-
         {/* Ruta pública para inspección de asegurabilidad */}
         <Route
           path="/inspeccion/:hash"
