@@ -53,7 +53,6 @@ export function LoginForm({
             </div>
             Iniciar sesión
           </CardTitle>
-          {/* <a href="http://192.168.78.106:5173/inspeccion/U01OMTIzXzExXzE3NTY0MDU5MTI5MDE">Inspección</a> */}
           <CardDescription>
             Ingresa tu correo electrónico para iniciar sesión
           </CardDescription>
