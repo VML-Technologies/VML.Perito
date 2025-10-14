@@ -367,25 +367,30 @@ const InspectionReport = () => {
                 <div className="text-center">
                   <div className="text-base font-bold text-blue-600">Estado de Asegurabilidad</div>
                   <div className="text-lg text-black mt-1 font-mono font-bold">{data.inspection_result}</div>
-                  {/* {(() => {
-                    const asegurabilidad = getAsegurabilidadStatus()
-                    return (
-                      <>
-                        <div
-                          className={`text-2xl font-bold ${asegurabilidad.isAsegurable ? "text-green-600" : "text-red-600"}`}>
-                          {asegurabilidad.isAsegurable ? "ASEGURABLE" : "NO ASEGURABLE"}
-                        </div>
-                        {asegurabilidad.reason && (
-                          <div className="text-sm text-gray-600 mt-1 font-mono">{asegurabilidad.reason}</div>
-                        )}
-                      </>
-                    )
-                  })()} */}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+
+        {/* Contact Information */}
+        {
+          (data?.inspection_result_details) ? <>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-gray-900">Detalles de resultado</h2>
+          </div>
+              <div className="">
+                {
+                  data?.inspection_result_details
+                }
+              </div>
+            </div>
+          </> : <></>
+        }
+
         {/* Vehicle Information Dashboard */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           <div className="flex items-center gap-3 mb-8">
@@ -728,7 +733,7 @@ const InspectionReport = () => {
                               <Camera className="h-5 w-5 text-gray-400 mb-1" />
                               <span className="text-xs text-gray-500">Error</span>
                             </div>
-                          </div>                         
+                          </div>
 
                           {/* Indicador de hover */}
                           <div className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

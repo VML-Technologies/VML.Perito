@@ -1703,7 +1703,7 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                         required: false
                     }
                 ],
-                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result']
+                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result', 'inspection_result_details']
             });
 
             if (!inspectionOrder) {
@@ -1925,6 +1925,7 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                 correo_contacto: inspectionOrder.correo_contacto,
                 fecha_creacion: inspectionOrder.created_at,
                 inspection_result: inspectionOrder.inspection_result,
+                inspection_result_details: inspectionOrder.inspection_result_details,
                 InspectionOrderStatus: inspectionOrder.InspectionOrderStatus ? {
                     id: inspectionOrder.InspectionOrderStatus.id,
                     name: inspectionOrder.InspectionOrderStatus.name
