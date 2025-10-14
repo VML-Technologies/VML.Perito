@@ -1,17 +1,13 @@
 import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { RoleBasedRoute } from '@/components/RoleBasedRoute';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { Shield, Save, RefreshCw, UserCheck, Users, Key, UserPlus, Bell, BarChart3 } from 'lucide-react';
-import { UserCreationForm } from './admin/UserCreationForm';
+import { Shield, Save, RefreshCw, Users, Bell, BarChart3 } from 'lucide-react';
 import UserManagement from './UserManagement';
-import { RoleAssignments } from './admin/RoleAssignments';
 import { RoleManagement } from './admin/RoleManagement';
-import { PermissionsList } from './admin/PermissionsList';
 import { NotificationsPanel } from './admin/NotificationsPanel';
 import { EventsPanel } from './admin/EventsPanel';
 import { useAuth } from '@/contexts/auth-context';
@@ -110,7 +106,7 @@ export default function Admin() {
 
     // Cargar datos de notificaciones
     const fetchNotificationData = async () => {
-        
+
         setNotificationTypes([]);
         setNotificationChannels([]);
         setNotificationConfigs([]);
@@ -363,7 +359,7 @@ export default function Admin() {
 
     // Filtrar roles para creación de usuarios (solo los tres específicos)
     const availableRoles = roles.filter(role =>
-        
+
         ['comercial_mundial', 'agente_contacto', 'coordinador_contacto'].includes(role.name)
     );
 
@@ -424,53 +420,23 @@ export default function Admin() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="w-full">
-                    {
-                        isSuperAdmin && <>
-                            <TabsTrigger value="assignments" className="flex items-center gap-2">
-                                <UserCheck className="h-4 w-4" />
-                                Asignaciones
-                            </TabsTrigger>
-                            <TabsTrigger value="roles" className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Roles
-                            </TabsTrigger>
-                            <TabsTrigger value="permissions" className="flex items-center gap-2">
-                                <Key className="h-4 w-4" />
-                                Permisos
-                            </TabsTrigger>
-                            <TabsTrigger value="notifications" className="flex items-center gap-2">
-                                <Bell className="h-4 w-4" />
-                                Notificaciones
-                            </TabsTrigger>
-                            <TabsTrigger value="events" className="flex items-center gap-2">
-                                <BarChart3 className="h-4 w-4" />
-                                Eventos
-                            </TabsTrigger>
-                        </>
-                    }
-                    {
-                        isHelpDesk && <>
-                            <TabsTrigger value="user-management" className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Gestión de Usuarios
-                            </TabsTrigger>
-                        </>
-                    }
+                    {/* {
+                        isSuperAdmin && <> */}
+                    <TabsTrigger value="roles" className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Roles
+                    </TabsTrigger>
+                    {/* </>
+                    } */}
+                    {/* {
+                        isHelpDesk && <> */}
+                    <TabsTrigger value="user-management" className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Gestión de Usuarios
+                    </TabsTrigger>
+                    {/* </>
+                    } */}
                 </TabsList>
-                {/* Tab de Asignaciones */}
-                <TabsContent value="assignments" className="space-y-6">
-                    <RoleAssignments
-                        users={users}
-                        roles={roles}
-                        permissions={permissions}
-                        selectedUser={selectedUser}
-                        setSelectedUser={setSelectedUser}
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        handleUserRoleChange={handleUserRoleChange}
-                        getUserPermissions={getUserPermissions}
-                    />
-                </TabsContent>
 
                 {/* Tab de Roles */}
                 <TabsContent value="roles" className="space-y-6">
@@ -483,34 +449,9 @@ export default function Admin() {
                     />
                 </TabsContent>
 
-                {/* Tab de Permisos */}
-                <TabsContent value="permissions">
-                    <PermissionsList permissions={permissions} />
-                </TabsContent>
-
                 {/* Tab de Gestión de Usuarios */}
                 <TabsContent value="user-management">
                     <UserManagement />
-                </TabsContent>
-
-                {/* Tab de Notificaciones */}
-                <TabsContent value="notifications" className="space-y-6">
-                    <NotificationsPanel
-                        notificationTypes={notificationTypes}
-                        notificationChannels={notificationChannels}
-                        notificationConfigs={notificationConfigs}
-                        notificationStats={notificationStats}
-                        fetchNotificationData={fetchNotificationData}
-                    />
-                </TabsContent>
-
-                {/* Tab de Eventos */}
-                <TabsContent value="events" className="space-y-6">
-                    <EventsPanel
-                        events={events}
-                        eventStats={eventStats}
-                        fetchEventData={fetchEventData}
-                    />
                 </TabsContent>
             </Tabs>
         </div>
