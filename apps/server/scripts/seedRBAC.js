@@ -594,6 +594,14 @@ const seedRBAC = async () => {
                 action: 'create',
                 endpoint: '/api/inspections',
                 method: 'POST'
+            },
+            {
+                name: 'inspections.fpv',
+                description: 'Hacer inspecciones en FPV',
+                resource: 'inspections',
+                action: 'fpv',
+                endpoint: '/api/inspections/fpv',
+                method: 'POST'
             }
         ];
 
@@ -669,6 +677,10 @@ const seedRBAC = async () => {
             {
                 name: 'inspector_aliado',
                 description: 'Inspector Aliado - Realiza inspecciones para aliados'
+            },
+            {
+                name: 'inspector_aliado_2',
+                description: 'Inspector Aliado Nivel 2- Tiene acceso a FPV'
             },
             {
                 name: 'coordinador_aliado',
@@ -971,6 +983,47 @@ const seedRBAC = async () => {
                 console.log("Permiso asignado:", rolePermission.name);
             }
             console.log(`✅ Permisos de Inspector Aliado asignados a ${inspectorAliadoRole.name}`);
+        }
+
+        // Inspector Aliado: Permisos para inspecciones de aliados
+        const inspectorAliadoRole2 = createdRoles.find(r => r.name == 'inspector_aliado_2');
+        if (inspectorAliadoRole2) {
+            const inspectorAliadoPermissionNames = [
+                'users.read',           // Para acceder al perfil
+                'sedes.read',           // Para obtener información de sedes
+                'inspection_orders.read', // Para buscar órdenes por placa
+                'inspection_orders.search_by_plate', // Para búsqueda específica por placa
+                'appointments.read',    // Para ver agendamientos
+                'appointments.create',  // Para crear agendamientos
+                'departments.read',     // Para datos geográficos
+                'cities.read',           // Para datos geográficos
+                'reports.read',          // Para ver reportes
+                'inspections.fpv'       // Para hacer inspecciones en FPV
+            ];
+            
+            const inspectorAliadoPermissions2 = createdPermissions.filter(p =>
+                inspectorAliadoPermissionNames.includes(p.name)
+            );
+
+            const permissionsNoEncontrados = inspectorAliadoPermissionNames.filter(p => !inspectorAliadoPermissions2.some(pp => pp.name == p));
+
+            console.log(`🔍 Permisos no encontrados:`, permissionsNoEncontrados);
+            
+            console.log(`🔍 Permisos que se asignarán al Inspector Aliado:`, inspectorAliadoPermissions2.map(p => p.name));
+            
+            for (const permission of inspectorAliadoPermissions2) {
+                console.log("Validando permiso:", permission.name);
+
+                const rolePermission = await RolePermission.findOrCreate({
+                    where: {
+                        role_id: inspectorAliadoRole2.id,
+                        permission_id: permission.id
+                    }
+                });
+
+                console.log("Permiso asignado:", rolePermission.name);
+            }
+            console.log(`✅ Permisos de Inspector Aliado asignados a ${inspectorAliadoRole2.name}`);
         }
 
         // Coordinador Aliado: Permisos para supervisar inspectores aliados
