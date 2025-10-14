@@ -1734,10 +1734,15 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                     }
                 });
             }
+
+            // sort appointments by updated_at descending
+            inspectionOrder.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
             
             const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0 
                 ? inspectionOrder.appointments[0] 
                 : null;
+        
+            console.log('🔍 mostRecentAppointment:', mostRecentAppointment);
 
             // Extender con respuestas e imágenes
             const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
