@@ -434,8 +434,6 @@ export default function Admin() {
                         <Users className="h-4 w-4" />
                         Gestión de Usuarios
                     </TabsTrigger>
-                    {/* </>
-                    } */}
                 </TabsList>
 
                 {/* Tab de Roles */}
