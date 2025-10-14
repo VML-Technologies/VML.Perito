@@ -10,8 +10,8 @@ export const securityConfig = {
         'http://localhost:5173',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'http://172.23.176.1:5173',
-        'http://172.23.176.1:3000'
+        'http://192.168.78.106:5173',
+        'http://192.168.78.106:3000'
     ],
 
     // Configuración de Helmet
