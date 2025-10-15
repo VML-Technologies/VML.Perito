@@ -28,8 +28,12 @@
   - See `docs/debugging-and-troubleshooting.md` for backend/frontend troubleshooting.
   - Key scripts: `apps/server/scripts/` (e.g., `generateHmac.js`, `seedAll.js`)
 
+
 ## Project-Specific Conventions
 
+- **ES Modules:**
+  - Use `import`/`export` syntax throughout the codebase (no `require`/`module.exports`).
+  - All backend and frontend files should follow ES Modules conventions.
 - **Controllers:**
   - Located in `apps/server/controllers/`, follow CRUD + soft delete patterns (see `baseController.js`).
 - **Models:**
@@ -42,7 +46,7 @@
   - Real-time events via `apps/server/websocket/` and documented in `docs/websockets-system.md`.
 - **Naming:**
   - Use hierarchical, context-rich names (see `.cursor/rules/naming-conventions.mdc`).
-  - Reference files using relative paths, e.g., `[App.jsx](mdc:apps/web/src/App.jsx)`.
+  - Reference files using relative paths, e.g., `apps/web/src/App.jsx`.
 
 ## Integration Points
 
@@ -68,9 +72,9 @@
 
 ## Example File References
 
-- `[App.jsx](mdc:apps/web/src/App.jsx)`
-- `[seedAll.js](mdc:apps/server/scripts/seedAll.js)`
-- `[package.json](mdc:apps/server/package.json)`
+apps/web/src/App.jsx
+apps/server/scripts/seedAll.js
+apps/server/package.json
 
 ## Troubleshooting & Further Reading
 
