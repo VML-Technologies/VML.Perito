@@ -13,69 +13,71 @@ import { Loader2, Search, Car, User, Phone, Mail, Calendar, Clock, Play, Refresh
 import { useNotificationContext } from '@/contexts/notification-context';
 import { API_ROUTES } from '@/config/api';
 import { useAuth } from '@/contexts/auth-context';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const InspectorAliado = () => {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const { showToast } = useNotificationContext();
-    
+
     // Estados para el formulario de búsqueda
     const [plate, setPlate] = useState('');
     const [searching, setSearching] = useState(false);
     const [inspectionOrder, setInspectionOrder] = useState(null);
     const [orderNotFound, setOrderNotFound] = useState(false);
-    
+
     // Estados para el agendamiento
     const [waitTime, setWaitTime] = useState('');
     const [creatingAppointment, setCreatingAppointment] = useState(false);
-    
+
     // Estados para la tabla de agendamientos
     const [appointments, setAppointments] = useState([]);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    
+
     // Estados para el reporte histórico
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportStartDate, setReportStartDate] = useState('');
     const [reportEndDate, setReportEndDate] = useState('');
     const [downloadingReport, setDownloadingReport] = useState(false);
-    
 
-    
+
+
     // Generar opciones de tiempo de espera
     const generateWaitTimeOptions = () => {
         const options = [];
         const inicio = 5;
         const fin = 140;
         const intervalo = 5;
-        
+
         for (let i = inicio; i <= fin; i += intervalo) {
             options.push({
                 value: i.toString(),
                 label: `+${i} minutos`
             });
         }
-        
+
         return options;
     };
-    
+
     const waitTimeOptions = generateWaitTimeOptions();
-    
+
     // Función para generar session_id
     const generateSessionId = () => {
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(2, 10);
         return `session_${timestamp}_${random}`;
     };
-    
 
-    
+
+
     // Cargar agendamientos existentes
     useEffect(() => {
         if (user?.sede_id) {
             fetchAppointments();
         }
     }, [user?.sede_id]);
-    
+
     const fetchAppointments = async () => {
         try {
             setLoadingAppointments(true);
@@ -86,7 +88,7 @@ const InspectorAliado = () => {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 console.log('🏢 Appointments para Inspector Aliado recibidos:', data.data);
@@ -101,18 +103,18 @@ const InspectorAliado = () => {
             setLoadingAppointments(false);
         }
     };
-    
+
     const handleSearchOrder = async () => {
         if (!plate.trim()) {
             showToast('Por favor ingresa una placa', 'error');
             return;
         }
-        
+
         try {
             setSearching(true);
             setOrderNotFound(false);
             setInspectionOrder(null);
-            
+
             const response = await fetch(`${API_ROUTES.INSPECTION_ORDERS.SEARCH_BY_PLATE}?plate=${encodeURIComponent(plate.trim())}`, {
                 method: 'GET',
                 headers: {
@@ -120,7 +122,7 @@ const InspectorAliado = () => {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.data) {
@@ -138,20 +140,20 @@ const InspectorAliado = () => {
             setSearching(false);
         }
     };
-    
+
     const handleCreateAppointment = async () => {
         if (!inspectionOrder || !waitTime) {
             showToast('Por favor completa todos los campos', 'error');
             return;
         }
-        
+
         try {
             setCreatingAppointment(true);
-            
+
             // Calcular tiempo de agendamiento
             const now = new Date();
             const appointmentTime = new Date(now.getTime() + (parseInt(waitTime) * 60 * 1000));
-            
+
             const appointmentData = {
                 sede_id: user.sede_id,
                 inspection_order_id: inspectionOrder.id,
@@ -161,7 +163,7 @@ const InspectorAliado = () => {
                 session_id: generateSessionId(),
                 status: 'pending'
             };
-            
+
             const response = await fetch(API_ROUTES.INSPECTOR_ALIADO.APPOINTMENTS.CREATE, {
                 method: 'POST',
                 headers: {
@@ -170,17 +172,17 @@ const InspectorAliado = () => {
                 },
                 body: JSON.stringify(appointmentData)
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 showToast('Agendamiento creado exitosamente', 'success');
-                
+
                 // Limpiar formulario
                 setPlate('');
                 setInspectionOrder(null);
                 setOrderNotFound(false);
                 setWaitTime('');
-                
+
                 // Recargar agendamientos
                 fetchAppointments();
             } else {
@@ -195,11 +197,11 @@ const InspectorAliado = () => {
         }
     };
 
-    const handleCopyLink = async (appointment) => {
+    const handleCopyLink = async (appointment, isFPV = false) => {
         if (appointment.session_id) {
             const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
-            const inspectionUrl = `${base}/inspection/${appointment.session_id}`;
-            
+            const inspectionUrl = isFPV ? `${base}/inspector/mobile/${appointment.session_id}` : `${base}/inspection/${appointment.session_id}`;
+
             try {
                 // Verificar si navigator.clipboard está disponible
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -215,7 +217,7 @@ const InspectorAliado = () => {
                     document.body.appendChild(textArea);
                     textArea.focus();
                     textArea.select();
-                    
+
                     try {
                         document.execCommand('copy');
                         showToast('Enlace copiado al portapapeles', 'success');
@@ -232,13 +234,13 @@ const InspectorAliado = () => {
             }
         }
     };
-    
+
     const handleRefreshAppointments = async () => {
         setRefreshing(true);
         await fetchAppointments();
         setRefreshing(false);
     };
-    
+
     const getStatusBadge = (status) => {
         switch (status) {
             case 'pending':
@@ -253,54 +255,54 @@ const InspectorAliado = () => {
                 return <Badge variant="outline">{status}</Badge>;
         }
     };
-    
+
     const handleDownloadReport = async () => {
         if (!reportStartDate || !reportEndDate) {
             showToast('Por favor selecciona las fechas de inicio y fin', 'error');
             return;
         }
-        
+
         if (new Date(reportStartDate) > new Date(reportEndDate)) {
             showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
             return;
         }
-        
+
         try {
             setDownloadingReport(true);
-            
+
             const response = await fetch(`${API_ROUTES.INSPECTOR_ALIADO.REPORTS.HISTORICAL}?sede_id=${user.sede_id}&start_date=${reportStartDate}&end_date=${reportEndDate}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
-            
+
             if (response.ok) {
                 // Obtener el blob del archivo
                 const blob = await response.blob();
-                
+
                 // Crear URL temporal para descarga
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                
+
                 // Obtener nombre del archivo del header Content-Disposition
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = `reporte-historico-cda-${reportStartDate}-${reportEndDate}.xlsx`;
-                
+
                 if (contentDisposition) {
                     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
                     if (filenameMatch) {
                         filename = filenameMatch[1];
                     }
                 }
-                
+
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-                
+
                 showToast('Reporte descargado exitosamente', 'success');
                 setShowReportModal(false);
                 setReportStartDate('');
@@ -316,7 +318,7 @@ const InspectorAliado = () => {
             setDownloadingReport(false);
         }
     };
-    
+
     return (
         <div className="">
             <div className="mb-6">
@@ -391,7 +393,7 @@ const InspectorAliado = () => {
                     </Dialog>
                 </div>
             </div>
-            
+
             <div className="flex gap-2">
                 {/* Parte Izquierda - Formulario de Búsqueda */}
                 <div className="w-3/12">
@@ -413,7 +415,7 @@ const InspectorAliado = () => {
                                         placeholder="Ej: ABC123"
                                         onKeyPress={(e) => e.key === 'Enter' && handleSearchOrder()}
                                     />
-                                    <Button 
+                                    <Button
                                         onClick={handleSearchOrder}
                                         disabled={searching || !plate.trim()}
                                     >
@@ -425,7 +427,7 @@ const InspectorAliado = () => {
                                     </Button>
                                 </div>
                             </div>
-                            
+
                             {/* Resultado de búsqueda */}
                             {orderNotFound && (
                                 <Alert>
@@ -435,7 +437,7 @@ const InspectorAliado = () => {
                                     </AlertDescription>
                                 </Alert>
                             )}
-                            
+
                             {inspectionOrder && (
                                 <div className="bg-green-50 p-4 rounded-lg">
                                     <h3 className="font-semibold text-green-800 mb-3 flex items-center">
@@ -460,9 +462,9 @@ const InspectorAliado = () => {
                                             <p className="text-gray-800">{inspectionOrder.email_contacto || 'No especificado'}</p>
                                         </div>
                                     </div>
-                                    
+
                                     <Separator className="my-4" />
-                                    
+
                                     <div>
                                         <Label htmlFor="waitTime">Tiempo de Espera</Label>
                                         <Select value={waitTime} onValueChange={setWaitTime}>
@@ -478,8 +480,8 @@ const InspectorAliado = () => {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    
-                                    <Button 
+
+                                    <Button
                                         onClick={handleCreateAppointment}
                                         disabled={creatingAppointment || !waitTime}
                                         className="w-full mt-4"
@@ -498,7 +500,7 @@ const InspectorAliado = () => {
                         </CardContent>
                     </Card>
                 </div>
-                
+
                 {/* Parte Derecha - Tabla de Agendamientos */}
                 <div className="w-9/12">
                     <Card>
@@ -508,8 +510,8 @@ const InspectorAliado = () => {
                                     <Calendar className="h-5 w-5 mr-2" />
                                     Agendamientos del CDA
                                 </CardTitle>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     size="sm"
                                     onClick={handleRefreshAppointments}
                                     disabled={refreshing}
@@ -547,73 +549,89 @@ const InspectorAliado = () => {
                                         <TableBody>
                                             {appointments.map((appointment) => (
                                                 <>
-                                                 <TableRow key={appointment.id}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <Car className="h-4 w-4 text-gray-500" />
-                                                            <span className="font-medium">{appointment.inspectionOrder?.placa}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="h-4 w-4 text-gray-500" />
-                                                            <div>
-                                                                <p className="font-medium">{appointment.inspectionOrder?.nombre_contacto}</p>
-                                                                {appointment.inspectionOrder?.celular_contacto && (
-                                                                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                                                                        <Phone className="h-3 w-3" />
-                                                                        {appointment.inspectionOrder.celular_contacto}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-col">
+                                                    <TableRow key={appointment.id}>
+                                                        <TableCell>
                                                             <div className="flex items-center gap-2">
-                                                                <Calendar className="h-4 w-4 text-gray-500" />
-                                                                <span className="text-sm">
-                                                                    {appointment.scheduled_date ?
-                                                                        new Date(appointment.scheduled_date).toLocaleDateString('es-ES') :
-                                                                        '-'
-                                                                    }
-                                                                </span>
+                                                                <Car className="h-4 w-4 text-gray-500" />
+                                                                <span className="font-medium">{appointment.inspectionOrder?.placa}</span>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <Clock className="h-4 w-4 text-gray-500" />
-                                                                <span className="text-sm">{appointment.scheduled_time || '-'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {appointment.user && appointment.user.roles && 
-                                                         appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                        </TableCell>
+                                                        <TableCell>
                                                             <div className="flex items-center gap-2">
                                                                 <User className="h-4 w-4 text-gray-500" />
                                                                 <div>
-                                                                    <p className="font-medium text-sm">{appointment.user.name}</p>
-                                                                    <p className="text-xs text-gray-500">{appointment.user.email}</p>
-                                                                    
+                                                                    <p className="font-medium">{appointment.inspectionOrder?.nombre_contacto}</p>
+                                                                    {appointment.inspectionOrder?.celular_contacto && (
+                                                                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                                            <Phone className="h-3 w-3" />
+                                                                            {appointment.inspectionOrder.celular_contacto}
+                                                                        </p>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        ) : (
-                                                            <span className="text-sm text-gray-500">Sin asignar</span>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex gap-2">
-                                                            {appointment.session_id && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => handleCopyLink(appointment)}
-                                                                    title="Copiar enlace de inspección"
-                                                                >
-                                                                    <Copy className="h-4 w-4" /> Copiar enlace
-                                                                </Button>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Calendar className="h-4 w-4 text-gray-500" />
+                                                                    <span className="text-sm">
+                                                                        {appointment.scheduled_date ?
+                                                                            new Date(appointment.scheduled_date).toLocaleDateString('es-ES') :
+                                                                            '-'
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="h-4 w-4 text-gray-500" />
+                                                                    <span className="text-sm">{appointment.scheduled_time || '-'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {appointment.user && appointment.user.roles &&
+                                                                appointment.user.roles.some(role => role.name.toLowerCase() === 'inspector') ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <User className="h-4 w-4 text-gray-500" />
+                                                                    <div>
+                                                                        <p className="font-medium text-sm">{appointment.user.name}</p>
+                                                                        <p className="text-xs text-gray-500">{appointment.user.email}</p>
+
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-sm text-gray-500">Sin asignar</span>
                                                             )}
-                                                        </div>
-                                                    </TableCell>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex gap-2">
+                                                                {appointment.session_id && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => handleCopyLink(appointment)}
+                                                                        title="Copiar enlace de inspección"
+                                                                    >
+                                                                        <Copy className="h-4 w-4" /> Copiar enlace
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                            {
+                                                                hasPermission('inspections.fpv') && (
+                                                                    <div className="flex gap-2">
+                                                                        {appointment.session_id && (
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => handleCopyLink(appointment, true)}
+                                                                                title="Copiar enlace de inspección"
+                                                                            >
+                                                                                <Copy className="h-4 w-4" /> Copiar enlace FPV
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </TableCell>
                                                     </TableRow>
                                                 </>
                                             ))}

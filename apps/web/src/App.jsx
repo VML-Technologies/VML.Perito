@@ -83,7 +83,7 @@ const routesMap = {
         textClass: 'text-blue-100',
         buttonClass: 'text-blue-600 hover:text-blue-700',
         type: 'navigate',
-        roles: ['inspector_aliado']
+        roles: ['inspector_aliado', 'inspector_aliado_2']
     },
     '/inspector': {
         name: 'Inspector',
@@ -339,7 +339,7 @@ function AppContent() {
         <Route
           path="/inspector-aliado"
           element={
-            <RoleBasedRoute requiredRoles={['inspector_aliado', 'super_admin']}>
+            <RoleBasedRoute requiredRoles={['inspector_aliado', 'inspector_aliado_2', 'super_admin']}>
               <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <InspectorAliado />
               </AuthenticatedLayout>
