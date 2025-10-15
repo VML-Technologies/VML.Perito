@@ -171,148 +171,6 @@ app.use((req, res, next) => {
 // Servir archivos estáticos de la carpeta dist/web
 const staticPath = path.join(__dirname, '../web/dist');
 
-// Rutas de autenticación con rate limiting específico
-app.post('/api/auth/login', authLimiter, login);
-app.get('/api/auth/verify', authLimiter, verify);
-app.post('/api/auth/logout', authLimiter, logout);
-app.post('/api/auth/change-temporary-password', authLimiter, requireAuth, changeTemporaryPassword);
-app.post('/api/auth/change-password', authLimiter, requireAuth, changePassword);
-app.post('/api/auth/request-password-reset', authLimiter, requestPasswordReset);
-app.get('/api/auth/verify-reset-token/:token', authLimiter, verifyResetToken);
-app.post('/api/auth/reset-password', authLimiter, resetPassword);
-
-// ===== RUTAS DE CONSULTA DE PLACAS (SIN AUTENTICACIÓN) =====
-
-// Consulta de placa sin autenticación
-app.get('/api/check-plate/:placa', readLimiter, plateQueryController.checkPlate);
-
-// Estadísticas de consultas (requiere autenticación)
-app.get('/api/plate-queries/stats', readLimiter, requireAuth, plateQueryController.getStats);
-
-// Rutas RBAC
-app.get('/api/permissions', readLimiter, requirePermission('permissions.read'), permissionController.index);
-app.get('/api/permissions/registered', readLimiter, requirePermission('permissions.read'), permissionController.registered);
-app.get('/api/roles', readLimiter, requirePermission('roles.read'), roleController.index);
-app.post('/api/roles', requirePermission('roles.create'), roleController.store);
-app.put('/api/roles/:id', requirePermission('roles.update'), roleController.update);
-app.delete('/api/roles/:id', requirePermission('roles.delete'), roleController.destroy);
-app.post('/api/permissions', requirePermission('permissions.create'), permissionController.store);
-app.put('/api/permissions/:id', requirePermission('permissions.update'), permissionController.update);
-app.delete('/api/permissions/:id', requirePermission('permissions.delete'), permissionController.destroy);
-app.post('/api/roles/:id/permissions', requirePermission('roles.update'), roleController.assignPermissions);
-app.get('/api/roles/:id/permissions', requirePermission('roles.read'), roleController.getPermissions);
-app.post('/api/users/:userId/roles', requirePermission('users.update'), roleController.assignUserRoles);
-app.get('/api/users/:userId/roles', requirePermission('users.read'), roleController.getUserRoles);
-app.get('/api/users/with-roles', requirePermission('users.read'), roleController.getUsersWithRoles);
-app.post('/api/rbac/bulk-assignments', requirePermission('roles.update'), roleController.updateBulkAssignments);
-
-// Rutas de departamentos
-app.get('/api/departments', readLimiter, requirePermission('departments.read'), departmentController.index);
-app.get('/api/departments/:id', readLimiter, requirePermission('departments.read'), departmentController.show);
-app.post('/api/departments', requirePermission('departments.create'), departmentController.store);
-app.put('/api/departments/:id', requirePermission('departments.update'), departmentController.update);
-app.delete('/api/departments/:id', requirePermission('departments.delete'), departmentController.destroy);
-app.delete('/api/departments/:id/force', requirePermission('departments.delete'), departmentController.forceDestroy);
-app.post('/api/departments/:id/restore', requirePermission('departments.update'), departmentController.restore);
-
-// Rutas de ciudades
-app.get('/api/cities', readLimiter, requirePermission('cities.read'), cityController.index);
-app.get('/api/cities/:id', readLimiter, requirePermission('cities.read'), cityController.show);
-app.get('/api/departments/:departmentId/cities', readLimiter, requirePermission('cities.read'), cityController.getByDepartment);
-app.post('/api/cities', requirePermission('cities.create'), cityController.store);
-app.put('/api/cities/:id', requirePermission('cities.update'), cityController.update);
-app.delete('/api/cities/:id', requirePermission('cities.delete'), cityController.destroy);
-app.delete('/api/cities/:id/force', requirePermission('cities.delete'), cityController.forceDestroy);
-app.post('/api/cities/:id/restore', requirePermission('cities.update'), cityController.restore);
-
-// Rutas de empresas
-app.get('/api/companies', readLimiter, requirePermission('companies.read'), companyController.index);
-app.get('/api/companies/:id', readLimiter, requirePermission('companies.read'), companyController.show);
-app.post('/api/companies', requirePermission('companies.create'), companyController.store);
-app.put('/api/companies/:id', requirePermission('companies.update'), companyController.update);
-app.delete('/api/companies/:id', requirePermission('companies.delete'), companyController.destroy);
-app.delete('/api/companies/:id/force', requirePermission('companies.delete'), companyController.forceDestroy);
-app.post('/api/companies/:id/restore', requirePermission('companies.update'), companyController.restore);
-
-// Rutas de sedes
-app.get('/api/sedes', readLimiter, requirePermission('sedes.read'), sedeController.index);
-app.get('/api/sedes/cda', readLimiter, requirePermission('sedes.read'), sedeController.getCDASedes);
-app.get('/api/sedes/:id', readLimiter, requirePermission('sedes.read'), sedeController.show);
-app.get('/api/companies/:companyId/sedes', readLimiter, requirePermission('sedes.read'), sedeController.getByCompany);
-app.post('/api/sedes', requirePermission('sedes.create'), sedeController.store);
-app.put('/api/sedes/:id', requirePermission('sedes.update'), sedeController.update);
-app.delete('/api/sedes/:id', requirePermission('sedes.delete'), sedeController.destroy);
-app.delete('/api/sedes/:id/force', requirePermission('sedes.delete'), sedeController.forceDestroy);
-app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeController.restore);
-
-// ===== NUEVAS RUTAS - ÓRDENES DE INSPECCIÓN UNIFICADAS =====
-
-// Endpoint unificado para órdenes de inspección
-app.get('/api/inspection-orders/full/:id', readLimiter, inspectionOrderController.getFullInspectionOrder);
-app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
-app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
-app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
-app.get('/api/inspection-orders/search-by-plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.searchByPlate);
-app.get('/api/inspection-orders/check-plate/:plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.checkPlate);
-app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
-app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
-app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
-app.delete('/api/inspection-orders/:id', requirePermission('inspection_orders.delete'), inspectionOrderController.destroy);
-
-// Rutas públicas para inspección de asegurabilidad
-app.get('/api/inspection-orders/by-hash/:hash', readLimiter, inspectionOrderController.getByHash);
-app.post('/api/inspection-orders/:id/start', inspectionOrderController.startInspection);
-app.post('/api/inspection-orders/:id/start-virtual-inspection', requirePermission('inspection_orders.update'), inspectionOrderController.startVirtualInspection);
-
-// Reporte de inspección
-// app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, inspectionOrderController.getInspectionReport);
-app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getInspectionReport);
-
-// Rutas para actualización de datos de contacto
-app.put('/api/inspection-orders/:id/contact-data', requirePermission('inspection_orders.update'), inspectionOrderController.updateContactData);
-
-// Ruta para reenviar SMS de inspección
-app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.resendInspectionSMS);
-
-// Ruta para reenviar SMS de inspección
-// app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
-
-// Rutas para historial de contactos
-app.get('/api/inspection-orders/:orderId/contact-history', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistory);
-app.get('/api/inspection-orders/:orderId/contact-history/:historyId', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistoryItem);
-app.get('/api/inspection-orders/:orderId/contact-history-stats', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistoryStats);
-
-// Rutas para comentarios
-app.get('/api/inspection-orders/:orderId/comments', readLimiter, commentHistoryController.getComments);
-app.get('/api/inspection-orders/:orderId/comments', readLimiter, requirePermission('inspection_orders.read'), commentHistoryController.getComments);
-app.post('/api/inspection-orders/:orderId/comments', requirePermission('inspection_orders.update'), commentHistoryController.createComment);
-app.get('/api/inspection-orders/:orderId/comments/:commentId', readLimiter, requirePermission('inspection_orders.read'), commentHistoryController.getComment);
-app.get('/api/inspection-orders/:orderId/comments-stats', readLimiter, requirePermission('inspection_orders.read'), commentHistoryController.getCommentStats);
-
-// ===== NUEVAS RUTAS - Agente de Contact =====
-
-// Rutas para Agente de Contact (mantener endpoints específicos para funcionalidad adicional)
-app.get('/api/contact-agent/orders/:id', requirePermission('contact_agent.read'), contactAgentController.getOrderDetails);
-
-// Gestión de llamadas
-app.post('/api/contact-agent/call-logs', requirePermission('contact_agent.create_call'), contactAgentController.createCallLog);
-app.get('/api/contact-agent/call-statuses', requirePermission('contact_agent.read'), contactAgentController.getCallStatuses);
-
-// Gestión de agendamientos
-app.get('/api/contact-agent/orders/:orderId/active-appointments', requirePermission('contact_agent.read'), contactAgentController.getActiveAppointments);
-app.post('/api/contact-agent/appointments', requirePermission('contact_agent.create_appointment'), contactAgentController.createAppointment);
-
-// Rutas geográficas para agendamientos
-app.get('/api/contact-agent/departments', requirePermission('contact_agent.read'), contactAgentController.getDepartments);
-app.get('/api/contact-agent/cities/:departmentId', requirePermission('contact_agent.read'), contactAgentController.getCities);
-app.get('/api/contact-agent/sedes/:cityId', requirePermission('contact_agent.read'), contactAgentController.getSedes);
-
-// Nuevas rutas para modalidades de agendamiento
-app.get('/api/contact-agent/modalities', requirePermission('contact_agent.read'), contactAgentController.getAvailableModalities);
-app.get('/api/contact-agent/available-sedes', requirePermission('contact_agent.read'), contactAgentController.getAvailableSedes);
-
-// Nuevas rutas para el flujo mejorado de agendamiento
-app.get('/api/contact-agent/all-modalities', requirePermission('contact_agent.read'), contactAgentController.getAllAvailableModalities);
 app.get('/api/contact-agent/sedes-by-modality', requirePermission('contact_agent.read'), contactAgentController.getSedesByModality);
 
 // ===== NUEVAS RUTAS - SISTEMA DE HORARIOS AVANZADO =====
@@ -460,7 +318,7 @@ app.post('/api/users/:id/restore', requirePermission('users.update'), userContro
 const webhookBodyMiddleware = (req, res, next) => {
     const signatureVerificationEnabled = process.env.WEBHOOK_SIGNATURE_VERIFICATION !== 'false';
     console.log('🔐 Verificación de firma HMAC:', signatureVerificationEnabled ? 'HABILITADA' : 'DESHABILITADA');
-    
+
     if (signatureVerificationEnabled) {
         console.log('⚠️ Verificación de firma habilitada - usando body ya parseado');
         // Para ahora, usar el body ya parseado por express.json()
@@ -721,13 +579,13 @@ const startServer = async () => {
 
         // DÉCIMO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
-        
+
         // Middleware para incluir io en req
         app.use((req, res, next) => {
             req.io = webSocketSystem.io;
             next();
         });
-        
+
         console.log('✅ Sistema completamente inicializado');
 
         // UNDÉCIMO: Mostrar estadísticas iniciales
@@ -768,17 +626,17 @@ const startServer = async () => {
 // Manejo de cierre graceful
 process.on('SIGINT', async () => {
     console.log('\n🛑 Recibida señal SIGINT. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {
@@ -796,17 +654,17 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
     console.log('\n🛑 Recibida señal SIGTERM. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {
