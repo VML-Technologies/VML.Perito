@@ -278,6 +278,15 @@ export const API_ROUTES = {
         // Logs
         LOGS: `${API_BASE_URL}/api/webhooks/logs`,
     },
+
+    // ===== RUTAS DE PERITAJES =====
+    PERITAJES: {
+        // Gestión de peritajes
+        GET_PENDING_TO_SCHEDULE: `${API_BASE_URL}/api/peritajes/getPendingToSchedule`,
+        GET_AGENTES_CONTACTO: `${API_BASE_URL}/api/peritajes/agentes-contacto`,
+        SCHEDULE: `${API_BASE_URL}/api/peritajes/schedule`,
+        ASSIGN_AGENT: `${API_BASE_URL}/api/peritajes/assign-agent`,
+    },
 };
 
 export const API_CONFIG = {

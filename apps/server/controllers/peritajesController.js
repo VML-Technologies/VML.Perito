@@ -1,5 +1,9 @@
 import PeritajeOrder from '../models/peritajeOrder.js';
 import PeritajeAgendamiento from '../models/peritajeAgendamiento.js';
+import User from '../models/user.js';
+import UserRole from '../models/userRole.js';
+import Role from '../models/role.js';
+import { Sequelize } from 'sequelize';
 
 class PeritajesController {
     constructor() { }
@@ -8,7 +12,7 @@ class PeritajesController {
         try {
             const peritajeOrders = await PeritajeOrder.findAll({
                 where: {
-                    estado_momento: 'Pendiente por asignar perito'
+                    estado_momento: 'Pendiente por agendar'
                 },
                 order: [['created_at', 'ASC']]
             });
@@ -92,10 +96,16 @@ class PeritajesController {
                 });
             }
 
-            // Si ya tiene un agendamiento, marcarlo como eliminado (soft delete)
-            await PeritajeAgendamiento.destroy({
-                where: { peritaje_order_id }
-            });
+            // Si ya tiene un agendamiento, marcarlo como eliminado (soft delete) con fecha actual
+            await PeritajeAgendamiento.update(
+                { deleted_at: Sequelize.literal('GETDATE()') },
+                { 
+                    where: { 
+                        peritaje_order_id,
+                        deleted_at: null
+                    }
+                }
+            );
 
             const newAgendamiento = await PeritajeAgendamiento.create({
                 peritaje_order_id,
@@ -107,6 +117,17 @@ class PeritajesController {
                 hora
             });
 
+            // Actualizar el estado del peritaje a 'Pendiente por asignar perito'
+            await PeritajeOrder.update(
+                { 
+                    estado_momento: 'Pendiente por asignar perito',
+                    fecha_momento: Sequelize.literal('GETDATE()')
+                },
+                { 
+                    where: { id: peritaje_order_id }
+                }
+            );
+
             res.status(201).json({
                 success: true,
                 message: 'Peritaje agendado exitosamente',
@@ -117,6 +138,124 @@ class PeritajesController {
             res.status(500).json({ 
                 success: false,
                 message: 'Error interno del servidor al agendar peritaje', 
+                error: error.message 
+            });
+        }
+    }
+
+    async assignAgent(req, res) {
+        try {
+            const { peritaje_order_id, agent_id } = req.body;
+
+            // Validaciones
+            const errors = [];
+            if (!peritaje_order_id || isNaN(Number(peritaje_order_id))) {
+                errors.push('peritaje_order_id es requerido y debe ser numérico.');
+            }
+            if (agent_id && isNaN(Number(agent_id))) {
+                errors.push('agent_id debe ser numérico si se proporciona.');
+            }
+
+            if (errors.length > 0) {
+                return res.status(422).json({ 
+                    success: false,
+                    message: 'Datos inválidos', 
+                    errors 
+                });
+            }
+
+            // Verificar que el peritaje existe
+            const peritajeOrder = await PeritajeOrder.findByPk(peritaje_order_id);
+            if (!peritajeOrder) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: 'Peritaje no encontrado.' 
+                });
+            }
+
+            // Si se proporciona agent_id, verificar que el agente existe
+            if (agent_id) {
+                const User = (await import('../models/user.js')).default;
+                const agent = await User.findByPk(agent_id);
+                if (!agent) {
+                    return res.status(404).json({ 
+                        success: false,
+                        message: 'Agente no encontrado.' 
+                    });
+                }
+            }
+
+            // Actualizar solo la asignación del agente (sin cambiar el estado)
+            await PeritajeOrder.update(
+                { 
+                    assigned_agent_id: agent_id || null
+                },
+                { 
+                    where: { id: peritaje_order_id }
+                }
+            );
+
+            const message = agent_id 
+                ? 'Agente asignado exitosamente al peritaje'
+                : 'Asignación de agente removida exitosamente';
+
+            res.json({
+                success: true,
+                message,
+                data: {
+                    peritaje_order_id,
+                    assigned_agent_id: agent_id || null
+                }
+            });
+        } catch (error) {
+            console.error('Error al asignar agente:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Error interno del servidor al asignar agente', 
+                error: error.message 
+            });
+        }
+    }
+
+    async getAgentesContacto(req, res) {
+        try {
+            const agentes = await User.findAll({
+                include: [
+                    {
+                        model: UserRole,
+                        as: 'userRoles',
+                        include: [
+                            {
+                                model: Role,
+                                as: 'role',
+                                where: {
+                                    name: 'agente_contacto'
+                                }
+                            }
+                        ]
+                    }
+                ],
+                where: {
+                    is_active: true
+                },
+                attributes: ['id', 'name', 'email', 'phone', 'is_active']
+            });
+
+            // Filtrar solo usuarios que tengan el rol agente_contacto
+            const agentesFiltrados = agentes.filter(user => 
+                user.userRoles && user.userRoles.length > 0
+            );
+
+            res.json({
+                success: true,
+                data: agentesFiltrados,
+                count: agentesFiltrados.length
+            });
+        } catch (error) {
+            console.error('Error al obtener agentes de contacto:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Error interno del servidor al obtener agentes de contacto', 
                 error: error.message 
             });
         }

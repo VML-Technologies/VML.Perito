@@ -457,8 +457,10 @@ app.post('/api/users/:id/restore', requirePermission('users.update'), userContro
 
 // ===== RUTAS DE PERITAJES =====
 
-app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('peritajes.read'), peritajesController.peritajesToSchedule);
-app.post('/api/peritajes/schedule', requirePermission('peritajes.update'), peritajesController.schedulePeritaje);
+app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('inspection_orders.read'), peritajesController.peritajesToSchedule);
+app.get('/api/peritajes/agentes-contacto', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getAgentesContacto);
+app.post('/api/peritajes/schedule', requirePermission('inspection_orders.update'), peritajesController.schedulePeritaje);
+app.post('/api/peritajes/assign-agent', requirePermission('inspection_orders.update'), peritajesController.assignAgent);
 
 // ===== RUTAS DE WEBHOOKS =====
 

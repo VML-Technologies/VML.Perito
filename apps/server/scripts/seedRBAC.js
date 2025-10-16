@@ -602,6 +602,22 @@ const seedRBAC = async () => {
                 action: 'fpv',
                 endpoint: '/api/inspections/fpv',
                 method: 'POST'
+            },
+            {
+                name: 'peritajes.read',
+                description: 'Ver peritajes',
+                resource: 'peritajes',
+                action: 'read',
+                endpoint: '/api/peritajes',
+                method: 'GET'
+            },
+            {
+                name: 'peritajes.read',
+                description: 'Ver un peritaje',
+                resource: 'peritajes',
+                action: 'read',
+                endpoint: '/api/peritajes/:id',
+                method: 'GET'
             }
         ];
 
@@ -845,11 +861,13 @@ const seedRBAC = async () => {
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
+                p.name.startsWith('peritajes.read') ||
+                p.name.startsWith('peritajes.update') ||
                 p.name == 'users.read' // Necesario para acceder al perfil
             );
-            
+
             console.log(`🔍 Permisos que se asignarán al coordinador:`, coordinadorPermissions.map(p => p.name));
-            
+
             for (const permission of coordinadorPermissions) {
                 await RolePermission.findOrCreate({
                     where: {
@@ -925,13 +943,13 @@ const seedRBAC = async () => {
                 'reports.read',          // Para ver reportes
                 'reports.download'      // Para descargar reportes
             ];
-            
+
             const coordinadorVMLPermissions = createdPermissions.filter(p =>
                 coordinadorVMLPermissionNames.includes(p.name)
             );
-            
+
             console.log(`🔍 Permisos que se asignarán al coordinador VML:`, coordinadorVMLPermissions.map(p => p.name));
-            
+
             for (const permission of coordinadorVMLPermissions) {
                 await RolePermission.findOrCreate({
                     where: {
@@ -959,7 +977,7 @@ const seedRBAC = async () => {
                 'cities.read',           // Para datos geográficos
                 'reports.read'          // Para ver reportes
             ];
-            
+
             const inspectorAliadoPermissions = createdPermissions.filter(p =>
                 inspectorAliadoPermissionNames.includes(p.name)
             );
@@ -967,9 +985,9 @@ const seedRBAC = async () => {
             const permissionsNoEncontrados = inspectorAliadoPermissionNames.filter(p => !inspectorAliadoPermissions.some(pp => pp.name == p));
 
             console.log(`🔍 Permisos no encontrados:`, permissionsNoEncontrados);
-            
+
             console.log(`🔍 Permisos que se asignarán al Inspector Aliado:`, inspectorAliadoPermissions.map(p => p.name));
-            
+
             for (const permission of inspectorAliadoPermissions) {
                 console.log("Validando permiso:", permission.name);
 
@@ -1000,7 +1018,7 @@ const seedRBAC = async () => {
                 'reports.read',          // Para ver reportes
                 'inspections.fpv'       // Para hacer inspecciones en FPV
             ];
-            
+
             const inspectorAliadoPermissions2 = createdPermissions.filter(p =>
                 inspectorAliadoPermissionNames.includes(p.name)
             );
@@ -1008,9 +1026,9 @@ const seedRBAC = async () => {
             const permissionsNoEncontrados = inspectorAliadoPermissionNames.filter(p => !inspectorAliadoPermissions2.some(pp => pp.name == p));
 
             console.log(`🔍 Permisos no encontrados:`, permissionsNoEncontrados);
-            
+
             console.log(`🔍 Permisos que se asignarán al Inspector Aliado:`, inspectorAliadoPermissions2.map(p => p.name));
-            
+
             for (const permission of inspectorAliadoPermissions2) {
                 console.log("Validando permiso:", permission.name);
 
