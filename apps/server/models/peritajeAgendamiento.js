@@ -21,10 +21,6 @@ const PeritajeAgendamiento = createModelWithSoftDeletes('PeritajeAgendamiento', 
         type: DataTypes.DATEONLY,
         allowNull: false,
     },
-    hora: {
-        type: DataTypes.TIME,
-        allowNull: true,
-    },
     direccion_peritaje: {
         type: DataTypes.STRING(500),
         allowNull: true,
@@ -40,6 +36,10 @@ const PeritajeAgendamiento = createModelWithSoftDeletes('PeritajeAgendamiento', 
     },
     observaciones: {
         type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    hora: {
+        type: DataTypes.TIME,
         allowNull: true,
     },
 }, {

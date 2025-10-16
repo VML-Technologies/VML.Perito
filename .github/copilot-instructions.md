@@ -34,6 +34,7 @@
   - Located in `apps/server/controllers/`, follow CRUD + soft delete patterns (see `baseController.js`).
 - **Models:**
   - Located in `apps/server/models/`, use Sequelize, soft deletes via `baseModel.js`.
+  - Shared models: `peritajeOrder.js` and `peritajeAgendamiento.js` follow the same pattern as other models, registered in `index.js` and related via 1:N (`PeritajeOrder.hasMany(PeritajeAgendamiento)`).
 - **RBAC:**
   - Roles/permissions managed via admin UI (`/admin`), permissions are granular and endpoint/method-specific.
 - **Notifications:**
@@ -57,6 +58,11 @@
 
 ## Key References & Patterns
 
+- Shared models:
+  - Main: `apps/server/models/peritajeOrder.js`
+  - Agendamientos: `apps/server/models/peritajeAgendamiento.js`
+  - Registered and related in: `apps/server/models/index.js`
+
 - Main backend entry: `apps/server/index.js`
 - Main frontend entry: `apps/web/src/App.jsx`
 - Database config: `apps/server/config/database.js`
@@ -67,6 +73,9 @@
 - All technical rules: `.cursor/rules/` (see `rule-generation-guidelines.mdc` for structure)
 
 ## Example File References
+
+- `[peritajeOrder.js](mdc:apps/server/models/peritajeOrder.js)`
+- `[peritajeAgendamiento.js](mdc:apps/server/models/peritajeAgendamiento.js)`
 
 - `[App.jsx](mdc:apps/web/src/App.jsx)`
 - `[seedAll.js](mdc:apps/server/scripts/seedAll.js)`
