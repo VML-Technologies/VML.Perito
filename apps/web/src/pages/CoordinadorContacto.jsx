@@ -10,8 +10,8 @@ import OrdersFilters from '@/components/OrdersFilters';
 import OrdersTable from '@/components/OrdersTable';
 import OrderDetailsPanel from '@/components/OrderDetailsPanel';
 import { useOrders } from '@/hooks/use-orders';
-import { ClipboardList, BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import PeritajesCoordinator from '@/components/PeritajesCoordinator';
+import { ClipboardList, BarChart3, TrendingUp } from 'lucide-react';
+import PeritajeMomento3 from '@/components/peritajeMomento3';
 
 export default function CoordinadorContacto() {
     const [agents, setAgents] = useState([]);
@@ -177,8 +177,8 @@ export default function CoordinadorContacto() {
                         <span className="inline">Órdenes de Inspección</span>
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        <span className="inline">Peritajes - Momento 3</span>
+                        <BarChart3 className="h-4 w-4" />
+                        <span className="inline">Peritaje - Momento 3</span>
                     </TabsTrigger>
                 </TabsList>
 
@@ -221,11 +221,9 @@ export default function CoordinadorContacto() {
                 {/* Tab: peritajes */}
                 <TabsContent value="peritajes" className="space-y-6">
                     <div className="space-y-6">
-                        <PeritajesCoordinator />
+                        <PeritajeMomento3 />
                     </div>
                 </TabsContent>
-
-
             </Tabs>
 
             {/* Panel de Detalles */}

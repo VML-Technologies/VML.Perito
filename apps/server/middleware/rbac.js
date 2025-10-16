@@ -34,6 +34,8 @@ export const requirePermission = (permissionName) => {
                     through: { attributes: [] }
                 }]
             });
+
+            console.log(JSON.stringify(user, null, 4))
             if (!user) return res.status(401).json({ message: 'Usuario no válido' });
 
             // 3. Verificar si el usuario tiene el permiso
@@ -43,6 +45,7 @@ export const requirePermission = (permissionName) => {
                     userPermissions.add(perm.name);
                 }
             }
+            console.log(JSON.stringify(userPermissions, null, 4))
             if (!userPermissions.has(permissionName)) {
                 return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
             }

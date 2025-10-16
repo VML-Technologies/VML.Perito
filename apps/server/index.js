@@ -39,6 +39,7 @@ import inspectionQueueController from './controllers/inspectionQueueController.j
 import inspectionModalityController from './controllers/inspectionModalityController.js';
 import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 import scheduledTasksController from './controllers/scheduledTasksController.js';
+import peritajesController from './controllers/peritajesController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -311,6 +312,13 @@ app.put('/api/users/:id', requirePermission('users.update'), userController.upda
 app.delete('/api/users/:id', requirePermission('users.delete'), userController.destroy);
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
 app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore);
+
+// ===== RUTAS DE PERITAJES =====
+
+app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('inspection_orders.read'), peritajesController.peritajesToSchedule);
+app.get('/api/peritajes/agentes-contacto', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getAgentesContacto);
+app.post('/api/peritajes/schedule', requirePermission('inspection_orders.update'), peritajesController.schedulePeritaje);
+app.post('/api/peritajes/assign-agent', requirePermission('inspection_orders.update'), peritajesController.assignAgent);
 
 // ===== RUTAS DE WEBHOOKS =====
 
