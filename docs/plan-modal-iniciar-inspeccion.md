@@ -136,7 +136,7 @@ socket.on('inspectionStarted', (data) => {
 
 #### 5.1 Backend (.env)
 ```
-FRONTEND_URL=http://192.168.78.106:5173
+FRONTEND_URL=http://localhost:5173
 ```
 
 #### 5.2 Verificar uso actual
