@@ -2409,6 +2409,101 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             });
         }
     }
+
+    /**
+     * Obtener URL de descarga del PDF de inspección
+     * GET /api/inspection-orders/:id/pdf-download-url
+     */
+    async getPdfDownloadUrl(req, res) {
+        try {
+            const { id } = req.params;
+
+            // 1. Buscar la orden de inspección
+            const inspectionOrder = await InspectionOrder.findByPk(id, {
+                attributes: ['id', 'placa']
+            });
+
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // 2. Buscar el appointment más reciente para esta orden
+            const latestAppointment = await Appointment.findOne({
+                where: {
+                    inspection_order_id: id,
+                    session_id: { [Op.ne]: null } // Solo appointments con session_id
+                },
+                order: [['updated_at', 'DESC']], // El más reciente
+                attributes: ['session_id', 'updated_at']
+            });
+
+            if (!latestAppointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No se encontró un appointment válido para esta orden'
+                });
+            }
+
+            // 3. Construir el nombre del archivo PDF
+            const pdfFileName = `inspeccion_${inspectionOrder.placa}.pdf`;
+            
+            // 4. Construir el blob_name para Azure
+            const blobName = `pdfs/${latestAppointment.session_id}/${inspectionOrder.id}/${pdfFileName}`;
+
+            // 5. Usar el servicio de Azure Blob para generar URL con SAS token
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+            
+            try {
+                // Generar URL con SAS token (válida por 60 minutos)
+                const downloadUrl = await azureBlobService.getDownloadUrl(blobName, 60);
+                
+                console.log(`✅ URL de descarga PDF generada para orden ${id}: ${pdfFileName}`);
+                
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: latestAppointment.session_id,
+                        inspectionOrderId: inspectionOrder.id,
+                        plate: inspectionOrder.placa,
+                        expiresIn: 60 // minutos
+                    }
+                });
+            } catch (azureError) {
+                console.error('❌ Error generando URL de Azure:', azureError.message);
+                
+                // Fallback: construir URL pública
+                const publicUrl = azureBlobService.getPublicUrl(blobName);
+                
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl: publicUrl,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: latestAppointment.session_id,
+                        inspectionOrderId: inspectionOrder.id,
+                        plate: inspectionOrder.placa,
+                        expiresIn: null, // URL pública sin expiración
+                        fallback: true
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('❌ Error obteniendo URL de descarga PDF:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
 }
 
 export default InspectionOrderController; 
