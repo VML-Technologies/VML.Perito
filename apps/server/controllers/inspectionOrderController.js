@@ -1425,7 +1425,7 @@ class InspectionOrderController extends BaseController {
             let showStartButton = true;
             let appointmentStatus = null;
             let activeAppointment = null;
-            
+
             if (activeAppointments.length > 0) {
                 // ✅ HAY appointment activo - Usuario debe ir al APPOINTMENT (redirigir a inspección)
                 activeAppointment = activeAppointments[0];
@@ -2416,10 +2416,10 @@ if status == 5 then check for latest @appointment an if it is with status != ine
      */
     async getPdfDownloadUrl(req, res) {
         try {
-            const { id } = req.params;
+            const { orderId, appointmentId, sessionId } = req.params;
 
             // 1. Buscar la orden de inspección
-            const inspectionOrder = await InspectionOrder.findByPk(id, {
+            const inspectionOrder = await InspectionOrder.findByPk(orderId, {
                 attributes: ['id', 'placa']
             });
 
@@ -2430,45 +2430,28 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                 });
             }
 
-            // 2. Buscar el appointment más reciente para esta orden
-            const latestAppointment = await Appointment.findOne({
-                where: {
-                    inspection_order_id: id,
-                    session_id: { [Op.ne]: null } // Solo appointments con session_id
-                },
-                order: [['updated_at', 'DESC']], // El más reciente
-                attributes: ['session_id', 'updated_at']
-            });
-
-            if (!latestAppointment) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'No se encontró un appointment válido para esta orden'
-                });
-            }
-
             // 3. Construir el nombre del archivo PDF
             const pdfFileName = `inspeccion_${inspectionOrder.placa}.pdf`;
-            
+
             // 4. Construir el blob_name para Azure
-            const blobName = `pdfs/${latestAppointment.session_id}/${inspectionOrder.id}/${pdfFileName}`;
+            const blobName = `pdfs/${sessionId}/${orderId}/${pdfFileName}`;
 
             // 5. Usar el servicio de Azure Blob para generar URL con SAS token
             const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
-            
+
             try {
                 // Generar URL con SAS token (válida por 60 minutos)
                 const downloadUrl = await azureBlobService.getDownloadUrl(blobName, 60);
-                
-                console.log(`✅ URL de descarga PDF generada para orden ${id}: ${pdfFileName}`);
-                
+
+                console.log(`✅ URL de descarga PDF generada para orden ${orderId}: ${pdfFileName}`);
+
                 return res.json({
                     success: true,
                     data: {
                         downloadUrl,
                         fileName: pdfFileName,
                         blobName,
-                        sessionId: latestAppointment.session_id,
+                        sessionId: sessionId,
                         inspectionOrderId: inspectionOrder.id,
                         plate: inspectionOrder.placa,
                         expiresIn: 60 // minutos
@@ -2476,20 +2459,20 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                 });
             } catch (azureError) {
                 console.error('❌ Error generando URL de Azure:', azureError.message);
-                
+
                 // Fallback: construir URL pública
                 const publicUrl = azureBlobService.getPublicUrl(blobName);
-                
+
                 return res.json({
                     success: true,
                     data: {
-                        downloadUrl: publicUrl,
+                        downloadUrl: null,
                         fileName: pdfFileName,
                         blobName,
-                        sessionId: latestAppointment.session_id,
+                        sessionId: sessionId,
                         inspectionOrderId: inspectionOrder.id,
                         plate: inspectionOrder.placa,
-                        expiresIn: null, // URL pública sin expiración
+                        expiresIn: null,
                         fallback: true
                     }
                 });
@@ -2497,6 +2480,23 @@ if status == 5 then check for latest @appointment an if it is with status != ine
 
         } catch (error) {
             console.error('❌ Error obteniendo URL de descarga PDF:', error);
+
+            // Verificar si es el error específico de "Blob no encontrado"
+            if (error.message && error.message.includes('Blob no encontrado')) {
+                console.log('📄 PDF no encontrado en Azure Blob Storage, devolviendo enlace como null');
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl: null,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: sessionId,
+                        inspectionOrderId: orderId,
+                        expiresIn: null,
+                        fallback: true
+                    }
+                });
+            }
             return res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',

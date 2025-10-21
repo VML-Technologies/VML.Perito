@@ -336,7 +336,7 @@ const OrdersTable = ({
                                                                             Ver Resumen
                                                                         </Button>
                                                                     )}
-                                                                    {
+                                                                    {/* {
                                                                         (order.InspectionOrderStatus.id && order.session_id && order.fixedStatus != 'No finalizada por novedad del cliente') ? <>
                                                                             <Button
                                                                                 size="sm"
@@ -349,7 +349,7 @@ const OrdersTable = ({
                                                                                 Ver Inspección
                                                                             </Button>
                                                                         </> : <></>
-                                                                    }
+                                                                    } */}
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select
                                                                             value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}

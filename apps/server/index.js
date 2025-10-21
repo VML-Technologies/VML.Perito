@@ -278,7 +278,9 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
 
 // Ruta para obtener URL de descarga del PDF
-app.get('/api/inspection-orders/:id/pdf-download-url', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getPdfDownloadUrl);
+app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, inspectionOrderController.getPdfDownloadUrl);
+
+// app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getPdfDownloadUrl);
 
 // Rutas para historial de contactos
 app.get('/api/inspection-orders/:orderId/contact-history', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistory);
@@ -463,7 +465,7 @@ app.post('/api/users/:id/restore', requirePermission('users.update'), userContro
 const webhookBodyMiddleware = (req, res, next) => {
     const signatureVerificationEnabled = process.env.WEBHOOK_SIGNATURE_VERIFICATION !== 'false';
     console.log('🔐 Verificación de firma HMAC:', signatureVerificationEnabled ? 'HABILITADA' : 'DESHABILITADA');
-    
+
     if (signatureVerificationEnabled) {
         console.log('⚠️ Verificación de firma habilitada - usando body ya parseado');
         // Para ahora, usar el body ya parseado por express.json()
@@ -890,13 +892,13 @@ const startServer = async () => {
 
         // DÉCIMO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
-        
+
         // Middleware para incluir io en req
         app.use((req, res, next) => {
             req.io = webSocketSystem.io;
             next();
         });
-        
+
         console.log('✅ Sistema completamente inicializado');
 
         // UNDÉCIMO: Mostrar estadísticas iniciales
@@ -937,17 +939,17 @@ const startServer = async () => {
 // Manejo de cierre graceful
 process.on('SIGINT', async () => {
     console.log('\n🛑 Recibida señal SIGINT. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {
@@ -965,17 +967,17 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
     console.log('\n🛑 Recibida señal SIGTERM. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {

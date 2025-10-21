@@ -119,23 +119,23 @@ const OrderDetailsPanel = ({
             };
 
             // 1. Obtener la URL de descarga del PDF
-            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), { 
-                headers 
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), {
+                headers
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            
+
             if (!data.success) {
                 throw new Error(data.message || 'Error obteniendo URL de descarga');
             }
 
             // 2. Descargar el archivo PDF
             const { downloadUrl, fileName } = data.data;
-            
+
             // Crear un enlace temporal para descargar
             const link = document.createElement('a');
             link.href = downloadUrl;
@@ -146,7 +146,7 @@ const OrderDetailsPanel = ({
             document.body.removeChild(link);
 
             console.log(`✅ PDF descargado: ${fileName}`);
-            
+
         } catch (error) {
             console.error('❌ Error descargando PDF:', error);
             alert(`Error descargando el PDF: ${error.message}`);
@@ -170,23 +170,23 @@ const OrderDetailsPanel = ({
             };
 
             // 1. Obtener la URL de descarga del PDF
-            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), { 
-                headers 
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), {
+                headers
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            
+
             if (!data.success) {
                 throw new Error(data.message || 'Error obteniendo URL de descarga');
             }
 
             // 2. Descargar el archivo PDF
             const { downloadUrl, fileName } = data.data;
-            
+
             // Crear un enlace temporal para descargar
             const link = document.createElement('a');
             link.href = downloadUrl;
@@ -197,7 +197,7 @@ const OrderDetailsPanel = ({
             document.body.removeChild(link);
 
             console.log(`✅ PDF de appointment descargado: ${fileName}`);
-            
+
         } catch (error) {
             console.error('❌ Error descargando PDF de appointment:', error);
             alert(`Error descargando el PDF: ${error.message}`);
@@ -232,22 +232,22 @@ const OrderDetailsPanel = ({
                                 )}
                             </div>
                         ))}
-                        
+
                         <div className='flex justify-start gap-2 w-full mt-2'>
-                                            <button
-                                                onClick={handleDownloadPdf}
-                                                disabled={downloadingPdf}
-                                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
-                                                title="Descargar PDF de inspección"
-                                            >
-                                                {downloadingPdf ? (
-                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                ) : (
-                                                    <Download className="h-3.5 w-3.5" />
-                                                )}
-                                                {downloadingPdf ? 'Descargando...' : 'Descargar informe'}
-                                            </button>
-                                        </div>
+                            <button
+                                onClick={handleDownloadPdf}
+                                disabled={downloadingPdf}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                title="Descargar PDF de inspección"
+                            >
+                                {downloadingPdf ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Download className="h-3.5 w-3.5" />
+                                )}
+                                {downloadingPdf ? 'Descargando...' : 'Descargar informe'}
+                            </button>
+                        </div>
                         {
                             inspection && (
                                 loading ? (
@@ -387,7 +387,8 @@ const OrderDetailsPanel = ({
 
                         {showAppointments && (
                             <TabsContent value="appointments">
-                                <AppointmentsHistory 
+                                <AppointmentsHistory
+                                    orderId={order.id}
                                     appointments={order.appointments?.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)) || []}
                                     onDownloadPdf={handleDownloadAppointmentPdf}
                                 />
@@ -411,7 +412,8 @@ const OrderDetailsPanel = ({
                             />
                         )}
                         {showAppointments && (
-                            <AppointmentsHistory 
+                            <AppointmentsHistory
+                                orderId={order.id}
                                 appointments={order.appointments?.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)) || []}
                                 onDownloadPdf={handleDownloadAppointmentPdf}
                             />
