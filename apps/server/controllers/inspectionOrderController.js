@@ -155,7 +155,7 @@ class InspectionOrderController extends BaseController {
         if (result) {
             const cleanResult = result.split("-")[0].trim()
             return {
-                fixedStatus: cleanResult=='NO ASEGURABLE PARCIAL'?'Reinspeccion':cleanResult,
+                fixedStatus: cleanResult == 'NO ASEGURABLE PARCIAL' ? 'Reinspeccion' : cleanResult,
                 badgeColor: statusBadgeColorMap[cleanResult],
                 comentariosAnulacion: comentariosAnulacion
             }
@@ -1608,7 +1608,8 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             const existingOrder = await InspectionOrder.findOne({
                 where: {
                     placa: plate.toUpperCase(),
-                    status: { [Op.ne]: 6 } // status != 6
+                    status: { [Op.ne]: 6 }, // status != 6
+                    deleted_at: null
                 },
                 include: [
                     {
@@ -1633,18 +1634,18 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             if (existingOrder) {
                 const latestAppointment = existingOrder.appointments[0];
                 if (existingOrder.status != 5 || (existingOrder.status === 5 && existingOrder.appointments && existingOrder.appointments.length > 0 && latestAppointment?.status == 'ineffective_with_retry')) {
-                        return res.json({
-                            success: true,
-                            exists: true,
-                            message: `Ya existe una orden de inspección activa para la placa ${plate.toUpperCase()}`,
-                            order: {
-                                id: existingOrder.id,
-                                numero: existingOrder.numero,
-                                status: existingOrder.InspectionOrderStatus?.name || 'Sin estado',
-                                created_at: existingOrder.created_at,
-                                nombre_cliente: existingOrder.nombre_cliente
-                            }
-                        });
+                    return res.json({
+                        success: true,
+                        exists: true,
+                        message: `Ya existe una orden de inspección activa para la placa ${plate.toUpperCase()}`,
+                        order: {
+                            id: existingOrder.id,
+                            numero: existingOrder.numero,
+                            status: existingOrder.InspectionOrderStatus?.name || 'Sin estado',
+                            created_at: existingOrder.created_at,
+                            nombre_cliente: existingOrder.nombre_cliente
+                        }
+                    });
                 }
             }
 
@@ -1737,11 +1738,11 @@ if status == 5 then check for latest @appointment an if it is with status != ine
 
             // sort appointments by updated_at descending
             inspectionOrder.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-            
-            const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0 
-                ? inspectionOrder.appointments[0] 
+
+            const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0
+                ? inspectionOrder.appointments[0]
                 : null;
-        
+
             console.log('🔍 mostRecentAppointment:', mostRecentAppointment);
 
             // Extender con respuestas e imágenes
@@ -2296,11 +2297,11 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             if (inspectionOrder.correo_contacto) {
                 try {
                     console.log(`📧 Enviando email a: ${inspectionOrder.correo_contacto}`);
-                    
+
                     // Leer plantilla de email
                     const templatePath = path.join(process.cwd(), 'mailTemplates', 'inspectionLinkNotification.html');
                     let emailTemplate = fs.readFileSync(templatePath, 'utf8');
-                    
+
                     // Reemplazar variables en la plantilla
                     console.log(`📧 Datos para reemplazo:`, emailData);
                     Object.keys(emailData).forEach(key => {
@@ -2310,7 +2311,7 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                         const afterReplace = emailTemplate.includes(`{{${key}}}`);
                         console.log(`📧 Reemplazando {{${key}}} -> ${emailData[key]} (antes: ${beforeReplace}, después: ${afterReplace})`);
                     });
-                    
+
                     // Crear objeto de notificación para email
                     const emailNotification = {
                         recipient_email: inspectionOrder.correo_contacto,
@@ -2332,7 +2333,7 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                             resend_at: new Date().toISOString()
                         }
                     };
-                    
+
                     // Preparar datos para logging de email
                     const emailLogData = {
                         inspection_order_id: inspectionOrder.id,
@@ -2352,7 +2353,7 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                             resent_at: new Date().toISOString()
                         }
                     };
-                    
+
                     // Enviar email con logging
                     const emailLogResult = await emailLoggingService.default.sendEmailWithLogging(
                         emailLogData,
@@ -2360,15 +2361,15 @@ if status == 5 then check for latest @appointment an if it is with status != ine
                             return await emailService.default.send(emailNotification, emailTemplate);
                         }
                     );
-                    
+
                     emailResult = emailLogResult;
-                    
+
                     if (emailResult.success) {
                         console.log(`✅ Email enviado y loggeado exitosamente a ${inspectionOrder.correo_contacto}`);
                     } else {
                         console.error(`❌ Error enviando email: ${emailResult.error}`);
                     }
-                    
+
                 } catch (emailError) {
                     console.error(`❌ Error procesando email:`, emailError);
                     emailResult = { success: false, error: emailError.message };

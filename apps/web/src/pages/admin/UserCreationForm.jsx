@@ -32,6 +32,12 @@ export function UserCreationForm({
     const [userFormErrors, setUserFormErrors] = useState({});
     const [validationMessages, setValidationMessages] = useState({});
 
+    // ¿El rol comercial_mundial está seleccionado?
+    const isComercialMundialSelected = (userForm.role_ids || []).some((id) => {
+        const role = availableRoles.find(r => r.id.toString() === id);
+        return role && (role.name === 'comercial_mundial' || role.name === 'comercial_mundial_4');
+    });
+
     // Cargar datos del usuario cuando está en modo edición
     useEffect(() => {
         if (editingUser) {
@@ -197,6 +203,24 @@ export function UserCreationForm({
                 return rest;
             });
         }
+
+        // Si ya no es requerido por cambio de roles, limpiar error de intermediary_key
+        setTimeout(() => {
+            const currentRoles = (userForm.role_ids || []);
+            const toggledRoles = currentRoles.includes(roleId)
+                ? currentRoles.filter(id => id !== roleId)
+                : [...currentRoles, roleId];
+            const willRequireIntermediary = (toggledRoles || []).some((id) => {
+                const role = availableRoles.find(r => r.id.toString() === id);
+                return role && (role.name === 'comercial_mundial' || role.name === 'comercial_mundial_4');
+            });
+            if (!willRequireIntermediary && userFormErrors.intermediary_key) {
+                setUserFormErrors(prev => {
+                    const { intermediary_key, ...rest } = prev;
+                    return rest;
+                });
+            }
+        }, 0);
     };
 
     // Función para crear o actualizar usuario
@@ -213,6 +237,9 @@ export function UserCreationForm({
             if (!userForm.email) errors.email = 'Email es requerido';
             if (!editingUser && !userForm.password) errors.password = 'Contraseña es requerida';
             if (!userForm.role_ids || userForm.role_ids.length === 0) errors.role_ids = 'Selecciona al menos un rol';
+            if (isComercialMundialSelected && (!userForm.intermediary_key || userForm.intermediary_key.trim() === '')) {
+                errors.intermediary_key = 'La llave de intermediario es requerida para el rol Comercial Mundial';
+            }
 
             if (Object.keys(errors).length > 0) {
                 setUserFormErrors(errors);
@@ -574,13 +601,17 @@ export function UserCreationForm({
 
                         {/* Llave de Intermediario */}
                         <div>
-                            <Label htmlFor="user-intermediary-key">Llave de Intermediario</Label>
+                            <Label htmlFor="user-intermediary-key">Llave de Intermediario{isComercialMundialSelected ? ' *' : ''}</Label>
                             <Input
                                 id="user-intermediary-key"
                                 value={userForm.intermediary_key}
                                 onChange={(e) => handleUserFormChange('intermediary_key', e.target.value)}
-                                placeholder="Llave de intermediario (opcional)"
+                                placeholder={isComercialMundialSelected ? 'Llave de intermediario (requerida para Comercial Mundial)' : 'Llave de intermediario (opcional)'}
+                                className={userFormErrors.intermediary_key ? 'border-red-500' : ''}
                             />
+                            {userFormErrors.intermediary_key && (
+                                <p className="text-sm text-red-500 mt-1">{userFormErrors.intermediary_key}</p>
+                            )}
                         </div>
 
                         {/* Contraseña */}
