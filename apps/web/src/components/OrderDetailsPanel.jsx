@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserCheck, UserX, FileTextIcon, Loader2 } from 'lucide-react';
+import { UserCheck, UserX, FileTextIcon, Loader2, Download } from 'lucide-react';
 import CallHistory from './CallHistory';
 import AppointmentsHistory from './AppointmentsHistory';
 import OrderCommunicationSection from './OrderCommunicationSection';
@@ -21,6 +21,8 @@ const OrderDetailsPanel = ({
 
     const [inspection, setInspection] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
+    const [downloadingAppointmentPdf, setDownloadingAppointmentPdf] = useState(false);
 
     useEffect(() => {
         const fetchInspectionData = async () => {
@@ -102,6 +104,108 @@ const OrderDetailsPanel = ({
         }
     }
 
+    const handleDownloadPdf = async () => {
+        if (!order?.id) {
+            console.error('No hay ID de orden disponible');
+            return;
+        }
+
+        setDownloadingPdf(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            // 1. Obtener la URL de descarga del PDF
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), {
+                headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Error obteniendo URL de descarga');
+            }
+
+            // 2. Descargar el archivo PDF
+            const { downloadUrl, fileName } = data.data;
+
+            // Crear un enlace temporal para descargar
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            link.target = '_blank'; // Abrir en nueva pestaña como fallback
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log(`✅ PDF descargado: ${fileName}`);
+
+        } catch (error) {
+            console.error('❌ Error descargando PDF:', error);
+            alert(`Error descargando el PDF: ${error.message}`);
+        } finally {
+            setDownloadingPdf(false);
+        }
+    }
+
+    const handleDownloadAppointmentPdf = async (appointment) => {
+        if (!order?.id || !appointment?.session_id) {
+            console.error('No hay datos suficientes para descargar el PDF');
+            return;
+        }
+
+        setDownloadingAppointmentPdf(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            // 1. Obtener la URL de descarga del PDF
+            const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF_DOWNLOAD_URL(order.id), {
+                headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Error obteniendo URL de descarga');
+            }
+
+            // 2. Descargar el archivo PDF
+            const { downloadUrl, fileName } = data.data;
+
+            // Crear un enlace temporal para descargar
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            link.target = '_blank'; // Abrir en nueva pestaña como fallback
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log(`✅ PDF de appointment descargado: ${fileName}`);
+
+        } catch (error) {
+            console.error('❌ Error descargando PDF de appointment:', error);
+            alert(`Error descargando el PDF: ${error.message}`);
+        } finally {
+            setDownloadingAppointmentPdf(false);
+        }
+    }
+
     const content = (
         <>
             <SheetHeader>
@@ -128,6 +232,22 @@ const OrderDetailsPanel = ({
                                 )}
                             </div>
                         ))}
+
+                        <div className='flex justify-start gap-2 w-full mt-2'>
+                            <button
+                                onClick={handleDownloadPdf}
+                                disabled={downloadingPdf}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                title="Descargar PDF de inspección"
+                            >
+                                {downloadingPdf ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Download className="h-3.5 w-3.5" />
+                                )}
+                                {downloadingPdf ? 'Descargando...' : 'Descargar informe'}
+                            </button>
+                        </div>
                         {
                             inspection && (
                                 loading ? (
@@ -252,7 +372,7 @@ const OrderDetailsPanel = ({
                     <Tabs defaultValue="calls" className="space-y-4">
                         <TabsList className="grid w-full grid-cols-3">
                             {showCallHistory && <TabsTrigger value="calls">Historial de Llamadas</TabsTrigger>}
-                            {showAppointments && <TabsTrigger value="appointments">Agendamientos</TabsTrigger>}
+                            {showAppointments && <TabsTrigger value="appointments">Informes</TabsTrigger>}
                             <TabsTrigger value="communications">Comunicaciones</TabsTrigger>
                         </TabsList>
 
@@ -267,7 +387,11 @@ const OrderDetailsPanel = ({
 
                         {showAppointments && (
                             <TabsContent value="appointments">
-                                <AppointmentsHistory appointments={order.appointments} />
+                                <AppointmentsHistory
+                                    orderId={order.id}
+                                    appointments={order.appointments?.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)) || []}
+                                    onDownloadPdf={handleDownloadAppointmentPdf}
+                                />
                             </TabsContent>
                         )}
 
@@ -287,7 +411,13 @@ const OrderDetailsPanel = ({
                                 userRole={user?.roles?.[0]?.name}
                             />
                         )}
-                        {showAppointments && <AppointmentsHistory appointments={order.appointments} />}
+                        {showAppointments && (
+                            <AppointmentsHistory
+                                orderId={order.id}
+                                appointments={order.appointments?.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)) || []}
+                                onDownloadPdf={handleDownloadAppointmentPdf}
+                            />
+                        )}
                         <OrderCommunicationSection
                             orderId={order.id}
                             orderData={order}

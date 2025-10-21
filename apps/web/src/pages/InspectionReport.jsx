@@ -26,7 +26,7 @@ import {
 } from "lucide-react"
 
 const InspectionReport = () => {
-  const { session_id } = useParams()
+  const { session_id, inspectionOrderId, appointmentId } = useParams()
   const [loading, setLoading] = useState(true)
   const [reportData, setReportData] = useState(null)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
@@ -36,7 +36,21 @@ const InspectionReport = () => {
 
   const fetchInspectionReport = async () => {
     try {
-      const response = await fetch(API_ROUTES.INSPECTION_ORDERS.FULL_REPORT(session_id))
+      let response;
+
+      // Determinar qué tipo de ruta estamos usando
+      if (inspectionOrderId && appointmentId) {
+        // Nueva ruta con IDs específicos
+        console.log(`🔍 Cargando reporte con inspectionOrderId: ${inspectionOrderId}, appointmentId: ${appointmentId}`);
+        response = await fetch(API_ROUTES.INSPECTION_ORDERS.INSPECTION_REPORT_BY_IDS(inspectionOrderId, appointmentId));
+      } else if (session_id) {
+        // Ruta antigua con session_id
+        console.log(`🔍 Cargando reporte con session_id: ${session_id}`);
+        response = await fetch(API_ROUTES.INSPECTION_ORDERS.FULL_REPORT(session_id));
+      } else {
+        throw new Error('No se proporcionaron los parámetros necesarios para cargar el reporte');
+      }
+
       const data = await response.json()
       if (data?.data?.appointments?.[0]?.images) {
         const images = data.data.appointments[0].images
@@ -378,10 +392,10 @@ const InspectionReport = () => {
         {
           (data?.inspection_result_details) ? <>
             <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
-            <h2 className="text-2xl font-bold text-gray-900">Detalles de resultado</h2>
-          </div>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900">Detalles de resultado</h2>
+              </div>
               <div className="">
                 {
                   data?.inspection_result_details
