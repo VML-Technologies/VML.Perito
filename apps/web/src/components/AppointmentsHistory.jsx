@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, MapPin, Download, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Download, Loader2, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getPDFLink } from '@/lib/pdfDownloads';
 
@@ -93,10 +93,17 @@ const AppointmentsHistory = ({
                                                         Descargar PDF
                                                     </button>
                                                 ) : (
-                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 rounded">
-                                                        <Calendar className="h-3.5 w-3.5" />
-                                                        PDF no disponible
-                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            const reportUrl = `/inspection-report/${orderId}/${appointment.id}`;
+                                                            window.open(reportUrl, '_blank');
+                                                        }}
+                                                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200 hover:border-green-400 transition-all duration-200"
+                                                        title="Ver reporte de inspección"
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5" />
+                                                        Ver Reporte
+                                                    </button>
                                                 )
                                             ) : (
                                                 <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-100 text-gray-500 border border-gray-300 rounded">

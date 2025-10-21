@@ -132,6 +132,7 @@ class InspectionOrderController extends BaseController {
         this.getResponsesData = this.getResponsesData.bind(this);
         this.getCategoryResponsesData = this.getCategoryResponsesData.bind(this);
         this.getInspectionReport = this.getInspectionReport.bind(this);
+        this.getInspectionReportByIds = this.getInspectionReportByIds.bind(this);
         this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
         this.checkPlate = this.checkPlate.bind(this);
         this.getFixedStatus = this.getFixedStatus.bind(this);
@@ -925,6 +926,150 @@ class InspectionOrderController extends BaseController {
             });
         } catch (error) {
             console.error('Error al obtener informe de inspección:', error);
+        }
+    }
+
+    /**
+     * Obtener reporte de inspección por inspection_order_id y appointment_id
+     */
+    async getInspectionReportByIds(req, res) {
+        try {
+            const { inspectionOrderId, appointmentId } = req.params;
+
+            console.log(`📋 Obteniendo reporte de inspección para orden ${inspectionOrderId}, appointment ${appointmentId}`);
+
+            // 1. Buscar el appointment específico
+            const appointment = await Appointment.findOne({
+                where: {
+                    id: appointmentId,
+                    inspection_order_id: inspectionOrderId
+                },
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder',
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        include: [
+                            {
+                                model: City,
+                                as: 'city',
+                                attributes: ['id', 'name']
+                            }
+                        ]
+                    },
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['id', 'name', 'code', 'description']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: ImageCapture,
+                        as: 'imageCaptures',
+                        attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
+                    },
+                    {
+                        model: Accessory,
+                        as: 'accessories',
+                        attributes: ['id', 'description', 'brand', 'reference', 'unit', 'value', 'quantity', 'total_value', 'notes', 'created_at', 'updated_at']
+                    }
+                ]
+            });
+
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Agendamiento no encontrado'
+                });
+            }
+
+            if (!appointment.session_id) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Sesión de inspección no encontrada'
+                });
+            }
+
+            // 2. Usar el session_id para obtener el reporte completo
+            const session_id = appointment.session_id;
+
+            // Aquí reutilizamos la lógica existente del método getInspectionReport
+            // pero usando el session_id obtenido del appointment específico
+
+            // Obtener datos de las respuestas
+            const responsesData = await this.getResponsesData(session_id);
+
+            // Obtener datos de comentarios de categorías
+            const categoryResponsesData = await this.getCategoryResponsesData(session_id);
+
+            // Obtener datos de pruebas mecánicas
+            const mechanicalTestsData = await this.getMechanicalTestsData(session_id);
+
+            // Procesar imágenes si existen
+            let processedImages = null;
+            if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                try {
+                    console.log(`� Procesando imágenes para appointment ${appointment.id}:`);
+                    console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
+                        id: img.id,
+                        slot: img.slot,
+                        name: img.name,
+                        category: img.category,
+                        hasBlobName: !!img.blob_name,
+                        hasImageUrl: !!img.image_url
+                    })));
+
+                    // Filtrar imágenes adicionales
+                    const filteredImages = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
+
+                    const imageProcessor = new ImageProcessor();
+                    processedImages = await imageProcessor.processInspectionImages(filteredImages, 60);
+                    console.log(`📸 Imágenes procesadas: ${processedImages.total_count} total`);
+                } catch (error) {
+                    console.error('❌ Error procesando imágenes:', error);
+                    processedImages = {
+                        main_images: [],
+                        additional_images: [],
+                        total_count: 0,
+                        error: error.message
+                    };
+                }
+            }
+
+            console.log(`�📊 Datos obtenidos - Respuestas: ${responsesData.length}, Comentarios: ${categoryResponsesData.length}`);
+
+            // Crear estructura similar a getFullInspectionOrder para compatibilidad
+            const appointmentWithImages = {
+                ...appointment.toJSON(),
+                images: processedImages
+            };
+
+            return res.json({
+                success: true,
+                data: {
+                    appointments: [appointmentWithImages], // Array para compatibilidad con el frontend
+                    inspection_order: appointment.inspectionOrder,
+                    session_id: session_id,
+                    responses: responsesData,
+                    category_responses: categoryResponsesData,
+                    mechanical_tests: mechanicalTestsData
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error al obtener reporte de inspección por IDs:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
         }
     }
 

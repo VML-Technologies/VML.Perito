@@ -30,85 +30,85 @@ import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react'
 
 // Mapa centralizado de rutas del sistema
 const routesMap = {
-    '/coordinador-contacto': {
-        name: 'Coordinador de Contact Center',
-        description: 'Supervisa y asigna agentes a las órdenes de inspección',
-        route: '/coordinador-contacto',
-        icon: Users,
-        gradientClass: 'bg-gradient-to-r from-purple-500 to-purple-600',
-        textClass: 'text-purple-100',
-        buttonClass: 'text-purple-600 hover:text-purple-700',
-        type: 'navigate',
-        roles: ['coordinador_contacto']
-    },
-    '/comercial-mundial': {
-        name: 'Comercial Mundial',
-        description: 'Crea y gestiona órdenes de inspección vehicular',
-        route: '/comercial-mundial',
-        icon: Building,
-        gradientClass: 'bg-gradient-to-r from-green-500 to-green-600',
-        textClass: 'text-green-100',
-        buttonClass: 'text-green-600 hover:text-green-700',
-        type: 'navigate',
-        roles: ['comercial_mundial', 'comercial_mundial_4']
-    },
-    '/agente-contacto': {
-        name: 'Agente de Contact Center',
-        description: 'Gestiona llamadas y agendamientos de inspecciones',
-        route: '/agente-contacto',
-        icon: Phone,
-        gradientClass: 'bg-gradient-to-r from-orange-500 to-orange-600',
-        textClass: 'text-orange-100',
-        buttonClass: 'text-orange-600 hover:text-orange-700',
-        type: 'navigate',
-        roles: ['agente_contacto']
-    },
-    '/coordinador-vml': {
-        name: 'Coordinador de VML',
-        description: 'Supervisa y asigna agentes a las órdenes de inspección',
-        route: '/coordinador-vml',
-        icon: Users,
-        gradientClass: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
-        textClass: 'text-indigo-100',
-        buttonClass: 'text-indigo-600 hover:text-indigo-700',
-        type: 'navigate',
-        roles: ['coordinador_vml']
-    },
-    '/inspector-aliado': {
-        name: 'Inspector Aliado',
-        description: 'Supervisa y asigna agentes a las órdenes de inspección',
-        route: '/inspector-aliado',
-        icon: Users,
-        gradientClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
-        textClass: 'text-blue-100',
-        buttonClass: 'text-blue-600 hover:text-blue-700',
-        type: 'navigate',
-        roles: ['inspector_aliado', 'inspector_aliado_2']
-    },
-    '/inspector': {
-        name: 'Inspector',
-        description: 'InspectYA | Realiza inspecciones vehiculares',
-        route: '/inspector',
-        icon: Users,
-        gradientClass: 'bg-gradient-to-r from-red-500 to-red-600',
-        textClass: 'text-red-100',
-        buttonClass: 'text-red-600 hover:text-red-700',
-        type: 'redirect',
-        redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
-        roles: ['inspector']
-    },
-    '/supervisor': {
-        name: 'Supervisor',
-        description: 'InspectYA | Supervisa inspecciones vehiculares',
-        route: '/supervisor',
-        icon: Users,
-        gradientClass: 'bg-gradient-to-r from-pink-500 to-pink-600',
-        textClass: 'text-pink-100',
-        buttonClass: 'text-pink-600 hover:text-pink-700',
-        type: 'redirect',
-        redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
-        roles: ['supervisor']
-    }
+  '/coordinador-contacto': {
+    name: 'Coordinador de Contact Center',
+    description: 'Supervisa y asigna agentes a las órdenes de inspección',
+    route: '/coordinador-contacto',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-purple-500 to-purple-600',
+    textClass: 'text-purple-100',
+    buttonClass: 'text-purple-600 hover:text-purple-700',
+    type: 'navigate',
+    roles: ['coordinador_contacto']
+  },
+  '/comercial-mundial': {
+    name: 'Comercial Mundial',
+    description: 'Crea y gestiona órdenes de inspección vehicular',
+    route: '/comercial-mundial',
+    icon: Building,
+    gradientClass: 'bg-gradient-to-r from-green-500 to-green-600',
+    textClass: 'text-green-100',
+    buttonClass: 'text-green-600 hover:text-green-700',
+    type: 'navigate',
+    roles: ['comercial_mundial', 'comercial_mundial_4']
+  },
+  '/agente-contacto': {
+    name: 'Agente de Contact Center',
+    description: 'Gestiona llamadas y agendamientos de inspecciones',
+    route: '/agente-contacto',
+    icon: Phone,
+    gradientClass: 'bg-gradient-to-r from-orange-500 to-orange-600',
+    textClass: 'text-orange-100',
+    buttonClass: 'text-orange-600 hover:text-orange-700',
+    type: 'navigate',
+    roles: ['agente_contacto']
+  },
+  '/coordinador-vml': {
+    name: 'Coordinador de VML',
+    description: 'Supervisa y asigna agentes a las órdenes de inspección',
+    route: '/coordinador-vml',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+    textClass: 'text-indigo-100',
+    buttonClass: 'text-indigo-600 hover:text-indigo-700',
+    type: 'navigate',
+    roles: ['coordinador_vml']
+  },
+  '/inspector-aliado': {
+    name: 'Inspector Aliado',
+    description: 'Supervisa y asigna agentes a las órdenes de inspección',
+    route: '/inspector-aliado',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-blue-500 to-blue-600',
+    textClass: 'text-blue-100',
+    buttonClass: 'text-blue-600 hover:text-blue-700',
+    type: 'navigate',
+    roles: ['inspector_aliado', 'inspector_aliado_2']
+  },
+  '/inspector': {
+    name: 'Inspector',
+    description: 'InspectYA | Realiza inspecciones vehiculares',
+    route: '/inspector',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-red-500 to-red-600',
+    textClass: 'text-red-100',
+    buttonClass: 'text-red-600 hover:text-red-700',
+    type: 'redirect',
+    redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
+    roles: ['inspector']
+  },
+  '/supervisor': {
+    name: 'Supervisor',
+    description: 'InspectYA | Supervisa inspecciones vehiculares',
+    route: '/supervisor',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-pink-500 to-pink-600',
+    textClass: 'text-pink-100',
+    buttonClass: 'text-pink-600 hover:text-pink-700',
+    type: 'redirect',
+    redirectUrl: import.meta.env.VITE_INSPECTYA_URL,
+    roles: ['supervisor']
+  }
 }
 
 // Componente para trackear rutas automáticamente
@@ -292,9 +292,21 @@ function AppContent() {
           path="/inspection-report/:session_id"
           element={
             // <RoleBasedRoute requiredRoles={['comercial_mundial', 'coordinador_contacto', 'agente_contacto', 'super_admin']}>
-              // <AuthenticatedLayout>
-                <InspectionReport />
-              // </AuthenticatedLayout>
+            // <AuthenticatedLayout>
+            <InspectionReport />
+            // </AuthenticatedLayout>
+            // </RoleBasedRoute>
+          }
+        />
+
+        {/* Nueva ruta de Informe de Inspección con IDs específicos */}
+        <Route
+          path="/inspection-report/:inspectionOrderId/:appointmentId"
+          element={
+            // <RoleBasedRoute requiredRoles={['comercial_mundial', 'coordinador_contacto', 'agente_contacto', 'super_admin']}>
+            // <AuthenticatedLayout>
+            <InspectionReport />
+            // </AuthenticatedLayout>
             // </RoleBasedRoute>
           }
         />

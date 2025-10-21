@@ -77,6 +77,7 @@ export const API_ROUTES = {
         CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
         INSPECTION_REPORT: (sessionId) => `${API_BASE_URL}/api/inspection-orders/${sessionId}/inspection-report`,
+        INSPECTION_REPORT_BY_IDS: (inspectionOrderId, appointmentId) => `${API_BASE_URL}/api/inspection-orders/${inspectionOrderId}/appointments/${appointmentId}/inspection-report`,
         ORDER_BY_HASH: (hash) => `${API_BASE_URL}/api/inspection-orders/by-hash/${hash}`,
         START_VIRTUAL_INSPECTION: (id) => `${API_BASE_URL}/api/inspection-orders/${id}/start-virtual-inspection`,
         FULL_REPORT: (inspectionOrderId) => `${API_BASE_URL}/api/inspection-orders/full/${inspectionOrderId}`,
