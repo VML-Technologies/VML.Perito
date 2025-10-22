@@ -935,139 +935,310 @@ class InspectionOrderController extends BaseController {
     async getInspectionReportByIds(req, res) {
         try {
             const { inspectionOrderId, appointmentId } = req.params;
-
-            console.log(`📋 Obteniendo reporte de inspección para orden ${inspectionOrderId}, appointment ${appointmentId}`);
-
-            // 1. Buscar el appointment específico
-            const appointment = await Appointment.findOne({
-                where: {
-                    id: appointmentId,
-                    inspection_order_id: inspectionOrderId
-                },
+            console.log("############################")
+            console.log({
+                inspectionOrderId,
+                appointmentId
+            })
+            const inspectionOrder = await InspectionOrder.findByPk(inspectionOrderId, {
                 include: [
                     {
-                        model: InspectionOrder,
-                        as: 'inspectionOrder',
-                    },
-                    {
-                        model: Sede,
-                        as: 'sede',
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['name']
+                    }, {
+                        model: Appointment,
+                        as: 'appointments',
+                        attributes: ['id', 'session_id', 'observaciones', 'scheduled_date', 'scheduled_time', 'created_at', 'updated_at'],
+                        where: {
+                            id: appointmentId,
+                            deleted_at: null // Solo appointments activos
+                        },
                         include: [
                             {
-                                model: City,
-                                as: 'city',
-                                attributes: ['id', 'name']
+                                model: InspectionModality,
+                                as: 'inspectionModality',
+                                attributes: ['name']
+                            },
+                            {
+                                model: Sede,
+                                as: 'sede',
+                                attributes: ['name'],
+                            }, {
+                                model: ImageCapture,
+                                as: 'imageCaptures',
+                                attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
+                            }, {
+                                model: Accessory,
+                                as: 'accessories',
+                                attributes: ['id', 'description', 'brand', 'reference', 'unit', 'value', 'quantity', 'total_value', 'notes', 'created_at', 'updated_at']
                             }
-                        ]
-                    },
-                    {
-                        model: InspectionModality,
-                        as: 'inspectionModality',
-                        attributes: ['id', 'name', 'code', 'description']
-                    },
-                    {
-                        model: User,
-                        as: 'user',
-                        attributes: ['id', 'name', 'email']
-                    },
-                    {
-                        model: ImageCapture,
-                        as: 'imageCaptures',
-                        attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
-                    },
-                    {
-                        model: Accessory,
-                        as: 'accessories',
-                        attributes: ['id', 'description', 'brand', 'reference', 'unit', 'value', 'quantity', 'total_value', 'notes', 'created_at', 'updated_at']
+                        ],
+                        order: [['updated_at', 'DESC']],
+                        required: false
                     }
-                ]
+                ],
+                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result', 'inspection_result_details']
             });
 
-            if (!appointment) {
+            if (!inspectionOrder) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Agendamiento no encontrado'
+                    message: 'Orden de inspección no encontrada'
                 });
             }
 
-            if (!appointment.session_id) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Sesión de inspección no encontrada'
+            console.log(`🔍 Orden encontrada: ${inspectionOrder.id}, Appointments: ${inspectionOrder.appointments?.length || 0}`);
+            if (inspectionOrder.appointments && inspectionOrder.appointments.length > 0) {
+                inspectionOrder.appointments.forEach((appointment, index) => {
+                    console.log(`📋 Appointment ${index + 1}: ${appointment.session_id}, ImageCaptures: ${appointment.imageCaptures?.length || 0}`);
+                    if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                        appointment.imageCaptures.forEach((img, imgIndex) => {
+                            console.log(`📸 Imagen ${imgIndex + 1}: ID=${img.id}, slot=${img.slot}, name=${img.name}, hasBlobName=${!!img.blob_name}`);
+                        });
+                    }
                 });
             }
 
-            // 2. Usar el session_id para obtener el reporte completo
-            const session_id = appointment.session_id;
+            if (!inspectionOrder.appointments || inspectionOrder.appointments.length === 0) {
+                return res.json({
+                    success: true,
+                    data: {
+                        ...inspectionOrder,
+                        appointments: []
+                    }
+                });
+            }
 
-            // Aquí reutilizamos la lógica existente del método getInspectionReport
-            // pero usando el session_id obtenido del appointment específico
+            // sort appointments by updated_at descending
+            inspectionOrder.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
-            // Obtener datos de las respuestas
-            const responsesData = await this.getResponsesData(session_id);
+            const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0
+                ? inspectionOrder.appointments[0]
+                : null;
 
-            // Obtener datos de comentarios de categorías
-            const categoryResponsesData = await this.getCategoryResponsesData(session_id);
+            console.log('🔍 mostRecentAppointment:', mostRecentAppointment);
 
-            // Obtener datos de pruebas mecánicas
-            const mechanicalTestsData = await this.getMechanicalTestsData(session_id);
+            // Extender con respuestas e imágenes
+            const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
+                // Obtener respuestas de partes de inspección
+                const responsesData = await this.getResponsesData(appointment.session_id);
 
-            // Procesar imágenes si existen
-            let processedImages = null;
-            if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
-                try {
-                    console.log(`� Procesando imágenes para appointment ${appointment.id}:`);
-                    console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
-                        id: img.id,
-                        slot: img.slot,
-                        name: img.name,
-                        category: img.category,
-                        hasBlobName: !!img.blob_name,
-                        hasImageUrl: !!img.image_url
-                    })));
+                // Obtener respuestas de categorías de inspección
+                const categoryResponsesData = await this.getCategoryResponsesData(inspectionOrder.id);
 
-                    // Filtrar imágenes adicionales
-                    const filteredImages = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
+                // Obtener datos de pruebas mecánicas
+                const mechanicalTestsData = await this.getMechanicalTestsData(appointment.session_id);
 
-                    const imageProcessor = new ImageProcessor();
-                    processedImages = await imageProcessor.processInspectionImages(filteredImages, 60);
-                    console.log(`📸 Imágenes procesadas: ${processedImages.total_count} total`);
-                } catch (error) {
-                    console.error('❌ Error procesando imágenes:', error);
-                    processedImages = {
-                        main_images: [],
-                        additional_images: [],
-                        total_count: 0,
-                        error: error.message
-                    };
+                // Obtener comentarios de categorías
+                const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
+
+                let processedImages = null;
+                if (appointment === mostRecentAppointment && appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                    try {
+                        console.log(`📸 Procesando imágenes para appointment más reciente ${appointment.session_id}:`);
+                        console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
+                            id: img.id,
+                            slot: img.slot,
+                            name: img.name,
+                            category: img.category,
+                            hasBlobName: !!img.blob_name,
+                            hasImageUrl: !!img.image_url
+                        })));
+
+                        // remover imagenes adicionales img.slot.startsWith('adicional_')
+                        appointment.imageCaptures = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
+
+
+                        const imageProcessor = new ImageProcessor();
+                        processedImages = await imageProcessor.processInspectionImages(appointment.imageCaptures, 60);
+                        console.log(`📸 Imágenes procesadas para appointment más reciente ${appointment.session_id}: ${processedImages.total_count} total`);
+                    } catch (error) {
+                        console.error('❌ Error procesando imágenes:', error);
+                        console.error('❌ Stack trace:', error.stack);
+                        processedImages = {
+                            main_images: [],
+                            additional_images: [],
+                            total_count: 0,
+                            error: error.message
+                        };
+                    }
+                } else if (appointment === mostRecentAppointment) {
+                    console.log(`📭 No hay imágenes para appointment más reciente ${appointment.session_id}`);
+                } else {
+                    console.log(`⏭️ Saltando imágenes para appointment ${appointment.session_id} (no es el más reciente)`);
                 }
-            }
 
-            console.log(`�📊 Datos obtenidos - Respuestas: ${responsesData.length}, Comentarios: ${categoryResponsesData.length}`);
+                // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
+                const partsData = await sequelize.query(`
+                    SELECT 
+                        ip.id,
+                        ip.parte,
+                        ip.bueno,
+                        ip.regular,
+                        ip.malo,
+                        ip.minimo,
+                        ip.opciones,
+                        ic.categoria
+                    FROM inspection_parts ip
+                    INNER JOIN inspection_categories ic ON ip.categoria_id = ic.id
+                    ORDER BY ip.categoria_id ASC, ip.parte ASC
+                `, {
+                    type: QueryTypes.SELECT
+                });
 
-            // Crear estructura similar a getFullInspectionOrder para compatibilidad
-            const appointmentWithImages = {
-                ...appointment.toJSON(),
-                images: processedImages
+                console.log(`📋 Encontradas ${partsData.length} partes de inspección para appointment ${appointment.session_id}`);
+
+                // Procesar respuestas para crear un objeto de respuestas por part_id
+                const partResponses = {};
+                responsesData.forEach(response => {
+                    if (response.part_id) {
+                        partResponses[response.part_id] = response.value;
+                    }
+                });
+
+                // Calcular todos los valores en el backend
+                const groupedParts = this.groupPartsByCategory(partsData);
+                const { categoryScores, generalScore } = this.calculateChecklistScores(partsData, partResponses);
+                const { isAsegurable, reason } = this.calculateAsegurabilidad(partsData, partResponses, mechanicalTestsData);
+
+                // Procesar partes con valores de respuesta formateados
+                const processedParts = partsData.map(part => ({
+                    ...part,
+                    responseValue: this.getResponseValue(part, partResponses),
+                    hasResponse: partResponses[part.id] !== undefined
+                }));
+
+                // Convertir appointment a objeto plano para evitar referencias circulares
+                const plainAppointment = {
+                    id: appointment.id,
+                    session_id: appointment.session_id,
+                    scheduled_date: appointment.scheduled_date,
+                    scheduled_time: appointment.scheduled_time,
+                    created_at: appointment.created_at,
+                    observaciones: appointment.observaciones,
+                    accessories: appointment.accessories,
+                    inspectionModality: appointment.inspectionModality ? {
+                        id: appointment.inspectionModality.id,
+                        name: appointment.inspectionModality.name
+                    } : null,
+                    sede: appointment.sede ? {
+                        id: appointment.sede.id,
+                        name: appointment.sede.name
+                    } : null
+                };
+
+                // Crear estructura organizada por categorías para el frontend
+                const inspectionResults = Object.entries(groupedParts).map(([categoria, parts]) => {
+                    const categoryScore = categoryScores[categoria];
+                    const categoryComment = categoryCommentsData.find(c => c.categoryName === categoria);
+
+                    return {
+                        categoria,
+                        puntaje: categoryScore,
+                        minimo: parts[0]?.minimo || 0,
+                        cumpleMinimo: categoryScore !== null ? (categoryScore >= (parts[0]?.minimo || 0)) : true,
+                        parts: processedParts.filter(el => el.categoria == categoria),
+                        comentario: categoryComment ? categoryComment.comentario : null,
+                        // Solo lo esencial para el render visual
+                        estado: categoryScore === null ? 'observacion' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'aprobado' : 'rechazado',
+                        color: categoryScore === null ? 'gray' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'green' : 'red'
+                    };
+                });
+
+                return {
+                    ...plainAppointment,
+                    // Solo datos esenciales para el frontend
+                    inspectionResults,
+                    calculatedData: {
+                        generalScore,
+                        asegurabilidad: {
+                            isAsegurable,
+                            reason
+                        },
+                        // Resumen por estado
+                        resumen: {
+                            aprobadas: inspectionResults.filter(cat => cat.estado === 'aprobado').length,
+                            rechazadas: inspectionResults.filter(cat => cat.estado === 'rechazado').length,
+                            observaciones: inspectionResults.filter(cat => cat.estado === 'observacion').length
+                        }
+                    },
+                    // Datos de pruebas mecánicas (solo si existen)
+                    mechanicalTests: mechanicalTestsData && Object.keys(mechanicalTestsData).length > 0 ? mechanicalTestsData : null,
+                    // Imágenes procesadas con URLs de Azure Blob Storage
+                    images: processedImages
+                };
+            }));
+
+            // Convertir inspectionOrder a objeto plano para evitar referencias circulares
+            const plainInspectionOrder = {
+                id: inspectionOrder.id,
+                numero: inspectionOrder.numero,
+                placa: inspectionOrder.placa,
+                nombre_cliente: inspectionOrder.nombre_cliente,
+                num_doc: inspectionOrder.num_doc,
+                celular_cliente: inspectionOrder.celular_cliente,
+                correo_cliente: inspectionOrder.correo_cliente,
+                marca: inspectionOrder.marca,
+                linea: inspectionOrder.linea,
+                modelo: inspectionOrder.modelo,
+                clase: inspectionOrder.clase,
+                color: inspectionOrder.color,
+                carroceria: inspectionOrder.carroceria,
+                cilindraje: inspectionOrder.cilindraje,
+                producto: inspectionOrder.producto,
+                motor: inspectionOrder.motor,
+                chasis: inspectionOrder.chasis,
+                vin: inspectionOrder.vin,
+                cod_fasecolda: inspectionOrder.cod_fasecolda,
+                combustible: inspectionOrder.combustible,
+                servicio: inspectionOrder.servicio,
+                nombre_contacto: inspectionOrder.nombre_contacto,
+                celular_contacto: inspectionOrder.celular_contacto,
+                correo_contacto: inspectionOrder.correo_contacto,
+                fecha_creacion: inspectionOrder.created_at,
+                inspection_result: inspectionOrder.inspection_result,
+                inspection_result_details: inspectionOrder.inspection_result_details,
+                InspectionOrderStatus: inspectionOrder.InspectionOrderStatus ? {
+                    id: inspectionOrder.InspectionOrderStatus.id,
+                    name: inspectionOrder.InspectionOrderStatus.name
+                } : null
             };
 
-            return res.json({
+            const response = {
                 success: true,
                 data: {
-                    appointments: [appointmentWithImages], // Array para compatibilidad con el frontend
-                    inspection_order: appointment.inspectionOrder,
-                    session_id: session_id,
-                    responses: responsesData,
-                    category_responses: categoryResponsesData,
-                    mechanical_tests: mechanicalTestsData
+                    ...plainInspectionOrder,
+                    appointments: fullInspectionOrderAppointments
+                }
+            };
+
+            // Log de la respuesta final para debugging
+            console.log('📤 Respuesta final enviada:');
+            console.log(`📤 - Orden ID: ${response.data.id}`);
+            console.log(`📤 - Appointments: ${response.data.appointments.length}`);
+            response.data.appointments.forEach((appointment, index) => {
+                console.log(`📤 - Appointment ${index + 1}: ${appointment.session_id}`);
+                if (appointment.images) {
+                    console.log(`📤   - Imágenes: ${appointment.images.total_count} total`);
+                    console.log(`📤   - Principales: ${appointment.images.main_images?.length || 0}`);
+                    console.log(`📤   - Adicionales: ${appointment.images.additional_images?.length || 0}`);
+                    if (appointment.images.error) {
+                        console.log(`📤   - Error: ${appointment.images.error}`);
+                    }
+                } else {
+                    console.log(`📤   - Sin imágenes procesadas`);
                 }
             });
 
+            res.json(response);
         } catch (error) {
-            console.error('❌ Error al obtener reporte de inspección por IDs:', error);
-            return res.status(500).json({
+            console.error('Error al obtener orden de inspección completa:', error);
+            res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor',
+                message: 'Error al obtener orden de inspección completa',
                 error: error.message
             });
         }
