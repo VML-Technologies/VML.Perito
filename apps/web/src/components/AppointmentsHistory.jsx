@@ -13,6 +13,19 @@ const AppointmentsHistory = ({
     const [appointmentsWithPdfLinks, setAppointmentsWithPdfLinks] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const downloadPDF = (downloadUrl, fileName) => {
+        // Crear un enlace temporal para descargar
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        link.target = '_blank'; // Abrir en nueva pestaña como fallback
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log(`✅ PDF de appointment descargado: ${fileName}`);
+    }
+
     useEffect(() => {
         const loadPdfLinks = async () => {
             if (appointments && appointments.length > 0 && orderId) {
@@ -85,7 +98,7 @@ const AppointmentsHistory = ({
                                             ) : appointment.pdfLinkData ? (
                                                 appointment.pdfLinkData.downloadUrl ? (
                                                     <button
-                                                        onClick={() => onDownloadPdf(appointment)}
+                                                        onClick={() => downloadPDF(appointment.pdfLinkData.downloadUrl, appointment.pdfLinkData.fileName)}
                                                         className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200 hover:border-blue-400 transition-all duration-200"
                                                         title="Descargar informe PDF"
                                                     >
