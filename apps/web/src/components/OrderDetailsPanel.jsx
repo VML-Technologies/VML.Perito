@@ -234,19 +234,6 @@ const OrderDetailsPanel = ({
                         ))}
 
                         <div className='flex justify-start gap-2 w-full mt-2'>
-                            <button
-                                onClick={handleDownloadPdf}
-                                disabled={downloadingPdf}
-                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-300 rounded hover:bg-gray-200 hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200"
-                                title="Descargar PDF de inspección"
-                            >
-                                {downloadingPdf ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <Download className="h-3.5 w-3.5" />
-                                )}
-                                {downloadingPdf ? 'Descargando...' : 'Descargar informe'}
-                            </button>
                         </div>
                         {
                             inspection && (
