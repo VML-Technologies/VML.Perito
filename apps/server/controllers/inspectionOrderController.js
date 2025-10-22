@@ -2459,7 +2459,11 @@ if status == 5 then check for latest @appointment an if it is with status != ine
 
             // Buscar la orden por placa
             const order = await InspectionOrder.findOne({
-                where: { placa: plate.toUpperCase() },
+                where: {
+                    placa: plate.toUpperCase(),
+                    deleted_at: null,
+                    status: { [Op.ne]: 6 },
+                },
                 include: [
                     {
                         model: InspectionOrderStatus,

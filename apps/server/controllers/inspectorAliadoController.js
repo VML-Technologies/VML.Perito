@@ -15,7 +15,7 @@ import coordinatorDataService from '../services/coordinatorDataService.js';
 class InspectorAliadoController extends BaseController {
     constructor() {
         super(Appointment);
-        
+
         // Bind methods
         this.createAppointment = this.createAppointment.bind(this);
         this.getHistoricalReport = this.getHistoricalReport.bind(this);
@@ -27,7 +27,7 @@ class InspectorAliadoController extends BaseController {
     async createAppointment(req, res) {
         try {
             const { sede_id, inspection_order_id, user_id, scheduled_date, scheduled_time, session_id, status } = req.body;
-            
+
             // Validar datos requeridos
             if (!sede_id || !inspection_order_id || !user_id || !scheduled_date || !scheduled_time || !session_id) {
                 return res.status(400).json({
@@ -50,6 +50,12 @@ class InspectorAliadoController extends BaseController {
                     code: 'SEDE'
                 }
             });
+
+            // Actualizar orden de inspección a agendado (status 2)
+            await InspectionOrder.update(
+                { status: 2 },
+                { where: { id: inspection_order_id } }
+            );
 
             // Crear el agendamiento
             const appointment = await Appointment.create({
@@ -106,7 +112,7 @@ class InspectorAliadoController extends BaseController {
             // Emitir evento WebSocket para actualizar CoordinadorVML
             try {
                 console.log('📡 Emitiendo evento WebSocket de nuevo agendamiento en sede...');
-                
+
                 // 🔥 USAR EL SERVICIO para garantizar 100% de consistencia
                 const allSedeAppointments = await coordinatorDataService.getSedeAppointments();
 
@@ -144,7 +150,7 @@ class InspectorAliadoController extends BaseController {
     async getHistoricalReport(req, res) {
         try {
             const { sede_id, start_date, end_date } = req.query;
-            
+
             // Validar parámetros requeridos
             if (!sede_id || !start_date || !end_date) {
                 return res.status(400).json({
@@ -156,7 +162,7 @@ class InspectorAliadoController extends BaseController {
             // Validar formato de fechas
             const startDate = new Date(start_date);
             const endDate = new Date(end_date);
-            
+
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                 return res.status(400).json({
                     success: false,
@@ -246,7 +252,7 @@ class InspectorAliadoController extends BaseController {
                     'Número': appointment.inspectionOrder?.numero || '-',
                     'Producto': appointment.inspectionOrder?.producto || '-',
                     'Nombre Contacto': appointment.inspectionOrder?.nombre_contacto || '-',
-                    'Fecha Agendamiento': appointment.scheduled_date ? 
+                    'Fecha Agendamiento': appointment.scheduled_date ?
                         new Date(appointment.scheduled_date).toLocaleDateString('es-ES') : '-',
                     'Hora Agendamiento': appointment.scheduled_time || '-'
                 };
@@ -254,10 +260,10 @@ class InspectorAliadoController extends BaseController {
 
             // Crear workbook de Excel
             const workbook = XLSX.utils.book_new();
-            
+
             // Hoja principal con datos
             const worksheet = XLSX.utils.json_to_sheet(excelData);
-            
+
             // Ajustar ancho de columnas
             const columnWidths = [
                 { wch: 10 },  // Placa
@@ -287,15 +293,15 @@ class InspectorAliadoController extends BaseController {
             XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen');
 
             // Generar buffer del archivo
-            const excelBuffer = XLSX.write(workbook, { 
-                type: 'buffer', 
+            const excelBuffer = XLSX.write(workbook, {
+                type: 'buffer',
                 bookType: 'xlsx',
                 compression: true
             });
 
             // Configurar headers para descarga
             const filename = `reporte-historico-cda-${sede.name.replace(/\s+/g, '-')}-${start_date}-${end_date}.xlsx`;
-            
+
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
             res.setHeader('Content-Length', excelBuffer.length);
