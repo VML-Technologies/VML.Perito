@@ -28,12 +28,17 @@
   - See `docs/debugging-and-troubleshooting.md` for backend/frontend troubleshooting.
   - Key scripts: `apps/server/scripts/` (e.g., `generateHmac.js`, `seedAll.js`)
 
+
 ## Project-Specific Conventions
 
+- **ES Modules:**
+  - Use `import`/`export` syntax throughout the codebase (no `require`/`module.exports`).
+  - All backend and frontend files should follow ES Modules conventions.
 - **Controllers:**
   - Located in `apps/server/controllers/`, follow CRUD + soft delete patterns (see `baseController.js`).
 - **Models:**
   - Located in `apps/server/models/`, use Sequelize, soft deletes via `baseModel.js`.
+  - Shared models: `peritajeOrder.js` and `peritajeAgendamiento.js` follow the same pattern as other models, registered in `index.js` and related via 1:N (`PeritajeOrder.hasMany(PeritajeAgendamiento)`).
 - **RBAC:**
   - Roles/permissions managed via admin UI (`/admin`), permissions are granular and endpoint/method-specific.
 - **Notifications:**
@@ -42,7 +47,7 @@
   - Real-time events via `apps/server/websocket/` and documented in `docs/websockets-system.md`.
 - **Naming:**
   - Use hierarchical, context-rich names (see `.cursor/rules/naming-conventions.mdc`).
-  - Reference files using relative paths, e.g., `[App.jsx](mdc:apps/web/src/App.jsx)`.
+  - Reference files using relative paths, e.g., `apps/web/src/App.jsx`.
 
 ## Integration Points
 
@@ -57,6 +62,11 @@
 
 ## Key References & Patterns
 
+- Shared models:
+  - Main: `apps/server/models/peritajeOrder.js`
+  - Agendamientos: `apps/server/models/peritajeAgendamiento.js`
+  - Registered and related in: `apps/server/models/index.js`
+
 - Main backend entry: `apps/server/index.js`
 - Main frontend entry: `apps/web/src/App.jsx`
 - Database config: `apps/server/config/database.js`
@@ -67,6 +77,9 @@
 - All technical rules: `.cursor/rules/` (see `rule-generation-guidelines.mdc` for structure)
 
 ## Example File References
+
+- `[peritajeOrder.js](mdc:apps/server/models/peritajeOrder.js)`
+- `[peritajeAgendamiento.js](mdc:apps/server/models/peritajeAgendamiento.js)`
 
 - `[App.jsx](mdc:apps/web/src/App.jsx)`
 - `[seedAll.js](mdc:apps/server/scripts/seedAll.js)`

@@ -26,7 +26,7 @@ import {
 } from "lucide-react"
 
 const InspectionReport = () => {
-  const { session_id } = useParams()
+  const { session_id, inspectionOrderId, appointmentId } = useParams()
   const [loading, setLoading] = useState(true)
   const [reportData, setReportData] = useState(null)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
@@ -36,7 +36,21 @@ const InspectionReport = () => {
 
   const fetchInspectionReport = async () => {
     try {
-      const response = await fetch(API_ROUTES.INSPECTION_ORDERS.FULL_REPORT(session_id))
+      let response;
+
+      // Determinar qué tipo de ruta estamos usando
+      if (inspectionOrderId && appointmentId) {
+        // Nueva ruta con IDs específicos
+        console.log(`🔍 Cargando reporte con inspectionOrderId: ${inspectionOrderId}, appointmentId: ${appointmentId}`);
+        response = await fetch(API_ROUTES.INSPECTION_ORDERS.INSPECTION_REPORT_BY_IDS(inspectionOrderId, appointmentId));
+      } else if (session_id) {
+        // Ruta antigua con session_id
+        console.log(`🔍 Cargando reporte con session_id: ${session_id}`);
+        response = await fetch(API_ROUTES.INSPECTION_ORDERS.FULL_REPORT(session_id));
+      } else {
+        throw new Error('No se proporcionaron los parámetros necesarios para cargar el reporte');
+      }
+
       const data = await response.json()
       if (data?.data?.appointments?.[0]?.images) {
         const images = data.data.appointments[0].images
@@ -268,13 +282,41 @@ const InspectionReport = () => {
   }
 
   const formatDate = (dateString) => {
-    let date = new Date(dateString)
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const day = date.getDate()
-    return <>
-      {`${year}-${leadZero(month)}-${leadZero(day)}`}
-    </>
+    console.log("Formatting date:", dateString)
+
+    // Si la fecha viene con formato ISO (con T y Z), usar UTC para evitar problemas de zona horaria
+    if (dateString.includes('T')) {
+      const date = new Date(dateString)
+      const year = date.getUTCFullYear()
+      const month = date.getUTCMonth() + 1
+      const day = date.getUTCDate()
+      console.log("Formatted date (UTC):", `${year}-${leadZero(month)}-${leadZero(day)}`)
+      return <>
+        {`${year}-${leadZero(month)}-${leadZero(day)}`}
+      </>
+    } else {
+      // Si es solo una fecha (YYYY-MM-DD)
+      const dateParts = dateString.split('-')
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0])
+        const month = parseInt(dateParts[1])
+        const day = parseInt(dateParts[2]) + 1
+        console.log("Formatted date (direct parse):", `${year}-${leadZero(month)}-${leadZero(day)}`)
+        return <>
+          {`${year}-${leadZero(month)}-${leadZero(day)}`}
+        </>
+      }
+
+      // Fallback al método original
+      const date = new Date(dateString)
+      const year = date.getFullYear()
+      const month = date.getMonth() + 1
+      const day = date.getDate()
+      console.log("Formatted date (fallback):", `${year}-${leadZero(month)}-${leadZero(day)}`)
+      return <>
+        {`${year}-${leadZero(month)}-${leadZero(day)}`}
+      </>
+    }
   }
 
   // Format time
@@ -345,7 +387,7 @@ const InspectionReport = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-base font-bold text-blue-600">Inspeccion programada</div>
               <div className="text-xs text-gray-700 mb-1">Fecha</div>
-              <div className="text-xs text-gray-500 mb-1">{appointment?.scheduled_date}</div>
+              <div className="text-xs text-gray-500 mb-1">{formatDate(appointment?.scheduled_date)}</div>
 
               <div className="text-xs text-gray-700 mb-1">Hora</div>
               <div className="text-xs text-gray-500 mb-1">{appointment?.scheduled_time}</div>
@@ -378,10 +420,10 @@ const InspectionReport = () => {
         {
           (data?.inspection_result_details) ? <>
             <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
-            <h2 className="text-2xl font-bold text-gray-900">Detalles de resultado</h2>
-          </div>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900">Detalles de resultado</h2>
+              </div>
               <div className="">
                 {
                   data?.inspection_result_details

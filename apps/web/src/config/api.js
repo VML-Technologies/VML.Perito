@@ -11,7 +11,7 @@ export const API_ROUTES = {
         LOGOUT: `${API_BASE_URL}/api/auth/logout`,
         CHANGE_TEMPORARY_PASSWORD: `${API_BASE_URL}/api/auth/change-temporary-password`,
         CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
-        
+
         // ===== RECUPERACIÓN DE CONTRASEÑA =====
         REQUEST_PASSWORD_RESET: `${API_BASE_URL}/api/auth/request-password-reset`,
         RESET_PASSWORD: `${API_BASE_URL}/api/auth/reset-password`,
@@ -60,20 +60,24 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
-        
+
         // ===== VALIDACIÓN DE PLACA =====
         CHECK_PLATE: (plate) => `${API_BASE_URL}/api/inspection-orders/check-plate/${plate}`,
-        
+
         // ===== HISTORIAL DE CONTACTOS =====
         CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-history`,
         UPDATE_CONTACT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/contact-data`,
         RESEND_SMS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/resend-sms`,
-        
+
+        // ===== DESCARGAS =====
+        PDF_DOWNLOAD_URL: (orderId, appointmentId, sessionId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/${appointmentId}/${sessionId}/pdf-download-url`,
+
         // ===== COMENTARIOS =====
         COMMENTS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         CREATE_COMMENT: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments`,
         GET_COMMENT: (orderId, commentId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments/${commentId}`,
         INSPECTION_REPORT: (sessionId) => `${API_BASE_URL}/api/inspection-orders/${sessionId}/inspection-report`,
+        INSPECTION_REPORT_BY_IDS: (inspectionOrderId, appointmentId) => `${API_BASE_URL}/api/inspection-orders/${inspectionOrderId}/appointments/${appointmentId}/inspection-report`,
         ORDER_BY_HASH: (hash) => `${API_BASE_URL}/api/inspection-orders/by-hash/${hash}`,
         START_VIRTUAL_INSPECTION: (id) => `${API_BASE_URL}/api/inspection-orders/${id}/start-virtual-inspection`,
         FULL_REPORT: (inspectionOrderId) => `${API_BASE_URL}/api/inspection-orders/full/${inspectionOrderId}`,
@@ -112,7 +116,7 @@ export const API_ROUTES = {
         AVAILABLE_SEDES: `${API_BASE_URL}/api/contact-agent/available-sedes`,
         ALL_MODALITIES: `${API_BASE_URL}/api/contact-agent/all-modalities`,
         SEDES_BY_MODALITY: `${API_BASE_URL}/api/contact-agent/sedes-by-modality`,
-        
+
         // ===== HISTORIAL Y COMENTARIOS =====
         ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/contact-history`,
         ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/contact-agent/orders/${orderId}/comments`,
@@ -138,11 +142,11 @@ export const API_ROUTES = {
         AGENT_STATS: `${API_BASE_URL}/api/coordinador-contacto/agent-stats`,
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
-        
+
         // ===== HISTORIAL Y COMENTARIOS (SOLO LECTURA) =====
         ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/contact-history`,
         ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/comments`,
-        
+
         // ===== REPORTES =====
         REPORTS: {
             COORDINATOR: `${API_BASE_URL}/api/coordinador-vml/reports/coordinator`
@@ -243,7 +247,7 @@ export const API_ROUTES = {
         SEDES: `${API_BASE_URL}/api/appointments/sedes`,
         TIME_SLOTS: `${API_BASE_URL}/api/appointments/time-slots`,
     },
-    
+
     // ===== RUTAS DEDICADAS PARA INSPECTOR ALIADO =====
     INSPECTOR_ALIADO: {
         APPOINTMENTS: {
@@ -253,7 +257,7 @@ export const API_ROUTES = {
             HISTORICAL: `${API_BASE_URL}/api/inspector-aliado/reports/historical`
         }
     },
-    
+
     // ===== RUTAS DE MODALIDADES DE INSPECCIÓN =====
     // INSPECTION_MODALITIES: {
     //     LIST: `${API_BASE_URL}/api/inspection-modalities`,
@@ -268,15 +272,24 @@ export const API_ROUTES = {
         // Endpoints de webhooks
         EVENTS: `${API_BASE_URL}/api/webhooks/events`,
         APPOINTMENT: `${API_BASE_URL}/api/webhooks/appointment`,
-        
+
         // Gestión de API Keys
         API_KEYS: `${API_BASE_URL}/api/webhooks/api-keys`,
         CREATE_API_KEY: `${API_BASE_URL}/api/webhooks/api-keys`,
         UPDATE_API_KEY: (id) => `${API_BASE_URL}/api/webhooks/api-keys/${id}`,
         DELETE_API_KEY: (id) => `${API_BASE_URL}/api/webhooks/api-keys/${id}`,
-        
+
         // Logs
         LOGS: `${API_BASE_URL}/api/webhooks/logs`,
+    },
+
+    // ===== RUTAS DE PERITAJES =====
+    PERITAJES: {
+        // Gestión de peritajes
+        GET_PENDING_TO_SCHEDULE: `${API_BASE_URL}/api/peritajes/getPendingToSchedule`,
+        GET_AGENTES_CONTACTO: `${API_BASE_URL}/api/peritajes/agentes-contacto`,
+        SCHEDULE: `${API_BASE_URL}/api/peritajes/schedule`,
+        ASSIGN_AGENT: `${API_BASE_URL}/api/peritajes/assign-agent`,
     },
 };
 

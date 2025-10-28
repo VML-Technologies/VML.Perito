@@ -39,6 +39,7 @@ import inspectionQueueController from './controllers/inspectionQueueController.j
 import inspectionModalityController from './controllers/inspectionModalityController.js';
 import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 import scheduledTasksController from './controllers/scheduledTasksController.js';
+import peritajesController from './controllers/peritajesController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -265,8 +266,10 @@ app.post('/api/inspection-orders/:id/start', inspectionOrderController.startInsp
 app.post('/api/inspection-orders/:id/start-virtual-inspection', requirePermission('inspection_orders.update'), inspectionOrderController.startVirtualInspection);
 
 // Reporte de inspección
-// app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, inspectionOrderController.getInspectionReport);
+// Ruta antigua (mantener para compatibilidad)
 app.get('/api/inspection-orders/:session_id/inspection-report', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getInspectionReport);
+// Nueva ruta con inspection_order_id y appointment_id
+app.get('/api/inspection-orders/:inspectionOrderId/appointments/:appointmentId/inspection-report', inspectionOrderController.getInspectionReportByIds);
 
 // Rutas para actualización de datos de contacto
 app.put('/api/inspection-orders/:id/contact-data', requirePermission('inspection_orders.update'), inspectionOrderController.updateContactData);
@@ -276,6 +279,11 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
+
+// Ruta para obtener URL de descarga del PDF
+app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, inspectionOrderController.getPdfDownloadUrl);
+
+// app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getPdfDownloadUrl);
 
 // Rutas para historial de contactos
 app.get('/api/inspection-orders/:orderId/contact-history', readLimiter, requirePermission('inspection_orders.read'), contactHistoryController.getContactHistory);
@@ -454,13 +462,20 @@ app.delete('/api/users/:id', requirePermission('users.delete'), userController.d
 app.delete('/api/users/:id/force', requirePermission('users.delete'), userController.forceDestroy);
 app.post('/api/users/:id/restore', requirePermission('users.update'), userController.restore);
 
+// ===== RUTAS DE PERITAJES =====
+
+app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('inspection_orders.read'), peritajesController.peritajesToSchedule);
+app.get('/api/peritajes/agentes-contacto', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getAgentesContacto);
+app.post('/api/peritajes/schedule', requirePermission('inspection_orders.update'), peritajesController.schedulePeritaje);
+app.post('/api/peritajes/assign-agent', requirePermission('inspection_orders.update'), peritajesController.assignAgent);
+
 // ===== RUTAS DE WEBHOOKS =====
 
 // Middleware condicional para captura de body raw
 const webhookBodyMiddleware = (req, res, next) => {
     const signatureVerificationEnabled = process.env.WEBHOOK_SIGNATURE_VERIFICATION !== 'false';
     console.log('🔐 Verificación de firma HMAC:', signatureVerificationEnabled ? 'HABILITADA' : 'DESHABILITADA');
-    
+
     if (signatureVerificationEnabled) {
         console.log('⚠️ Verificación de firma habilitada - usando body ya parseado');
         // Para ahora, usar el body ya parseado por express.json()
@@ -679,172 +694,6 @@ const startServer = async () => {
         await sequelize.authenticate();
         console.log('✅ Conexión a la base de datos establecida correctamente.');
 
-        // SEGUNDO: Sincronizar modelos (crear tablas si no existen) - ESTO DEBE SER LO PRIMERO
-        console.log('🔄 Sincronizando modelos con la base de datos...');
-
-        // Verificar que los modelos estén registrados
-        // const {
-        //     Department, City, Company, Sede, User, Role, Permission, RolePermission, UserRole,
-        //     InspectionOrderStatus, InspectionOrder, CallStatus, CallLog, Appointment,
-        //     NotificationChannel, NotificationType, NotificationConfig, Notification, NotificationQueue,
-        //     SedeType, InspectionModality, SedeModalityAvailability, VehicleType, SedeVehicleType,
-        //     ScheduleTemplate, Event, EventListener, NotificationTemplate, TemplateVersion, ChannelConfig,
-        //     PlateQuery, WebhookApiKey, WebhookLog
-        // } = await import('./models/index.js');
-
-        // // Crear tablas en secuencia para respetar dependencias
-        // console.log('🔧 Creando tablas en secuencia...');
-
-        // // Lista completa de modelos en orden de dependencias (sin dependencias primero)
-        // const modelos = [
-        //     // 1. Tablas base sin dependencias
-        //     { nombre: 'Department', modelo: Department, tabla: 'departments' },
-        //     { nombre: 'SedeType', modelo: SedeType, tabla: 'sede_types' },
-        //     { nombre: 'InspectionOrderStatus', modelo: InspectionOrderStatus, tabla: 'inspection_orders_statuses' },
-        //     { nombre: 'CallStatus', modelo: CallStatus, tabla: 'call_statuses' },
-        //     { nombre: 'InspectionModality', modelo: InspectionModality, tabla: 'inspection_modalities' },
-        //     { nombre: 'VehicleType', modelo: VehicleType, tabla: 'vehicle_types' },
-        //     { nombre: 'NotificationType', modelo: NotificationType, tabla: 'notification_types' },
-        //     { nombre: 'NotificationChannel', modelo: NotificationChannel, tabla: 'notification_channels' },
-
-        //     // 2. Tablas con dependencias de nivel 1
-        //     { nombre: 'City', modelo: City, tabla: 'cities' },
-        //     { nombre: 'Role', modelo: Role, tabla: 'roles' },
-        //     { nombre: 'Permission', modelo: Permission, tabla: 'permissions' },
-
-        //     // 3. Tablas con dependencias de nivel 2
-        //     { nombre: 'Company', modelo: Company, tabla: 'companies' },
-        //     { nombre: 'Sede', modelo: Sede, tabla: 'sedes' },
-        //     { nombre: 'User', modelo: User, tabla: 'users' },
-        //     { nombre: 'NotificationConfig', modelo: NotificationConfig, tabla: 'notification_config' },
-
-        //     // 4. Tablas que dependen de User
-        //     { nombre: 'Event', modelo: Event, tabla: 'events' },
-        //     { nombre: 'ChannelConfig', modelo: ChannelConfig, tabla: 'channel_configs' },
-        //     { nombre: 'NotificationTemplate', modelo: NotificationTemplate, tabla: 'notification_templates' },
-        //     { nombre: 'TemplateVersion', modelo: TemplateVersion, tabla: 'template_versions' },
-
-        //     // 5. Tablas de relaciones N:N
-        //     { nombre: 'RolePermission', modelo: RolePermission, tabla: 'role_permissions' },
-        //     { nombre: 'UserRole', modelo: UserRole, tabla: 'user_roles' },
-        //     { nombre: 'SedeVehicleType', modelo: SedeVehicleType, tabla: 'sede_vehicle_types' },
-
-        //     // 6. Tablas con dependencias de nivel 3
-        //     { nombre: 'InspectionOrder', modelo: InspectionOrder, tabla: 'inspection_orders' },
-        //     { nombre: 'CallLog', modelo: CallLog, tabla: 'call_logs' },
-        //     { nombre: 'SedeModalityAvailability', modelo: SedeModalityAvailability, tabla: 'sede_modality_availability' },
-        //     { nombre: 'ScheduleTemplate', modelo: ScheduleTemplate, tabla: 'schedule_templates' },
-
-        //     // 7. Tablas con dependencias de nivel 4
-        //     { nombre: 'Appointment', modelo: Appointment, tabla: 'appointments' },
-        //     { nombre: 'Notification', modelo: Notification, tabla: 'notifications' },
-        //     { nombre: 'EventListener', modelo: EventListener, tabla: 'event_listeners' },
-
-        //     // 8. Tablas finales
-        //     { nombre: 'NotificationQueue', modelo: NotificationQueue, tabla: 'notification_queue' },
-        //     { nombre: 'PlateQuery', modelo: PlateQuery, tabla: 'plate_queries' },
-
-        //     // 9. Tablas de webhooks
-        //     { nombre: 'WebhookApiKey', modelo: WebhookApiKey, tabla: 'webhook_api_keys' },
-        //     { nombre: 'WebhookLog', modelo: WebhookLog, tabla: 'webhook_logs' },
-        // ];
-
-        // let contador = 0;
-        // const maxIntentos = 50; // Máximo 5 segundos por tabla (50 * 100ms)
-
-        // // Loop principal para crear tablas secuencialmente
-        // while (contador < modelos.length) {
-        //     const modeloActual = modelos[contador];
-        //     console.log(`📋 [${contador + 1}/${modelos.length}] Creando tabla ${modeloActual.nombre}...`);
-
-        //     try {
-        //         // Ejecutar sync del modelo actual
-        //         await modeloActual.modelo.sync({ force: false });
-        //         console.log(`✅ Sync de ${modeloActual.nombre} ejecutado.`);
-
-        //         // Loop de verificación - esperar hasta que la tabla esté disponible
-        //         let tablaCreada = false;
-        //         let intentos = 0;
-
-        //         while (!tablaCreada && intentos < maxIntentos) {
-        //             try {
-        //                 const driver = sequelize.getDialect();
-        //                 if (driver == 'mssql') {
-        //                     await sequelize.query(`SELECT TOP 1 * FROM ${modeloActual.tabla}`);
-        //                 } else {
-        //                     await sequelize.query(`SELECT 1 FROM ${modeloActual.tabla} LIMIT 1`);
-        //                 }
-        //                 tablaCreada = true;
-        //                 console.log(`✅ Tabla ${modeloActual.tabla} verificada y disponible.`);
-        //             } catch (error) {
-        //                 intentos++;
-        //                 console.log(`⏳ [${intentos}/${maxIntentos}] Esperando que ${modeloActual.tabla} esté disponible... (${intentos * 100}ms)`);
-        //                 await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 100ms
-        //             }
-        //         }
-
-        //         if (tablaCreada) {
-        //             console.log(`✅ Tabla ${modeloActual.nombre} creada y verificada exitosamente.`);
-        //             contador++; // Pasar al siguiente modelo
-        //         } else {
-        //             console.error(`❌ Error: No se pudo verificar la tabla ${modeloActual.tabla} después de ${maxIntentos} intentos.`);
-        //             throw new Error(`Fallo al crear tabla ${modeloActual.tabla}`);
-        //         }
-
-        //     } catch (error) {
-        //         console.error(`❌ Error creando tabla ${modeloActual.nombre}:`, error.message);
-        //         console.log('🔄 Intentando sincronización general como último recurso...');
-        //         await sequelize.sync({ force: false });
-        //         console.log('✅ Sincronización general completada.');
-        //         break; // Salir del loop principal
-        //     }
-        // }
-
-        // console.log(`✅ Proceso de creación de tablas completado. ${contador}/${modelos.length} tablas creadas.`);
-
-        // VERIFICAR que las tablas críticas existan antes de continuar
-
-        // let tablesReady = false;
-        // let attempts = 0;
-        // const maxAttempts = 10;
-
-        // while (!tablesReady && attempts < maxAttempts) {
-        //     try {
-        //         const driver = sequelize.getDialect();
-        //         if (driver == 'mssql') {
-        //             await sequelize.query('SELECT TOP 1 * FROM events');
-        //             await sequelize.query('SELECT TOP 1 * FROM channel_configs');
-        //             await sequelize.query('SELECT TOP 1 * FROM event_listeners');
-        //             await sequelize.query('SELECT TOP 1 * FROM notification_queue');
-        //             await sequelize.query('SELECT TOP 1 * FROM notification_types');
-        //             await sequelize.query('SELECT TOP 1 * FROM plate_queries');
-        //             await sequelize.query('SELECT TOP 1 * FROM webhook_api_keys');
-        //             await sequelize.query('SELECT TOP 1 * FROM webhook_logs');
-        //         } else {
-        //             await sequelize.query('SELECT 1 FROM events LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM channel_configs LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM event_listeners LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM notification_queue LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM notification_types LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM plate_queries LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM webhook_api_keys LIMIT 1');
-        //             await sequelize.query('SELECT 1 FROM webhook_logs LIMIT 1');
-        //         }
-        //         console.log('✅ Todas las tablas críticas están disponibles.');
-        //         tablesReady = true;
-        //     } catch (error) {
-        //         attempts++;
-        //         console.log(`⚠️ Intento ${attempts}/${maxAttempts}: Error verificando tablas:`, error.message);
-        //         if (attempts < maxAttempts) {
-        //             console.log('⏳ Esperando 2 segundos antes del siguiente intento...');
-        //             await new Promise(resolve => setTimeout(resolve, 2000));
-        //         } else {
-        //             console.log('❌ No se pudieron verificar las tablas después de múltiples intentos.');
-        //             throw new Error('Las tablas críticas no están disponibles');
-        //         }
-        //     }
-        // }
-
         // TERCERO: Inicializar servicios (DESPUÉS de que todas las tablas estén creadas)
         console.log('📦 Inicializando servicios...');
 
@@ -887,13 +736,13 @@ const startServer = async () => {
 
         // DÉCIMO: Hacer disponible el sistema WebSocket en la app
         app.set('webSocketSystem', webSocketSystem);
-        
+
         // Middleware para incluir io en req
         app.use((req, res, next) => {
             req.io = webSocketSystem.io;
             next();
         });
-        
+
         console.log('✅ Sistema completamente inicializado');
 
         // UNDÉCIMO: Mostrar estadísticas iniciales
@@ -934,17 +783,17 @@ const startServer = async () => {
 // Manejo de cierre graceful
 process.on('SIGINT', async () => {
     console.log('\n🛑 Recibida señal SIGINT. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {
@@ -962,17 +811,17 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
     console.log('\n🛑 Recibida señal SIGTERM. Cerrando servidor gracefully...');
-    
+
     try {
         // Detener servicio de tareas programadas
         if (scheduledTasksService) {
             scheduledTasksService.stop();
         }
-        
+
         // Cerrar conexión a base de datos
         await sequelize.close();
         console.log('✅ Conexión a base de datos cerrada');
-        
+
         // Cerrar servidor HTTP
         if (server) {
             server.close(() => {

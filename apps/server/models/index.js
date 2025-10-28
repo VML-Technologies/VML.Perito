@@ -72,7 +72,25 @@ import InspectionQueue from './inspectionQueue.js';
 // Nuevos modelos para accesorios
 import Accessory from './accessory.js';
 
+// Nuevos modelos compartidos
+import PeritajeOrder from './peritajeOrder.js';
+import PeritajeAgendamiento from './peritajeAgendamiento.js';
+
 // Definir relaciones existentes
+// ===== RELACIONES PERITAJE COMPARTIDO =====
+// PeritajeOrder -> PeritajeAgendamiento (1:N)
+PeritajeOrder.hasMany(PeritajeAgendamiento, {
+    foreignKey: 'peritaje_order_id',
+    as: 'agendamientos',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PeritajeAgendamiento.belongsTo(PeritajeOrder, {
+    foreignKey: 'peritaje_order_id',
+    as: 'order',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
 
 // Department -> Cities (1:N)
 Department.hasMany(City, {
@@ -136,6 +154,9 @@ User.belongsTo(Sede, {
     onUpdate: 'CASCADE'
 });
 
+// Modelos compartidos
+PeritajeOrder,
+    PeritajeAgendamiento
 // ===== RELACIONES RBAC =====
 
 // User -> Roles (N:N a través de UserRole)

@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
 import { InspectionOrder } from '../models/index.js';
+import InspectionQueue from '../models/inspectionQueue.js';
 
 /**
  * Servicio de Tareas Programadas
@@ -23,10 +24,10 @@ class ScheduledTasksService {
         }
 
         console.log('🚀 Iniciando servicio de tareas programadas...');
-        
+
         // Registrar todas las tareas
         this.registerTasks();
-        
+
         this.isRunning = true;
         console.log('✅ Servicio de tareas programadas iniciado correctamente');
     }
@@ -41,13 +42,13 @@ class ScheduledTasksService {
         }
 
         console.log('🛑 Deteniendo servicio de tareas programadas...');
-        
+
         // Detener todas las tareas
         this.tasks.forEach((task, name) => {
             task.destroy();
             console.log(`   - Tarea "${name}" detenida`);
         });
-        
+
         this.tasks.clear();
         this.isRunning = false;
         console.log('✅ Servicio de tareas programadas detenido correctamente');
@@ -60,6 +61,11 @@ class ScheduledTasksService {
         // Tarea diaria a medianoche: Marcar órdenes vencidas
         this.registerTask('marcar-ordenes-vencidas', '0 0 * * *', async () => {
             await this.marcarOrdenesVencidas();
+        });
+
+        // Tarea diaria a las 04:00 am: Desactivar inspecciones virtuales activas
+        this.registerTask('clear-outdated-virtual-inspections', '0 4 * * *', async () => {
+            await this.clearOutdatedVirtualInspections();
         });
 
         // Aquí se pueden agregar más tareas en el futuro
@@ -77,7 +83,7 @@ class ScheduledTasksService {
             const task = cron.schedule(schedule, async () => {
                 const startTime = new Date();
                 console.log(`🕐 Ejecutando tarea programada: ${name} - ${startTime.toISOString()}`);
-                
+
                 try {
                     await taskFunction();
                     const endTime = new Date();
@@ -100,19 +106,40 @@ class ScheduledTasksService {
     }
 
     /**
-     * Marcar órdenes de inspección vencidas (más de 31 días)
-     * Equivalente a: UPDATE inspection_orders SET status = 6 WHERE status != 6 AND created_at < DATEADD(dd, -31, GETDATE())
+     * Desactiva inspecciones virtuales activas en la cola
+     */
+    async clearOutdatedVirtualInspections() {
+        try {
+            console.log('🔄 Iniciando limpieza de inspecciones virtuales activas en la cola...');
+            const [actualizadas] = await InspectionQueue.update(
+                { is_active: false },
+                { where: { is_active: true } }
+            );
+            console.log(`✅ Se desactivaron ${actualizadas} inspecciones virtuales en la cola (is_active = 0)`);
+            return {
+                success: true,
+                inspeccionesDesactivadas: actualizadas,
+                fechaConsulta: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('❌ Error desactivando inspecciones virtuales:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Marcar órdenes de inspección vencidas (más de 30 días)
      */
     async marcarOrdenesVencidas() {
         try {
             console.log('🔄 Iniciando marcado de órdenes vencidas...');
-            
+
             // Calcular fecha de hace 31 días
             const fechaLimite = new Date();
             fechaLimite.setDate(fechaLimite.getDate() - 30);
-            
+
             console.log(`📅 Marcando órdenes creadas antes de: ${fechaLimite.toISOString()}`);
-            
+
             // Primero, obtener las órdenes que van a ser actualizadas para logging
             const ordenesAVencer = await InspectionOrder.findAll({
                 where: {
@@ -129,20 +156,20 @@ class ScheduledTasksService {
 
             const cantidadAVencer = ordenesAVencer.length;
             console.log(`📊 Se encontraron ${cantidadAVencer} órdenes para marcar como vencidas`);
-            
+
             if (cantidadAVencer > 0) {
                 console.log('📋 Primeras 5 órdenes que serán marcadas como vencidas:');
                 ordenesAVencer.slice(0, 5).forEach((orden, index) => {
                     console.log(`   ${index + 1}. ID: ${orden.id}, Número: ${orden.numero}, Cliente: ${orden.nombre_cliente}, Status actual: ${orden.status}, Fecha: ${orden.created_at.toISOString()}`);
                 });
-                
+
                 if (cantidadAVencer > 5) {
                     console.log(`   ... y ${cantidadAVencer - 5} órdenes más`);
                 }
 
                 // Ejecutar el UPDATE usando Sequelize
                 const [ordenesActualizadas] = await InspectionOrder.update(
-                    { 
+                    {
                         status: 6, // Marcar como vencida
                         updated_at: new Date() // Actualizar timestamp
                     },
@@ -159,7 +186,7 @@ class ScheduledTasksService {
                 );
 
                 console.log(`✅ Se marcaron ${ordenesActualizadas} órdenes como vencidas (status = 6)`);
-                
+
                 // Log de las órdenes actualizadas
                 if (ordenesActualizadas > 0) {
                     console.log('📝 Órdenes marcadas como vencidas:');
@@ -222,10 +249,12 @@ class ScheduledTasksService {
         }
 
         console.log(`🔧 Ejecutando tarea manualmente: ${taskName}`);
-        
+
         switch (taskName) {
             case 'marcar-ordenes-vencidas':
                 return await this.marcarOrdenesVencidas();
+            case 'clear-outdated-virtual-inspections':
+                return await this.clearOutdatedVirtualInspections();
             default:
                 throw new Error(`Función para tarea "${taskName}" no implementada`);
         }

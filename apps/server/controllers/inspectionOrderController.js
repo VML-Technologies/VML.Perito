@@ -132,6 +132,7 @@ class InspectionOrderController extends BaseController {
         this.getResponsesData = this.getResponsesData.bind(this);
         this.getCategoryResponsesData = this.getCategoryResponsesData.bind(this);
         this.getInspectionReport = this.getInspectionReport.bind(this);
+        this.getInspectionReportByIds = this.getInspectionReportByIds.bind(this);
         this.getMechanicalTestsData = this.getMechanicalTestsData.bind(this);
         this.checkPlate = this.checkPlate.bind(this);
         this.getFixedStatus = this.getFixedStatus.bind(this);
@@ -928,6 +929,321 @@ class InspectionOrderController extends BaseController {
         }
     }
 
+    /**
+     * Obtener reporte de inspección por inspection_order_id y appointment_id
+     */
+    async getInspectionReportByIds(req, res) {
+        try {
+            const { inspectionOrderId, appointmentId } = req.params;
+            console.log("############################")
+            console.log({
+                inspectionOrderId,
+                appointmentId
+            })
+            const inspectionOrder = await InspectionOrder.findByPk(inspectionOrderId, {
+                include: [
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['name']
+                    }, {
+                        model: Appointment,
+                        as: 'appointments',
+                        attributes: ['id', 'session_id', 'observaciones', 'scheduled_date', 'scheduled_time', 'created_at', 'updated_at'],
+                        where: {
+                            id: appointmentId,
+                            deleted_at: null // Solo appointments activos
+                        },
+                        include: [
+                            {
+                                model: InspectionModality,
+                                as: 'inspectionModality',
+                                attributes: ['name']
+                            },
+                            {
+                                model: Sede,
+                                as: 'sede',
+                                attributes: ['name'],
+                            }, {
+                                model: ImageCapture,
+                                as: 'imageCaptures',
+                                attributes: ['id', 'image_url', 'name', 'category', 'slot', 'blob_name', 'created_at']
+                            }, {
+                                model: Accessory,
+                                as: 'accessories',
+                                attributes: ['id', 'description', 'brand', 'reference', 'unit', 'value', 'quantity', 'total_value', 'notes', 'created_at', 'updated_at']
+                            }
+                        ],
+                        order: [['updated_at', 'DESC']],
+                        required: false
+                    }
+                ],
+                attributes: ['id', 'numero', 'placa', 'nombre_cliente', 'num_doc', 'celular_cliente', 'correo_cliente', 'marca', 'linea', 'modelo', 'clase', 'color', 'carroceria', 'cilindraje', 'producto', 'motor', 'chasis', 'vin', 'cod_fasecolda', 'combustible', 'servicio', 'nombre_contacto', 'celular_contacto', 'correo_contacto', 'created_at', 'inspection_result', 'inspection_result_details']
+            });
+
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            console.log(`🔍 Orden encontrada: ${inspectionOrder.id}, Appointments: ${inspectionOrder.appointments?.length || 0}`);
+            if (inspectionOrder.appointments && inspectionOrder.appointments.length > 0) {
+                inspectionOrder.appointments.forEach((appointment, index) => {
+                    console.log(`📋 Appointment ${index + 1}: ${appointment.session_id}, ImageCaptures: ${appointment.imageCaptures?.length || 0}`);
+                    if (appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                        appointment.imageCaptures.forEach((img, imgIndex) => {
+                            console.log(`📸 Imagen ${imgIndex + 1}: ID=${img.id}, slot=${img.slot}, name=${img.name}, hasBlobName=${!!img.blob_name}`);
+                        });
+                    }
+                });
+            }
+
+            if (!inspectionOrder.appointments || inspectionOrder.appointments.length === 0) {
+                return res.json({
+                    success: true,
+                    data: {
+                        ...inspectionOrder,
+                        appointments: []
+                    }
+                });
+            }
+
+            // sort appointments by updated_at descending
+            inspectionOrder.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+            const mostRecentAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0
+                ? inspectionOrder.appointments[0]
+                : null;
+
+            console.log('🔍 mostRecentAppointment:', mostRecentAppointment);
+
+            // Extender con respuestas e imágenes
+            const fullInspectionOrderAppointments = await Promise.all(inspectionOrder.appointments.map(async (appointment) => {
+                // Obtener respuestas de partes de inspección
+                const responsesData = await this.getResponsesData(appointment.session_id);
+
+                // Obtener respuestas de categorías de inspección
+                const categoryResponsesData = await this.getCategoryResponsesData(inspectionOrder.id);
+
+                // Obtener datos de pruebas mecánicas
+                const mechanicalTestsData = await this.getMechanicalTestsData(appointment.session_id);
+
+                // Obtener comentarios de categorías
+                const categoryCommentsData = await this.getCategoryCommentsData(inspectionOrder.id);
+
+                let processedImages = null;
+                if (appointment === mostRecentAppointment && appointment.imageCaptures && appointment.imageCaptures.length > 0) {
+                    try {
+                        console.log(`📸 Procesando imágenes para appointment más reciente ${appointment.session_id}:`);
+                        console.log('📸 ImageCaptures encontradas:', appointment.imageCaptures.map(img => ({
+                            id: img.id,
+                            slot: img.slot,
+                            name: img.name,
+                            category: img.category,
+                            hasBlobName: !!img.blob_name,
+                            hasImageUrl: !!img.image_url
+                        })));
+
+                        // remover imagenes adicionales img.slot.startsWith('adicional_')
+                        appointment.imageCaptures = appointment.imageCaptures.filter(img => !img.slot.startsWith('adicional_'));
+
+
+                        const imageProcessor = new ImageProcessor();
+                        processedImages = await imageProcessor.processInspectionImages(appointment.imageCaptures, 60);
+                        console.log(`📸 Imágenes procesadas para appointment más reciente ${appointment.session_id}: ${processedImages.total_count} total`);
+                    } catch (error) {
+                        console.error('❌ Error procesando imágenes:', error);
+                        console.error('❌ Stack trace:', error.stack);
+                        processedImages = {
+                            main_images: [],
+                            additional_images: [],
+                            total_count: 0,
+                            error: error.message
+                        };
+                    }
+                } else if (appointment === mostRecentAppointment) {
+                    console.log(`📭 No hay imágenes para appointment más reciente ${appointment.session_id}`);
+                } else {
+                    console.log(`⏭️ Saltando imágenes para appointment ${appointment.session_id} (no es el más reciente)`);
+                }
+
+                // Obtener partes de inspección (estructura base) - Evitar relaciones circulares
+                const partsData = await sequelize.query(`
+                    SELECT 
+                        ip.id,
+                        ip.parte,
+                        ip.bueno,
+                        ip.regular,
+                        ip.malo,
+                        ip.minimo,
+                        ip.opciones,
+                        ic.categoria
+                    FROM inspection_parts ip
+                    INNER JOIN inspection_categories ic ON ip.categoria_id = ic.id
+                    ORDER BY ip.categoria_id ASC, ip.parte ASC
+                `, {
+                    type: QueryTypes.SELECT
+                });
+
+                console.log(`📋 Encontradas ${partsData.length} partes de inspección para appointment ${appointment.session_id}`);
+
+                // Procesar respuestas para crear un objeto de respuestas por part_id
+                const partResponses = {};
+                responsesData.forEach(response => {
+                    if (response.part_id) {
+                        partResponses[response.part_id] = response.value;
+                    }
+                });
+
+                // Calcular todos los valores en el backend
+                const groupedParts = this.groupPartsByCategory(partsData);
+                const { categoryScores, generalScore } = this.calculateChecklistScores(partsData, partResponses);
+                const { isAsegurable, reason } = this.calculateAsegurabilidad(partsData, partResponses, mechanicalTestsData);
+
+                // Procesar partes con valores de respuesta formateados
+                const processedParts = partsData.map(part => ({
+                    ...part,
+                    responseValue: this.getResponseValue(part, partResponses),
+                    hasResponse: partResponses[part.id] !== undefined
+                }));
+
+                // Convertir appointment a objeto plano para evitar referencias circulares
+                const plainAppointment = {
+                    id: appointment.id,
+                    session_id: appointment.session_id,
+                    scheduled_date: appointment.scheduled_date,
+                    scheduled_time: appointment.scheduled_time,
+                    created_at: appointment.created_at,
+                    observaciones: appointment.observaciones,
+                    accessories: appointment.accessories,
+                    inspectionModality: appointment.inspectionModality ? {
+                        id: appointment.inspectionModality.id,
+                        name: appointment.inspectionModality.name
+                    } : null,
+                    sede: appointment.sede ? {
+                        id: appointment.sede.id,
+                        name: appointment.sede.name
+                    } : null
+                };
+
+                // Crear estructura organizada por categorías para el frontend
+                const inspectionResults = Object.entries(groupedParts).map(([categoria, parts]) => {
+                    const categoryScore = categoryScores[categoria];
+                    const categoryComment = categoryCommentsData.find(c => c.categoryName === categoria);
+
+                    return {
+                        categoria,
+                        puntaje: categoryScore,
+                        minimo: parts[0]?.minimo || 0,
+                        cumpleMinimo: categoryScore !== null ? (categoryScore >= (parts[0]?.minimo || 0)) : true,
+                        parts: processedParts.filter(el => el.categoria == categoria),
+                        comentario: categoryComment ? categoryComment.comentario : null,
+                        // Solo lo esencial para el render visual
+                        estado: categoryScore === null ? 'observacion' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'aprobado' : 'rechazado',
+                        color: categoryScore === null ? 'gray' :
+                            categoryScore >= (parts[0]?.minimo || 0) ? 'green' : 'red'
+                    };
+                });
+
+                return {
+                    ...plainAppointment,
+                    // Solo datos esenciales para el frontend
+                    inspectionResults,
+                    calculatedData: {
+                        generalScore,
+                        asegurabilidad: {
+                            isAsegurable,
+                            reason
+                        },
+                        // Resumen por estado
+                        resumen: {
+                            aprobadas: inspectionResults.filter(cat => cat.estado === 'aprobado').length,
+                            rechazadas: inspectionResults.filter(cat => cat.estado === 'rechazado').length,
+                            observaciones: inspectionResults.filter(cat => cat.estado === 'observacion').length
+                        }
+                    },
+                    // Datos de pruebas mecánicas (solo si existen)
+                    mechanicalTests: mechanicalTestsData && Object.keys(mechanicalTestsData).length > 0 ? mechanicalTestsData : null,
+                    // Imágenes procesadas con URLs de Azure Blob Storage
+                    images: processedImages
+                };
+            }));
+
+            // Convertir inspectionOrder a objeto plano para evitar referencias circulares
+            const plainInspectionOrder = {
+                id: inspectionOrder.id,
+                numero: inspectionOrder.numero,
+                placa: inspectionOrder.placa,
+                nombre_cliente: inspectionOrder.nombre_cliente,
+                num_doc: inspectionOrder.num_doc,
+                celular_cliente: inspectionOrder.celular_cliente,
+                correo_cliente: inspectionOrder.correo_cliente,
+                marca: inspectionOrder.marca,
+                linea: inspectionOrder.linea,
+                modelo: inspectionOrder.modelo,
+                clase: inspectionOrder.clase,
+                color: inspectionOrder.color,
+                carroceria: inspectionOrder.carroceria,
+                cilindraje: inspectionOrder.cilindraje,
+                producto: inspectionOrder.producto,
+                motor: inspectionOrder.motor,
+                chasis: inspectionOrder.chasis,
+                vin: inspectionOrder.vin,
+                cod_fasecolda: inspectionOrder.cod_fasecolda,
+                combustible: inspectionOrder.combustible,
+                servicio: inspectionOrder.servicio,
+                nombre_contacto: inspectionOrder.nombre_contacto,
+                celular_contacto: inspectionOrder.celular_contacto,
+                correo_contacto: inspectionOrder.correo_contacto,
+                fecha_creacion: inspectionOrder.created_at,
+                inspection_result: inspectionOrder.inspection_result,
+                inspection_result_details: inspectionOrder.inspection_result_details,
+                InspectionOrderStatus: inspectionOrder.InspectionOrderStatus ? {
+                    id: inspectionOrder.InspectionOrderStatus.id,
+                    name: inspectionOrder.InspectionOrderStatus.name
+                } : null
+            };
+
+            const response = {
+                success: true,
+                data: {
+                    ...plainInspectionOrder,
+                    appointments: fullInspectionOrderAppointments
+                }
+            };
+
+            // Log de la respuesta final para debugging
+            console.log('📤 Respuesta final enviada:');
+            console.log(`📤 - Orden ID: ${response.data.id}`);
+            console.log(`📤 - Appointments: ${response.data.appointments.length}`);
+            response.data.appointments.forEach((appointment, index) => {
+                console.log(`📤 - Appointment ${index + 1}: ${appointment.session_id}`);
+                if (appointment.images) {
+                    console.log(`📤   - Imágenes: ${appointment.images.total_count} total`);
+                    console.log(`📤   - Principales: ${appointment.images.main_images?.length || 0}`);
+                    console.log(`📤   - Adicionales: ${appointment.images.additional_images?.length || 0}`);
+                    if (appointment.images.error) {
+                        console.log(`📤   - Error: ${appointment.images.error}`);
+                    }
+                } else {
+                    console.log(`📤   - Sin imágenes procesadas`);
+                }
+            });
+
+            res.json(response);
+        } catch (error) {
+            console.error('Error al obtener orden de inspección completa:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al obtener orden de inspección completa',
+                error: error.message
+            });
+        }
+    }
+
     async getResponsesData(inspection_id) {
         const query = `
         SELECT 
@@ -1425,7 +1741,7 @@ class InspectionOrderController extends BaseController {
             let showStartButton = true;
             let appointmentStatus = null;
             let activeAppointment = null;
-            
+
             if (activeAppointments.length > 0) {
                 // ✅ HAY appointment activo - Usuario debe ir al APPOINTMENT (redirigir a inspección)
                 activeAppointment = activeAppointments[0];
@@ -2143,7 +2459,11 @@ if status == 5 then check for latest @appointment an if it is with status != ine
 
             // Buscar la orden por placa
             const order = await InspectionOrder.findOne({
-                where: { placa: plate.toUpperCase() },
+                where: {
+                    placa: plate.toUpperCase(),
+                    deleted_at: null,
+                    status: { [Op.ne]: 6 },
+                },
                 include: [
                     {
                         model: InspectionOrderStatus,
@@ -2406,6 +2726,101 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             return res.status(500).json({
                 success: false,
                 message: 'Error reenviando SMS: ' + error.message
+            });
+        }
+    }
+
+    /**
+     * Obtener URL de descarga del PDF de inspección
+     * GET /api/inspection-orders/:id/pdf-download-url
+     */
+    async getPdfDownloadUrl(req, res) {
+        try {
+            const { orderId, appointmentId, sessionId } = req.params;
+
+            // 1. Buscar la orden de inspección
+            const inspectionOrder = await InspectionOrder.findByPk(orderId, {
+                attributes: ['id', 'placa']
+            });
+
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // 3. Construir el nombre del archivo PDF
+            const pdfFileName = `inspeccion_${inspectionOrder.placa}.pdf`;
+
+            // 4. Construir el blob_name para Azure
+            const blobName = `pdfs/${sessionId}/${orderId}/${pdfFileName}`;
+
+            // 5. Usar el servicio de Azure Blob para generar URL con SAS token
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+
+            try {
+                // Generar URL con SAS token (válida por 60 minutos)
+                const downloadUrl = await azureBlobService.getDownloadUrl(blobName, 60);
+
+                console.log(`✅ URL de descarga PDF generada para orden ${orderId}: ${pdfFileName}`);
+
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: sessionId,
+                        inspectionOrderId: inspectionOrder.id,
+                        plate: inspectionOrder.placa,
+                        expiresIn: 60 // minutos
+                    }
+                });
+            } catch (azureError) {
+                console.error('❌ Error generando URL de Azure:', azureError.message);
+
+                // Fallback: construir URL pública
+                const publicUrl = azureBlobService.getPublicUrl(blobName);
+
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl: null,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: sessionId,
+                        inspectionOrderId: inspectionOrder.id,
+                        plate: inspectionOrder.placa,
+                        expiresIn: null,
+                        fallback: true
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('❌ Error obteniendo URL de descarga PDF:', error);
+
+            // Verificar si es el error específico de "Blob no encontrado"
+            if (error.message && error.message.includes('Blob no encontrado')) {
+                console.log('📄 PDF no encontrado en Azure Blob Storage, devolviendo enlace como null');
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl: null,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: sessionId,
+                        inspectionOrderId: orderId,
+                        expiresIn: null,
+                        fallback: true
+                    }
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
             });
         }
     }
