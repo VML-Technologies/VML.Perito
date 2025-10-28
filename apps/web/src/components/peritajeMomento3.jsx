@@ -101,15 +101,7 @@ const PeritajeMomento3 = () => {
                 return;
             }
 
-            // Si es agente, filtrar solo los peritajes asignados a él
-            if (isAgente && !isCoordinador) {
-                const filteredPeritajes = data.data.filter(peritaje =>
-                    peritaje.assigned_agent_id === user.id
-                );
-                setPeritajes(filteredPeritajes);
-            } else {
-                setPeritajes(data.data);
-            }
+            setPeritajes(data.data);
         } catch (error) {
             console.error('Error cargando peritajes:', error);
             showToast('Error al cargar peritajes', 'error');
@@ -435,16 +427,20 @@ const PeritajeMomento3 = () => {
                                                 {/* Asignación Section */}
                                                 <div className="space-y-3">
                                                     <div className="flex justify-between items-center gap-4">
-                                                        <div
-                                                            className={`flex w-full items-center gap-2 p-2 rounded-lg`}
-                                                        >
-                                                            {isAssigned ? (
-                                                                <UserCheck className="h-4 w-4 flex-shrink-0" />
-                                                            ) : (
-                                                                <UserX className="h-4 w-4 flex-shrink-0" />
-                                                            )}
-                                                            <span className="text-sm font-medium">{getAssignedAgentName(peritaje)}</span>
-                                                        </div>
+                                                        {
+                                                            isCoordinador && <>
+                                                                <div
+                                                                    className={`flex w-full items-center gap-2 p-2 rounded-lg`}
+                                                                >
+                                                                    {isAssigned ? (
+                                                                        <UserCheck className="h-4 w-4 flex-shrink-0" />
+                                                                    ) : (
+                                                                        <UserX className="h-4 w-4 flex-shrink-0" />
+                                                                    )}
+                                                                    <span className="text-sm font-medium">{getAssignedAgentName(peritaje)}</span>
+                                                                </div>
+                                                            </>
+                                                        }
 
                                                         <div className="flex w-full flex-col">
                                                             {isCoordinador && (
@@ -483,16 +479,16 @@ const PeritajeMomento3 = () => {
                                                                 </div>
                                                             )}
 
-                                                            {isAgente && peritaje.assigned_agent_id === user.id && (
-                                                                <Button
-                                                                    onClick={() => openScheduleDialog(peritaje)}
-                                                                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-                                                                    size="default"
-                                                                >
-                                                                    <CalendarIcon className="h-4 w-4" />
-                                                                    Agendar Peritaje
-                                                                </Button>
-                                                            )}
+                                                            {/* {isAgente && peritaje.assigned_agent_id === user.id && ( */}
+                                                            <Button
+                                                                onClick={() => openScheduleDialog(peritaje)}
+                                                                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                                                                size="default"
+                                                            >
+                                                                <CalendarIcon className="h-4 w-4" />
+                                                                Agendar Peritaje
+                                                            </Button>
+                                                            {/* )} */}
                                                         </div>
                                                     </div>
                                                 </div>
