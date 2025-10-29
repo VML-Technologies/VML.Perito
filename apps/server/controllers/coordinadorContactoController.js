@@ -427,23 +427,6 @@ class CoordinadorContactoController {
             const order = await InspectionOrder.findByPk(id, {
                 include: [
                     {
-                        model: InspectionOrderStatus,
-                        as: 'InspectionOrderStatus',
-                        attributes: ['id', 'name', 'description']
-                    },
-                    {
-                        model: User,
-                        as: 'AssignedAgent',
-                        attributes: ['id', 'name', 'email'],
-                        required: false
-                    },
-                    {
-                        model: User,
-                        as: 'Creator',
-                        attributes: ['id', 'name', 'email'],
-                        required: false
-                    },
-                    {
                         model: CallLog,
                         as: 'callLogs',
                         include: [
@@ -464,8 +447,9 @@ class CoordinadorContactoController {
                     {
                         model: Appointment,
                         as: 'appointments',
+                        required: false,
                         where: {
-                            deleted_at: null // Solo appointments activos
+                            deleted_at: null
                         },
                         include: [
                             {
@@ -780,7 +764,7 @@ class CoordinadorContactoController {
     async getCoordinatorReport(req, res) {
         try {
             const { start_date, end_date } = req.query;
-            
+
             // Validar parámetros requeridos
             if (!start_date || !end_date) {
                 return res.status(400).json({
@@ -792,7 +776,7 @@ class CoordinadorContactoController {
             // Validar formato de fechas
             const startDate = new Date(start_date);
             const endDate = new Date(end_date);
-            
+
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                 return res.status(400).json({
                     success: false,

@@ -203,8 +203,9 @@ class ContactAgentController {
                     {
                         model: Appointment,
                         as: 'appointments',
+                        required: false,
                         where: {
-                            deleted_at: null // Solo appointments activos
+                            deleted_at: null
                         },
                         include: [
                             {
@@ -255,7 +256,7 @@ class ContactAgentController {
 
             // Determinar el usuario destinatario según las reglas de negocio
             let targetUser = null;
-            
+
             if (order.numero.toString().includes('9991')) {
                 // Si la orden inicia con 9991, buscar por user_id
                 targetUser = await User.findByPk(order.user_id);
@@ -291,7 +292,7 @@ class ContactAgentController {
             // Leer la plantilla HTML
             const templatePath = path.join(__dirname, '../mailTemplates/callLogNotification.html');
             let emailTemplate;
-            
+
             try {
                 emailTemplate = fs.readFileSync(templatePath, 'utf8');
             } catch (templateError) {
@@ -325,7 +326,7 @@ class ContactAgentController {
 
             // Generar contenido HTML
             const htmlContent = this.replaceTemplateVariables(emailTemplate, templateVariables);
-            
+
             // Crear objeto de notificación compatible con EmailService.send()
             const notification = {
                 recipient_email: targetUser.email,
@@ -370,7 +371,7 @@ class ContactAgentController {
         try {
             // Determinar el usuario destinatario según las reglas de negocio
             let targetUser = null;
-            
+
             if (order.numero.toString().includes('9991')) {
                 // Si la orden inicia con 9991, buscar por user_id
                 targetUser = await User.findByPk(order.user_id);
@@ -406,7 +407,7 @@ class ContactAgentController {
             // Leer la plantilla HTML
             const templatePath = path.join(__dirname, '../mailTemplates/appointmentNotification.html');
             let emailTemplate;
-            
+
             try {
                 emailTemplate = fs.readFileSync(templatePath, 'utf8');
             } catch (templateError) {
@@ -461,7 +462,7 @@ class ContactAgentController {
 
             // Generar contenido HTML
             const htmlContent = this.replaceTemplateVariables(emailTemplate, templateVariables);
-            
+
             // Crear objeto de notificación compatible con EmailService.send()
             const notification = {
                 recipient_email: targetUser.email,
@@ -599,7 +600,7 @@ class ContactAgentController {
     // Crear agendamiento
     async createAppointment(req, res) {
         try {
-            const { 
+            const {
                 inspection_order_id,
                 direccion_inspeccion,
                 observaciones
@@ -641,7 +642,7 @@ class ContactAgentController {
                 try {
                     // Usar soft delete con la columna deleted_at
                     await Appointment.update(
-                        { 
+                        {
                             deleted_at: new Date(),
                             updated_at: new Date()
                         },
@@ -652,7 +653,7 @@ class ContactAgentController {
                             }
                         }
                     );
-                    
+
                     console.log(`📝 Se marcaron ${existingAppointments.length} appointments anteriores como eliminados para la orden ${inspection_order_id}`);
                 } catch (updateError) {
                     console.warn('No se pudieron marcar appointments anteriores como eliminados:', updateError.message);
@@ -712,7 +713,7 @@ class ContactAgentController {
             if (fullAppointment.inspectionModality.name === 'A Domicilio') {
                 // Send simple email to list: simon.bolivar@holdingvml.net, betum98@gmail.com
                 // usar nodemailer
-                const to = ['simon.bolivar@holdingvml.net','miguel.pineda@holdingvml.net', 'analista.operativo1@holdingvml.net','coordinacion.nacional@holdingvml.net','radicados.operativos@holdingvml.net'];
+                const to = ['simon.bolivar@holdingvml.net', 'miguel.pineda@holdingvml.net', 'analista.operativo1@holdingvml.net', 'coordinacion.nacional@holdingvml.net', 'radicados.operativos@holdingvml.net'];
                 const subject = 'Orden de inspeccion a domicilio agendada';
                 // enviar, fecha y hora, direccion de inspeccion, nombre del cliente, email del cliente, telefono del cliente y placa
                 const html = `
