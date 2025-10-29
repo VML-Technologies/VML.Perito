@@ -13,8 +13,10 @@ import Notification from '../models/notification.js';
 import NotificationConfig from '../models/notificationConfig.js';
 import NotificationType from '../models/notificationType.js';
 import NotificationChannel from '../models/notificationChannel.js';
+import InspectionQueue from '../models/inspectionQueue.js';
+import InspectionOrderSmsLog from '../models/inspectionOrderSmsLog.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import coordinatorDataService from '../services/coordinatorDataService.js';
 
 // Registrar permisos
@@ -54,6 +56,34 @@ registerPermission({
     description: 'Generar reportes del coordinador VML',
 });
 
+registerPermission({
+    name: 'coordinador_contacto.recuperacion',
+    resource: 'coordinador_contacto',
+    action: 'recuperacion',
+    endpoint: '/api/coordinador-contacto/ordenes-recuperacion',
+    method: 'GET',
+    description: 'Ver órdenes en recuperación',
+});
+
+registerPermission({
+    name: 'coordinador_contacto.no_recuperadas',
+    resource: 'coordinador_contacto',
+    action: 'no_recuperadas',
+    endpoint: '/api/coordinador-contacto/ordenes-no-recuperadas',
+    method: 'GET',
+    description: 'Ver órdenes no recuperadas',
+});
+
+// Permiso para actividad de una orden (timeline)
+registerPermission({
+    name: 'coordinador_contacto.actividad',
+    resource: 'coordinador_contacto',
+    action: 'actividad',
+    endpoint: '/api/coordinador-contacto/ordenes/:id/actividad',
+    method: 'GET',
+    description: 'Ver actividad (llamadas y SMS) de una orden específica',
+});
+
 class CoordinadorContactoController {
     constructor() {
         // Bind methods
@@ -63,6 +93,9 @@ class CoordinadorContactoController {
         this.getAgents = this.getAgents.bind(this);
         this.assignAgent = this.assignAgent.bind(this);
         this.getCoordinatorReport = this.getCoordinatorReport.bind(this);
+        this.getOrdenesRecuperacion = this.getOrdenesRecuperacion.bind(this);
+        this.getOrdenesNoRecuperadas = this.getOrdenesNoRecuperadas.bind(this);
+        this.getOrdenActividad = this.getOrdenActividad.bind(this);
     }
 
     // Obtener órdenes con paginación, filtros y sorting
@@ -227,6 +260,98 @@ class CoordinadorContactoController {
                 message: 'Error al obtener órdenes',
                 error: error.message
             });
+        }
+    }
+
+    // Obtener actividad (llamadas y SMS) de una orden de inspección
+    async getOrdenActividad(req, res) {
+        try {
+            const { id } = req.params;
+            const limit = Math.min(parseInt(req.query.limit || '20', 10), 100);
+
+            // Validaciones básicas
+            if (!id) {
+                return res.status(400).json({ success: false, message: 'Falta el parámetro id' });
+            }
+
+            // Verificar que la orden exista (opcional pero útil)
+            const order = await InspectionOrder.findByPk(id, { attributes: ['id'] });
+            if (!order) {
+                return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+            }
+
+            // Obtener llamadas con estado y agente
+            const callLogs = await CallLog.findAll({
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null
+                },
+                include: [
+                    {
+                        model: CallStatus,
+                        as: 'status',
+                        attributes: ['id', 'name', 'creates_schedule']
+                    },
+                    {
+                        model: User,
+                        as: 'Agent',
+                        attributes: ['id', 'name', 'email'],
+                        required: false
+                    }
+                ],
+                order: [['call_time', 'DESC']],
+                limit
+            });
+
+            // Obtener SMS logs
+            const smsLogs = await InspectionOrderSmsLog.findAll({
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null
+                },
+                attributes: [
+                    'id', 'created_at', 'sent_at', 'status', 'recipient_phone', 'recipient_name', 'sms_type', 'priority', 'error_message'
+                ],
+                order: [['created_at', 'DESC']],
+                limit
+            });
+
+            // Mapear a una línea de tiempo unificada
+            const callEvents = callLogs.map(cl => ({
+                type: 'call',
+                at: cl.call_time,
+                status: cl.status?.name || 'Desconocido',
+                creates_schedule: !!cl.status?.creates_schedule,
+                agent: cl.Agent ? { id: cl.Agent.id, name: cl.Agent.name } : null,
+                comments: cl.comments || null,
+                id: cl.id
+            }));
+
+            const smsEvents = smsLogs.map(sl => ({
+                type: 'sms',
+                at: sl.sent_at || sl.created_at,
+                status: sl.status,
+                sms_type: sl.sms_type,
+                priority: sl.priority,
+                recipient: { phone: sl.recipient_phone, name: sl.recipient_name },
+                error_message: sl.error_message || null,
+                id: sl.id
+            }));
+
+            const events = [...callEvents, ...smsEvents]
+                .filter(e => !!e.at)
+                .sort((a, b) => new Date(a.at) - new Date(b.at)); // Ascendente para timeline
+
+            return res.json({
+                success: true,
+                data: {
+                    events,
+                    counts: { calls: callLogs.length, sms: smsLogs.length }
+                }
+            });
+        } catch (error) {
+            console.error('❌ Error obteniendo actividad de la orden:', error);
+            return res.status(500).json({ success: false, message: 'Error obteniendo actividad', error: error.message });
         }
     }
 
@@ -759,6 +884,259 @@ class CoordinadorContactoController {
     }
 
     /**
+     * Obtener órdenes en recuperación (días 2-5)
+     * Órdenes que no tienen cita agendada ni están en cola de inspección
+     * OPTIMIZADO: Usa NOT EXISTS subqueries para mejor performance en SQL Server
+     */
+    async getOrdenesRecuperacion(req, res) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 12;
+            const offset = (page - 1) * limit;
+
+            // Calcular fechas para el rango de días 2-5
+            const hoy = new Date();
+            const dia2 = new Date(hoy);
+            dia2.setDate(hoy.getDate() - 5);
+            dia2.setHours(23, 59, 59, 999);
+
+            const dia5 = new Date(hoy);
+            dia5.setDate(hoy.getDate() - 2);
+
+            // Query optimizada usando NOT EXISTS subqueries
+            const ordenes = await InspectionOrder.findAll({
+                where: {
+                    deleted_at: null,
+                    created_at: {
+                        [Op.between]: [dia2, dia5]
+                    },
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                },
+                attributes: {
+                    include: [
+                        [
+                            Sequelize.literal(`(
+                                SELECT COUNT(*)
+                                FROM call_logs
+                                WHERE call_logs.inspection_order_id = InspectionOrder.id
+                                AND call_logs.deleted_at IS NULL
+                            )`),
+                            'call_count'
+                        ],
+                        [
+                            Sequelize.literal(`(
+                                SELECT COUNT(*)
+                                FROM inspection_order_sms_logs
+                                WHERE inspection_order_sms_logs.inspection_order_id = InspectionOrder.id
+                                AND inspection_order_sms_logs.deleted_at IS NULL
+                            )`),
+                            'sms_count'
+                        ]
+                    ]
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'AssignedAgent',
+                        attributes: ['id', 'name', 'email'],
+                        required: false
+                    },
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name'],
+                        required: false
+                    }
+                ],
+                order: [['created_at', 'ASC']],
+                limit: limit,
+                offset: offset
+            });
+
+            const totalCount = await InspectionOrder.count({
+                where: {
+                    deleted_at: null,
+                    created_at: {
+                        [Op.between]: [dia2, dia5]
+                    },
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                }
+            });
+
+            // Formatear respuesta
+            const ordenesFormateadas = ordenes.map(orden => {
+                const ordenJson = orden.toJSON();
+                const statusName = ordenJson.InspectionOrderStatus?.name || 'Pendiente';
+
+                return {
+                    ...ordenJson,
+                    assigned_agent_name: ordenJson.AssignedAgent?.name || null,
+                    estado: statusName,
+                    fixedStatus: statusName,
+                    badgeColor: 'default',
+                    call_count: parseInt(ordenJson.call_count) || 0,
+                    sms_count: parseInt(ordenJson.sms_count) || 0
+                };
+            });
+
+            res.json({
+                success: true,
+                data: ordenesFormateadas,
+                pagination: {
+                    total: totalCount,
+                    page: page,
+                    limit: limit,
+                    pages: Math.ceil(totalCount / limit),
+                    hasNext: page < Math.ceil(totalCount / limit),
+                    hasPrev: page > 1
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo órdenes en recuperación:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtener órdenes no recuperadas (día 6+)
+     * Órdenes que no tienen cita agendada ni están en cola de inspección
+     * OPTIMIZADO: Usa NOT EXISTS subqueries para mejor performance en SQL Server
+     */
+    async getOrdenesNoRecuperadas(req, res) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 12;
+            const offset = (page - 1) * limit;
+
+            // Calcular fecha para día 6 o más
+            const hoy = new Date();
+            const dia6 = new Date(hoy);
+            dia6.setDate(hoy.getDate() - 6);
+            dia6.setHours(23, 59, 59, 999);
+
+            // Query optimizada usando NOT EXISTS subqueries
+            const ordenes = await InspectionOrder.findAll({
+                where: {
+                    deleted_at: null,
+                    created_at: {
+                        [Op.lte]: dia6
+                    },
+                    status: {
+                        [Op.ne]: 6 // Excluir órdenes vencidas (status = 6)
+                    },
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                },
+                attributes: {
+                    include: [
+                        [
+                            Sequelize.literal(`(
+                                SELECT COUNT(*)
+                                FROM call_logs
+                                WHERE call_logs.inspection_order_id = InspectionOrder.id
+                                AND call_logs.deleted_at IS NULL
+                            )`),
+                            'call_count'
+                        ],
+                        [
+                            Sequelize.literal(`(
+                                SELECT COUNT(*)
+                                FROM inspection_order_sms_logs
+                                WHERE inspection_order_sms_logs.inspection_order_id = InspectionOrder.id
+                                AND inspection_order_sms_logs.deleted_at IS NULL
+                            )`),
+                            'sms_count'
+                        ]
+                    ]
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'AssignedAgent',
+                        attributes: ['id', 'name', 'email'],
+                        required: false
+                    },
+                    {
+                        model: InspectionOrderStatus,
+                        as: 'InspectionOrderStatus',
+                        attributes: ['id', 'name'],
+                        required: false
+                    }
+                ],
+                order: [['created_at', 'ASC']],
+                limit: limit,
+                offset: offset
+            });
+
+            const totalCount = await InspectionOrder.count({
+                where: {
+                    deleted_at: null,
+                    created_at: {
+                        [Op.lte]: dia6
+                    },
+                    status: {
+                        [Op.ne]: 6
+                    },
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                }
+            });
+
+            // Formatear respuesta
+            const ordenesFormateadas = ordenes.map(orden => {
+                const ordenJson = orden.toJSON();
+                const statusName = ordenJson.InspectionOrderStatus?.name || 'Pendiente';
+
+                return {
+                    ...ordenJson,
+                    assigned_agent_name: ordenJson.AssignedAgent?.name || null,
+                    estado: statusName,
+                    fixedStatus: statusName,
+                    badgeColor: 'default',
+                    call_count: parseInt(ordenJson.call_count) || 0,
+                    sms_count: parseInt(ordenJson.sms_count) || 0
+                };
+            });
+
+            res.json({
+                success: true,
+                data: ordenesFormateadas,
+                pagination: {
+                    total: totalCount,
+                    page: page,
+                    limit: limit,
+                    pages: Math.ceil(totalCount / limit),
+                    hasNext: page < Math.ceil(totalCount / limit),
+                    hasPrev: page > 1
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error obteniendo órdenes no recuperadas:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
      * Generar reporte completo del coordinador
      */
     async getCoordinatorReport(req, res) {
@@ -813,4 +1191,4 @@ class CoordinadorContactoController {
     }
 }
 
-export default new CoordinadorContactoController(); 
+export default new CoordinadorContactoController();
