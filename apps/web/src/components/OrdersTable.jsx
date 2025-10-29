@@ -148,8 +148,8 @@ const OrdersTable = ({
                                             >
                                                 Número {getSortIcon('numero')}
                                             </Button>
-                                            </th>
-                                            <th className="text-left p-2">
+                                        </th>
+                                        <th className="text-left p-2">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -279,7 +279,7 @@ const OrdersTable = ({
                                                 </td>
                                                 <td className="p-2">
                                                     <Badge variant={order.badgeColor}>
-                                                        {(order.fixedStatus == 'Agendado' ?'Activo':(order.fixedStatus.toLowerCase() == 'inspeccion en curso' ? 'Activo' : order.fixedStatus))}
+                                                        {(order.fixedStatus == 'Agendado' ? 'Activo' : (order.fixedStatus.toLowerCase() == 'inspeccion en curso' ? 'Activo' : order.fixedStatus))}
                                                     </Badge>
                                                 </td>
                                                 {showAgentColumn && (
