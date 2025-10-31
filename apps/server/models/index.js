@@ -91,6 +91,11 @@ PeritajeAgendamiento.belongsTo(PeritajeOrder, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+// PeritajeOrder -> users (N:1) - Usuario que creó el peritaje
+PeritajeOrder.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'creator'
+});
 
 // Department -> Cities (1:N)
 Department.hasMany(City, {
