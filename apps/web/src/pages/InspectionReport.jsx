@@ -386,7 +386,7 @@ const InspectionReport = () => {
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="text-base font-bold text-blue-600">Inspeccion programada</div>
-              <div className="text-xs text-gray-700 mb-1">Fecha | {appointment?.scheduled_date}</div>
+              <div className="text-xs text-gray-700 mb-1">Fecha</div>
               <div className="text-xs text-gray-500 mb-1">{formatDate(appointment?.scheduled_date)}</div>
 
               <div className="text-xs text-gray-700 mb-1">Hora</div>
