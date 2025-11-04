@@ -893,28 +893,29 @@ class CoordinadorContactoController {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 12;
             const offset = (page - 1) * limit;
+            const search = req.query.search || '';
 
-            // Calcular fechas para el rango de días 2-5
-            const hoy = new Date();
-            const dia2 = new Date(hoy);
-            dia2.setDate(hoy.getDate() - 5);
-            dia2.setHours(23, 59, 59, 999);
+            // Construir where clause base
+            let whereClause = {
+                deleted_at: null,
+                status_internal: 'En proceso de recuperacion'
+            };
 
-            const dia5 = new Date(hoy);
-            dia5.setDate(hoy.getDate() - 2);
+            // Añadir filtros de búsqueda si se proporciona
+            if (search.trim()) {
+                whereClause[Op.or] = [
+                    { numero: { [Op.like]: `%${search}%` } },
+                    { placa: { [Op.like]: `%${search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${search}%` } },
+                    { nombre_contacto: { [Op.like]: `%${search}%` } },
+                    { celular_contacto: { [Op.like]: `%${search}%` } },
+                    { correo_contacto: { [Op.like]: `%${search}%` } }
+                ];
+            }
 
-            // Query optimizada usando NOT EXISTS subqueries
+            // Simplificado: ahora dependemos de status_internal para identificar órdenes en recuperación
             const ordenes = await InspectionOrder.findAll({
-                where: {
-                    deleted_at: null,
-                    created_at: {
-                        [Op.between]: [dia2, dia5]
-                    },
-                    [Op.and]: [
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
-                    ]
-                },
+                where: whereClause,
                 attributes: {
                     include: [
                         [
@@ -957,16 +958,7 @@ class CoordinadorContactoController {
             });
 
             const totalCount = await InspectionOrder.count({
-                where: {
-                    deleted_at: null,
-                    created_at: {
-                        [Op.between]: [dia2, dia5]
-                    },
-                    [Op.and]: [
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
-                    ]
-                }
+                where: whereClause
             });
 
             // Formatear respuesta
@@ -1018,28 +1010,29 @@ class CoordinadorContactoController {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 12;
             const offset = (page - 1) * limit;
+            const search = req.query.search || '';
 
-            // Calcular fecha para día 6 o más
-            const hoy = new Date();
-            const dia6 = new Date(hoy);
-            dia6.setDate(hoy.getDate() - 6);
-            dia6.setHours(23, 59, 59, 999);
+            // Construir where clause base
+            let whereClause = {
+                deleted_at: null,
+                status_internal: 'Recuperacion fallida'
+            };
 
-            // Query optimizada usando NOT EXISTS subqueries
+            // Añadir filtros de búsqueda si se proporciona
+            if (search.trim()) {
+                whereClause[Op.or] = [
+                    { numero: { [Op.like]: `%${search}%` } },
+                    { placa: { [Op.like]: `%${search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${search}%` } },
+                    { nombre_contacto: { [Op.like]: `%${search}%` } },
+                    { celular_contacto: { [Op.like]: `%${search}%` } },
+                    { correo_contacto: { [Op.like]: `%${search}%` } }
+                ];
+            }
+
+            // Simplificado: ahora dependemos de status_internal para identificar órdenes no recuperadas
             const ordenes = await InspectionOrder.findAll({
-                where: {
-                    deleted_at: null,
-                    created_at: {
-                        [Op.lte]: dia6
-                    },
-                    status: {
-                        [Op.ne]: 6 // Excluir órdenes vencidas (status = 6)
-                    },
-                    [Op.and]: [
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
-                    ]
-                },
+                where: whereClause,
                 attributes: {
                     include: [
                         [
@@ -1082,19 +1075,7 @@ class CoordinadorContactoController {
             });
 
             const totalCount = await InspectionOrder.count({
-                where: {
-                    deleted_at: null,
-                    created_at: {
-                        [Op.lte]: dia6
-                    },
-                    status: {
-                        [Op.ne]: 6
-                    },
-                    [Op.and]: [
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = InspectionOrder.id AND appointments.deleted_at IS NULL)"),
-                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = InspectionOrder.id AND inspection_queue.deleted_at IS NULL)")
-                    ]
-                }
+                where: whereClause
             });
 
             // Formatear respuesta

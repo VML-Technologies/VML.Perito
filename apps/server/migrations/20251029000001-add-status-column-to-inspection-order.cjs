@@ -3,30 +3,17 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Agregar columna appointment_id a inspection_queue
-    await queryInterface.addColumn('inspection_queue', 'appointment_id', {
-      type: Sequelize.BIGINT,
+    // Agregar columna status_internal (VARCHAR(50)) a inspection_orders
+    await queryInterface.addColumn('inspection_orders', 'status_internal', {
+      type: Sequelize.STRING(50),
       allowNull: true,
-      references: {
-        model: 'appointments',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
-      comment: 'ID del appointment asociado a esta entrada de cola'
-    });
-
-    // Crear índice para mejorar performance
-    await queryInterface.addIndex('inspection_queue', ['appointment_id'], {
-      name: 'inspection_queue_appointment_id_idx'
+      defaultValue: null,
+      comment: 'Estado interno textual de la orden (uso operativo)'
     });
   },
 
   async down(queryInterface, Sequelize) {
-    // Eliminar índice
-    await queryInterface.removeIndex('inspection_queue', 'inspection_queue_appointment_id_idx');
-    
-    // Eliminar columna
-    await queryInterface.removeColumn('inspection_queue', 'appointment_id');
+    // Revertir: eliminar la columna status_internal de inspection_orders
+    await queryInterface.removeColumn('inspection_orders', 'status_internal');
   }
 };

@@ -7,7 +7,8 @@ import {
     VehicleType,
     SedeVehicleType
 } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
+import { InspectionOrder } from '../models/index.js';
 
 // Obtener la capacidad global máxima desde variables de entorno
 const MAX_GLOBAL_AVAILABILITY = parseInt(process.env.MAX_GLOBAL_AVAILABILITY_PER_INTERVAL) || 10;
@@ -29,6 +30,94 @@ class ScheduleController {
         this.isTimeSlotExcluded = this.isTimeSlotExcluded.bind(this);
         this.timeToMinutes = this.timeToMinutes.bind(this); // Bind auxiliary methods if they use 'this' or are called by other bound methods
         this.minutesToTime = this.minutesToTime.bind(this);
+
+        // Programar tarea diaria a las 4 AM para actualizar status_internal por procesos de recuperación
+        this.scheduleDailyRecoveryStatusUpdate();
+    }
+
+    // Programar la ejecución diaria a las 4:00 AM hora del servidor
+    scheduleDailyRecoveryStatusUpdate() {
+        const scheduleNextRun = () => {
+            const now = new Date();
+            const next = new Date(now);
+            if (now.getHours() >= 4) {
+                next.setDate(now.getDate() + 1);
+            }
+            next.setHours(4, 0, 0, 0);
+            const delay = next.getTime() - now.getTime();
+            setTimeout(async () => {
+                try {
+                    await this.runRecoveryStatusUpdate();
+                } catch (e) {
+                    console.error('Error en tarea de actualización de recuperación:', e);
+                } finally {
+                    scheduleNextRun();
+                }
+            }, Math.max(delay, 0));
+        };
+        scheduleNextRun();
+    }
+
+    // Ejecuta el proceso: marca órdenes en ventana 2-5 días como "En proceso de recuperacion"
+    // y las de 6+ días como "Recuperacion fallida", excluyendo órdenes con cita o en cola
+    async runRecoveryStatusUpdate() {
+        const hoy = new Date();
+        // Ventana 2-5 días: desde el inicio del día de hace 5 días hasta el fin del día de hace 2 días
+        const ventanaInicio = new Date(hoy);
+        ventanaInicio.setDate(hoy.getDate() - 5);
+        ventanaInicio.setHours(0, 0, 0, 0);
+
+        const ventanaFin = new Date(hoy);
+        ventanaFin.setDate(hoy.getDate() - 2);
+        ventanaFin.setHours(23, 59, 59, 999);
+
+        const dia6 = new Date(hoy);
+        dia6.setDate(hoy.getDate() - 6);
+        dia6.setHours(23, 59, 59, 999);
+
+        // 1) En proceso de recuperación (días 2-5)
+        const [updatedInProcess] = await InspectionOrder.update(
+            { status_internal: 'En proceso de recuperacion' },
+            {
+                where: {
+                    deleted_at: null,
+                    status: { [Op.ne]: 6 },
+                    created_at: { [Op.between]: [ventanaInicio, ventanaFin] },
+                    [Op.or]: [
+                        { status_internal: null },
+                        { status_internal: { [Op.ne]: 'En proceso de recuperacion' } }
+                    ],
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = inspection_orders.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = inspection_orders.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                }
+            }
+        );
+
+        // 2) Recuperación fallida (6+ días), excluyendo vencidas (status = 6)
+        const [updatedFailed] = await InspectionOrder.update(
+            { status_internal: 'Recuperacion fallida' },
+            {
+                where: {
+                    created_at: { [Op.lte]: dia6 },
+                    status: { [Op.ne]: 6 },
+                    // Solo pasar a fallida si actualmente está en proceso de recuperación
+                    status_internal: 'En proceso de recuperacion',
+                    [Op.and]: [
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = inspection_orders.id AND appointments.deleted_at IS NULL)"),
+                        Sequelize.literal("NOT EXISTS (SELECT 1 FROM inspection_queue WHERE inspection_queue.inspection_order_id = inspection_orders.id AND inspection_queue.deleted_at IS NULL)")
+                    ]
+                }
+            }
+        );
+
+        console.log('✅ Tarea de recuperación ejecutada: status_internal actualizado', {
+            updatedInProcess,
+            updatedFailed
+        });
+
+        return { updatedInProcess, updatedFailed };
     }
 
     // Obtener horarios disponibles para una sede, modalidad y tipo
@@ -175,7 +264,7 @@ class ScheduleController {
 
             // Verificar si este intervalo está en un período de exclusión
             const isExcluded = this.isTimeSlotExcluded(current, current + intervalMinutes, template.exclusions || []);
-            
+
             if (isExcluded) {
                 // Saltar este slot porque está en período de exclusión
                 continue;

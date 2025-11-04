@@ -15,9 +15,11 @@ const OrdenesRecuperacion = () => {
     const [ordenesRecuperacion, setOrdenesRecuperacion] = useState([]);
     const [ordenesNoRecuperadas, setOrdenesNoRecuperadas] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all'); // 'all', 'placa', 'numero'
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [searching, setSearching] = useState(false);
     const [activeTab, setActiveTab] = useState('recuperacion');
     const [agents, setAgents] = useState([]);
     const [assigningOrder, setAssigningOrder] = useState(null);
@@ -44,6 +46,32 @@ const OrdenesRecuperacion = () => {
     useEffect(() => {
         loadOrdenes();
     }, [pageRecuperacion, pageNoRecuperadas]);
+
+    // Debounce para el término de búsqueda
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500); // 500ms de debounce
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Efecto para búsqueda - resetea la paginación cuando se busca
+    useEffect(() => {
+        if (debouncedSearchTerm !== searchTerm) return; // Solo ejecutar cuando el debounce esté listo
+
+        if (debouncedSearchTerm !== '') {
+            setPageRecuperacion(1);
+            setPageNoRecuperadas(1);
+        }
+
+        // Activar indicador de búsqueda solo si hay término de búsqueda
+        if (debouncedSearchTerm.trim()) {
+            setSearching(true);
+        }
+
+        loadOrdenes();
+    }, [debouncedSearchTerm]);
 
     const loadAgents = async () => {
         try {
@@ -398,21 +426,28 @@ const OrdenesRecuperacion = () => {
 
     const loadOrdenes = async () => {
         try {
-            setLoading(true);
+            // Solo mostrar loading completo en la carga inicial
+            if (!searching) {
+                setLoading(true);
+            }
+
             const token = localStorage.getItem('authToken');
             const headers = {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             };
 
-            // Cargar órdenes en recuperación (días 2-5) con paginación
-            const recuperacionUrl = `${API_ROUTES.COORDINADOR_CONTACTO.ORDENES_RECUPERACION}?page=${pageRecuperacion}&limit=${limitRecuperacion}`;
+            // Construir parámetros de búsqueda
+            const searchParam = debouncedSearchTerm.trim() ? `&search=${encodeURIComponent(debouncedSearchTerm.trim())}` : '';
+
+            // Cargar órdenes en recuperación (días 2-5) con paginación y búsqueda
+            const recuperacionUrl = `${API_ROUTES.COORDINADOR_CONTACTO.ORDENES_RECUPERACION}?page=${pageRecuperacion}&limit=${limitRecuperacion}${searchParam}`;
             const recuperacionResponse = await fetch(recuperacionUrl, { headers });
             if (!recuperacionResponse.ok) throw new Error('Error al cargar órdenes en recuperación');
             const recuperacionData = await recuperacionResponse.json();
 
-            // Cargar órdenes no recuperadas (día 6+) con paginación
-            const noRecuperadasUrl = `${API_ROUTES.COORDINADOR_CONTACTO.ORDENES_NO_RECUPERADAS}?page=${pageNoRecuperadas}&limit=${limitNoRecuperadas}`;
+            // Cargar órdenes no recuperadas (día 6+) con paginación y búsqueda
+            const noRecuperadasUrl = `${API_ROUTES.COORDINADOR_CONTACTO.ORDENES_NO_RECUPERADAS}?page=${pageNoRecuperadas}&limit=${limitNoRecuperadas}${searchParam}`;
             const noRecuperadasResponse = await fetch(noRecuperadasUrl, { headers });
             if (!noRecuperadasResponse.ok) throw new Error('Error al cargar órdenes no recuperadas');
             const noRecuperadasData = await noRecuperadasResponse.json();
@@ -427,6 +462,7 @@ const OrdenesRecuperacion = () => {
             showToast('Error al cargar órdenes de recuperación', 'error');
         } finally {
             setLoading(false);
+            setSearching(false); // Desactivar indicador de búsqueda
         }
     };
 
@@ -452,15 +488,29 @@ const OrdenesRecuperacion = () => {
                             Seguimiento de órdenes sin citas agendadas o en cola de inspección
                         </p>
                     </div>
-                    <Button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        variant="outline"
-                        size="sm"
-                    >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                        {refreshing ? 'Actualizando...' : 'Actualizar'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            variant="outline"
+                            size="sm"
+                        >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                            {refreshing ? 'Actualizando...' : 'Actualizar'}
+                        </Button>
+
+                        {/* Indicador de búsqueda */}
+                        {searching && (
+                            <Button
+                                disabled
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Search className="h-4 w-4 mr-2 animate-pulse" />
+                                Buscando...
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Controles de filtro y búsqueda */}
