@@ -7,8 +7,9 @@ import OrdersFilters from '@/components/OrdersFilters';
 import OrdersTable from '@/components/OrdersTable';
 import AgentOrderPanel from '@/components/AgentOrderPanel';
 import PeritajeMomento3 from '@/components/peritajeMomento3';
+import AgentOrdenesRecuperacion from '@/components/AgentOrdenesRecuperacion';
 import { useOrders } from '@/hooks/use-orders';
-import { ClipboardList, FileText } from 'lucide-react';
+import { ClipboardList, FileText, RefreshCw } from 'lucide-react';
 
 export default function AgenteContacto() {
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -147,10 +148,14 @@ export default function AgenteContacto() {
 
             {/* Sistema de Tabs */}
             <Tabs defaultValue="orders" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="orders" className="flex items-center gap-2">
                         <ClipboardList className="h-4 w-4" />
                         <span className="inline">Órdenes de Inspección</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="recuperacion" className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        <span className="inline">Recuperación</span>
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
@@ -186,6 +191,13 @@ export default function AgenteContacto() {
                             emptyDescription="Todas las órdenes han sido contactadas"
                             loading={loading}
                         />
+                    </div>
+                </TabsContent>
+
+                {/* Tab: Recuperación */}
+                <TabsContent value="recuperacion" className="space-y-6">
+                    <div className="space-y-6">
+                        <AgentOrdenesRecuperacion />
                     </div>
                 </TabsContent>
 

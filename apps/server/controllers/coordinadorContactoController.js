@@ -901,6 +901,18 @@ class CoordinadorContactoController {
                 status_internal: 'En proceso de recuperacion'
             };
 
+            const user = await User.findByPk(req.user.id, {
+                include: [{
+                    model: Role,
+                    as: 'roles',
+                    through: { attributes: [] }
+                }]
+            });
+
+            if (user.roles.some(role => role.name == 'agente_contacto')) {
+                whereClause.assigned_agent_id = req.user.id;
+            }
+
             // Añadir filtros de búsqueda si se proporciona
             if (search.trim()) {
                 whereClause[Op.or] = [

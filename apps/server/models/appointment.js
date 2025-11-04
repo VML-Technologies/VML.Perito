@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Op } from 'sequelize';
 import { createModelWithSoftDeletes, createTimeFieldGetter } from './baseModel.js';
 
 const Appointment = createModelWithSoftDeletes('Appointment', {
@@ -146,7 +146,6 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
                         where: {
                             id: appointment.inspection_order_id,
                             deleted_at: null,
-                            status: { [Op.ne]: 6 },
                             status_internal: 'En proceso de recuperacion'
                         },
                         transaction: options?.transaction
