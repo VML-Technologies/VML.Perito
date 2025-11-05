@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Op } from 'sequelize';
 import { createModelWithSoftDeletes, createTimeFieldGetter } from './baseModel.js';
 
 const Appointment = createModelWithSoftDeletes('Appointment', {
@@ -132,7 +132,47 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
             name: 'appointment_session_id_idx',
             fields: ['session_id']
         }
-    ]
+    ],
+    hooks: {
+        // Al crear un agendamiento, marcar la orden como recuperación efectiva según su estado interno previo
+        afterCreate: async (appointment, options) => {
+            try {
+                const { InspectionOrder } = await import('./index.js');
+
+                // 1) Si estaba "En proceso de recuperacion" => "Recuperacion Efectiva - en tiempos"
+                const [updatedInTime] = await InspectionOrder.update(
+                    { status_internal: 'Recuperacion Efectiva - en tiempos' },
+                    {
+                        where: {
+                            id: appointment.inspection_order_id,
+                            deleted_at: null,
+                            status_internal: 'En proceso de recuperacion'
+                        },
+                        transaction: options?.transaction
+                    }
+                );
+
+                if (updatedInTime > 0) {
+                    return; // Ya aplicado: no intentar la otra transición
+                }
+
+                // 2) Si estaba "Recuperacion fallida" => "Recuperacion Efectiva - fuera de de tiempos"
+                await InspectionOrder.update(
+                    { status_internal: 'Recuperacion Efectiva - fuera de de tiempos' },
+                    {
+                        where: {
+                            id: appointment.inspection_order_id,
+                            deleted_at: null,
+                            status_internal: 'Recuperacion fallida'
+                        },
+                        transaction: options?.transaction
+                    }
+                );
+            } catch (e) {
+                console.error('Error actualizando status_internal por creación de agendamiento:', e);
+            }
+        }
+    }
 });
 
 export default Appointment; 

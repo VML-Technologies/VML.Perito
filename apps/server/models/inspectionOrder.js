@@ -210,6 +210,13 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
             key: 'id'
         }
     },
+    // Estado interno operativo para procesos de recuperación
+    status_internal: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: null,
+        comment: 'Estado interno textual de la orden (uso operativo)'
+    },
 }, {
     tableName: 'inspection_orders',
     paranoid: true, // Habilita soft deletes
@@ -274,7 +281,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                 }
             }
         },
-        
+
         afterCreate: async (inspectionOrder, options) => {
             // Generar link final con el ID real
             let finalLink = null;
@@ -283,12 +290,12 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                 const uniqueHash = `${inspectionOrder.placa}_${inspectionOrder.id}_${timestamp}`;
                 const encodedHash = Buffer.from(uniqueHash).toString('base64').replace(/[+/=]/g, '');
                 finalLink = `/inspeccion/${encodedHash}`;
-                
+
                 // Actualizar el link con el hash final
                 await inspectionOrder.update({
                     inspection_link: finalLink
                 });
-                
+
                 console.log(`🔗 Link final generado: ${finalLink}`);
             } catch (error) {
                 console.error('❌ Error generando link final:', error);
@@ -301,14 +308,14 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                 // Crear mensaje SMS (disponible para ambos SMS y Email) usando el link final
                 const finalInspectionLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}${finalLink}`;
                 const smsMessage = `Hola ${inspectionOrder.nombre_contacto} te hablamos desde Seguros Mundial. Para la inspeccion de ${inspectionOrder.placa} debes tener los documentos, carro limpio, internet, disponibilidad 45Min. Para ingresar dale click aca: ${finalInspectionLink}`;
-                
+
                 try {
                     const smsService = await import('../services/channels/smsService.js');
-                    
+
                     // Intentar enviar SMS con logging
                     try {
                         const smsLoggingService = await import('../services/smsLoggingService.js');
-                        
+
                         // Loggear SMS con envío automático
                         const smsData = {
                             inspection_order_id: inspectionOrder.id,
@@ -344,7 +351,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                                 }
                             });
                         });
-                        
+
                         if (result.success) {
                             console.log(`📱 SMS enviado y loggeado a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
                         } else {
@@ -352,7 +359,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                         }
                     } catch (loggingError) {
                         console.warn('⚠️ Error en logging de SMS, enviando sin log:', loggingError.message);
-                        
+
                         // Enviar SMS sin logging como fallback
                         await smsService.default.send({
                             recipient_phone: inspectionOrder.celular_contacto,
@@ -370,34 +377,34 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                                 }
                             }
                         });
-                        
+
                         console.log(`📱 SMS enviado sin logging a ${inspectionOrder.nombre_contacto} (${inspectionOrder.celular_contacto}) con link de inspección`);
                     }
                 } catch (error) {
                     console.error('❌ Error enviando SMS con link de inspección:', error);
                 }
-                
+
                 // Enviar email si tiene correo de contacto
                 if (inspectionOrder.correo_contacto) {
                     try {
                         console.log(`📧 Enviando email automático a: ${inspectionOrder.correo_contacto}`);
-                        
+
                         const emailService = await import('../services/channels/emailService.js');
                         const emailLoggingService = await import('../services/emailLoggingService.js');
                         const fs = await import('fs');
                         const path = await import('path');
-                        
+
                         // Preparar datos para email usando el link final
                         const emailData = {
                             NAME: inspectionOrder.nombre_contacto,
                             PLACA: inspectionOrder.placa,
                             INSPECTION_LINK: finalInspectionLink
                         };
-                        
+
                         // Leer plantilla de email
                         const templatePath = path.join(process.cwd(), 'mailTemplates', 'inspectionLinkNotification.html');
                         let emailTemplate = fs.readFileSync(templatePath, 'utf8');
-                        
+
                         // Reemplazar variables en la plantilla
                         console.log(`📧 Datos para reemplazo:`, emailData);
                         Object.keys(emailData).forEach(key => {
@@ -407,7 +414,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                             const afterReplace = emailTemplate.includes(`{{${key}}}`);
                             console.log(`📧 Reemplazando {{${key}}} -> ${emailData[key]} (antes: ${beforeReplace}, después: ${afterReplace})`);
                         });
-                        
+
                         // Crear objeto de notificación para email
                         const emailNotification = {
                             recipient_email: inspectionOrder.correo_contacto,
@@ -428,7 +435,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                                 trigger_source: 'model_hook'
                             }
                         };
-                        
+
                         // Preparar datos para logging de email
                         const emailLogData = {
                             inspection_order_id: inspectionOrder.id,
@@ -447,7 +454,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                                 created_at: new Date().toISOString()
                             }
                         };
-                        
+
                         // Enviar email con logging
                         const emailLogResult = await emailLoggingService.default.sendEmailWithLogging(
                             emailLogData,
@@ -455,37 +462,37 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                                 return await emailService.default.send(emailNotification, emailTemplate);
                             }
                         );
-                        
+
                         if (emailLogResult.success) {
                             console.log(`✅ Email enviado y loggeado exitosamente a ${inspectionOrder.correo_contacto}`);
                         } else {
                             console.error(`❌ Error enviando email: ${emailLogResult.error}`);
                         }
-                        
+
                     } catch (emailError) {
                         console.error(`❌ Error procesando email:`, emailError);
                     }
                 } else {
                     console.log(`⚠️ No se envió email: la orden no tiene correo de contacto`);
                 }
-                
+
             } else {
                 console.log(`📱 SMS y Email saltados por configuración FLAG_SEND_SMS_OIN_CREATE=${process.env.FLAG_SEND_SMS_OIN_CREATE} para orden ${inspectionOrder.id}`);
             }
         },
-        
+
         afterUpdate: async (inspectionOrder, options) => {
             // Verificar si cambiaron los datos de contacto y guardar en historial
             const contactFieldsChanged = ['nombre_contacto', 'celular_contacto', 'correo_contacto'];
             const hasContactChanges = contactFieldsChanged.some(field => inspectionOrder.changed(field));
-            
+
             if (hasContactChanges && options.user_id) {
                 try {
                     const { InspectionOrderContactHistory } = await import('./index.js');
-                    
+
                     // Obtener los valores anteriores
                     const previousValues = inspectionOrder._previousDataValues;
-                    
+
                     await InspectionOrderContactHistory.create({
                         inspection_order_id: inspectionOrder.id,
                         nombre_contacto: previousValues.nombre_contacto,
@@ -493,7 +500,7 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
                         correo_contacto: previousValues.correo_contacto,
                         user_id: options.user_id
                     });
-                    
+
                     console.log(`📝 Historial de contacto guardado para orden ${inspectionOrder.id}`);
                 } catch (error) {
                     console.error('❌ Error guardando historial de contacto:', error);

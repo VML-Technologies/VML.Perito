@@ -11,6 +11,13 @@ class PeritajesController {
     async peritajesToSchedule(req, res) {
         try {
             const peritajeOrders = await PeritajeOrder.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'creator',
+                        attributes: ['id', 'name']
+                    }
+                ],
                 where: {
                     estado_momento: 'Pendiente por agendar'
                 },

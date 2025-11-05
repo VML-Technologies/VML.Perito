@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const driver = process.env.DATABASE_DRIVER || 'mysql';
+console.log(`Driver: ${driver}`);
+console.log(`Host: ${process.env.DB_HOST}`);
+console.log(`Database: ${process.env.DB_DATABASE}`);
 
 let sequelize;
 

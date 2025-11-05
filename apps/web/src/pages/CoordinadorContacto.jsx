@@ -10,8 +10,9 @@ import OrdersFilters from '@/components/OrdersFilters';
 import OrdersTable from '@/components/OrdersTable';
 import OrderDetailsPanel from '@/components/OrderDetailsPanel';
 import { useOrders } from '@/hooks/use-orders';
-import { ClipboardList, BarChart3, TrendingUp } from 'lucide-react';
+import { ClipboardList, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react';
 import PeritajeMomento3 from '@/components/peritajeMomento3';
+import OrdenesRecuperacion from '@/components/OrdenesRecuperacion';
 
 export default function CoordinadorContacto() {
     const [agents, setAgents] = useState([]);
@@ -171,10 +172,14 @@ export default function CoordinadorContacto() {
 
             {/* Sistema de Tabs */}
             <Tabs defaultValue="orders" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="orders" className="flex items-center gap-2">
                         <ClipboardList className="h-4 w-4" />
                         <span className="inline">Órdenes de Inspección</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="recuperacion" className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="inline">Recuperación</span>
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
                         <BarChart3 className="h-4 w-4" />
@@ -215,6 +220,13 @@ export default function CoordinadorContacto() {
                             emptyMessage="No se encontraron órdenes"
                             emptyDescription="Ajusta los filtros para ver más resultados"
                         />
+                    </div>
+                </TabsContent>
+
+                {/* Tab: Recuperación */}
+                <TabsContent value="recuperacion" className="space-y-6">
+                    <div className="space-y-6">
+                        <OrdenesRecuperacion />
                     </div>
                 </TabsContent>
 

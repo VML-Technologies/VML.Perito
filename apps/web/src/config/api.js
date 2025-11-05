@@ -143,6 +143,11 @@ export const API_ROUTES = {
         AGENTS: `${API_BASE_URL}/api/coordinador-contacto/agents`,
         ASSIGN: `${API_BASE_URL}/api/coordinador-contacto/assign`,
 
+        // ===== ÓRDENES EN RECUPERACIÓN =====
+        ORDENES_RECUPERACION: `${API_BASE_URL}/api/coordinador-contacto/ordenes-recuperacion`,
+        ORDENES_NO_RECUPERADAS: `${API_BASE_URL}/api/coordinador-contacto/ordenes-no-recuperadas`,
+        ORDEN_ACTIVIDAD: (id) => `${API_BASE_URL}/api/coordinador-contacto/ordenes/${id}/actividad`,
+
         // ===== HISTORIAL Y COMENTARIOS (SOLO LECTURA) =====
         ORDER_CONTACT_HISTORY: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/contact-history`,
         ORDER_COMMENTS: (orderId) => `${API_BASE_URL}/api/coordinador-contacto/orders/${orderId}/comments`,

@@ -349,6 +349,22 @@ const seedRBAC = async () => {
                 endpoint: '/api/coordinador-contacto/stats',
                 method: 'GET'
             },
+            {
+                name: 'coordinador_contacto.recuperacion',
+                description: 'Ver órdenes en recuperación',
+                resource: 'coordinador_contacto',
+                action: 'recuperacion',
+                endpoint: '/api/coordinador-contacto/ordenes-recuperacion',
+                method: 'GET'
+            },
+            {
+                name: 'coordinador_contacto.no_recuperadas',
+                description: 'Ver órdenes no recuperadas',
+                resource: 'coordinador_contacto',
+                action: 'no_recuperadas',
+                endpoint: '/api/coordinador-contacto/ordenes-no-recuperadas',
+                method: 'GET'
+            },
             // ===== NUEVOS PERMISOS - SISTEMA DE NOTIFICACIONES =====
             {
                 name: 'notifications.read',
@@ -867,7 +883,7 @@ const seedRBAC = async () => {
             );
 
             console.log(`🔍 Permisos que se asignarán al coordinador:`, coordinadorPermissions.map(p => p.name));
-            
+
             for (const permission of coordinadorPermissions) {
                 await RolePermission.findOrCreate({
                     where: {

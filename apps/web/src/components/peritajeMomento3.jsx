@@ -101,15 +101,7 @@ const PeritajeMomento3 = () => {
                 return;
             }
 
-            // Si es agente, filtrar solo los peritajes asignados a él
-            if (isAgente && !isCoordinador) {
-                const filteredPeritajes = data.data.filter(peritaje =>
-                    peritaje.assigned_agent_id === user.id
-                );
-                setPeritajes(filteredPeritajes);
-            } else {
-                setPeritajes(data.data);
-            }
+            setPeritajes(data.data);
         } catch (error) {
             console.error('Error cargando peritajes:', error);
             showToast('Error al cargar peritajes', 'error');
@@ -356,145 +348,188 @@ const PeritajeMomento3 = () => {
                                 const isAssigned = !!peritaje.assigned_agent_id;
                                 return (
                                     <Card key={peritaje.id} className="overflow-hidden border-border hover:shadow-md transition-shadow duration-200">
-                                        <CardContent className="p-4">
+                                        <CardContent className="p-0">
                                             {/* Header Section */}
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2.5 bg-primary/10 rounded-lg">
-                                                        <FileText className="h-5 w-5 text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-semibold text-lg text-foreground">{peritaje.placa}</h3>
-                                                        <p className="text-sm text-muted-foreground mt-0.5">{formatDate(peritaje.created_at)}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <Badge
-                                                        variant={isAssigned ? "default" : "secondary"}
-                                                        className={`${isAssigned ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}
-                                                    >
-                                                        {isAssigned ? (
-                                                            <>
-                                                                <UserCheck className="h-3 w-3 mr-1.5" />
-                                                                Asignado
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <UserX className="h-3 w-3 mr-1.5" />
-                                                                Pendiente
-                                                            </>
-                                                        )}
-                                                    </Badge>
-                                                    <span className='text-sm text-muted-foreground mt-0.5'>
-                                                        {peritaje.producto.split("_").join(" ")}
-                                                    </span>
-                                                </div>
-
-                                            </div>
-
-                                            <div className="space-y-6 mb-6">
-                                                {/* Cliente Section */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                                                        <User className="h-4 w-4 text-primary" />
-                                                        <h4 className="font-medium text-sm text-foreground uppercase tracking-wide">Cliente</h4>
-                                                    </div>
-                                                    <div className="space-y-2.5">
-                                                        <p className="font-medium text-foreground">{peritaje.nombre_cliente}</p>
-                                                        <a
-                                                            href={`tel:${peritaje.celular_cliente}`}
-                                                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                                                        >
-                                                            <Phone className="h-3.5 w-3.5" />
-                                                            {peritaje.celular_cliente}
-                                                        </a>
-                                                        <a
-                                                            href={`mailto:${peritaje.correo_cliente}`}
-                                                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors truncate"
-                                                        >
-                                                            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                                                            <span className="truncate">{peritaje.correo_cliente}</span>
-                                                        </a>
-                                                    </div>
-                                                </div>
-
-                                                {/* Vehículo Section */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Car className="h-4 w-4 text-primary" />
-                                                        <div className="font-medium text-sm text-foreground uppercase tracking-wide space-y-2.5">
-                                                            <p className="text-sm text-foreground">
-                                                                <span className="font-medium">{peritaje.marca}</span>
-                                                                <span className="text-muted-foreground"> • {peritaje.modelo}</span>
-                                                            </p>
+                                            <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 border-b border-border">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2.5 bg-primary/20 rounded-lg">
+                                                            <FileText className="h-5 w-5 text-primary" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-lg text-foreground">{peritaje.placa}</h3>
+                                                            <p className="text-sm text-muted-foreground">{formatDate(peritaje.created_at)}</p>
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {/* Asignación Section */}
-                                                <div className="space-y-3">
-                                                    <div className="flex justify-between items-center gap-4">
-                                                        <div
-                                                            className={`flex w-full items-center gap-2 p-2 rounded-lg`}
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <Badge
+                                                            variant={isAssigned ? "default" : "secondary"}
+                                                            className={`${isAssigned ? "bg-green-500/10 text-green-700 border-green-200" : "bg-orange-500/10 text-orange-700 border-orange-200"}`}
                                                         >
                                                             {isAssigned ? (
-                                                                <UserCheck className="h-4 w-4 flex-shrink-0" />
+                                                                <>
+                                                                    <UserCheck className="h-3 w-3 mr-1.5" />
+                                                                    Asignado
+                                                                </>
                                                             ) : (
-                                                                <UserX className="h-4 w-4 flex-shrink-0" />
+                                                                <>
+                                                                    <UserX className="h-3 w-3 mr-1.5" />
+                                                                    Pendiente
+                                                                </>
                                                             )}
-                                                            <span className="text-sm font-medium">{getAssignedAgentName(peritaje)}</span>
+                                                        </Badge>
+                                                        <span className="text-xs text-muted-foreground bg-white/60 px-2 py-1 rounded-md">
+                                                            {peritaje.producto?.split("_").join(" ") || 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 space-y-4">
+                                                {/* Perito Asignado */}
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <UserCheck className="h-4 w-4 text-blue-600" />
+                                                        <h4 className="font-medium text-sm text-blue-800 uppercase tracking-wide">Perito Asignado</h4>
+                                                    </div>
+                                                    <p className="font-semibold text-blue-900">{peritaje.creator?.name || 'Sin asignar'}</p>
+                                                </div>
+
+                                                {/* Información en dos columnas */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Datos del Cliente */}
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                                                            <User className="h-4 w-4 text-primary" />
+                                                            <h4 className="font-medium text-sm text-foreground uppercase tracking-wide">Cliente</h4>
                                                         </div>
-
-                                                        <div className="flex w-full flex-col">
-                                                            {isCoordinador && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <Select
-                                                                        value={assigningAgent === peritaje.id ? selectedAgent : peritaje.assigned_agent_id?.toString() || ""}
-                                                                        onValueChange={(value) => {
-                                                                            setSelectedAgent(value);
-                                                                            handleAssignAgent(peritaje.id, value);
-                                                                        }}
-                                                                        disabled={assigningAgent === peritaje.id}
-                                                                    >
-                                                                        <SelectTrigger className="flex-1 bg-card">
-                                                                            <SelectValue placeholder="Seleccionar agente" />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="unassign">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <UserX className="h-4 w-4 text-destructive" />
-                                                                                    <span>Quitar asignación</span>
-                                                                                </div>
-                                                                            </SelectItem>
-                                                                            {agents.map((agent) => (
-                                                                                <SelectItem key={agent.id} value={agent.id.toString()}>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <UserCheck className="h-4 w-4 text-accent" />
-                                                                                        <span>{agent.name}</span>
-                                                                                    </div>
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    {assigningAgent === peritaje.id && (
-                                                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            {isAgente && peritaje.assigned_agent_id === user.id && (
-                                                                <Button
-                                                                    onClick={() => openScheduleDialog(peritaje)}
-                                                                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-                                                                    size="default"
+                                                        <div className="space-y-2">
+                                                            <p className="font-medium text-foreground">{peritaje.nombre_cliente || 'N/A'}</p>
+                                                            {peritaje.celular_cliente && (
+                                                                <a
+                                                                    href={`tel:${peritaje.celular_cliente}`}
+                                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                                                                 >
-                                                                    <CalendarIcon className="h-4 w-4" />
-                                                                    Agendar Peritaje
-                                                                </Button>
+                                                                    <Phone className="h-3.5 w-3.5" />
+                                                                    {peritaje.celular_cliente}
+                                                                </a>
+                                                            )}
+                                                            {peritaje.correo_cliente && (
+                                                                <a
+                                                                    href={`mailto:${peritaje.correo_cliente}`}
+                                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                                                >
+                                                                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                    <span className="truncate">{peritaje.correo_cliente}</span>
+                                                                </a>
                                                             )}
                                                         </div>
                                                     </div>
+
+                                                    {/* Datos de Contacto */}
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                                                            <Phone className="h-4 w-4 text-primary" />
+                                                            <h4 className="font-medium text-sm text-foreground uppercase tracking-wide">Contacto</h4>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <p className="font-medium text-foreground">{peritaje.nombre_contacto || 'N/A'}</p>
+                                                            {peritaje.celular_contacto && (
+                                                                <a
+                                                                    href={`tel:${peritaje.celular_contacto}`}
+                                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                                                >
+                                                                    <Phone className="h-3.5 w-3.5" />
+                                                                    {peritaje.celular_contacto}
+                                                                </a>
+                                                            )}
+                                                            {peritaje.correo_contacto && (
+                                                                <a
+                                                                    href={`mailto:${peritaje.correo_contacto}`}
+                                                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                                                >
+                                                                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                    <span className="truncate">{peritaje.correo_contacto}</span>
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Información del Vehículo */}
+                                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Car className="h-4 w-4 text-gray-600" />
+                                                        <h4 className="font-medium text-sm text-gray-800 uppercase tracking-wide">Vehículo</h4>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-gray-900">{peritaje.marca || 'N/A'}</span>
+                                                        <span className="text-gray-600">•</span>
+                                                        <span className="text-gray-700">{peritaje.modelo || 'N/A'}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Sección de Asignación de Agente */}
+                                                <div className="space-y-3 pt-2 border-t border-border">
+                                                    {isCoordinador && (
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <UserCheck className="h-4 w-4 text-primary" />
+                                                                <h4 className="font-medium text-sm text-foreground uppercase tracking-wide">Agente Asignado</h4>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                                {isAssigned ? (
+                                                                    <UserCheck className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                                                ) : (
+                                                                    <UserX className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                                                                )}
+                                                                <span className="text-sm font-medium flex-1">{getAssignedAgentName(peritaje)}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Select
+                                                                    value={assigningAgent === peritaje.id ? selectedAgent : peritaje.assigned_agent_id?.toString() || ""}
+                                                                    onValueChange={(value) => {
+                                                                        setSelectedAgent(value);
+                                                                        handleAssignAgent(peritaje.id, value);
+                                                                    }}
+                                                                    disabled={assigningAgent === peritaje.id}
+                                                                >
+                                                                    <SelectTrigger className="flex-1">
+                                                                        <SelectValue placeholder="Seleccionar agente" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="unassign">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <UserX className="h-4 w-4 text-destructive" />
+                                                                                <span>Quitar asignación</span>
+                                                                            </div>
+                                                                        </SelectItem>
+                                                                        {agents.map((agent) => (
+                                                                            <SelectItem key={agent.id} value={agent.id.toString()}>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <UserCheck className="h-4 w-4 text-accent" />
+                                                                                    <span>{agent.name}</span>
+                                                                                </div>
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                {assigningAgent === peritaje.id && (
+                                                                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Botón de Agendar */}
+                                                    <Button
+                                                        onClick={() => openScheduleDialog(peritaje)}
+                                                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                                                        size="default"
+                                                    >
+                                                        <CalendarIcon className="h-4 w-4" />
+                                                        Agendar Peritaje
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </CardContent>

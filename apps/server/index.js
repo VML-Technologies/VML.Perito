@@ -338,7 +338,10 @@ app.get('/api/coordinador-contacto/stats', requirePermission('coordinador_contac
 app.get('/api/coordinador-contacto/agent-stats', requirePermission('coordinador_contacto.stats'), coordinadorContactoController.getAgentAssignmentStats);
 app.get('/api/coordinador-contacto/agents', requirePermission('coordinador_contacto.read'), coordinadorContactoController.getAgents);
 app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_contacto.assign'), coordinadorContactoController.assignAgent);
-app.get('/api/coordinador-vml/reports/coordinator', requirePermission('reports.read'), coordinadorContactoController.getCoordinatorReport);
+app.get('/api/coordinador-contacto/ordenes-recuperacion', requireAuth, coordinadorContactoController.getOrdenesRecuperacion);
+app.get('/api/coordinador-contacto/ordenes-no-recuperadas', requireAuth, coordinadorContactoController.getOrdenesNoRecuperadas);
+app.get('/api/coordinador-contacto/ordenes/:id/actividad', requireAuth, coordinadorContactoController.getOrdenActividad);
+app.get('/api/coordinador-vml/reports/coordinator', requireAuth, coordinadorContactoController.getCoordinatorReport);
 
 // ===== RUTAS DE NOTIFICACIONES =====
 
