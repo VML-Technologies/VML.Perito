@@ -64,7 +64,7 @@ class ScheduleController {
         const hoy = new Date();
         // Ventana 2-5 días: desde el inicio del día de hace 5 días hasta el fin del día de hace 2 días
         const ventanaInicio = new Date(hoy);
-        ventanaInicio.setDate(hoy.getDate() - 5);
+        ventanaInicio.setDate(hoy.getDate() - 5000);
         ventanaInicio.setHours(0, 0, 0, 0);
 
         const ventanaFin = new Date(hoy);
@@ -75,6 +75,7 @@ class ScheduleController {
         dia6.setDate(hoy.getDate() - 6);
         dia6.setHours(23, 59, 59, 999);
 
+        console.log(`Ventana de recuperación: ${ventanaInicio.toISOString()} - ${ventanaFin.toISOString()}`);
         // 1) En proceso de recuperación (días 2-5)
         const [updatedInProcess] = await InspectionOrder.update(
             { status_internal: 'En proceso de recuperacion' },
@@ -85,7 +86,6 @@ class ScheduleController {
                     created_at: { [Op.between]: [ventanaInicio, ventanaFin] },
                     [Op.or]: [
                         { status_internal: null },
-                        { status_internal: { [Op.ne]: 'En proceso de recuperacion' } }
                     ],
                     [Op.and]: [
                         Sequelize.literal("NOT EXISTS (SELECT 1 FROM appointments WHERE appointments.inspection_order_id = inspection_orders.id AND appointments.deleted_at IS NULL)"),
