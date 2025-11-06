@@ -119,8 +119,8 @@ const OrdersTable = ({
     return (
         <Card className="rounded-lg shadow-md">
             <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-800">{getTableTitle()}</CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardTitle className="text-2xl font-ubuntu font-bold text-gray-800">{getTableTitle()}</CardTitle>
+                <CardDescription className="text-gray-600 font-ubuntu">
                     {getTableDescription()}
                 </CardDescription>
             </CardHeader>
@@ -129,7 +129,7 @@ const OrdersTable = ({
                     <div className="flex items-center justify-center h-64">
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                            <p className="mt-4 text-muted-foreground">Cargando órdenes...</p>
+                            <p className="mt-4 font-ubuntu text-muted-foreground">Cargando órdenes...</p>
                         </div>
                     </div>
                 ) : (
@@ -144,7 +144,7 @@ const OrdersTable = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('numero')}
-                                                className="font-semibold"
+                                                className="font-semibold font-ubuntu"
                                             >
                                                 Número {getSortIcon('numero')}
                                             </Button>
@@ -154,9 +154,9 @@ const OrdersTable = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('created_at')}
-                                                className="font-semibold"
+                                                className="font-semibold font-ubuntu"
                                             >
-                                                Fecha de creacion {getSortIcon('created_at')}
+                                                Fecha de creación {getSortIcon('created_at')}
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">
@@ -164,29 +164,29 @@ const OrdersTable = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('nombre_cliente')}
-                                                className="font-semibold"
+                                                className="font-semibold font-ubuntu"
                                             >
                                                 Cliente {getSortIcon('nombre_cliente')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2">Contacto</th>
+                                        <th className="font-ubuntu text-left p-2">Contacto</th>
                                         <th className="text-left p-2">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('placa')}
-                                                className="font-semibold"
+                                                className="font-semibold font-ubuntu"
                                             >
                                                 Placa {getSortIcon('placa')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2">Intentos</th>
-                                        <th className="text-left p-2">Estado</th>
+                                        <th className="text-left p-2 font-ubuntu">Intentos</th>
+                                        <th className="text-left p-2 font-ubuntu">Estado</th>
                                         {showAgentColumn && (
-                                            <th className="text-left p-2">Agente Asignado</th>
+                                            <th className="text-left p-2 font-ubuntu">Agente Asignado</th>
                                         )}
                                         {showActions && (
-                                            <th className="text-left p-2">Acciones</th>
+                                            <th className="text-left p-2 font-ubuntu">Acciones</th>
                                         )}
                                     </tr>
                                 </thead>
