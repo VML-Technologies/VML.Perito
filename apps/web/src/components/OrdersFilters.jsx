@@ -126,17 +126,10 @@ const OrdersFilters = ({
                         </div>
                     </div>
                 </div>
-                <div className="w-full">
-                    {
-                        role === "comercial" && <>
-                            <StatsCards stats={stats} variant="colorful" role="comercial" />
-                        </>
-                    }
-                </div>
                 <div>
                     {
                         hasPermission('inspections.create') && (
-                            <Button onClick={() => showCreateModal(true)} className="flex items-center gap-2 px-2 border py-8 rounded-md">
+                            <Button onClick={() => showCreateModal(true)} className="flex items-center gap-2 px-2 border cursor-pointer bg-[#3075C7] hover:bg-[#003370] py-8 rounded-full">
                                 <div className="flex items-center gap-2 px-4">
                                     <PlusCircle className="h-8 w-8" />
                                     <span className="text-lg font-medium">

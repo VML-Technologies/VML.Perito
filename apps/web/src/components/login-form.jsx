@@ -92,14 +92,14 @@ export function LoginForm({
               <button
                 type="button"
                 onClick={() => navigate('/forgot-password')}
-                className="ml-auto inline-block text-sm underline-offset-4 hover:underline cursor-pointer text-[rgb(95,122,241)] hover:text-blue-700"
+                className="ml-auto inline-block text-sm underline-offset-4 hover:underline cursor-pointer text-[#002EFF] hover:text-blue-700"
               >
                 ¿Olvidaste tu contraseña?
               </button>
               <div className="flex flex-col gap-3">
                 <Button
                   type="submit"
-                  className="w-full bg-[rgb(62,123,250)] hover:bg-[#005481] text-white cursor-pointer"
+                  className="w-full bg-[#235692] hover:bg-[#003370] text-white cursor-pointer rounded-xl"
                   disabled={loading}
                 >
                   {loading ? "Iniciando sesión..." : "Iniciar sesión"}
