@@ -25,7 +25,8 @@ import {
     CheckCircle,
     CreditCard,
     Hash,
-    TestTube
+    TestTube,
+    TriangleAlert
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
@@ -1077,7 +1078,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     <Card className={!sameAsClient ? 'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20' : ''}>
                         <CardHeader>
                             <CardTitle className="inline-flex items-center gap-2 bg-[#FFD9AA] text-[#935100] px-3 py-2 rounded-md text-sm">
-                                <AlertCircle className="h-4 w-4" />
+                                <TriangleAlert className="h-4 w-4" />
                                 Recuerde que, si el vehículo no está en su poder, debe dejar los datos de contacto de quien lo tiene
                             </CardTitle>
                         </CardHeader>
@@ -1176,18 +1177,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1"
+                            className="flex-1 cursor-pointer rounded-xl"
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             disabled={loading || plateExists}
-                            className={`flex-1 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            className={`flex-1 cursor-pointer rounded-xl ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-xl"></div>
                                     <span>Creando Orden...</span>
                                 </div>
                             ) : plateExists ? (
@@ -1196,8 +1197,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <span>Orden de inspección existente</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-4 w-4" />
+                                <div className="flex items-center gap-2 rounded-xl">
+                                    <CheckCircle className="h-4 w-4 " />
                                     <span>Crear Orden</span>
                                 </div>
                             )}
