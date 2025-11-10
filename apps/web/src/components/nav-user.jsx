@@ -79,16 +79,7 @@ export function NavUser() {
       <div className="hidden sm:block min-w-0 flex-1">
         <div className="w-32 lg:w-48">
           <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
-          <Select className="w-full">
-            <SelectTrigger className="w-full h-7 text-xs">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent className="w-full">
-              <SelectItem value="almuerzo">Almuerzo</SelectItem>
-              <SelectItem value="en_linea">En línea</SelectItem>
-              <SelectItem value="en_descanso">En descanso</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
         </div>
       </div>
 

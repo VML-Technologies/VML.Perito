@@ -136,10 +136,11 @@ const OrdersFilters = ({
                                     onClick={handleClearFilters}
                                     variant="secondary"
                                     size="sm"
-                                    className="text-xs px-4 py-2 rounded-md shadow-sm hover:bg-gray-100 transition-colors duration-200"
+                                    className="text-xs text-[#235692] px-4 py-2 rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
                                 >
                                     Limpiar Filtros
                                 </Button>
+
                             </div>
                         </div>
                     </div>

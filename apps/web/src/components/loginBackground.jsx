@@ -11,7 +11,7 @@ export function LoginBackground({ children }) {
         src={Check}
         className="absolute"
         style={{
-          bottom: "14vh",
+          bottom: "17vh",
           left: "15vw",
           width: "5vw",
           opacity: 0.5,
@@ -23,8 +23,8 @@ export function LoginBackground({ children }) {
         className="absolute"
         style={{
           bottom: "10vh",
-          right: "5vw",
-          width: "20vw",
+          right: "7vw",
+          width: "16vw",
           opacity: 0.9,
         }}
         alt="Girl"
@@ -44,7 +44,7 @@ export function LoginBackground({ children }) {
         src={Letter}
         className="absolute"
         style={{
-          top: "15vh",
+          top: "18vh",
           right: "11vw",
           width: "8vw",
           opacity: 0.6,

@@ -275,8 +275,8 @@ const OrdersTable = ({
                                     Página {pagination.page} de {pagination.pages} ({pagination.total} total)
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page - 1)} disabled={!pagination.hasPrev}>Anterior</Button>
-                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page + 1)} disabled={!pagination.hasNext}>Siguiente</Button>
+                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page - 1)} disabled={!pagination.hasPrev} className="rounded-xl cursor-pointer text-[#235692] border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] disabled:text-[#235692] disabled:bg-[#FFFFFF] disabled:cursor-not-allowed">Anterior</Button>
+                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page + 1)} disabled={!pagination.hasNext} className="rounded-xl cursor-pointer text-[#235692] border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] disabled:text-[#235692] disabled:bg-[#FFFFFF] disabled:cursor-not-allowed">Siguiente</Button>
                                 </div>
                             </div>
                         )}
