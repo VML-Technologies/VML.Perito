@@ -469,6 +469,7 @@ app.post('/api/users/:id/restore', requirePermission('users.update'), userContro
 
 app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('inspection_orders.read'), peritajesController.peritajesToSchedule);
 app.get('/api/peritajes/agentes-contacto', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getAgentesContacto);
+app.get('/api/peritajes/disponibilidad-horarios', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getDisponibilidadHorarios);
 app.post('/api/peritajes/schedule', requirePermission('inspection_orders.update'), peritajesController.schedulePeritaje);
 app.post('/api/peritajes/assign-agent', requirePermission('inspection_orders.update'), peritajesController.assignAgent);
 

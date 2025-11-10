@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRoles } from '@/hooks/use-roles';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
+import { isHoliday } from '@/utils/holidays';
 
 const PeritajeMomento3 = () => {
     const { user } = useAuth();
@@ -36,6 +37,15 @@ const PeritajeMomento3 = () => {
         modalidad_peritaje: 'presencial',
         observaciones: ''
     });
+    const [disponibilidad, setDisponibilidad] = useState({});
+    const [loadingDisponibilidad, setLoadingDisponibilidad] = useState(false);
+
+    // Horarios disponibles
+    const timeSlots = [
+        { time: '08:00', label: '8:00 AM', icon: '🌅', description: 'Mañana' },
+        { time: '11:00', label: '11:00 AM', icon: '☀️', description: 'Mediodía' },
+        { time: '14:00', label: '2:00 PM', icon: '🌤️', description: 'Tarde' }
+    ];
 
     // Verificar roles
     const isCoordinador = hasRole('coordinador_contacto');
@@ -140,6 +150,36 @@ const PeritajeMomento3 = () => {
         }
     };
 
+    const loadDisponibilidad = async (fecha) => {
+        try {
+            setLoadingDisponibilidad(true);
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            const response = await fetch(`${API_ROUTES.PERITAJES.DISPONIBILIDAD_HORARIOS}?fecha=${fecha}`, {
+                method: 'GET',
+                headers
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al cargar disponibilidad');
+            }
+
+            setDisponibilidad(data.data || {});
+        } catch (error) {
+            console.error('Error cargando disponibilidad:', error);
+            showToast('Error al cargar disponibilidad de horarios', 'error');
+            setDisponibilidad({});
+        } finally {
+            setLoadingDisponibilidad(false);
+        }
+    };
+
     const handleAssignAgent = async (peritajeId, agentId) => {
         try {
             setAssigningAgent(peritajeId);
@@ -216,7 +256,60 @@ const PeritajeMomento3 = () => {
 
     const openScheduleDialog = (peritaje) => {
         setSelectedPeritaje(peritaje);
+        setScheduleForm({
+            fecha_agendada: '',
+            hora: '',
+            direccion_peritaje: '',
+            ciudad: '',
+            modalidad_peritaje: 'presencial',
+            observaciones: ''
+        });
         setShowScheduleDialog(true);
+    };
+
+    // Función para verificar si una fecha es válida (lunes a viernes, no festivo)
+    const isValidDate = (dateString) => {
+        const date = new Date(dateString + 'T00:00:00');
+        const dayOfWeek = date.getDay();
+
+        // Verificar si es fin de semana (0 = domingo, 6 = sábado)
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            return false;
+        }
+
+        // Verificar si es festivo
+        const holidayCheck = isHoliday(dateString);
+        if (holidayCheck.isHoliday) {
+            return false;
+        }
+
+        return true;
+    };
+
+    // Función para obtener el mensaje de error de fecha inválida
+    const getDateErrorMessage = (dateString) => {
+        if (!dateString) return null;
+
+        const date = new Date(dateString + 'T00:00:00');
+        const dayOfWeek = date.getDay();
+
+        // Verificar si es sábado
+        if (dayOfWeek === 6) {
+            return 'No disponible el sábado';
+        }
+
+        // Verificar si es domingo
+        if (dayOfWeek === 0) {
+            return 'No disponible el domingo';
+        }
+
+        // Verificar si es festivo
+        const holidayCheck = isHoliday(dateString);
+        if (holidayCheck.isHoliday) {
+            return `No disponible por festivo: ${holidayCheck.celebration}`;
+        }
+
+        return null;
     };
 
     const formatDate = (dateString) => {
@@ -543,157 +636,266 @@ const PeritajeMomento3 = () => {
 
             {/* Dialog para agendar peritaje */}
             <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-3 text-xl">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <CalendarIcon className="h-6 w-6 text-primary" />
+                        <DialogTitle className="flex items-center gap-3 text-2xl">
+                            <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                                <CalendarIcon className="h-7 w-7 text-primary" />
                             </div>
-                            Agendar Peritaje
+                            <div>
+                                <div>Agendar Peritaje</div>
+                                <DialogDescription className="text-sm mt-1">
+                                    Configure los detalles del agendamiento para el peritaje <span className="font-semibold text-primary">{selectedPeritaje?.numero}</span>
+                                </DialogDescription>
+                            </div>
                         </DialogTitle>
-                        <DialogDescription>
-                            Configura los detalles del agendamiento para el peritaje {selectedPeritaje?.numero}
-                        </DialogDescription>
                     </DialogHeader>
 
                     {/* Información del peritaje seleccionado */}
                     {selectedPeritaje && (
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                            <h4 className="font-medium mb-3 text-sm text-muted-foreground uppercase tracking-wide">
-                                Información del Peritaje
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 shadow-sm">
+                            <h4 className="font-semibold mb-4 text-sm text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                                <div className='flex justify-between w-full'>
+                                    <div className='flex'>
+                                        <FileText className="h-4 w-4" />
+                                        Detalles
+                                    </div>
+                                    <div>
+                                        <p className="font-mono text-sm bg-white px-2 py-1 rounded border border-gray-300 w-fit">{selectedPeritaje.placa}</p>
+                                    </div>
+                                </div>
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                <div>
-                                    <span className="text-muted-foreground">Cliente:</span>
-                                    <p className="font-medium">{selectedPeritaje.nombre_cliente}</p>
+                            <div className="flex flex-col gap-2 text-sm">
+                                <div className="space-y-1">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Cliente</span>
+                                    <p className="font-semibold text-base">{selectedPeritaje.nombre_cliente}</p>
                                 </div>
-                                <div>
-                                    <span className="text-muted-foreground">Vehículo:</span>
-                                    <p className="font-medium">{selectedPeritaje.marca} {selectedPeritaje.modelo}</p>
-                                    <p className="font-mono text-xs bg-gray-200 px-1 rounded w-fit">{selectedPeritaje.placa}</p>
+                                <div className="space-y-1">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Vehículo</span>
+                                    <p className="font-semibold text-base">{selectedPeritaje.marca} {selectedPeritaje.modelo}</p>
+
                                 </div>
-                                <div>
-                                    <span className="text-muted-foreground">Contacto:</span>
-                                    <p className="font-medium">{selectedPeritaje.celular_cliente}</p>
+                                <div className="space-y-1">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Contacto</span>
+                                    <p className="font-semibold text-base flex items-center gap-2">
+                                        <Phone className="h-4 w-4 text-primary" />
+                                        {selectedPeritaje.celular_cliente}
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-
-                    <div className="space-y-6">
+                    <div className="space-y-6 mt-2">
                         {/* Fecha y Hora */}
-                        <div className="space-y-4">
-                            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                Fecha y Hora
+                        <div className="space-y-4 bg-white rounded-xl p-5 border border-gray-200">
+                            <h4 className="font-semibold text-base text-gray-800 flex items-center gap-2 pb-2 border-b">
+                                <CalendarIcon className="h-5 w-5 text-primary" />
+                                Fecha y Horario
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="fecha_agendada" className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4" />
-                                        Fecha del peritaje *
-                                    </Label>
-                                    <Input
-                                        id="fecha_agendada"
-                                        type="date"
-                                        value={scheduleForm.fecha_agendada}
-                                        onChange={(e) => setScheduleForm(prev => ({ ...prev, fecha_agendada: e.target.value }))}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        className="w-full"
-                                    />
-                                </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="hora" className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
-                                        Hora del peritaje
-                                    </Label>
-                                    <Input
-                                        id="hora"
-                                        type="time"
-                                        value={scheduleForm.hora}
-                                        onChange={(e) => setScheduleForm(prev => ({ ...prev, hora: e.target.value }))}
-                                        className="w-full"
-                                    />
-                                </div>
+                            {/* Selector de Fecha */}
+                            <div className="space-y-3">
+                                <Label htmlFor="fecha_agendada" className="text-sm font-medium flex items-center gap-2">
+                                    <CalendarIcon className="h-4 w-4 text-primary" />
+                                    Seleccione la fecha del peritaje *
+                                </Label>
+                                <Input
+                                    id="fecha_agendada"
+                                    type="date"
+                                    value={scheduleForm.fecha_agendada}
+                                    onChange={(e) => {
+                                        const selectedDate = e.target.value;
+                                        setScheduleForm(prev => ({ ...prev, fecha_agendada: selectedDate, hora: '' }));
+
+                                        // Cargar disponibilidad si la fecha es válida
+                                        if (selectedDate && isValidDate(selectedDate)) {
+                                            loadDisponibilidad(selectedDate);
+                                        } else {
+                                            setDisponibilidad({});
+                                        }
+                                    }}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full text-base"
+                                />
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" />
+                                    Solo se permiten días de lunes a viernes (excluyendo festivos)
+                                </p>
                             </div>
+
+                            {/* Mensaje de error o Selector de Horario */}
+                            {scheduleForm.fecha_agendada && (
+                                <>
+                                    {!isValidDate(scheduleForm.fecha_agendada) ? (
+                                        <div className="pt-2">
+                                            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="p-3 bg-amber-100 rounded-full">
+                                                        <AlertCircle className="h-8 w-8 text-amber-600" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-lg text-amber-900">
+                                                            {getDateErrorMessage(scheduleForm.fecha_agendada)}
+                                                        </p>
+                                                        <p className="text-sm text-amber-700 mt-1">
+                                                            Por favor, seleccione otra fecha
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 pt-2">
+                                            <Label className="text-sm font-medium flex items-center gap-2">
+                                                <Clock className="h-4 w-4 text-primary" />
+                                                Seleccione el horario *
+                                            </Label>
+
+                                            {loadingDisponibilidad ? (
+                                                <div className="flex items-center justify-center py-8">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    {timeSlots.map((slot) => {
+                                                        const slotKey = `${slot.time}:00`;
+                                                        const disponibilidadSlot = disponibilidad[slotKey] || { ocupados: 0, total: 3, completo: false };
+                                                        const isDisabled = disponibilidadSlot.completo;
+
+                                                        return (
+                                                            <button
+                                                                key={slot.time}
+                                                                type="button"
+                                                                onClick={() => !isDisabled && setScheduleForm(prev => ({ ...prev, hora: slot.time }))}
+                                                                disabled={isDisabled}
+                                                                className={`
+                                                                    relative p-5 rounded-xl border-2 transition-all duration-200
+                                                                    ${isDisabled
+                                                                        ? 'border-gray-300 bg-gray-100 cursor-not-allowed opacity-60'
+                                                                        : scheduleForm.hora === slot.time
+                                                                            ? 'border-primary bg-primary/10 shadow-md scale-105'
+                                                                            : 'border-gray-200 bg-white hover:border-primary/50 hover:bg-primary/5 hover:shadow-sm'
+                                                                    }
+                                                                `}
+                                                            >
+                                                                <div className="flex flex-col items-center gap-2">
+                                                                    <span className="text-2xl">{slot.icon}</span>
+                                                                    <span className="text-lg font-bold text-gray-800">{slot.label}</span>
+                                                                    <span className="text-xs text-muted-foreground">
+                                                                        {slot.description}
+                                                                    </span>
+
+                                                                    {/* Contador de disponibilidad */}
+                                                                    <div className={`
+                                                                        mt-2 px-3 py-1 rounded-full text-xs font-semibold
+                                                                        ${isDisabled
+                                                                            ? 'bg-red-100 text-red-700 border border-red-300'
+                                                                            : disponibilidadSlot.ocupados >= 2
+                                                                                ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                                                                                : 'bg-green-100 text-green-700 border border-green-300'
+                                                                        }
+                                                                    `}>
+                                                                        {disponibilidadSlot.ocupados}/{disponibilidadSlot.total}
+                                                                    </div>
+                                                                </div>
+
+                                                                {scheduleForm.hora === slot.time && !isDisabled && (
+                                                                    <div className="absolute top-2 right-2">
+                                                                        <div className="bg-primary text-white rounded-full p-1">
+                                                                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Modalidad y Ubicación */}
-                        <div className="space-y-4">
-                            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                                <MapPin className="h-4 w-4" />
+                        <div className="space-y-4 bg-white rounded-xl p-5 border border-gray-200">
+                            <h4 className="font-semibold text-base text-gray-800 flex items-center gap-2 pb-2 border-b">
+                                <MapPin className="h-5 w-5 text-primary" />
                                 Modalidad y Ubicación
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="modalidad_peritaje">Modalidad del peritaje</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-3">
+                                    <Label htmlFor="modalidad_peritaje" className="text-sm font-medium">Modalidad del peritaje</Label>
                                     <Select
                                         value={scheduleForm.modalidad_peritaje}
                                         onValueChange={(value) => setScheduleForm(prev => ({ ...prev, modalidad_peritaje: value }))}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="h-11">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="presencial">
-                                                <div className="flex items-center gap-2">
-                                                    <Building className="h-4 w-4" />
-                                                    Presencial
+                                                <div className="flex items-center gap-2 py-1">
+                                                    <Building className="h-4 w-4 text-primary" />
+                                                    <span className="font-medium">Presencial</span>
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="virtual">
-                                                <div className="flex items-center gap-2">
-                                                    <Phone className="h-4 w-4" />
-                                                    Virtual
+                                                <div className="flex items-center gap-2 py-1">
+                                                    <Phone className="h-4 w-4 text-primary" />
+                                                    <span className="font-medium">Virtual</span>
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="domicilio">
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin className="h-4 w-4" />
-                                                    A Domicilio
+                                                <div className="flex items-center gap-2 py-1">
+                                                    <MapPin className="h-4 w-4 text-primary" />
+                                                    <span className="font-medium">A Domicilio</span>
                                                 </div>
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="ciudad">Ciudad</Label>
+                                <div className="space-y-3">
+                                    <Label htmlFor="ciudad" className="text-sm font-medium">Ciudad</Label>
                                     <Input
                                         id="ciudad"
                                         value={scheduleForm.ciudad}
                                         onChange={(e) => setScheduleForm(prev => ({ ...prev, ciudad: e.target.value }))}
-                                        placeholder="Ciudad del peritaje"
+                                        placeholder="Ej: Bogotá, Medellín, Cali..."
+                                        className="h-11"
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="direccion_peritaje">Dirección del peritaje</Label>
+                            <div className="space-y-3">
+                                <Label htmlFor="direccion_peritaje" className="text-sm font-medium">Dirección del peritaje</Label>
                                 <Input
                                     id="direccion_peritaje"
                                     value={scheduleForm.direccion_peritaje}
                                     onChange={(e) => setScheduleForm(prev => ({ ...prev, direccion_peritaje: e.target.value }))}
-                                    placeholder="Dirección completa del peritaje"
+                                    placeholder="Dirección completa donde se realizará el peritaje"
+                                    className="h-11"
                                 />
                             </div>
                         </div>
 
                         {/* Observaciones */}
-                        <div className="space-y-4">
-                            <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
+                        <div className="space-y-4 bg-white rounded-xl p-5 border border-gray-200">
+                            <h4 className="font-semibold text-base text-gray-800 flex items-center gap-2 pb-2 border-b">
+                                <FileText className="h-5 w-5 text-primary" />
                                 Observaciones Adicionales
                             </h4>
-                            <div className="space-y-2">
-                                <Label htmlFor="observaciones">Notas e información adicional</Label>
+                            <div className="space-y-3">
+                                <Label htmlFor="observaciones" className="text-sm font-medium">Notas e información adicional</Label>
                                 <Textarea
                                     id="observaciones"
                                     value={scheduleForm.observaciones}
                                     onChange={(e) => setScheduleForm(prev => ({ ...prev, observaciones: e.target.value }))}
-                                    placeholder="Observaciones adicionales para el peritaje, instrucciones especiales, etc."
+                                    placeholder="Agregue cualquier observación, instrucción especial o detalle importante para el peritaje..."
                                     rows={4}
                                     className="resize-none"
                                 />
@@ -701,14 +903,18 @@ const PeritajeMomento3 = () => {
                         </div>
                     </div>
 
-                    <DialogFooter className="flex gap-3 pt-6 border-t">
-                        <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>
+                    <DialogFooter className="flex gap-3 pt-6 border-t bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-xl">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowScheduleDialog(false)}
+                            className="h-11"
+                        >
                             <span>Cancelar</span>
                         </Button>
                         <Button
                             onClick={handleSchedulePeritaje}
-                            disabled={!scheduleForm.fecha_agendada}
-                            className="flex items-center gap-2"
+                            disabled={!scheduleForm.fecha_agendada || !scheduleForm.hora || !isValidDate(scheduleForm.fecha_agendada)}
+                            className="flex items-center gap-2 h-11 px-6"
                         >
                             <CalendarIcon className="h-4 w-4" />
                             Confirmar Agendamiento

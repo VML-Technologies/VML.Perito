@@ -293,6 +293,7 @@ export const API_ROUTES = {
         // Gestión de peritajes
         GET_PENDING_TO_SCHEDULE: `${API_BASE_URL}/api/peritajes/getPendingToSchedule`,
         GET_AGENTES_CONTACTO: `${API_BASE_URL}/api/peritajes/agentes-contacto`,
+        DISPONIBILIDAD_HORARIOS: `${API_BASE_URL}/api/peritajes/disponibilidad-horarios`,
         SCHEDULE: `${API_BASE_URL}/api/peritajes/schedule`,
         ASSIGN_AGENT: `${API_BASE_URL}/api/peritajes/assign-agent`,
     },

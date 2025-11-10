@@ -267,6 +267,54 @@ class PeritajesController {
             });
         }
     }
+
+    async getDisponibilidadHorarios(req, res) {
+        try {
+            const { fecha } = req.query;
+
+            if (!fecha) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La fecha es requerida'
+                });
+            }
+
+            // Horarios disponibles
+            const horarios = ['08:00:00', '11:00:00', '14:00:00'];
+            const disponibilidad = {};
+
+            // Contar agendamientos para cada horario
+            for (const hora of horarios) {
+                const count = await PeritajeAgendamiento.count({
+                    where: {
+                        fecha_agendada: fecha,
+                        hora: hora,
+                        deleted_at: null
+                    }
+                });
+
+                disponibilidad[hora] = {
+                    ocupados: count,
+                    disponibles: 3 - count,
+                    total: 3,
+                    completo: count >= 3
+                };
+            }
+
+            res.json({
+                success: true,
+                data: disponibilidad,
+                fecha: fecha
+            });
+        } catch (error) {
+            console.error('Error al obtener disponibilidad de horarios:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor al obtener disponibilidad',
+                error: error.message
+            });
+        }
+    }
 }
 
 export default new PeritajesController();
