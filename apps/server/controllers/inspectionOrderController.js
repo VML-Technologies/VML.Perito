@@ -257,12 +257,20 @@ class InspectionOrderController extends BaseController {
             }
 
             if (client) {
-                whereConditions.nombre_cliente = { [Op.like]: `%${client}%` };
+                whereConditions[Op.or] = [
+                    { nombre_cliente: { [Op.like]: `%${client}%` } },
+                    { correo_cliente: { [Op.like]: `%${client}%` } },
+                    { celular_cliente: { [Op.like]: `%${client}%` } },
+                ];
+            }
+            if (contact) {
+                whereConditions[Op.or] = [
+                    { nombre_contacto: { [Op.like]: `%${contact}%` } },
+                    { correo_contacto: { [Op.like]: `%${contact}%` } },
+                    { celular_contacto: { [Op.like]: `%${contact}%` } },
+                ];
             }
 
-            if (contact) {
-                whereConditions.num_doc = { [Op.like]: `%${contact}%` };
-            }
             if (order_number) {
                 whereConditions.numero = { [Op.like]: `%${order_number}%` };
             }

@@ -77,7 +77,7 @@ const OrdersFilters = ({
                                 <Label htmlFor="client">Cliente</Label>
                                 <Input
                                     id="client"
-                                    placeholder="Nombre del cliente"
+                                    placeholder="Ej: Juan Pérez, juan@mail.com, 3004567890"
                                     value={filters.client || ''}
                                     onChange={(e) => handleFilterChange('client', e.target.value)}
                                 />
@@ -88,7 +88,7 @@ const OrdersFilters = ({
                                 <Label htmlFor="contact">Contacto</Label>
                                 <Input
                                     id="contact"
-                                    placeholder="Contacto"
+                                    placeholder="Ej: ana ramos, ana@mail.com, 3012345678"
                                     value={filters.contact || ''}
                                     onChange={(e) => handleFilterChange('contact', e.target.value)}
                                 />

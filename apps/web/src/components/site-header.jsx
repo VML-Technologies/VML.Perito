@@ -14,7 +14,7 @@ export function SiteHeader() {
   }
   return (
     <header className="border-b h-16 flex items-center gap-2 w-full">
-      <div className="flex w-full items-center gap-1 px-2 sm:px-4 lg:gap-2 lg:px-6">
+      <div className="flex w-full items-center gap-2 px-4 py-2 sm:px-6 lg:gap-3 rounded-xl bg-[#EAF4FF] shadow-sm border border-[#D3E3F5]">
         {/* Logo/App Name - Responsive */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <AppName />

@@ -59,7 +59,8 @@ export function NavUser() {
   if (!user) return null
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <div className="flex items-center gap-1 sm:gap-2 bg-[#EAF4FF] px-3 py-2 rounded-lg">
+
       {/* Avatar - Always visible */}
       <div className="flex-shrink-0">
         <Avatar className="h-8 w-8 rounded-lg">

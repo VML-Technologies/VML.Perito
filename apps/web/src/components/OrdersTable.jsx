@@ -86,35 +86,71 @@ const OrdersTable = ({
                     <>
                         <div className="overflow-x-auto block">
                             <table className="w-full border-collapse">
-                                <thead className='bg-blue-100'>
+                                <thead className="bg-blue-100">
                                     <tr className="border-b">
                                         <th className="text-left p-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handleSort('numero')} className="font-semibold font-ubuntu">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSort('numero')}
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
+                                            >
                                                 Número {getSortIcon('numero')}
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handleSort('created_at')} className="font-semibold font-ubuntu">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSort('created_at')}
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
+                                            >
                                                 Fecha de creación {getSortIcon('created_at')}
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handleSort('nombre_cliente')} className="font-semibold font-ubuntu">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSort('nombre_cliente')}
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
+                                            >
                                                 Cliente {getSortIcon('nombre_cliente')}
                                             </Button>
                                         </th>
-                                        <th className="font-ubuntu text-left p-2">Contacto</th>
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Contacto
+                                        </th>
                                         <th className="text-left p-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handleSort('placa')} className="font-semibold font-ubuntu">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleSort('placa')}
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
+                                            >
                                                 Placa {getSortIcon('placa')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2 font-ubuntu">Intentos</th>
-                                        <th className="text-left p-2 font-ubuntu">Estado</th>
-                                        {showAgentColumn && <th className="text-left p-2 font-ubuntu">Agente Asignado</th>}
-                                        {showActions && <th className="text-left p-2 font-ubuntu">Acciones</th>}
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Intentos
+                                        </th>
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Estado
+                                        </th>
+                                        {showAgentColumn && (
+                                            <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                                Agente Asignado
+                                            </th>
+                                        )}
+                                        {showActions && (
+                                            <th className="text-center p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle w-[10rem]">
+                                                Acciones
+                                            </th>
+
+                                        )}
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     {orders.length == 0 ? (
                                         <tr>
