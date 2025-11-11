@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -12,6 +13,9 @@
   /* Colores base */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Fuentes */
+  --font-ubuntu: "Ubuntu", ui-sans-serif, system-ui, sans-serif;
 
   /* Colores de componentes (tarjetas, popovers) */
   --color-card: var(--card);
@@ -198,6 +202,12 @@
   --sidebar-ring: oklch(0.5 0.05 260);
   /* Azul medio */
 }
+@layer utilities {
+  .font-ubuntu {
+    font-family: "Ubuntu", ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
 
 @layer base {
   * {
@@ -206,5 +216,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Ubuntu", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 500;
   }
 }

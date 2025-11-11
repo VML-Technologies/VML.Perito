@@ -25,11 +25,13 @@ import {
     CheckCircle,
     CreditCard,
     Hash,
-    TestTube
+    TestTube,
+    TriangleAlert
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
 import { useAuth } from '@/contexts/auth-context';
+import { Alert } from './ui/alert';
 
 export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const [loading, setLoading] = useState(false);
@@ -1071,14 +1073,19 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
                         </CardContent>
                     </Card>
-{/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
-                
+                    {/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
                     {/* Información del Contacto */}
-                    <Card className={!sameAsClient?'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20':''}>
+                    <Card
+                        className={
+                            !sameAsClient
+                                ? 'border border-[#F5A623]/40 bg-[#FFF9F2] rounded-xl p-5 shadow-md shadow-[#F5A623]/20 transition-all duration-300'
+                                : ''
+                        }
+                    >
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2 text-red-500">
-                                <Phone className="h-4 w-4" />
-                                Persona encargada de realizar la inspección
+                            <CardTitle className="inline-flex items-center gap-2 bg-[#FFE7C2] text-[#8A4B00] px-3 py-2 rounded-md text-sm font-medium">
+                                <TriangleAlert className="h-4 w-4" />
+                                Recuerde que, si el vehículo no está en su poder, debe dejar los datos de contacto de quien lo tiene
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1176,18 +1183,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1"
+                            className="flex-1 cursor-pointer rounded-xl"
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             disabled={loading || plateExists}
-                            className={`flex-1 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            className={`flex-1 cursor-pointer rounded-xl ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-xl"></div>
                                     <span>Creando Orden...</span>
                                 </div>
                             ) : plateExists ? (
@@ -1196,8 +1203,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <span>Orden de inspección existente</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-4 w-4" />
+                                <div className="flex items-center gap-2 rounded-xl">
+                                    <CheckCircle className="h-4 w-4 " />
                                     <span>Crear Orden</span>
                                 </div>
                             )}
