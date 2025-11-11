@@ -3,6 +3,7 @@ import { NotificationToast } from "@/components/notification-toast"
 import { NotificationProvider, useNotificationContext } from "@/contexts/notification-context"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { LoginForm } from "@/components/login-form"
+import { LoginBackground } from "@/components/loginBackground"
 
 function AppContent() {
     const { toast, hideToast } = useNotificationContext();
@@ -12,13 +13,15 @@ function AppContent() {
             <SidebarProvider>
                 <SidebarInset>
                     <SiteHeader />
-                    <div className="flex flex-col">
-                        <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-                            <div className="w-full max-w-sm">
-                                <LoginForm />
+                    <LoginBackground>
+                        <div className="flex flex-col">
+                            <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+                                <div className="w-full max-w-sm">
+                                    <LoginForm />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </LoginBackground>
                 </SidebarInset>
             </SidebarProvider>
 

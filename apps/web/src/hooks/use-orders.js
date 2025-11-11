@@ -12,8 +12,13 @@ export const useOrders = (apiEndpoint, options = {}) => {
         completadas: 0,
         sin_asignar: 0
     });
+
+    //filtros específicos 
     const [filters, setFilters] = useState({
-        search: '',
+        plate: '',
+        client: '',
+        contact: '',
+        order_number: '',
         status: '',
         assigned_agent_id: '',
         date_from: '',
@@ -21,6 +26,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
         sortBy: 'created_at',
         sortOrder: 'DESC'
     });
+
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 10,
@@ -35,10 +41,14 @@ export const useOrders = (apiEndpoint, options = {}) => {
     const loadOrders = async () => {
         try {
             const token = localStorage.getItem('authToken');
+
+            // 🔄 Enviamos solo los filtros definidos
             const params = new URLSearchParams({
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
-                ...filters
+                ...Object.fromEntries(
+                    Object.entries(filters).filter(([_, v]) => v !== '')
+                )
             });
 
             if (options.context) {
@@ -47,8 +57,6 @@ export const useOrders = (apiEndpoint, options = {}) => {
 
             const finalUrl = `${apiEndpoint}?${params}`;
             console.log('🔍 URL construida:', finalUrl);
-            console.log('🔍 apiEndpoint original:', apiEndpoint);
-            console.log('🔍 Parámetros adicionales:', Object.fromEntries(params));
 
             const response = await fetch(finalUrl, {
                 headers: {
@@ -59,8 +67,8 @@ export const useOrders = (apiEndpoint, options = {}) => {
 
             if (response.ok) {
                 const data = await response.json();
-
                 setOrders(data.data?.orders || data.orders || []);
+
                 if (data.data?.pagination) {
                     setPagination(prev => ({
                         ...prev,
@@ -106,10 +114,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            await Promise.all([
-                loadStats(),
-                loadOrders()
-            ]);
+            await Promise.all([loadStats(), loadOrders()]);
         } catch (error) {
             console.error('Error loading initial data:', error);
             showToast('Error al cargar los datos iniciales', 'error');
@@ -119,7 +124,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
     };
 
     const handleFilterChange = (key, value) => {
-        const backendValue = (value == 'all') ? '' : value;
+        const backendValue = value === 'all' ? '' : value;
         setFilters(prev => ({
             ...prev,
             [key]: backendValue
@@ -128,7 +133,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
     };
 
     const handleSort = (field) => {
-        const newOrder = filters.sortBy == field && filters.sortOrder == 'ASC' ? 'DESC' : 'ASC';
+        const newOrder = filters.sortBy === field && filters.sortOrder === 'ASC' ? 'DESC' : 'ASC';
         setFilters(prev => ({
             ...prev,
             sortBy: field,
@@ -140,17 +145,26 @@ export const useOrders = (apiEndpoint, options = {}) => {
         setPagination(prev => ({ ...prev, page: newPage }));
     };
 
-    const handleClearFilters = (defaultFilters) => {
-        setFilters(defaultFilters);
+    const handleClearFilters = () => {
+        setFilters({
+            plate: '',
+            client: '',
+            contact: '',
+            order_number: '',
+            status: '',
+            assigned_agent_id: '',
+            date_from: '',
+            date_to: '',
+            sortBy: 'created_at',
+            sortOrder: 'DESC'
+        });
         setPagination(prev => ({ ...prev, page: 1 }));
     };
 
-    // Cargar datos cuando cambien los filtros o paginación
     useEffect(() => {
         loadOrders();
     }, [filters, pagination.page]);
 
-    // Cargar datos iniciales
     useEffect(() => {
         loadInitialData();
     }, []);
@@ -169,4 +183,4 @@ export const useOrders = (apiEndpoint, options = {}) => {
         handlePageChange,
         handleClearFilters
     };
-}; 
+};
