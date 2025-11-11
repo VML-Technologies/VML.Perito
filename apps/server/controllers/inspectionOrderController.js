@@ -276,11 +276,11 @@ class InspectionOrderController extends BaseController {
                 res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
                 res.setHeader('Pragma', 'no-cache');
                 res.setHeader('Expires', '0');
-                
+
                 // Headers para permitir iframe
                 res.setHeader('X-Frame-Options', 'SAMEORIGIN');
                 res.setHeader('Content-Security-Policy', "frame-ancestors 'self' http://localhost:5173 https://localhost:5173");
-                
+
                 // CORS headers
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.setHeader('Access-Control-Allow-Methods', 'GET');
