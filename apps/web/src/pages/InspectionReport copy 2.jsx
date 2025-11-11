@@ -8,8 +8,9 @@ const InspectionReport = () => {
   const { session_id, inspectionOrderId, appointmentId } = useParams()
   const [pdfData, setPdfData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const getPdfReport = async () => {
+  useEffect(async () => {
     console.log("#####################################")
     console.log("cargando reporte de inspección...")
     console.log("ID de sesión:", session_id)
@@ -19,19 +20,49 @@ const InspectionReport = () => {
     const data = await response.json();
     console.log("data del reporte:", data)
     if (data.success && data.data) {
-      console.log("data del reporte - estableciendo pdfData")
       setPdfData(data.data)
-      setLoading(false)
     } else {
-      console.log("data del reporte - estableciendo error")
       setError('No se pudo obtener el enlace del PDF')
     }
 
     console.log("#####################################")
-  }
-  useEffect(() => {
-    getPdfReport()
   }, [])
+
+  useEffect(() => {
+    const fetchPdfReport = async () => {
+      try {
+        console.log("#####################################")
+        console.log("cargando reporte de inspección...")
+        console.log("ID de sesión:", session_id)
+        console.log("ID de orden de inspección:", inspectionOrderId)
+        console.log("ID de cita:", appointmentId)
+        const response = await fetch(API_ROUTES.INSPECTION_ORDERS.PDF(session_id));
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+
+        const data = await response.json();
+        console.log("data del reporte:", data)
+
+        if (data.success && data.data) {
+          setPdfData(data.data)
+        } else {
+          setError('No se pudo obtener el enlace del PDF')
+        }
+
+        console.log("#####################################")
+      } catch (err) {
+        console.error('Error fetching PDF report:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session_id && inspectionOrderId && appointmentId) {
+      fetchPdfReport()
+    }
+  }, [session_id, inspectionOrderId, appointmentId])
 
   if (loading) {
     return (
@@ -43,6 +74,18 @@ const InspectionReport = () => {
       </div>
     )
   }
+
+  // if (error) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="text-center">
+  //         <div className="text-red-500 text-xl mb-4">⚠️</div>
+  //         <h2 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar el reporte</h2>
+  //         <p className="text-gray-600">{error}</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   if (!pdfData) {
     return (
@@ -56,8 +99,9 @@ const InspectionReport = () => {
   }
 
   return (
-    <div className="border border-red-500">
-
+    <div className="min-h-screen bg-gray-50 border border-red-500">
+      aca
+      <pre>{JSON.stringify(pdfData, null, 2)}</pre>
       {/* Header with PDF info */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,6 +117,17 @@ const InspectionReport = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
+                <a
+                  href={pdfData.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Descargar PDF
+                </a>
               </div>
             </div>
           </div>
@@ -83,7 +138,7 @@ const InspectionReport = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <iframe
-            src={API_ROUTES.INSPECTION_ORDERS.PDF_VIEW(session_id)}
+            src={pdfData.downloadUrl}
             className="w-full h-screen border-0"
             title={`Reporte de Inspección - ${pdfData.fileName}`}
           />

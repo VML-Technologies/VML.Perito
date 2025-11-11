@@ -62,6 +62,7 @@ import automatedEventTriggers from './services/automatedEventTriggers.js';
 import webSocketSystem from './websocket/index.js';
 import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
 import scheduledTasksService from './services/scheduledTasksService.js';
+import { read } from 'fs';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -256,6 +257,8 @@ app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspecti
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
 app.get('/api/inspection-orders/search-by-plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.searchByPlate);
 app.get('/api/inspection-orders/check-plate/:plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.checkPlate);
+app.get('/api/inspection-orders/pdf/:id', readLimiter, inspectionOrderController.getPdfReportFilePath);
+app.get('/api/inspection-orders/pdf/:id/view', readLimiter, inspectionOrderController.getPdfForInlineView);
 app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
 app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);

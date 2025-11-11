@@ -60,6 +60,8 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        PDF: (id) => `${API_BASE_URL}/api/inspection-orders/pdf/${id}`,
+        PDF_VIEW: (id) => `${API_BASE_URL}/api/inspection-orders/pdf/${id}/view`,
 
         // ===== VALIDACIÓN DE PLACA =====
         CHECK_PLATE: (plate) => `${API_BASE_URL}/api/inspection-orders/check-plate/${plate}`,

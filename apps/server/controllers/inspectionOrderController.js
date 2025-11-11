@@ -11,7 +11,7 @@ import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op, QueryTypes } from 'sequelize';
+import { Op, QueryTypes, where } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -143,6 +143,172 @@ class InspectionOrderController extends BaseController {
         this.getResponseValue = this.getResponseValue.bind(this);
         this.calculateChecklistScores = this.calculateChecklistScores.bind(this);
         this.calculateAsegurabilidad = this.calculateAsegurabilidad.bind(this);
+        this.getPdfReportFilePath = this.getPdfReportFilePath.bind(this);
+        this.getPdfForInlineView = this.getPdfForInlineView.bind(this);
+    }
+
+    async getPdfReportFilePath(req, res) {
+        try {
+            const { id } = req.params;
+            console.log('Getting PDF report for inspection order ID:', id);
+
+            const inspection = await InspectionOrder.findByPk(id, {
+                where: { deleted_at: null }
+            });
+
+            if (!inspection) {
+                return res.status(404).json({
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            const lastUpdatedAppointment = await Appointment.findOne({
+                where: { inspection_order_id: id },
+                order: [['updated_at', 'DESC']]
+            });
+
+            if (!lastUpdatedAppointment) {
+                return res.status(404).json({
+                    message: 'Última cita no encontrada'
+                });
+            }
+
+            const pdfFileName = `inspeccion_${inspection.placa}.pdf`;
+            const blobName = `pdfs/${lastUpdatedAppointment.session_id}/${inspection.id}/${pdfFileName}`;
+
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+
+            try {
+                // Generar URL con SAS token (válida por 60 minutos)
+                const downloadUrl = await azureBlobService.getDownloadUrl(blobName, 60);
+
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: lastUpdatedAppointment.session_id,
+                        inspectionOrderId: inspection.id,
+                        plate: inspection.placa,
+                        expiresIn: 60 // minutos
+                    }
+                });
+            } catch (error) {
+                console.error('Error generating PDF download URL:', error);
+                return res.status(500).json({
+                    message: 'Error al generar URL de descarga PDF',
+                    error: error.message
+                });
+            }
+
+            // For now, return the inspection data - implement PDF generation logic as needed
+            res.json({
+                message: 'PDF report endpoint',
+                blobName: blobName
+            });
+        } catch (error) {
+            console.error('Error getting PDF report:', error);
+            res.status(500).json({
+                message: 'Error al obtener reporte PDF',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Servir PDF para visualización inline (proxy)
+     * GET /api/inspection-orders/pdf/:id/view
+     */
+    async getPdfForInlineView(req, res) {
+        try {
+            const { id } = req.params;
+            console.log('Serving PDF for inline view, inspection order ID:', id);
+
+            const inspection = await InspectionOrder.findByPk(id, {
+                where: { deleted_at: null }
+            });
+
+            if (!inspection) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            const lastUpdatedAppointment = await Appointment.findOne({
+                where: { inspection_order_id: id },
+                order: [['updated_at', 'DESC']]
+            });
+
+            if (!lastUpdatedAppointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Última cita no encontrada'
+                });
+            }
+
+            const pdfFileName = `inspeccion_${inspection.placa}.pdf`;
+            const blobName = `pdfs/${lastUpdatedAppointment.session_id}/${inspection.id}/${pdfFileName}`;
+
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+
+            try {
+                // Obtener el stream del archivo directamente desde Azure
+                const blockBlobClient = azureBlobService.containerClient.getBlockBlobClient(blobName);
+
+                // Verificar que existe
+                const exists = await blockBlobClient.exists();
+                if (!exists) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Archivo PDF no encontrado'
+                    });
+                }
+
+                // Obtener propiedades del blob
+                const properties = await blockBlobClient.getProperties();
+
+                // Configurar headers para visualización inline
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="${pdfFileName}"`);
+                res.setHeader('Content-Length', properties.contentLength);
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+                
+                // Headers para permitir iframe
+                res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+                res.setHeader('Content-Security-Policy', "frame-ancestors 'self' http://localhost:5173 https://localhost:5173");
+                
+                // CORS headers
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+                // Stream el archivo directamente al response
+                const downloadResponse = await blockBlobClient.download();
+                downloadResponse.readableStreamBody.pipe(res);
+
+                console.log(`✅ PDF servido para visualización inline: ${pdfFileName}`);
+
+            } catch (error) {
+                console.error('Error serving PDF for inline view:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al servir archivo PDF',
+                    error: error.message
+                });
+            }
+
+        } catch (error) {
+            console.error('Error in getPdfForInlineView:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
     }
 
     getFixedStatus(statusId, statusName, result, comentariosAnulacion, appointments) {
