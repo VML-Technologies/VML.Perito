@@ -155,7 +155,7 @@ export default function AgenteContacto() {
                     </TabsTrigger>
                     <TabsTrigger value="recuperacion" className="flex items-center gap-2">
                         <RefreshCw className="h-4 w-4" />
-                        <span className="inline">Recuperación</span>
+                        <span className="inline">Gestion sin interacción</span>
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />

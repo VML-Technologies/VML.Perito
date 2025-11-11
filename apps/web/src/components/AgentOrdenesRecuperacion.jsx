@@ -184,10 +184,8 @@ const AgentOrdenesRecuperacion = () => {
                         <div className="flex justify-between items-start">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-lg">#{orden.numero}</h3>
-                                    <Badge variant={getStatusBadgeVariant(orden.status_internal)} className="text-xs">
-                                        {orden.status_internal || 'Sin estado'}
-                                    </Badge>
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    Orden #{orden.numero}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     <span className="flex items-center gap-1">

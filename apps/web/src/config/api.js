@@ -92,6 +92,31 @@ export const API_ROUTES = {
         STATS: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/comments-stats`,
         ACTIVITY_LOG: (orderId) => `${API_BASE_URL}/api/inspection-orders/${orderId}/activity-log`,
     },
+    // ===== RUTAS DE DEPARTAMENTOS =====
+    DEPARTMENTS: {
+        LIST: `${API_BASE_URL}/api/departments`,
+        GET: (id) => `${API_BASE_URL}/api/departments/${id}`,
+        CREATE: `${API_BASE_URL}/api/departments`,
+        UPDATE: (id) => `${API_BASE_URL}/api/departments/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/departments/${id}`,
+    },
+    // ===== RUTAS DE CIUDADES =====
+    CITIES: {
+        LIST: `${API_BASE_URL}/api/cities`,
+        GET: (id) => `${API_BASE_URL}/api/cities/${id}`,
+        CREATE: `${API_BASE_URL}/api/cities`,
+        UPDATE: (id) => `${API_BASE_URL}/api/cities/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/cities/${id}`,
+        BY_DEPARTMENT: (departmentId) => `${API_BASE_URL}/api/departments/${departmentId}/cities`,
+    },
+    // ===== RUTAS DE EMPRESAS =====
+    COMPANIES: {
+        LIST: `${API_BASE_URL}/api/companies`,
+        GET: (id) => `${API_BASE_URL}/api/companies/${id}`,
+        CREATE: `${API_BASE_URL}/api/companies`,
+        UPDATE: (id) => `${API_BASE_URL}/api/companies/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/api/companies/${id}`,
+    },
     // ===== RUTAS DE SEDES =====
     SEDES: {
         LIST: `${API_BASE_URL}/api/sedes`,
@@ -99,6 +124,7 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/sedes`,
         UPDATE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/sedes/${id}`,
+        TYPES: `${API_BASE_URL}/api/sedes/types`,
         BY_COMPANY: (companyId) => `${API_BASE_URL}/api/companies/${companyId}/sedes`,
         CDA: `${API_BASE_URL}/api/sedes/cda`,
     },

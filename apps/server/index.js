@@ -237,6 +237,7 @@ app.post('/api/companies/:id/restore', requirePermission('companies.update'), co
 
 // Rutas de sedes
 app.get('/api/sedes', readLimiter, requirePermission('sedes.read'), sedeController.index);
+app.get('/api/sedes/types', readLimiter, requirePermission('sedes.read'), sedeController.getSedeTypes);
 app.get('/api/sedes/cda', readLimiter, requirePermission('sedes.read'), sedeController.getCDASedes);
 app.get('/api/sedes/:id', readLimiter, requirePermission('sedes.read'), sedeController.show);
 app.get('/api/companies/:companyId/sedes', readLimiter, requirePermission('sedes.read'), sedeController.getByCompany);
