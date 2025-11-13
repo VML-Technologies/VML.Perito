@@ -22,6 +22,7 @@ import ImageCapture from '../models/imageCapture.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 import fs from 'fs';
+import crypto from 'crypto';
 import ImageProcessor from '../utils/imageProcessor.js';
 
 
@@ -145,6 +146,7 @@ class InspectionOrderController extends BaseController {
         this.calculateAsegurabilidad = this.calculateAsegurabilidad.bind(this);
         this.getPdfReportFilePath = this.getPdfReportFilePath.bind(this);
         this.getPdfForInlineView = this.getPdfForInlineView.bind(this);
+        this.fetchVehicleDataFromSegurosMundialAPI = this.fetchVehicleDataFromSegurosMundialAPI.bind(this);
     }
 
     async getPdfReportFilePath(req, res) {
@@ -642,6 +644,103 @@ class InspectionOrderController extends BaseController {
         return this.getOrders(req, res);
     }
 
+    /**
+     * Consultar los datos del vehículo desde la API de Seguros Mundial.
+     * 
+     * @param {string} placa Placa del vehículo.
+     * @param {string} tipoDoc Tipo de documento (CC, CE, NIT, PASAPORTE, TI).
+     * @param {string} numDoc Número de documento.
+     * @returns {Promise<Object|null>}
+     * @author Fahibram Cárcamo
+     */
+    async fetchVehicleDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
+        try {
+            // Obtener token de autenticación
+            let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/integracion/v1/token`;
+
+            let options = {
+                method: 'POST',
+                body: new URLSearchParams({
+                    client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    grant_type: "client_credentials"
+                })
+            };
+
+            let response = await fetch(url, options);
+
+            if (response?.status !== 200 && response?.statusText !== "OK") {
+                throw new Error("Error al intentar obtener token de la API de Seguros Mundial.");
+            }
+
+            let result = await response.json();
+            let accessToken = result.access_token;
+
+            // Consultar historial de pólizas
+            url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/externals-apis/fasecolda/v1/cexper/historico-polizas`;
+
+            let numeroTipoDocumento = {
+                "CC":        "1",
+                "CE":        "2",
+                "NIT":       "3",
+                "TI":        "4",
+                "PASAPORTE": "5"
+            }[tipoDoc];
+
+            options = {
+                method: "POST",
+                body: JSON.stringify({
+                    "input": {
+                        "placa": placa,
+                        "tipoDocumento": numeroTipoDocumento,
+                        "numeroDocumento": numDoc
+                    }
+                }),
+                headers: {
+                    "client_id": process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    "client_secret": process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    "Authorization": `Bearer ${accessToken}`,
+                    "x-correlation-id": crypto.randomUUID(),
+                    "mun-app": "APP-VML",
+                    "Content-Type": "application/json",
+                    "mun-ext-user": "USER-VML",
+                    "mun-op": "Consulta cliente",
+                    "mun-timestamp": Math.floor(Date.now() / 1000)
+                }
+            };
+
+            response = await fetch(url, options);
+            const jsonResponse = await response.json();
+
+            let polizas = jsonResponse?.output?.data?.historicoPolizas;
+
+            if (Array.isArray(polizas) && polizas.length > 0) {
+                // Ordenar por fecha de vigencia (más reciente primero)
+                polizas = polizas.sort((polizaA, polizaB) =>
+                    new Date(polizaB.fechaVigencia) - new Date(polizaA.fechaVigencia)
+                );
+
+                let polizaMasReciente = polizas[0];
+
+                // Retornar datos de la póliza más reciente
+                return {
+                    marca: polizaMasReciente?.marca,
+                    linea: polizaMasReciente?.tipo,
+                    clase: polizaMasReciente?.clase,
+                    modelo: polizaMasReciente?.modelo,
+                    servicio: polizaMasReciente?.servicio,
+                    motor: polizaMasReciente?.motor,
+                    chasis: polizaMasReciente?.chasis,
+                    cod_fasecolda: polizaMasReciente?.codigoGuia
+                };
+            }
+
+            return null;
+        } catch (error) {
+            throw new Error("Error al intentar obtener datos de la API de Seguros Mundial.");
+        }
+    }
+
     // Obtener estadísticas
     async getStats(req, res) {
         try {
@@ -731,6 +830,21 @@ class InspectionOrderController extends BaseController {
     // Crear orden con validaciones
     async store(req, res) {
         try {
+            // Consultar datos del vehículo desde la API de Seguros Mundial
+            const vehicleData = await this.fetchVehicleDataFromSegurosMundialAPI(req.body.placa, req.body.tipo_doc, req.body.num_doc);
+
+            // Si se obtuvieron datos del vehículo, actualizar req.body
+            if (vehicleData !== null) {
+                req.body.marca = vehicleData.marca;
+                req.body.linea = vehicleData.linea;
+                req.body.clase = vehicleData.clase;
+                req.body.modelo = vehicleData.modelo;
+                req.body.servicio = vehicleData.servicio;
+                req.body.motor = vehicleData.motor;
+                req.body.chasis = vehicleData.chasis;
+                req.body.cod_fasecolda = vehicleData.cod_fasecolda;
+            }
+            
             // Generar número de orden automáticamente
             const orderNumber = await generateOrderNumber();
 
