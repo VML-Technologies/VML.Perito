@@ -169,9 +169,9 @@ const OrdersTable = ({
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id} className="border-b hover:bg-muted/50">
-                                                <td className="p-2 font-mono font-medium">
+                                                <td className="p-2 font-medium">
                                                     <div className='flex flex-col gap-0'>
-                                                        <span className='font-mono font-bold ms-2'>{order.numero}</span>
+                                                        <span className='font-bold ms-2'>{order.numero}</span>
                                                         <Badge variant='outline' className='text-xs'>
                                                             {order.numero.toString().includes('9991') ? 'Orden Manual' : 'Integracion'}
                                                         </Badge>
@@ -195,11 +195,18 @@ const OrdersTable = ({
                                                         <div className="text-sm text-[#3075C7] font-bold">{order.celular_contacto}</div>
                                                     </div>
                                                 </td>
-                                                <td className="p-2 font-mono font-medium">
+                                                <td className="p-2 font-medium">
                                                     <div className="flex flex-col">
                                                         <span className='font-bold'>{order.placa}</span>
-                                                        <span className='text-xs text-[#3075C7]'>{order.marca} - {order.modelo}</span>
-                                                        <span className='text-xs font-mono'>{order.producto.split("_").join(" ")}</span>
+                                                        <span className="text-xs text-[#3075C7] first-letter:uppercase">
+                                                            {order.marca} - {order.modelo}
+                                                        </span>
+                                                        <span className="text-xs capitalize">
+                                                            {order.producto
+                                                                .toLowerCase()
+                                                                .split("_")
+                                                                .join(" ")}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="p-2">
@@ -244,7 +251,7 @@ const OrdersTable = ({
                                                                     )
                                                                 )
                                                             ) : (
-                                                                <div className="flex gap-2">
+                                                                <div className="flex flex-col gap-2">
                                                                     {onViewDetails && (
                                                                         <Button
                                                                             size="sm"
@@ -269,6 +276,7 @@ const OrdersTable = ({
                                                                         </Button>
                                                                     )}
                                                                 </div>
+
                                                             )}
                                                             {onAssignAgent && agents.length > 0 && (
                                                                 <Select

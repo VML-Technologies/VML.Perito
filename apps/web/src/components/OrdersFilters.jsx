@@ -48,7 +48,7 @@ const OrdersFilters = ({
     const { hasPermission } = usePermissions();
 
     return (
-        <div className="flex w-full gap-4">
+        <div className="flex w-full items-center gap-4">
             <div className="w-full">
                 <div className="rounded-lg border border-gray-200 shadow-md">
                     {role !== "comercial" && (
@@ -136,7 +136,7 @@ const OrdersFilters = ({
                                     onClick={handleClearFilters}
                                     variant="secondary"
                                     size="sm"
-                                    className="text-xs text-[#235692] px-4 py-2 rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
+                                    className="text-xs  px-4 py-2 text-[#235692] rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
                                 >
                                     Limpiar Filtros
                                 </Button>
@@ -149,17 +149,18 @@ const OrdersFilters = ({
 
             {/* Botón Nueva Orden */}
             {hasPermission('inspections.create') && (
-                <div>
+                <div className="flex justify-center">
                     <Button
                         onClick={() => showCreateModal(true)}
                         className="flex items-center gap-2 px-2 border cursor-pointer bg-[#3075C7] hover:bg-[#003370] py-8 rounded-full"
                     >
                         <div className="flex items-center gap-2 px-4">
-                            <PlusCircle className="h-8 w-8" />
-                            <span className="text-lg font-medium">Nueva Orden</span>
+                            <PlusCircle className="h-4 w-4" />
+                            <span className="text-lg font-medium">Nueva orden</span>
                         </div>
                     </Button>
                 </div>
+
             )}
         </div>
     );
