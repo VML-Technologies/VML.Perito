@@ -5,12 +5,12 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Calendar, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
 import logo_mundial from '@/assets/logo_mundial.svg';
 
-const Landing = ({ 
-    inspectionOrder, 
-    existingAppointment, 
-    isWithinBusinessHours, 
-    startingInspection, 
-    onStartInspection, 
+const Landing = ({
+    inspectionOrder,
+    existingAppointment,
+    isWithinBusinessHours,
+    startingInspection,
+    onStartInspection,
     onGoToExistingInspection,
     isHolidayToday,
     holidayName
@@ -39,7 +39,7 @@ const Landing = ({
                                 ¡Hola {inspectionOrder.nombre_contacto}!
                             </h2>
                             <p className="text-gray-700">
-                                Estás a punto de iniciar la inspección de asegurabilidad de la placa: 
+                                Estás a punto de iniciar la inspección de asegurabilidad de la placa:
                                 <span className="font-bold text-blue-600 ml-1">
                                     {inspectionOrder.placa}
                                 </span>
@@ -59,7 +59,7 @@ const Landing = ({
                                         </h3>
                                     </div>
                                     <div className="mt-4">
-                                        <Button 
+                                        <Button
                                             onClick={onGoToExistingInspection}
                                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                                             size="lg"
@@ -72,21 +72,6 @@ const Landing = ({
                                 <Separator />
                             </>
                         )}
-
-                        {/* Horario de atención */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                                <Calendar className="h-5 w-5 mr-2" />
-                                Horario de Atención
-                            </h3>
-                            <div className="bg-blue-50 p-4 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                    <strong>Lunes a viernes:</strong> 8:00 AM - 4:00 PM<br />
-                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
-                                    <strong className="text-blue-800">Solo días hábiles</strong> (no festivos ni domingos)
-                                </p>
-                            </div>
-                        </div>                        
 
                         {/* Mensaje de festivo */}
                         {isHolidayToday && (
@@ -117,6 +102,21 @@ const Landing = ({
                                 </p>
                             </div>
                         )}
+
+                        {/* Horario de atención */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <Calendar className="h-5 w-5 mr-2" />
+                                Horario de Atención
+                            </h3>
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    <strong>Lunes a viernes:</strong> 8:00 AM - 5:00 PM<br />
+                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
+                                    <strong className="text-blue-800">Solo días hábiles</strong> (no festivos ni domingos)
+                                </p>
+                            </div>
+                        </div>
 
                         {/* Recomendaciones */}
                         <div>
@@ -149,14 +149,13 @@ const Landing = ({
                         {/* Botón de inicio - mostrar si no hay agendamiento o si está en estado final */}
                         {(!existingAppointment || inspectionOrder.show_start_button === true) && (
                             <div className="text-center pt-4">
-                                <Button 
+                                <Button
                                     onClick={onStartInspection}
                                     disabled={startingInspection || !isWithinBusinessHours}
-                                    className={`w-full py-3 text-lg font-semibold ${
-                                        !isWithinBusinessHours 
-                                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    }`}
+                                    className={`w-full py-3 text-lg font-semibold ${!isWithinBusinessHours
+                                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        }`}
                                     size="lg"
                                 >
                                     {startingInspection ? (
