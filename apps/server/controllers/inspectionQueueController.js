@@ -16,8 +16,85 @@ class InspectionQueueController extends BaseController {
         this.getQueueStats = this.getQueueStats.bind(this);
         this.getAvailableInspectors = this.getAvailableInspectors.bind(this);
         this.getQueueStatusByHashPublic = this.getQueueStatusByHashPublic.bind(this);
+        this.checkBusinessHours = this.checkBusinessHours.bind(this);
         this.success = this.success.bind(this);
         this.error = this.error.bind(this);
+    }
+
+    /**
+     * Verificar si el servicio está dentro del horario de atención
+     * @returns {Object} { isOpen: boolean, message: string }
+     */
+    checkBusinessHours() {
+        try {
+            // Obtener hora actual en zona horaria de Bogotá
+            const now = new Date();
+            const bogotaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Bogota" }));
+
+            const dayOfWeek = bogotaTime.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+            const hour = bogotaTime.getHours();
+            const minute = bogotaTime.getMinutes();
+            const currentTime = hour * 60 + minute; // Convertir a minutos
+
+            // Verificar si es domingo
+            if (dayOfWeek === 0) {
+                return {
+                    isOpen: false,
+                    message: 'El servicio no está disponible los domingos'
+                };
+            }
+
+            // Lunes a viernes: 8:00 AM - 5:00 PM (17:00)
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                const startTime = 8 * 60;  // 8:00 AM = 480 minutos
+                const endTime = 17 * 60;    // 5:00 PM = 1020 minutos
+
+                if (currentTime < startTime) {
+                    return {
+                        isOpen: false,
+                        message: 'El servicio abre a las 8:00 AM'
+                    };
+                }
+
+                if (currentTime > endTime) {
+                    return {
+                        isOpen: false,
+                        message: 'El servicio cierra a las 5:00 PM'
+                    };
+                }
+
+                return { isOpen: true, message: 'Servicio disponible' };
+            }
+
+            // Sábados: 8:00 AM - 12:00 PM
+            if (dayOfWeek === 6) {
+                const startTime = 8 * 60;  // 8:00 AM = 480 minutos
+                const endTime = 12 * 60;   // 12:00 PM = 720 minutos
+
+                if (currentTime < startTime) {
+                    return {
+                        isOpen: false,
+                        message: 'El servicio abre a las 8:00 AM'
+                    };
+                }
+
+                if (currentTime > endTime) {
+                    return {
+                        isOpen: false,
+                        message: 'El servicio cierra a las 12:00 PM los sábados'
+                    };
+                }
+
+                return { isOpen: true, message: 'Servicio disponible' };
+            }
+
+            return { isOpen: false, message: 'Horario no válido' };
+
+        } catch (error) {
+            console.error('Error verificando horario de atención:', error);
+            // En caso de error, permitir el acceso (fail-open para evitar interrupciones)
+            return { isOpen: true, message: 'Servicio disponible' };
+        }
     }
 
     // Métodos de respuesta estandarizados
@@ -100,16 +177,16 @@ class InspectionQueueController extends BaseController {
 
             console.log('🚀 appointments:', appointments);
 
-            if (existingEntry && appointments.length == 0) {                
+            if (existingEntry && appointments.length == 0) {
 
                 // Calcular tiempo transcurrido desde el ingreso
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
-                
+
                 // ✅ CORRECIÓN: Siempre usar entrada existente, mantener posición original
                 // Solo actualizar timestamp de actividad
                 await existingEntry.update({ updated_at: new Date() });
-                
+
                 return this.success(res, {
                     message: 'La orden ya está en la cola. Manteniendo posición original private?.',
                     data: existingEntry,
@@ -159,6 +236,12 @@ class InspectionQueueController extends BaseController {
         try {
             const { inspection_order_id, hash_acceso } = req.body;
 
+            // ✅ VALIDAR HORARIO DE ATENCIÓN
+            const isWithinBusinessHours = this.checkBusinessHours();
+            if (!isWithinBusinessHours.isOpen) {
+                return this.error(res, isWithinBusinessHours.message, null, 403);
+            }
+
             // Verificar que la orden existe
             const inspectionOrder = await InspectionOrder.findByPk(inspection_order_id);
             if (!inspectionOrder) {
@@ -194,10 +277,10 @@ class InspectionQueueController extends BaseController {
                 // Calcular tiempo transcurrido desde el ingreso
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
-                
+
                 // Actualizar timestamp de actividad
                 await existingEntry.update({ updated_at: new Date() });
-                
+
                 // Calcular posición en la cola
                 const position = await InspectionQueue.count({
                     where: {
@@ -298,16 +381,16 @@ class InspectionQueueController extends BaseController {
 
         } catch (error) {
             console.error('Error adding to inspection queue (public):', error);
-            
+
             // Manejar errores específicos de Sequelize
             if (error.name === 'SequelizeUniqueConstraintError') {
                 return this.error(res, 'Ya existe una entrada con este hash de acceso', null, 400);
             }
-            
+
             if (error.name === 'SequelizeForeignKeyConstraintError') {
                 return this.error(res, 'Error de referencia: la orden de inspección no existe', null, 400);
             }
-            
+
             return this.error(res, 'Error al agregar a la cola de inspecciones', error);
         }
     }
@@ -377,7 +460,7 @@ class InspectionQueueController extends BaseController {
                         model: InspectionOrder,
                         as: 'inspectionOrder',
                         attributes: ['id', 'numero', 'placa', 'nombre_contacto', 'celular_contacto']
-                        
+
                     },
                     {
                         model: User,
@@ -425,9 +508,9 @@ class InspectionQueueController extends BaseController {
 
             // Usar el servicio de memoria
             const result = await inspectionQueueMemoryService.updateQueueStatus(
-                id, 
-                estado, 
-                inspector_asignado_id, 
+                id,
+                estado,
+                inspector_asignado_id,
                 observaciones
             );
 
@@ -452,13 +535,13 @@ class InspectionQueueController extends BaseController {
             if (result.data && result.data.hash_acceso) {
                 try {
                     socketManager.emitQueueStatusUpdate(result.data.hash_acceso, result.data);
-                    
+
                     // Si se asignó un inspector, emitir evento específico
                     if (estado === 'en_proceso' && inspector_asignado_id) {
                         const inspector = await User.findByPk(inspector_asignado_id, {
                             attributes: ['id', 'name', 'email']
                         });
-                        
+
                         if (inspector) {
                             socketManager.emitInspectorAssigned(result.data.hash_acceso, {
                                 inspector: inspector,
