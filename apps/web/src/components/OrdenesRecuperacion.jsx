@@ -483,7 +483,7 @@ const OrdenesRecuperacion = () => {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold">Órdenes en Recuperación</h2>
+                        <h2 className="text-2xl font-bold">Autogestiones sin actividad</h2>
                         <p className="text-muted-foreground">
                             Seguimiento de órdenes sin citas agendadas o en cola de inspección
                         </p>
@@ -552,17 +552,14 @@ const OrdenesRecuperacion = () => {
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="recuperacion" className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        En Recuperación (Días 2-5)
+                        En gestión activa
                         <Badge variant="secondary" className="ml-2">
                             {paginationRecuperacion?.total || 0}
                         </Badge>
                     </TabsTrigger>
                     <TabsTrigger value="no-recuperadas" className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4" />
-                        No Recuperadas (Día 6+)
-                        <Badge variant="destructive" className="ml-2">
-                            {paginationNoRecuperadas?.total || 0}
-                        </Badge>
+                        Gestión concluida sin acción
                     </TabsTrigger>
                 </TabsList>
 

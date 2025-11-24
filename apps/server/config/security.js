@@ -24,7 +24,8 @@ export const securityConfig = {
                 imgSrc: ["'self'", "data:", "https:"],
                 scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://analytics.vmltechnologies.com"],
                 connectSrc: ["'self'", "ws:", "wss:", "https://analytics.vmltechnologies.com"],
-                frameSrc: ["'none'"],
+                frameSrc: ["'self'"],
+                frameAncestors: ["'self'", "http://localhost:5173", "https://localhost:5173"],
                 objectSrc: ["'none'"],
                 upgradeInsecureRequests: []
             }

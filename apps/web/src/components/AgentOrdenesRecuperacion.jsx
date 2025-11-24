@@ -184,10 +184,8 @@ const AgentOrdenesRecuperacion = () => {
                         <div className="flex justify-between items-start">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-lg">#{orden.numero}</h3>
-                                    <Badge variant={getStatusBadgeVariant(orden.status_internal)} className="text-xs">
-                                        {orden.status_internal || 'Sin estado'}
-                                    </Badge>
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    Orden #{orden.numero}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     <span className="flex items-center gap-1">
@@ -223,12 +221,12 @@ const AgentOrdenesRecuperacion = () => {
                                 <Phone className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">Intentos:</span>
                                 <span className={`font-medium text-sm px-2 py-1 rounded-full ${(orden.call_count || 0) === 0
-                                        ? 'bg-gray-100 text-gray-600'
-                                        : (orden.call_count || 0) <= 2
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : (orden.call_count || 0) <= 4
-                                                ? 'bg-yellow-100 text-yellow-700'
-                                                : 'bg-red-100 text-red-700'
+                                    ? 'bg-gray-100 text-gray-600'
+                                    : (orden.call_count || 0) <= 2
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : (orden.call_count || 0) <= 4
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-red-100 text-red-700'
                                     }`}>
                                     {orden.call_count || 0}
                                 </span>
@@ -312,9 +310,9 @@ const AgentOrdenesRecuperacion = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Órdenes de Recuperación</h1>
+                    <h1 className="text-2xl font-bold">Autogestiones sin actividad</h1>
                     <p className="text-muted-foreground">
-                        Gestiona las órdenes que requieren recuperación
+                        Gestiona las órdenes que requieren seguimiento para completar la inspección
                     </p>
                 </div>
                 <Button
@@ -346,19 +344,19 @@ const AgentOrdenesRecuperacion = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="recuperacion">
-                        En Proceso de Recuperación ({ordenesRecuperacion.length})
+                        En gestión activa
                     </TabsTrigger>
                     <TabsTrigger value="fallidas">
-                        Recuperación Fallida ({ordenesNoRecuperadas.length})
+                        Gestión concluida sin acción
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="recuperacion" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Órdenes en Proceso de Recuperación</CardTitle>
+                            <CardTitle>Órdenes en gestión activa</CardTitle>
                             <CardDescription>
-                                Órdenes que están en proceso de recuperación (2-5 días sin contacto exitoso)
+                                Órdenes que están en proceso de gestión (2-5 días sin contacto exitoso)
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -392,9 +390,9 @@ const AgentOrdenesRecuperacion = () => {
                 <TabsContent value="fallidas" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Órdenes con Recuperación Fallida</CardTitle>
+                            <CardTitle>Órdenes con gestión concluida sin acción</CardTitle>
                             <CardDescription>
-                                Órdenes que han fallado en el proceso de recuperación (6+ días sin contacto)
+                                Órdenes que han fallado en el proceso de gestión (6+ días sin contacto)
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

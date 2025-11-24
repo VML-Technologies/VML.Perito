@@ -62,6 +62,7 @@ import automatedEventTriggers from './services/automatedEventTriggers.js';
 import webSocketSystem from './websocket/index.js';
 import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
 import scheduledTasksService from './services/scheduledTasksService.js';
+import { read } from 'fs';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -237,6 +238,7 @@ app.post('/api/companies/:id/restore', requirePermission('companies.update'), co
 
 // Rutas de sedes
 app.get('/api/sedes', readLimiter, requirePermission('sedes.read'), sedeController.index);
+app.get('/api/sedes/types', readLimiter, requirePermission('sedes.read'), sedeController.getSedeTypes);
 app.get('/api/sedes/cda', readLimiter, requirePermission('sedes.read'), sedeController.getCDASedes);
 app.get('/api/sedes/:id', readLimiter, requirePermission('sedes.read'), sedeController.show);
 app.get('/api/companies/:companyId/sedes', readLimiter, requirePermission('sedes.read'), sedeController.getByCompany);
@@ -255,6 +257,8 @@ app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspecti
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
 app.get('/api/inspection-orders/search-by-plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.searchByPlate);
 app.get('/api/inspection-orders/check-plate/:plate', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.checkPlate);
+app.get('/api/inspection-orders/pdf/:id', readLimiter, inspectionOrderController.getPdfReportFilePath);
+app.get('/api/inspection-orders/pdf/:id/view', readLimiter, inspectionOrderController.getPdfForInlineView);
 app.get('/api/inspection-orders/:id', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.show);
 app.post('/api/inspection-orders', requirePermission('inspection_orders.create'), inspectionOrderController.store);
 app.put('/api/inspection-orders/:id', requirePermission('inspection_orders.update'), inspectionOrderController.update);
@@ -469,6 +473,7 @@ app.post('/api/users/:id/restore', requirePermission('users.update'), userContro
 
 app.get('/api/peritajes/getPendingToSchedule', readLimiter, requirePermission('inspection_orders.read'), peritajesController.peritajesToSchedule);
 app.get('/api/peritajes/agentes-contacto', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getAgentesContacto);
+app.get('/api/peritajes/disponibilidad-horarios', readLimiter, requirePermission('inspection_orders.read'), peritajesController.getDisponibilidadHorarios);
 app.post('/api/peritajes/schedule', requirePermission('inspection_orders.update'), peritajesController.schedulePeritaje);
 app.post('/api/peritajes/assign-agent', requirePermission('inspection_orders.update'), peritajesController.assignAgent);
 

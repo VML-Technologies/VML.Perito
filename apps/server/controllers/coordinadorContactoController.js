@@ -909,9 +909,9 @@ class CoordinadorContactoController {
                 }]
             });
 
-            if (user.roles.some(role => role.name == 'agente_contacto')) {
-                whereClause.assigned_agent_id = req.user.id;
-            }
+            // if (user.roles.some(role => role.name == 'agente_contacto')) {
+            //     whereClause.assigned_agent_id = req.user.id;
+            // }
 
             // Añadir filtros de búsqueda si se proporciona
             if (search.trim()) {

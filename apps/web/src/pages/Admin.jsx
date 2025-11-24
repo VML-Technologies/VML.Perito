@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
-import { Shield, Save, RefreshCw, Users, Bell, BarChart3 } from 'lucide-react';
+import { Shield, Save, RefreshCw, Users, Bell, BarChart3, Building2 } from 'lucide-react';
 import UserManagement from './UserManagement';
 import { RoleManagement } from './admin/RoleManagement';
 import { NotificationsPanel } from './admin/NotificationsPanel';
 import { EventsPanel } from './admin/EventsPanel';
+import SedeManagement from '../components/SedeManagement';
+import CompanyManagement from '../components/CompanyManagement';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function Admin() {
@@ -434,6 +436,14 @@ export default function Admin() {
                         <Users className="h-4 w-4" />
                         Gestión de Usuarios
                     </TabsTrigger>
+                    <TabsTrigger value="sede-management" className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Gestión de Sedes
+                    </TabsTrigger>
+                    <TabsTrigger value="company-management" className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Gestión de Empresas
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Tab de Roles */}
@@ -450,6 +460,16 @@ export default function Admin() {
                 {/* Tab de Gestión de Usuarios */}
                 <TabsContent value="user-management">
                     <UserManagement />
+                </TabsContent>
+
+                {/* Tab de Gestión de Sedes */}
+                <TabsContent value="sede-management">
+                    <SedeManagement />
+                </TabsContent>
+
+                {/* Tab de Gestión de Empresas */}
+                <TabsContent value="company-management">
+                    <CompanyManagement />
                 </TabsContent>
             </Tabs>
         </div>
