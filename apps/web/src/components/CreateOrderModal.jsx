@@ -1183,7 +1183,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1 text-[#235692] rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
+                            className="flex-1 text-[#235692] rounded-xl shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
                         >
                             Cancelar
                         </Button>

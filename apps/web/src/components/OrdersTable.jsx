@@ -173,7 +173,7 @@ const OrdersTable = ({
                                                     <div className='flex flex-col gap-0'>
                                                         <span className='font-bold ms-2'>{order.numero}</span>
                                                         <Badge variant='outline' className='text-xs'>
-                                                            {order.numero.toString().includes('9991') ? 'Orden Manual' : 'Integracion'}
+                                                            {order.numero.toString().includes('9991') ? 'Orden Manual' : 'Integración'}
                                                         </Badge>
                                                     </div>
                                                 </td>
