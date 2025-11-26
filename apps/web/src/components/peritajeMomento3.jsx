@@ -43,8 +43,9 @@ const PeritajeMomento3 = () => {
     // Horarios disponibles
     const timeSlots = [
         { time: '08:00', label: '8:00 AM', icon: '🌅', description: 'Mañana' },
-        { time: '11:00', label: '11:00 AM', icon: '☀️', description: 'Mediodía' },
-        { time: '14:00', label: '2:00 PM', icon: '🌤️', description: 'Tarde' }
+        { time: '10:00', label: '10:00 AM', icon: '☀️', description: 'Mediodía' },
+        { time: '14:00', label: '2:00 PM', icon: '🌤️', description: 'Tarde' },
+        { time: '16:00', label: '4:00 PM', icon: '🌇', description: 'Tarde' }
     ];
 
     // Verificar roles
@@ -636,7 +637,7 @@ const PeritajeMomento3 = () => {
 
             {/* Dialog para agendar peritaje */}
             <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3 text-2xl">
                             <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
@@ -757,10 +758,10 @@ const PeritajeMomento3 = () => {
                                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-3 gap-4">
+                                                <div className="grid grid-cols-2 gap-2">
                                                     {timeSlots.map((slot) => {
                                                         const slotKey = `${slot.time}:00`;
-                                                        const disponibilidadSlot = disponibilidad[slotKey] || { ocupados: 0, total: 3, completo: false };
+                                                        const disponibilidadSlot = disponibilidad[slotKey] || { ocupados: 0, total: 4, completo: false };
                                                         const isDisabled = disponibilidadSlot.completo;
 
                                                         return (

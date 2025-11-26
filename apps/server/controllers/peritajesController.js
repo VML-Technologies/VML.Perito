@@ -23,7 +23,7 @@ class PeritajesController {
                 },
                 order: [['created_at', 'ASC']]
             });
-            
+
             res.json({
                 success: true,
                 data: peritajeOrders,
@@ -31,10 +31,10 @@ class PeritajesController {
             });
         } catch (error) {
             console.error('Error al obtener peritajes para agendar:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor al obtener peritajes', 
-                error: error.message 
+                message: 'Error interno del servidor al obtener peritajes',
+                error: error.message
             });
         }
     }
@@ -53,15 +53,15 @@ class PeritajesController {
 
             // Validaciones estrictas
             const errors = [];
-            
+
             if (!peritaje_order_id || isNaN(Number(peritaje_order_id))) {
                 errors.push('peritaje_order_id es requerido y debe ser numérico.');
             }
-            
+
             if (!fecha_agendada || isNaN(Date.parse(fecha_agendada))) {
                 errors.push('fecha_agendada es requerida y debe ser una fecha válida.');
             }
-            
+
             // Validar que la fecha no sea en el pasado
             const fechaAgendada = new Date(fecha_agendada);
             const hoy = new Date();
@@ -69,45 +69,45 @@ class PeritajesController {
             if (fechaAgendada < hoy) {
                 errors.push('La fecha agendada no puede ser en el pasado.');
             }
-            
+
             if (hora && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(hora)) {
                 errors.push('hora debe estar en formato HH:mm o HH:mm:ss válido.');
             }
-            
+
             if (direccion_peritaje && direccion_peritaje.length > 500) {
                 errors.push('direccion_peritaje no puede exceder 500 caracteres.');
             }
-            
+
             if (ciudad && ciudad.length > 100) {
                 errors.push('ciudad no puede exceder 100 caracteres.');
             }
-            
+
             if (modalidad_peritaje && modalidad_peritaje.length > 50) {
                 errors.push('modalidad_peritaje no puede exceder 50 caracteres.');
             }
 
             if (errors.length > 0) {
-                return res.status(422).json({ 
+                return res.status(422).json({
                     success: false,
-                    message: 'Datos inválidos', 
-                    errors 
+                    message: 'Datos inválidos',
+                    errors
                 });
             }
 
             // Verificar que el peritaje_order_id exista
             const peritajeOrder = await PeritajeOrder.findByPk(peritaje_order_id);
             if (!peritajeOrder) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: 'Peritaje no encontrado.' 
+                    message: 'Peritaje no encontrado.'
                 });
             }
 
             // Si ya tiene un agendamiento, marcarlo como eliminado (soft delete) con fecha actual
             await PeritajeAgendamiento.update(
                 { deleted_at: Sequelize.literal('GETDATE()') },
-                { 
-                    where: { 
+                {
+                    where: {
                         peritaje_order_id,
                         deleted_at: null
                     }
@@ -126,11 +126,11 @@ class PeritajesController {
 
             // Actualizar el estado del peritaje a 'Pendiente por asignar perito'
             await PeritajeOrder.update(
-                { 
+                {
                     estado_momento: 'Pendiente por asignar perito',
                     fecha_momento: Sequelize.literal('GETDATE()')
                 },
-                { 
+                {
                     where: { id: peritaje_order_id }
                 }
             );
@@ -142,10 +142,10 @@ class PeritajesController {
             });
         } catch (error) {
             console.error('Error al agendar peritaje:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor al agendar peritaje', 
-                error: error.message 
+                message: 'Error interno del servidor al agendar peritaje',
+                error: error.message
             });
         }
     }
@@ -164,19 +164,19 @@ class PeritajesController {
             }
 
             if (errors.length > 0) {
-                return res.status(422).json({ 
+                return res.status(422).json({
                     success: false,
-                    message: 'Datos inválidos', 
-                    errors 
+                    message: 'Datos inválidos',
+                    errors
                 });
             }
 
             // Verificar que el peritaje existe
             const peritajeOrder = await PeritajeOrder.findByPk(peritaje_order_id);
             if (!peritajeOrder) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: 'Peritaje no encontrado.' 
+                    message: 'Peritaje no encontrado.'
                 });
             }
 
@@ -185,24 +185,24 @@ class PeritajesController {
                 const User = (await import('../models/user.js')).default;
                 const agent = await User.findByPk(agent_id);
                 if (!agent) {
-                    return res.status(404).json({ 
+                    return res.status(404).json({
                         success: false,
-                        message: 'Agente no encontrado.' 
+                        message: 'Agente no encontrado.'
                     });
                 }
             }
 
             // Actualizar solo la asignación del agente (sin cambiar el estado)
             await PeritajeOrder.update(
-                { 
+                {
                     assigned_agent_id: agent_id || null
                 },
-                { 
+                {
                     where: { id: peritaje_order_id }
                 }
             );
 
-            const message = agent_id 
+            const message = agent_id
                 ? 'Agente asignado exitosamente al peritaje'
                 : 'Asignación de agente removida exitosamente';
 
@@ -216,10 +216,10 @@ class PeritajesController {
             });
         } catch (error) {
             console.error('Error al asignar agente:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor al asignar agente', 
-                error: error.message 
+                message: 'Error interno del servidor al asignar agente',
+                error: error.message
             });
         }
     }
@@ -249,7 +249,7 @@ class PeritajesController {
             });
 
             // Filtrar solo usuarios que tengan el rol agente_contacto
-            const agentesFiltrados = agentes.filter(user => 
+            const agentesFiltrados = agentes.filter(user =>
                 user.userRoles && user.userRoles.length > 0
             );
 
@@ -260,10 +260,10 @@ class PeritajesController {
             });
         } catch (error) {
             console.error('Error al obtener agentes de contacto:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor al obtener agentes de contacto', 
-                error: error.message 
+                message: 'Error interno del servidor al obtener agentes de contacto',
+                error: error.message
             });
         }
     }
@@ -280,7 +280,7 @@ class PeritajesController {
             }
 
             // Horarios disponibles
-            const horarios = ['08:00:00', '11:00:00', '14:00:00'];
+            const horarios = ['08:00:00', '10:00:00', '14:00:00', '16:00:00'];
             const disponibilidad = {};
 
             // Contar agendamientos para cada horario
@@ -295,9 +295,9 @@ class PeritajesController {
 
                 disponibilidad[hora] = {
                     ocupados: count,
-                    disponibles: 3 - count,
-                    total: 3,
-                    completo: count >= 3
+                    disponibles: 4 - count,
+                    total: 4,
+                    completo: count >= 4
                 };
             }
 
