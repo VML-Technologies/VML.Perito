@@ -996,10 +996,13 @@ class InspectionOrderController extends BaseController {
             };
 
             const order = await this.model.create(orderData);
-
+            console.log("##################")
+            console.log(siniestrosData)
             // Guardar registros de siniestros si existen
             if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
+                console.log('Guardando registros de siniestros para la orden:', order.id);
                 await this.saveSinisterRecords(siniestrosData, order.id);
+                console.log('Registros de siniestros guardados exitosamente.');
             }
 
             // Cargar la orden completa con relaciones
