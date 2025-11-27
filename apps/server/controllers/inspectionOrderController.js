@@ -7,11 +7,12 @@ import Appointment from '../models/appointment.js';
 import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Accessory from '../models/accessory.js';
+import SinisterRecord from '../models/sinisterRecord.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op, QueryTypes, where } from 'sequelize';
+import { json, Op, QueryTypes, where } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -147,6 +148,8 @@ class InspectionOrderController extends BaseController {
         this.getPdfReportFilePath = this.getPdfReportFilePath.bind(this);
         this.getPdfForInlineView = this.getPdfForInlineView.bind(this);
         this.fetchVehicleDataFromSegurosMundialAPI = this.fetchVehicleDataFromSegurosMundialAPI.bind(this);
+        this.fetchSiniestrosDataFromSegurosMundialAPI = this.fetchSiniestrosDataFromSegurosMundialAPI.bind(this);
+        this.saveSinisterRecords = this.saveSinisterRecords.bind(this);
     }
 
     async getPdfReportFilePath(req, res) {
@@ -644,6 +647,141 @@ class InspectionOrderController extends BaseController {
         return this.getOrders(req, res);
     }
 
+
+    async authSegurosMundialAPI() {
+        let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/integracion/v1/token`;
+
+        let options = {
+            method: 'POST',
+            body: new URLSearchParams({
+                client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                grant_type: "client_credentials"
+            })
+        };
+
+        let response = await fetch(url, options);
+
+        if (response?.status !== 200 && response?.statusText !== "OK") {
+            throw new Error("Error al intentar obtener token de la API de Seguros Mundial.");
+        }
+
+        let result = await response.json();
+        let accessToken = result.access_token;
+        return accessToken;
+    }
+
+
+    async fetchSiniestrosDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
+        try {
+            const accessToken = await this.authSegurosMundialAPI();
+            const urlSiniestros = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/externals-apis/fasecolda/v1/cexper/historico-siniestros`;
+            let numeroTipoDocumento = {
+                "CC": "1",
+                "CE": "2",
+                "NIT": "3",
+                "TI": "4",
+                "PASAPORTE": "5"
+            }[tipoDoc];
+
+            const options = {
+                method: "POST",
+                body: JSON.stringify({
+                    "input": {
+                        "placa": placa,
+                        "tipoDocumento": numeroTipoDocumento,
+                        "numeroDocumento": numDoc
+                    }
+                }),
+                headers: {
+                    "client_id": process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    "client_secret": process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    "Authorization": `Bearer ${accessToken}`,
+                    "x-correlation-id": crypto.randomUUID(),
+                    "mun-app": "APP-VML",
+                    "Content-Type": "application/json",
+                    "mun-ext-user": "USER-VML",
+                    "mun-op": "Consulta cliente",
+                    "mun-timestamp": Math.floor(Date.now() / 1000)
+                }
+            };
+
+            const response = await fetch(urlSiniestros, options);
+            const jsonResponse = await response.json();
+
+            console.log('Respuesta API Siniestros:', JSON.stringify(jsonResponse, null, 2));
+
+            // Retornar datos procesados
+            if (jsonResponse?.output?.success && jsonResponse?.output?.data?.historicoSiniestros) {
+                return {
+                    success: true,
+                    correlationId: jsonResponse.output.correlationId,
+                    siniestros: jsonResponse.output.data.historicoSiniestros
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error al obtener histórico de siniestros:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Guardar registros de siniestros en la base de datos
+     * 
+     * @param {Object} siniestrosData - Datos de siniestros desde la API
+     * @param {number} inspectionOrderId - ID de la orden de inspección
+     * @returns {Promise<Array>}
+     * @author Fahibram Cárcamo
+     */
+    async saveSinisterRecords(siniestrosData, inspectionOrderId) {
+        try {
+            if (!siniestrosData || !siniestrosData.siniestros || siniestrosData.siniestros.length === 0) {
+                console.log('⚠️ No hay siniestros para guardar');
+                return [];
+            }
+
+            const { correlationId, siniestros } = siniestrosData;
+            const savedRecords = [];
+
+            for (const siniestro of siniestros) {
+                const sinisterRecord = await SinisterRecord.create({
+                    inspection_order_id: inspectionOrderId,
+                    correlation_id: correlationId,
+                    codigo_compania: siniestro.codigoCompania,
+                    nombre_compania: siniestro.nombreCompania,
+                    numero_siniestro: siniestro.numeroSiniestro,
+                    numero_poliza: siniestro.numeroPoliza,
+                    orden: siniestro.orden,
+                    placa: siniestro.placa,
+                    motor: siniestro.motor,
+                    chasis: siniestro.chasis,
+                    fecha_siniestro: siniestro.fechaSiniestro ? new Date(siniestro.fechaSiniestro) : null,
+                    codigo_guia: siniestro.codigoGuia,
+                    marca: siniestro.marca,
+                    clase: siniestro.clase,
+                    tipo: siniestro.tipo,
+                    modelo: siniestro.modelo,
+                    tipo_documento_asegurado: siniestro.tipoDocumentoAsegurado,
+                    numero_documento: siniestro.numeroDocumento,
+                    asegurado: siniestro.asegurado,
+                    valor_asegurado: siniestro.valorAsegurado,
+                    tipo_cruce: siniestro.tipoCruce,
+                    amparos: siniestro.amparos ? JSON.stringify(siniestro.amparos) : null
+                });
+
+                savedRecords.push(sinisterRecord);
+            }
+
+            console.log(`✅ Guardados ${savedRecords.length} registros de siniestros para orden ${inspectionOrderId}`);
+            return savedRecords;
+        } catch (error) {
+            console.error('Error al guardar registros de siniestros:', error);
+            throw error;
+        }
+    }
+
     /**
      * Consultar los datos del vehículo desde la API de Seguros Mundial.
      * 
@@ -680,10 +818,10 @@ class InspectionOrderController extends BaseController {
             url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/externals-apis/fasecolda/v1/cexper/historico-polizas`;
 
             let numeroTipoDocumento = {
-                "CC":        "1",
-                "CE":        "2",
-                "NIT":       "3",
-                "TI":        "4",
+                "CC": "1",
+                "CE": "2",
+                "NIT": "3",
+                "TI": "4",
                 "PASAPORTE": "5"
             }[tipoDoc];
 
@@ -832,6 +970,7 @@ class InspectionOrderController extends BaseController {
         try {
             // Consultar datos del vehículo desde la API de Seguros Mundial
             const vehicleData = await this.fetchVehicleDataFromSegurosMundialAPI(req.body.placa, req.body.tipo_doc, req.body.num_doc);
+            const siniestrosData = await this.fetchSiniestrosDataFromSegurosMundialAPI(req.body.placa, req.body.tipo_doc, req.body.num_doc);
 
             // Si se obtuvieron datos del vehículo, actualizar req.body
             if (vehicleData !== null) {
@@ -844,7 +983,7 @@ class InspectionOrderController extends BaseController {
                 req.body.chasis = vehicleData.chasis;
                 req.body.cod_fasecolda = vehicleData.cod_fasecolda;
             }
-            
+
             // Generar número de orden automáticamente
             const orderNumber = await generateOrderNumber();
 
@@ -857,6 +996,11 @@ class InspectionOrderController extends BaseController {
             };
 
             const order = await this.model.create(orderData);
+
+            // Guardar registros de siniestros si existen
+            if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
+                await this.saveSinisterRecords(siniestrosData, order.id);
+            }
 
             // Cargar la orden completa con relaciones
             const fullOrder = await this.model.findByPk(order.id, {
