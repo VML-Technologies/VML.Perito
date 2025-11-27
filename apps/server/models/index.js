@@ -72,6 +72,9 @@ import InspectionQueue from './inspectionQueue.js';
 // Nuevos modelos para accesorios
 import Accessory from './accessory.js';
 
+// Nuevos modelos para histórico de siniestros
+import SinisterRecord from './sinisterRecord.js';
+
 // Nuevos modelos compartidos
 import PeritajeOrder from './peritajeOrder.js';
 import PeritajeAgendamiento from './peritajeAgendamiento.js';
@@ -95,6 +98,21 @@ PeritajeAgendamiento.belongsTo(PeritajeOrder, {
 PeritajeOrder.belongsTo(User, {
     foreignKey: 'user_id',
     as: 'creator'
+});
+
+// ===== RELACIONES SINISTER RECORDS =====
+// InspectionOrder -> SinisterRecord (1:N)
+InspectionOrder.hasMany(SinisterRecord, {
+    foreignKey: 'inspection_order_id',
+    as: 'sinisterRecords',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+SinisterRecord.belongsTo(InspectionOrder, {
+    foreignKey: 'inspection_order_id',
+    as: 'inspectionOrder',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 
 // Department -> Cities (1:N)
@@ -986,5 +1004,7 @@ export {
     InspectionOrdersStatusInternal,
     AppointmentStatus,
     // Sistema de accesorios
-    Accessory
+    Accessory,
+    // Sistema de histórico de siniestros
+    SinisterRecord
 }; 
