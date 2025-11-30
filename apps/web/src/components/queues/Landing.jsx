@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Calendar, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNotifications } from '@/hooks/use-notifications';
 import logo_mundial from '@/assets/logo_mundial.svg';
 
 const Landing = ({ 
@@ -13,8 +14,43 @@ const Landing = ({
     onStartInspection, 
     onGoToExistingInspection,
     isHolidayToday,
-    holidayName
+    holidayName,
+    inspectionStartedAt // <-- Nuevo prop
 }) => {
+    const { showToast } = useNotifications();
+
+    // ===== Efecto para notificaciones de inactividad =====
+    useEffect(() => {
+        if (!existingAppointment || !inspectionStartedAt) return;
+
+        let notified7Min = false;
+        let notified10Min = false;
+
+        const timer = setInterval(() => {
+            const elapsedSeconds = Math.floor((Date.now() - inspectionStartedAt) / 1000);
+
+            if (elapsedSeconds >= 420 && !notified7Min) { // 7 minutos
+                showToast(
+                    'Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.',
+                    'warning'
+                );
+                notified7Min = true;
+            }
+
+            if (elapsedSeconds >= 600 && !notified10Min) { // 10 minutos
+                showToast(
+                    'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar, seleccione nuevamente el enlace enviado anteriormente.',
+                    'error'
+                );
+                notified10Min = true;
+                clearInterval(timer);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [existingAppointment, inspectionStartedAt, showToast]);
+    // ================================================
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
             <div className="max-w-2xl mx-auto">
@@ -24,11 +60,9 @@ const Landing = ({
                             <img src={logo_mundial} alt="logo_mundial" className="h-6 text-blue-600 mr-3" />
                         </div>
                         <div className="flex justify-center mb-4">
-                            <div>
-                                <CardTitle className="text-2xl text-gray-800">
-                                    Inspección de Asegurabilidad
-                                </CardTitle>
-                            </div>
+                            <CardTitle className="text-2xl text-gray-800">
+                                Inspección de Asegurabilidad
+                            </CardTitle>
                         </div>
                     </CardHeader>
 
@@ -48,14 +82,14 @@ const Landing = ({
 
                         <Separator />
 
-                        {/* Agendamiento existente - solo mostrar si NO está en estado final */}
+                        {/* Agendamiento existente */}
                         {existingAppointment && inspectionOrder.show_start_button === false && (
                             <>
                                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                                     <div className="flex items-center mb-3">
                                         <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
                                         <h3 className="text-lg font-semibold text-green-800">
-                                            ¡Un inspector te esta esperando!
+                                            ¡Un inspector te está esperando!
                                         </h3>
                                     </div>
                                     <div className="mt-4">
@@ -126,27 +160,15 @@ const Landing = ({
                             </h3>
                             <div className="bg-yellow-50 p-4 rounded-lg">
                                 <ul className="text-sm text-gray-700 space-y-2">
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Asegúrate de tener buena iluminación para las fotos
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        El vehículo debe estar limpio y sin objetos que obstaculicen la vista
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Ten a mano la documentación del vehículo
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-yellow-600 mr-2">•</span>
-                                        Asegúrate de tener una conexión estable a internet
-                                    </li>
+                                    <li className="flex items-start"><span className="text-yellow-600 mr-2">•</span>Asegúrate de tener buena iluminación para las fotos</li>
+                                    <li className="flex items-start"><span className="text-yellow-600 mr-2">•</span>El vehículo debe estar limpio y sin objetos que obstaculicen la vista</li>
+                                    <li className="flex items-start"><span className="text-yellow-600 mr-2">•</span>Ten a mano la documentación del vehículo</li>
+                                    <li className="flex items-start"><span className="text-yellow-600 mr-2">•</span>Asegúrate de tener una conexión estable a internet</li>
                                 </ul>
                             </div>
                         </div>
 
-                        {/* Botón de inicio - mostrar si no hay agendamiento o si está en estado final */}
+                        {/* Botón de inicio */}
                         {(!existingAppointment || inspectionOrder.show_start_button === true) && (
                             <div className="text-center pt-4">
                                 <Button 
