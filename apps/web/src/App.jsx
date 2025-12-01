@@ -27,7 +27,8 @@ import { getDefaultRouteForUser } from "@/lib/role-utils"
 import { useMatomo } from "@/hooks/use-matomo"
 import { analytics, getPageName } from "@/utils/analytics"
 import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react'
-import ListConfiguration from "./pages/ListConfig"
+import ListManager from "./components/listConfig"
+
 
 // Mapa centralizado de rutas del sistema
 const routesMap = {
@@ -263,7 +264,7 @@ function AppContent() {
           element={
             <RoleBasedRoute requiredRoles={['super_admin', 'admin']}>
               <AuthenticatedLayout routesMap={memoizedRoutesMap}>
-                <ListConfiguration />
+                <ListManager />
               </AuthenticatedLayout>
             </RoleBasedRoute>
           }
