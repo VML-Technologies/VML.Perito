@@ -18,6 +18,7 @@ import { Loader2, Clock, User, Car, Phone, Calendar, AlertCircle, CheckCircle, P
 import { useNotifications } from '@/hooks/use-notifications';
 import { useCoordinatorWebSocket } from '@/hooks/use-inspection-queue-websocket';
 import { API_ROUTES } from '@/config/api';
+import DetailsButton from '@/components/detailsButton';
 
 const CoordinadorVML = () => {
     const { showToast } = useNotifications();
@@ -392,48 +393,48 @@ const CoordinadorVML = () => {
             showToast('Por favor selecciona las fechas de inicio y fin', 'error');
             return;
         }
-        
+
         if (new Date(reportStartDate) > new Date(reportEndDate)) {
             showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
             return;
         }
-        
+
         try {
             setDownloadingReport(true);
-            
+
             const response = await fetch(`${API_ROUTES.COORDINADOR_CONTACTO.REPORTS.COORDINATOR}?start_date=${reportStartDate}&end_date=${reportEndDate}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
-            
+
             if (response.ok) {
                 // Obtener el blob del archivo
                 const blob = await response.blob();
-                
+
                 // Crear URL temporal para descarga
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                
+
                 // Obtener nombre del archivo del header Content-Disposition
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = `reporte-coordinador-vml-${reportStartDate}-${reportEndDate}.xlsx`;
-                
+
                 if (contentDisposition) {
                     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
                     if (filenameMatch) {
                         filename = filenameMatch[1];
                     }
                 }
-                
+
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-                
+
                 showToast('Reporte descargado exitosamente', 'success');
                 setShowReportModal(false);
                 setReportStartDate('');
@@ -475,8 +476,8 @@ const CoordinadorVML = () => {
                     <p className="text-gray-600">Gestión de cola de inspecciones</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="flex items-center gap-2"
                         onClick={() => setShowReportModal(true)}
                     >
@@ -521,7 +522,10 @@ const CoordinadorVML = () => {
                                             const isOverdue = timeInfo.isOverdue;
 
                                             return (
-                                                <TableRow key={item.id} className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}>
+                                                <TableRow
+                                                    key={item.id}
+                                                    className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}
+                                                >
                                                     <TableCell>
                                                         <div className="flex flex-col gap-2">
                                                             <div className="flex items-center gap-2">
@@ -531,6 +535,7 @@ const CoordinadorVML = () => {
                                                             <span className="font-mono text-sm">Orden: {item.numero_orden}</span>
                                                         </div>
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <User className="h-4 w-4 text-gray-500" />
@@ -545,25 +550,25 @@ const CoordinadorVML = () => {
                                                             </div>
                                                         </div>
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <div className="flex gap-1">
                                                             <div className="flex items-center justify-center">
-                                                                {
-                                                                    isOverdue ? <>
-                                                                        <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
-                                                                    </> : <>
-                                                                        <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
-                                                                    </>
-                                                                }
+                                                                {isOverdue ? (
+                                                                    <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
+                                                                ) : (
+                                                                    <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
+                                                                )}
                                                             </div>
-                                                            <span className={`text-sm font-mono px-2 py-1 rounded ${isOverdue
-                                                                ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
-                                                                : 'text-gray-500'
-                                                                }`}>
+                                                            <span
+                                                                className={`text-sm font-mono px-2 py-1 rounded ${isOverdue ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black' : 'text-gray-500'
+                                                                    }`}
+                                                            >
                                                                 {timeInfo.text}
                                                             </span>
                                                         </div>
                                                     </TableCell>
+
                                                     <TableCell>
                                                         <div className="flex gap-2">
                                                             {item.estado === 'en_cola' && (
@@ -575,6 +580,7 @@ const CoordinadorVML = () => {
                                                                     Iniciar
                                                                 </Button>
                                                             )}
+                                                            <DetailsButton item={item} />
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
