@@ -19,16 +19,16 @@ const seedAll = async () => {
         console.log('✅ Conexión a la base de datos establecida.');
 
         // 2. Ejecutar seed de RBAC (roles y permisos)
-        // console.log('\n📋 Paso 1: Configurando RBAC...');
-        // const { default: seedRBAC } = await import('./seedRBAC.js');
-        // await seedRBAC();
-        // console.log('✅ RBAC configurado correctamente.');
+        console.log('\n📋 Paso 1: Configurando RBAC...');
+        const { default: seedRBAC } = await import('./seedRBAC.js');
+        await seedRBAC();
+        console.log('✅ RBAC configurado correctamente.');
 
         // 3. Ejecutar seed de departamentos y ciudades
-        console.log('\n📍 Paso 2: Cargando departamentos y ciudades de Colombia...');
-        const { seedDepartmentsAndCities } = await import('./seedDepartmentsAndCities.js');
-        await seedDepartmentsAndCities();
-        console.log('✅ Departamentos y ciudades configurados correctamente.');
+        // console.log('\n📍 Paso 2: Cargando departamentos y ciudades de Colombia...');
+        // const { seedDepartmentsAndCities } = await import('./seedDepartmentsAndCities.js');
+        // await seedDepartmentsAndCities();
+        // console.log('✅ Departamentos y ciudades configurados correctamente.');
 
         // // 4. Ejecutar seed de estados de órdenes y citas
         // console.log('\n📋 Paso 2: Configurando estados de órdenes y citas...');
