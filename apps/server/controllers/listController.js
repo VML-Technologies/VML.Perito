@@ -1,4 +1,5 @@
 import ListName from '../models/listName.js';
+import { UniqueConstraintError } from 'sequelize';
 
 class ListNameController {
 
@@ -32,26 +33,45 @@ class ListNameController {
   // POST /api/lists
   async addList(req, res) {
     try {
-      const { name, label } = req.body;
+      let { name, label } = req.body;
 
       if (!name)
         return res.status(400).json({ message: 'name es requerido' });
 
-      const exists = await ListName.findOne({
-        where: { name, parent_id: null }
+      // Normalizar entradas para reducir duplicados por espacios/case
+      name = String(name).trim();
+      label = (label === undefined || label === null) ? name : String(label).trim();
+
+      // Intentar restaurar un registro soft-deleted que coincida (paranoid:false)
+      const soft = await ListName.findOne({ where: { name, parent_id: null }, paranoid: false });
+      if (soft && soft.deleted_at) {
+        try {
+          await soft.restore();
+          soft.label = label || soft.label;
+          await soft.save();
+          return res.status(200).json({ message: 'Lista restaurada', restored: soft });
+        } catch (restoreErr) {
+          console.error('restore error', restoreErr);
+          // continuar al flujo normal si falla la restauración
+        }
+      }
+
+      // Usar findOrCreate para reducir condiciones de carrera
+      const [list, created] = await ListName.findOrCreate({
+        where: { name, parent_id: null },
+        defaults: { label, parent_id: null }
       });
 
-      if (exists)
-        return res.status(400).json({ message: 'La lista ya existe' });
-
-      const list = await ListName.create({
-        name,
-        label: label || name,
-        parent_id: null
-      });
+      if (!created) {
+        // Devolver información del recurso existente para que el frontend pueda manejar el conflicto
+        return res.status(409).json({ message: 'La lista ya existe', existingId: list.id, existing: list });
+      }
 
       return res.status(201).json(list);
     } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        return res.status(409).json({ message: 'La lista ya existe' });
+      }
       console.error('addList error', err);
       return res.status(500).json({ message: 'Error creando lista' });
     }
@@ -75,6 +95,9 @@ class ListNameController {
 
       return res.json(list);
     } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        return res.status(409).json({ message: 'Nombre de lista duplicado' });
+      }
       console.error('updateList error', err);
       return res.status(500).json({ message: 'Error actualizando lista' });
     }
@@ -125,7 +148,7 @@ class ListNameController {
   async createItem(req, res) {
     try {
       const { id } = req.params;
-      const { value, label } = req.body;
+      let { value, label } = req.body;
 
       const parent = await ListName.findByPk(id);
 
@@ -135,15 +158,39 @@ class ListNameController {
       if (!value)
         return res.status(400).json({ message: 'value es requerido' });
 
-      const item = await ListName.create({
-        value,
-        label: label || value,
-        name: null,
-        parent_id: id
+      // Normalizar
+      value = String(value).trim();
+      label = (label === undefined || label === null) ? value : String(label).trim();
+
+      // Intentar restaurar un soft-deleted con mismo parent/value
+      const softItem = await ListName.findOne({ where: { parent_id: id, value }, paranoid: false });
+      if (softItem && softItem.deleted_at) {
+        try {
+          await softItem.restore();
+          softItem.label = label || softItem.label;
+          await softItem.save();
+          return res.status(200).json({ message: 'Ítem restaurado', restored: softItem });
+        } catch (restoreErr) {
+          console.error('restore item error', restoreErr);
+          // continuar al flujo normal si falla la restauración
+        }
+      }
+
+      // Evitar duplicados bajo el mismo padre
+      const [item, created] = await ListName.findOrCreate({
+        where: { parent_id: id, value },
+        defaults: { label, name: null, parent_id: id }
       });
+
+      if (!created) {
+        return res.status(409).json({ message: 'El ítem ya existe en esta lista', existingId: item.id, existing: item });
+      }
 
       return res.status(201).json(item);
     } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        return res.status(409).json({ message: 'El ítem ya existe' });
+      }
       console.error('createItem error', err);
       return res.status(500).json({ message: 'Error creando ítem' });
     }
@@ -167,6 +214,9 @@ class ListNameController {
 
       return res.json(item);
     } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        return res.status(409).json({ message: 'Ítem duplicado en la lista' });
+      }
       console.error('updateItem error', err);
       return res.status(500).json({ message: 'Error actualizando ítem' });
     }

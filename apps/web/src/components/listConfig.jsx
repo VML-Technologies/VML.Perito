@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,19 +29,23 @@ const ListManager = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('authToken')}` });
+  const authHeader = useCallback(() => ({ Authorization: `Bearer ${localStorage.getItem('authToken')}` }), []);
 
   // ===== LISTS =====
   const fetchLists = async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_ROUTES.LIST_CONFIG.LIST, { headers: authHeader() });
-      if (!res.ok) throw new Error('Error cargando listas');
+      const res = await fetch(API_ROUTES.LIST_CONFIG.LIST, { headers: authHeader(), signal: AbortSignal.timeout(10000) });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Sesión expirada. Inicia sesión de nuevo.');
+        throw new Error('Error cargando listas');
+      }
       const data = await res.json();
       setLists(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
+      const msg = err.name === 'AbortError' ? 'La solicitud tardó demasiado. Intenta de nuevo.' : (err.message || 'Error cargando listas');
       console.error('fetchLists error', err);
-      showToast('Error cargando listas', 'error');
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -61,7 +65,7 @@ const ListManager = () => {
 
   const handleSaveList = async () => {
     if (!listForm.name) {
-      showToast('El campo name es requerido', 'warning');
+      showToast('El campo nombre es requerido', 'warning');
       return;
     }
 
@@ -121,13 +125,17 @@ const ListManager = () => {
   const fetchItems = async (listId) => {
     try {
       setLoading(true);
-      const res = await fetch(API_ROUTES.LIST_CONFIG.ITEMS(listId), { headers: authHeader() });
-      if (!res.ok) throw new Error('Error cargando ítems');
+      const res = await fetch(API_ROUTES.LIST_CONFIG.ITEMS(listId), { headers: authHeader(), signal: AbortSignal.timeout(10000) });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Sesión expirada. Inicia sesión de nuevo.');
+        throw new Error('Error cargando ítems');
+      }
       const data = await res.json();
       setItems(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
+      const msg = err.name === 'AbortError' ? 'La solicitud tardó demasiado. Intenta de nuevo.' : (err.message || 'Error cargando ítems');
       console.error('fetchItems error', err);
-      showToast('Error cargando ítems', 'error');
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -196,11 +204,11 @@ const ListManager = () => {
     }
   };
 
-  // Filtrado simple
-  const filteredLists = lists.filter(l =>
+  // Filtrado memoizado
+  const filteredLists = useMemo(() => lists.filter(l =>
     (l.label || '').toLowerCase().includes(search.toLowerCase()) ||
     (l.name || '').toLowerCase().includes(search.toLowerCase())
-  );
+  ), [lists, search]);
 
   if (loading) {
     return (
@@ -211,16 +219,16 @@ const ListManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Listas del Sistema</h1>
           <p className="text-gray-600">Gestiona listas y sus ítems (padres e hijos)</p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={handleOpenNewList}>
+          <Button onClick={handleOpenNewList} className="whitespace-nowrap">
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Lista
+            Nueva lista
           </Button>
         </div>
       </div>
@@ -241,8 +249,8 @@ const ListManager = () => {
         <Card>
           <CardContent>
             <div className="space-y-2">
-              <Label>Buscar</Label>
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar listas..." />
+              <Label htmlFor="search-lists">Buscar</Label>
+              <Input id="search-lists" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Por nombre o etiqueta" />
             </div>
           </CardContent>
         </Card>
@@ -265,21 +273,19 @@ const ListManager = () => {
 
             <CardContent>
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">ID: {list.id}</p>
-
-                <div className="flex space-x-2 pt-2">
-                  <Button size="sm" variant="outline" onClick={() => { setSelectedList(list); fetchItems(list.id); }}>
+                <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 pt-2">
+                  <Button size="sm" variant="outline" onClick={() => { setSelectedList(list); fetchItems(list.id); }} className="w-full sm:w-auto">
                     Ver ítems
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleEditList(list)}>
+                  <Button size="sm" variant="outline" onClick={() => handleEditList(list)} className="w-full sm:w-auto">
                     <Edit className="h-4 w-4 mr-1" />
                     Editar
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleOpenNewItem(list)}>
+                  <Button size="sm" variant="outline" onClick={() => handleOpenNewItem(list)} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-1" />
                     Nuevo ítem
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleDeleteList(list)} className="text-red-600 hover:text-red-700">
+                  <Button size="sm" variant="outline" onClick={() => handleDeleteList(list)} className="text-red-600 hover:text-red-700 w-full sm:w-auto">
                     <Trash2 className="h-4 w-4 mr-1" />
                     Eliminar
                   </Button>
@@ -295,11 +301,11 @@ const ListManager = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Ítems de: {selectedList.label}</h2>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" onClick={() => { setSelectedList(null); setItems([]); }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={() => { setSelectedList(null); setItems([]); }} className="w-full sm:w-auto">
                 Cerrar
               </Button>
-              <Button onClick={() => handleOpenNewItem(selectedList)}>
+              <Button onClick={() => handleOpenNewItem(selectedList)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo ítem
               </Button>
@@ -315,12 +321,14 @@ const ListManager = () => {
                       <CardTitle className="text-sm">{it.label}</CardTitle>
                       <p className="text-xs text-gray-500">{it.value}</p>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Button size="sm" variant="outline" onClick={() => handleEditItem(it)}>
+                    <div className="flex flex-col sm:flex-row sm:space-x-1 space-y-2 sm:space-y-0">
+                      <Button size="sm" variant="outline" onClick={() => handleEditItem(it)} className="w-full sm:w-auto">
                         <Edit className="h-4 w-4" />
+                        <span className="sr-only">Editar</span>
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDeleteItem(it)} className="text-red-600">
+                      <Button size="sm" variant="outline" onClick={() => handleDeleteItem(it)} className="text-red-600 w-full sm:w-auto">
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Eliminar</span>
                       </Button>
                     </div>
                   </div>
@@ -347,16 +355,18 @@ const ListManager = () => {
 
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSaveList(); }}>
             <div className="space-y-2">
-              <Label htmlFor="list-name">Name</Label>
-              <Input id="list-name" value={listForm.name} onChange={(e) => setListForm(prev => ({ ...prev, name: e.target.value }))} required />
+              <Label htmlFor="list-name">Nombre</Label>
+              <Input id="list-name" maxLength={100} value={listForm.name} onChange={(e) => setListForm(prev => ({ ...prev, name: e.target.value }))} placeholder="p.ej: colores, tamaños" required />
+              <p className="text-xs text-gray-500">{(listForm.name || '').length}/100</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="list-label">Label</Label>
-              <Input id="list-label" value={listForm.label} onChange={(e) => setListForm(prev => ({ ...prev, label: e.target.value }))} />
+              <Label htmlFor="list-label">Etiqueta</Label>
+              <Input id="list-label" maxLength={200} value={listForm.label} onChange={(e) => setListForm(prev => ({ ...prev, label: e.target.value }))} placeholder="p.ej: Colores disponibles" />
+              <p className="text-xs text-gray-500">{(listForm.label || '').length}/200</p>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setIsListDialogOpen(false)}>Cancelar</Button>
               <Button type="submit">Guardar</Button>
             </div>
@@ -373,16 +383,18 @@ const ListManager = () => {
 
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSaveItem(); }}>
             <div className="space-y-2">
-              <Label htmlFor="item-value">Value</Label>
-              <Input id="item-value" value={itemForm.value} onChange={(e) => setItemForm(prev => ({ ...prev, value: e.target.value }))} required />
+              <Label htmlFor="item-value">Valor</Label>
+              <Input id="item-value" maxLength={200} value={itemForm.value} onChange={(e) => setItemForm(prev => ({ ...prev, value: e.target.value }))} placeholder="p.ej: rojo, grande" required />
+              <p className="text-xs text-gray-500">{(itemForm.value || '').length}/200</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="item-label">Label</Label>
-              <Input id="item-label" value={itemForm.label} onChange={(e) => setItemForm(prev => ({ ...prev, label: e.target.value }))} />
+              <Label htmlFor="item-label">Etiqueta</Label>
+              <Input id="item-label" maxLength={200} value={itemForm.label} onChange={(e) => setItemForm(prev => ({ ...prev, label: e.target.value }))} placeholder="p.ej: Color rojo" />
+              <p className="text-xs text-gray-500">{(itemForm.label || '').length}/200</p>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)}>Cancelar</Button>
               <Button type="submit">Guardar</Button>
             </div>
