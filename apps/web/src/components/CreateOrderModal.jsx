@@ -40,6 +40,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     const [clientData, setClientData] = useState({}); // Almacenar datos del cliente por separado
     const [plateExists, setPlateExists] = useState(false); // Estado para validación de placa
     const [existingOrder, setExistingOrder] = useState(null); // Datos de la orden existente
+    const [tipoVehiculoOptions, setTipoVehiculoOptions] = useState([]); // Opciones de tipo de vehículo
+    const [loadingTipoVehiculo, setLoadingTipoVehiculo] = useState(false); // Estado de carga de tipos de vehículo
 
     // Estado del formulario con todos los campos del modelo (sin sede_id)
     const [formData, setFormData] = useState({
@@ -71,6 +73,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         combustible: '',
         metodo_inspeccion_recomendado: 'Virtual',
         cod_fasecolda: '', // Campo opcional
+        tipo_vehiculo: '', // Tipo de vehículo de la lista configurable
 
         // Información del cliente
         tipo_doc: '',
@@ -162,6 +165,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             combustible: 'GASOLINA',
             metodo_inspeccion_recomendado: 'Virtual',
             cod_fasecolda: '', // Campo opcional
+            tipo_vehiculo: '', // Tipo de vehículo de la lista configurable
 
             // Información del cliente
             tipo_doc: 'CC',
@@ -227,6 +231,40 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
     }, [isOpen]);
 
+    // Cargar tipos de vehículo cuando se abra el modal
+    useEffect(() => {
+        const fetchTipoVehiculoOptions = async () => {
+            if (!isOpen) return;
+
+            setLoadingTipoVehiculo(true);
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(API_ROUTES.LIST_CONFIG.ITEMS_BY_NAME('tipo de vehiculo'), {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setTipoVehiculoOptions(Array.isArray(data) ? data : []);
+                } else {
+                    console.error('Error cargando tipos de vehículo:', response.statusText);
+                    setTipoVehiculoOptions([]);
+                }
+            } catch (error) {
+                console.error('Error cargando tipos de vehículo:', error);
+                setTipoVehiculoOptions([]);
+            } finally {
+                setLoadingTipoVehiculo(false);
+            }
+        };
+
+        fetchTipoVehiculoOptions();
+    }, [isOpen]);
+
     // Sincronizar datos del contacto cuando cambie el checkbox
     useEffect(() => {
         if (sameAsClient && (clientData.nombre_cliente || formData.nombre_cliente)) {
@@ -269,6 +307,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             combustible: '',
             metodo_inspeccion_recomendado: 'Virtual',
             cod_fasecolda: '', // Campo opcional
+            tipo_vehiculo: '', // Tipo de vehículo de la lista configurable
 
             // Información del cliente
             tipo_doc: '',
@@ -380,11 +419,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             'correo_cliente', 'nombre_contacto', 'celular_contacto', 'correo_contacto',
         ];
 
-        // Campos opcionales que pueden estar vacíos
-        const optionalFields = [
-            'sucursal', 'cod_oficina', 'vigencia', 'avaluo'
-        ];
-
         requiredFields.forEach(field => {
             const value = formData[field];
             const isEmpty = !value || value.toString().trim() == '';
@@ -423,13 +457,21 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             newErrors.color = 'El color no puede tener más de 100 caracteres';
         }
 
-        // Validación de celular (máximo 10 caracteres)
-        if (formData.celular_cliente && formData.celular_cliente.length > 10) {
-            newErrors.celular_cliente = 'El celular no puede tener más de 10 dígitos';
+        // Validación de celular (máximo 10 caracteres y solo numérico)
+        if (formData.celular_cliente) {
+            if (formData.celular_cliente.length > 10) {
+                newErrors.celular_cliente = 'El celular no puede tener más de 10 dígitos';
+            } else if (!/^\d+$/.test(formData.celular_cliente)) {
+                newErrors.celular_cliente = 'El celular debe ser numérico';
+            }
         }
 
-        if (formData.celular_contacto && formData.celular_contacto.length > 10) {
-            newErrors.celular_contacto = 'El celular no puede tener más de 10 dígitos';
+        if (formData.celular_contacto) {
+            if (formData.celular_contacto.length > 10) {
+                newErrors.celular_contacto = 'El celular no puede tener más de 10 dígitos';
+            } else if (!/^\d+$/.test(formData.celular_contacto)) {
+                newErrors.celular_contacto = 'El celular debe ser numérico';
+            }
         }
 
         // Validación de num_doc (máximo 15 caracteres)
@@ -573,8 +615,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 let errorData;
                 try {
                     errorData = await response.json();
-                } catch (parseError) {
-                    const errorText = await response.text();
+                } catch {
                     errorData = { message: `Error del servidor: ${response.status} ${response.statusText}` };
                 }
                 throw new Error(errorData.message || `Error HTTP ${response.status}: ${response.statusText}`);
@@ -635,7 +676,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
                                 <Label htmlFor="producto">Producto *</Label>
                                 <Select
@@ -656,6 +697,50 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
                                         {errors.producto}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <Label htmlFor="tipo_vehiculo">Tipo de Vehículo</Label>
+                                <Select
+                                    value={formData.tipo_vehiculo}
+                                    onValueChange={(value) => handleInputChange('tipo_vehiculo', value)}
+                                    disabled={loadingTipoVehiculo}
+                                >
+                                    <SelectTrigger className={`w-full ${errors.tipo_vehiculo ? 'border-red-500' : ''}`}>
+                                        <SelectValue placeholder={loadingTipoVehiculo ? "Cargando..." : "Seleccionar tipo de vehículo"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {tipoVehiculoOptions.length > 0 ? (
+                                            tipoVehiculoOptions
+                                                .filter(option => {
+                                                    // Filtrar opciones que no tengan value válido
+                                                    const value = option.value || option.label;
+                                                    return value && value.trim() !== '';
+                                                })
+                                                .map((option) => {
+                                                    // Asegurar que el value nunca sea vacío
+                                                    const value = option.value || option.label || `option-${option.id}`;
+                                                    const label = option.label || option.value || 'Sin etiqueta';
+                                                    return (
+                                                        <SelectItem key={option.id} value={value}>
+                                                            {label}
+                                                        </SelectItem>
+                                                    );
+                                                })
+                                        ) : (
+                                            !loadingTipoVehiculo && (
+                                                <div className="px-2 py-1.5 text-sm text-gray-500 text-center">
+                                                    No hay opciones disponibles
+                                                </div>
+                                            )
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.tipo_vehiculo && (
+                                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        {errors.tipo_vehiculo}
                                     </p>
                                 )}
                             </div>
@@ -1038,10 +1123,15 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 <Label htmlFor="celular_cliente">Celular Cliente *</Label>
                                 <Input
                                     id="celular_cliente"
+                                    type="tel"
                                     placeholder="3001234567"
                                     maxLength={10}
                                     value={formData.celular_cliente}
-                                    onChange={(e) => handleInputChange('celular_cliente', e.target.value)}
+                                    onChange={(e) => {
+                                        // Solo permitir números
+                                        const value = e.target.value.replace(/\D/g, '');
+                                        handleInputChange('celular_cliente', value);
+                                    }}
                                     className={errors.celular_cliente ? 'border-red-500' : ''}
                                 />
                                 {errors.celular_cliente && (
@@ -1116,10 +1206,15 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         <Label htmlFor="celular_contacto">Celular Contacto *</Label>
                                         <Input
                                             id="celular_contacto"
+                                            type="tel"
                                             placeholder="3001234567"
                                             maxLength={10}
                                             value={formData.celular_contacto}
-                                            onChange={(e) => handleInputChange('celular_contacto', e.target.value)}
+                                            onChange={(e) => {
+                                                // Solo permitir números
+                                                const value = e.target.value.replace(/\D/g, '');
+                                                handleInputChange('celular_contacto', value);
+                                            }}
                                             className={errors.celular_contacto ? 'border-red-500' : ''}
                                         />
                                         {errors.celular_contacto && (

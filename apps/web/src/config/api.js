@@ -332,6 +332,7 @@ export const API_ROUTES = {
         DELETE: (id) => API_BASE_URL + `/api/lists/${id}`,
 
         ITEMS: (listId) => API_BASE_URL + `/api/lists/${listId}/items`,
+        ITEMS_BY_NAME: (name) => API_BASE_URL + `/api/lists/by-name/${name}/items`,
         ITEM: (listId, itemId) =>
             API_BASE_URL + `/api/lists/${listId}/items/${itemId}`,
     },

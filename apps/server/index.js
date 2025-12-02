@@ -363,6 +363,7 @@ app.delete('/api/lists/:id', requirePermission('lists.update'), listController.r
 
 // ITEMS
 app.get('/api/lists/:id/items', readLimiter, requirePermission('lists.read'), listController.getItems);
+app.get('/api/lists/by-name/:name/items', readLimiter, requirePermission('lists.read'), listController.getItemsByName);
 app.post('/api/lists/:id/items', requirePermission('lists.update'), listController.createItem);
 app.put('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.updateItem);
 app.delete('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.removeItem);

@@ -884,7 +884,8 @@ const seedRBAC = async () => {
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
                 p.name.startsWith('inspections.create') ||
-                p.name == 'users.read' // Necesario para acceder al perfil
+                p.name == 'users.read' || // Necesario para acceder al perfil
+                p.name == 'lists.read' // Permiso para ver listas e ítems
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({
@@ -898,13 +899,14 @@ const seedRBAC = async () => {
         }
 
         const comercialRole4 = createdRoles.find(r => r.name == 'comercial_mundial_4');
-        if (comercialRole) {
+        if (comercialRole4) {
             const comercialPermissions = createdPermissions.filter(p =>
                 p.name.startsWith('inspection_orders.') ||
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
-                p.name == 'users.read' // Necesario para acceder al perfil
+                p.name == 'users.read' || // Necesario para acceder al perfil
+                p.name == 'lists.read' // Permiso para ver listas e ítems
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({

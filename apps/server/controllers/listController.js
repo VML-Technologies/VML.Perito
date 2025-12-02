@@ -240,6 +240,37 @@ class ListNameController {
       return res.status(500).json({ message: 'Error eliminando ítem' });
     }
   }
+
+  // GET /api/lists/by-name/:name/items
+  async getItemsByName(req, res) {
+    try {
+      const { name } = req.params;
+
+      if (!name) {
+        return res.status(400).json({ message: 'El nombre de la lista es requerido' });
+      }
+
+      // Buscar la lista por nombre
+      const parent = await ListName.findOne({
+        where: { name: name.trim(), parent_id: null }
+      });
+
+      if (!parent) {
+        return res.status(404).json({ message: 'Lista no encontrada' });
+      }
+
+      // Obtener los ítems de la lista
+      const items = await ListName.findAll({
+        where: { parent_id: parent.id },
+        order: [['id', 'ASC']]
+      });
+
+      return res.json(items);
+    } catch (err) {
+      console.error('getItemsByName error', err);
+      return res.status(500).json({ message: 'Error cargando ítems' });
+    }
+  }
 }
 
 export default new ListNameController();
