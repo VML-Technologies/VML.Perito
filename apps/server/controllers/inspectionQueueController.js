@@ -248,6 +248,86 @@ class InspectionQueueController extends BaseController {
                 return this.error(res, 'Orden de inspección no encontrada', null, 404);
             }
 
+            // --- Notificación a coordinadores (SMS y Email) ---
+            try {
+                const coordinadores = await User.findAll({
+                    include: [{
+                        model: Role,
+                        as: 'roles',
+                        where: { name: 'coordinador_vml' }
+                    }],
+                    where: { is_active: true },
+                    attributes: ['id', 'name', 'email', 'phone']
+                });
+                console.log('[NOTIF] Coordinadores encontrados:', coordinadores.map(u => ({id: u.id, name: u.name, email: u.email, phone: u.phone})));
+                const emails = coordinadores.map(u => u.email).filter(Boolean);
+                const phones = coordinadores.map(u => (u.phone || '').replace(/\s+/g, '').trim());
+                console.log('[NOTIF] Emails a notificar:', emails);
+                console.log('[NOTIF] Phones procesados:', phones);
+                const smsMessage = `El vehículo de placa ${inspectionOrder.placa} está en la cola de espera.`;
+                const emailTemplatePath = 'apps/server/mailTemplates/clientEnterToQueue.html';
+                const emailSubject = 'Vehículo en cola de espera';
+                const emailData = {
+                    vehicle_plate: inspectionOrder.placa,
+                    current_year: new Date().getFullYear()
+                };
+                // Enviar SMS a cada coordinador
+                let smsCount = 0;
+                if (phones.length > 0) {
+                    try {
+                        const notificationService = await import('../services/notificationService.js');
+                        const sendSMS = notificationService.sendSMS || notificationService.default?.sendSMS;
+                        for (let i = 0; i < coordinadores.length; i++) {
+                            const phone = phones[i];
+                            const name = coordinadores[i].name;
+                            if (phone && typeof sendSMS === 'function') {
+                                console.log(`[NOTIF] Enviando SMS a ${name} (${phone})`);
+                                await sendSMS({
+                                    to: phone,
+                                    message: smsMessage
+                                });
+                                smsCount++;
+                            } else if (!phone) {
+                                console.warn(`[NOTIF] Phone vacío para coordinador ${name} (ID: ${coordinadores[i].id})`);
+                            } else {
+                                console.error('[NOTIF] sendSMS no es una función válida');
+                            }
+                        }
+                        console.log(`[NOTIF] Total SMS enviados: ${smsCount}`);
+                    } catch (err) {
+                        console.error('Error enviando SMS a coordinadores:', err);
+                    }
+                } else {
+                    console.warn('[NOTIF] No hay teléfonos válidos para enviar SMS a coordinadores.');
+                }
+                // Enviar email a todos los coordinadores
+                if (emails.length > 0) {
+                    try {
+                        const notificationService = await import('../services/notificationService.js');
+                        const sendEmail = notificationService.sendEmail || notificationService.default?.sendEmail;
+                        console.log(`[NOTIF] Enviando email a:`, emails);
+                        if (typeof sendEmail === 'function') {
+                            await sendEmail({
+                                to: emails,
+                                subject: emailSubject,
+                                template: emailTemplatePath,
+                                data: emailData
+                            });
+                            console.log('[NOTIF] Email enviado correctamente a coordinadores.');
+                        } else {
+                            console.error('[NOTIF] sendEmail no es una función válida');
+                        }
+                    } catch (err) {
+                        console.error('Error enviando email a coordinadores:', err);
+                    }
+                } else {
+                    console.warn('[NOTIF] No hay emails válidos para enviar notificación a coordinadores.');
+                }
+            } catch (err) {
+                console.error('Error en notificación a coordinadores:', err);
+            }
+            // --- Fin notificación ---
+
             // ✅ CORRECIÓN: Consulta directa a DB en lugar de servicio en memoria
             // Verificar si ya existe una entrada en la cola para esta orden
             const existingEntry = await InspectionQueue.findOne({
