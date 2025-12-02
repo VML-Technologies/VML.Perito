@@ -234,22 +234,25 @@ const ListManager = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-0">
-            <div className="flex items-center space-x-2">
-              <Database className="h-5 w-5 text-blue-600" />
-              <CardTitle>Total listas</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{lists.length}</div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center space-x-2">
+                <Database className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-base">Total listas</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold">{lists.length}</div>
+            </CardContent>
+          </Card>
 
         <Card>
-          <CardContent>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Buscar</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
             <div className="space-y-2">
-              <Label htmlFor="search-lists">Buscar</Label>
+              <Label htmlFor="search-lists" className="sr-only">Buscar listas</Label>
               <Input id="search-lists" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Por nombre o etiqueta" />
             </div>
           </CardContent>
@@ -271,25 +274,43 @@ const ListManager = () => {
               </div>
             </CardHeader>
 
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 pt-2">
-                  <Button size="sm" variant="outline" onClick={() => { setSelectedList(list); fetchItems(list.id); }} className="w-full sm:w-auto">
-                    Ver ítems
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleEditList(list)} className="w-full sm:w-auto">
-                    <Edit className="h-4 w-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleOpenNewItem(list)} className="w-full sm:w-auto">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Nuevo ítem
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleDeleteList(list)} className="text-red-600 hover:text-red-700 w-full sm:w-auto">
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Eliminar
-                  </Button>
-                </div>
+            <CardContent className="pt-0">
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => { setSelectedList(list); fetchItems(list.id); }} 
+                  className="flex-1 min-w-[100px]"
+                >
+                  Ver ítems
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleEditList(list)} 
+                  className="flex-1 min-w-[80px]"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleOpenNewItem(list)} 
+                  className="flex-1 min-w-[100px]"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nuevo ítem
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleDeleteList(list)} 
+                  className="flex-1 min-w-[90px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Eliminar
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -315,18 +336,30 @@ const ListManager = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map(it => (
               <Card key={it.id}>
-                <CardHeader className="pb-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-sm">{it.label}</CardTitle>
-                      <p className="text-xs text-gray-500">{it.value}</p>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm truncate">{it.label}</CardTitle>
+                      <p className="text-xs text-gray-500 truncate">{it.value}</p>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:space-x-1 space-y-2 sm:space-y-0">
-                      <Button size="sm" variant="outline" onClick={() => handleEditItem(it)} className="w-full sm:w-auto">
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleEditItem(it)} 
+                        className="h-8 w-8 p-0"
+                        title="Editar"
+                      >
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Editar</span>
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDeleteItem(it)} className="text-red-600 w-full sm:w-auto">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleDeleteItem(it)} 
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Eliminar"
+                      >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Eliminar</span>
                       </Button>
