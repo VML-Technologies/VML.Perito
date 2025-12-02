@@ -450,6 +450,7 @@ const CoordinadorVML = () => {
             setDownloadingReport(false);
         }
     };
+      console.log("queueData:", queueData);
 
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
         return (
@@ -510,10 +511,10 @@ const CoordinadorVML = () => {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Placa y Orden</TableHead>
-                                            <TableHead>Cliente</TableHead>
-                                            <TableHead>Tiempo</TableHead>
-                                            <TableHead>Acciones</TableHead>
+                                            <TableHead className="text-left">Placa y Orden</TableHead>
+                                            <TableHead className="text-left pl-12">Cliente</TableHead>
+                                            <TableHead className="text-center">Tiempo</TableHead>
+                                            <TableHead className="text-center">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -526,8 +527,9 @@ const CoordinadorVML = () => {
                                                     key={item.id}
                                                     className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}
                                                 >
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-2">
+                                                    {/* Placa y Orden */}
+                                                    <TableCell className="text-left">
+                                                        <div className="flex flex-col gap-1">
                                                             <div className="flex items-center gap-2">
                                                                 <Car className="h-4 w-4 text-gray-500" />
                                                                 <span className="font-medium">Placa: {item.placa}</span>
@@ -536,7 +538,8 @@ const CoordinadorVML = () => {
                                                         </div>
                                                     </TableCell>
 
-                                                    <TableCell>
+                                                    {/* Cliente */}
+                                                    <TableCell className="text-left">
                                                         <div className="flex items-center gap-2">
                                                             <User className="h-4 w-4 text-gray-500" />
                                                             <div>
@@ -551,8 +554,9 @@ const CoordinadorVML = () => {
                                                         </div>
                                                     </TableCell>
 
-                                                    <TableCell>
-                                                        <div className="flex gap-1">
+                                                    {/* Tiempo */}
+                                                    <TableCell className="text-center">
+                                                        <div className="flex items-center justify-center gap-1">
                                                             <div className="flex items-center justify-center">
                                                                 {isOverdue ? (
                                                                     <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
@@ -561,28 +565,30 @@ const CoordinadorVML = () => {
                                                                 )}
                                                             </div>
                                                             <span
-                                                                className={`text-sm font-mono px-2 py-1 rounded ${isOverdue ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black' : 'text-gray-500'
-                                                                    }`}
+                                                                className={`text-sm font-mono px-2 py-1 rounded ${isOverdue ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black' : 'text-gray-500'}`}
                                                             >
                                                                 {timeInfo.text}
                                                             </span>
                                                         </div>
                                                     </TableCell>
 
-                                                    <TableCell>
-                                                        <div className="flex gap-2">
+                                                    {/* Acciones */}
+                                                    <TableCell className="text-center">
+                                                        <div className="flex justify-center gap-2">
                                                             {item.estado === 'en_cola' && (
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
+                                                                    className="cursor-pointer"
                                                                 >
                                                                     <Play className="h-4 w-4 mr-1" />
                                                                     Iniciar
                                                                 </Button>
                                                             )}
-                                                            <DetailsButton item={item} />
+                                                            <DetailsButton item={item} inspectionQueue={queueData} />
                                                         </div>
                                                     </TableCell>
+
                                                 </TableRow>
                                             );
                                         })}

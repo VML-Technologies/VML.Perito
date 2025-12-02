@@ -88,6 +88,11 @@ const Inspeccion = () => {
                 clearInterval(businessHoursTimer);
             }
         };
+        const handleGoBack = () => {
+            console.log('Volviendo a Landing'); // debug
+            setCurrentView('landing');
+        };
+
 
         // Agregar event listeners
         document.addEventListener('visibilitychange', handleVisibilityChange);
