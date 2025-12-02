@@ -259,7 +259,7 @@ class InspectionQueueController extends BaseController {
                     where: { is_active: true },
                     attributes: ['id', 'name', 'email', 'phone']
                 });
-                console.log('[NOTIF] Coordinadores encontrados:', coordinadores.map(u => ({id: u.id, name: u.name, email: u.email, phone: u.phone})));
+                console.log('[NOTIF] Coordinadores encontrados:', coordinadores.map(u => ({ id: u.id, name: u.name, email: u.email, phone: u.phone })));
                 const emails = coordinadores.map(u => u.email).filter(Boolean);
                 const phones = coordinadores.map(u => (u.phone || '').replace(/\s+/g, '').trim());
                 console.log('[NOTIF] Emails a notificar:', emails);
@@ -271,26 +271,32 @@ class InspectionQueueController extends BaseController {
                     vehicle_plate: inspectionOrder.placa,
                     current_year: new Date().getFullYear()
                 };
-                // Enviar SMS a cada coordinador
+                // Enviar SMS a cada coordinador usando smsService
                 let smsCount = 0;
                 if (phones.length > 0) {
                     try {
-                        const notificationService = await import('../services/notificationService.js');
-                        const sendSMS = notificationService.sendSMS || notificationService.default?.sendSMS;
+                        const smsService = await import('../services/channels/smsService.js');
                         for (let i = 0; i < coordinadores.length; i++) {
                             const phone = phones[i];
                             const name = coordinadores[i].name;
-                            if (phone && typeof sendSMS === 'function') {
-                                console.log(`[NOTIF] Enviando SMS a ${name} (${phone})`);
-                                await sendSMS({
-                                    to: phone,
-                                    message: smsMessage
-                                });
-                                smsCount++;
-                            } else if (!phone) {
-                                console.warn(`[NOTIF] Phone vacío para coordinador ${name} (ID: ${coordinadores[i].id})`);
+                            if (phone) {
+                                try {
+                                    console.log(`[NOTIF] Enviando SMS a ${name} (${phone})`);
+                                    await smsService.default.send({
+                                        recipient_phone: phone,
+                                        content: smsMessage,
+                                        priority: 'normal',
+                                        metadata: {
+                                            placa: inspectionOrder.placa,
+                                            nombre_contacto: inspectionOrder.nombre_contacto
+                                        }
+                                    });
+                                    smsCount++;
+                                } catch (err) {
+                                    console.error(`[NOTIF] Error enviando SMS a ${name} (${phone}):`, err);
+                                }
                             } else {
-                                console.error('[NOTIF] sendSMS no es una función válida');
+                                console.warn(`[NOTIF] Phone vacío para coordinador ${name} (ID: ${coordinadores[i].id})`);
                             }
                         }
                         console.log(`[NOTIF] Total SMS enviados: ${smsCount}`);
@@ -300,23 +306,29 @@ class InspectionQueueController extends BaseController {
                 } else {
                     console.warn('[NOTIF] No hay teléfonos válidos para enviar SMS a coordinadores.');
                 }
-                // Enviar email a todos los coordinadores
+                // Enviar email a todos los coordinadores usando emailService
                 if (emails.length > 0) {
                     try {
-                        const notificationService = await import('../services/notificationService.js');
-                        const sendEmail = notificationService.sendEmail || notificationService.default?.sendEmail;
+                        const emailService = await import('../services/channels/emailService.js');
                         console.log(`[NOTIF] Enviando email a:`, emails);
-                        if (typeof sendEmail === 'function') {
-                            await sendEmail({
-                                to: emails,
-                                subject: emailSubject,
-                                template: emailTemplatePath,
-                                data: emailData
-                            });
-                            console.log('[NOTIF] Email enviado correctamente a coordinadores.');
-                        } else {
-                            console.error('[NOTIF] sendEmail no es una función válida');
-                        }
+                        await emailService.default.send({
+                            recipient_email: emails.join(','),
+                            title: emailSubject,
+                            content: 'El vehículo de placa ' + inspectionOrder.placa + ' está en la cola de espera.',
+                            priority: 'normal',
+                            metadata: {
+                                channel_data: {
+                                    email: {
+                                        subject: emailSubject,
+                                        template: emailTemplatePath,
+                                        data: emailData
+                                    }
+                                },
+                                vehicle_plate: inspectionOrder.placa,
+                                current_year: new Date().getFullYear()
+                            }
+                        }, null);
+                        console.log('[NOTIF] Email enviado correctamente a coordinadores.');
                     } catch (err) {
                         console.error('Error enviando email a coordinadores:', err);
                     }
