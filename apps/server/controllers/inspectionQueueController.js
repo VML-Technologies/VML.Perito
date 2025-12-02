@@ -266,7 +266,7 @@ class InspectionQueueController extends BaseController {
                 console.log('[NOTIF] Phones procesados:', phones);
                 const smsMessage = `El vehículo de placa ${inspectionOrder.placa} está en la cola de espera.`;
                 const emailTemplatePath = 'apps/server/mailTemplates/clientEnterToQueue.html';
-                const emailSubject = 'Vehículo en cola de espera';
+                const emailSubject = `Vehículo en cola de espera - ${inspectionOrder.placa}`;
                 const emailData = {
                     vehicle_plate: inspectionOrder.placa,
                     current_year: new Date().getFullYear()
