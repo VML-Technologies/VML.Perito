@@ -37,7 +37,12 @@ const seedLists = async () => {
       {
         name: 'Producto',
         label: 'Producto',
-        items: [],
+        items: [
+          { value: 'Rodando Contigo', label: 'Rodando Contigo' },
+          { value: 'Pesados Carga', label: 'Pesados Carga' },
+          { value: 'Seguro Amarillo', label: 'Seguro Amarillo' },
+          { value: 'Servicio Público de Pasajeros', label: 'Servicio Público de Pasajeros' },
+        ],
       },
       {
         name: 'tipo de vehiculo',
