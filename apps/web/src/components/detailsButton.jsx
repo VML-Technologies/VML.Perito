@@ -19,16 +19,17 @@ const DetailsButton = ({ item, inspectionQueue }) => {
         (entry) => Number(entry.inspectionOrder?.id) === Number(item.inspectionOrder?.id)
     ).length;
 
+    const inspections = item.inspectionOrder?.inspections || [];
+
     const detailData = {
         "Fecha y Hora de Conexión": item.tiempo_ingreso
             ? new Date(item.tiempo_ingreso).toLocaleString("es-CO", { timeZone: "America/Bogota" })
             : "-",
         "Número de intentos": attempts,
-        "Discriminado de inspecciones": item.inspectionOrder?.inspections ?? "-",
+        "Discriminado de inspecciones": inspections,
         "Reinspección": getReinspectionText(item.status),
         "Observaciones": item.observaciones || "N/A"
     };
-
 
     return (
         <>
@@ -51,21 +52,40 @@ const DetailsButton = ({ item, inspectionQueue }) => {
                             <CardHeader>
                                 <CardTitle>Detalle del Asegurado</CardTitle>
                             </CardHeader>
+
                             <CardContent className="space-y-4">
                                 <table className="w-full text-sm table-auto border-collapse">
                                     <tbody>
                                         {Object.entries(detailData).map(([key, value]) => (
                                             <tr key={key} className="border-b last:border-b-0">
                                                 <td className="font-medium py-2 pr-4 align-top">{key}</td>
+
                                                 <td className="py-2">
                                                     {key === "Reinspección" ? (
                                                         <Badge variant="secondary" className="text-sm">
                                                             {value}
                                                         </Badge>
                                                     ) : key === "Observaciones" ? (
-                                                        <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">{value}</div>
-                                                    ) : typeof value === "object" ? (
-                                                        <pre className="bg-gray-100 dark:bg-gray-700 p-2 rounded">{JSON.stringify(value, null, 2)}</pre>
+                                                        <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
+                                                            {value}
+                                                        </div>
+                                                    ) : key === "Discriminado de inspecciones" ? (
+                                                        Array.isArray(value) && value.length > 0 ? (
+                                                            <ul className="space-y-1">
+                                                                {value.map((ins, idx) => (
+                                                                    <li key={idx} className="flex gap-2 items-start">
+                                                                        <Badge variant="outline">
+                                                                            {ins.estado || "Sin estado"}
+                                                                        </Badge>
+                                                                        <span className="text-gray-700 dark:text-gray-200">
+                                                                            {ins.descripcion || JSON.stringify(ins)}
+                                                                        </span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        ) : (
+                                                            "No hay inspecciones"
+                                                        )
                                                     ) : (
                                                         value
                                                     )}
@@ -74,6 +94,7 @@ const DetailsButton = ({ item, inspectionQueue }) => {
                                         ))}
                                     </tbody>
                                 </table>
+
                                 <div className="flex justify-end mt-2">
                                     <Button size="sm" onClick={handleClose}>
                                         Cerrar
@@ -86,11 +107,11 @@ const DetailsButton = ({ item, inspectionQueue }) => {
             )}
 
             <style jsx>{`
-        @keyframes showModal {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+                @keyframes showModal {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            `}</style>
         </>
     );
 };

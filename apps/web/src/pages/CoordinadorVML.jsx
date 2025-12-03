@@ -251,7 +251,6 @@ const CoordinadorVML = () => {
             showToast('Sin conexión WebSocket. No se puede actualizar el estado', 'error');
         }
     };
-
     // Función para asignar inspector a una cita en sede via WebSocket
     const assignInspectorToSedeAppointment = (appointmentId, inspectorId) => {
         if (isConnected && socket) {
@@ -450,7 +449,6 @@ const CoordinadorVML = () => {
             setDownloadingReport(false);
         }
     };
-
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
         return (
             <Card className="w-full">
