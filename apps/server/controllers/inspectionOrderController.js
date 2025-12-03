@@ -656,7 +656,8 @@ class InspectionOrderController extends BaseController {
             body: new URLSearchParams({
                 client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
                 client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
-                grant_type: "client_credentials"
+                grant_type: "client_credentials",
+                scope: "api://sm-oauth-server/.default"
             })
         };
 
