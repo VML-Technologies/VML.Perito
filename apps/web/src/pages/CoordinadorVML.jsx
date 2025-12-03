@@ -450,7 +450,6 @@ const CoordinadorVML = () => {
             setDownloadingReport(false);
         }
     };
-      console.log("queueData:", queueData);
 
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
         return (

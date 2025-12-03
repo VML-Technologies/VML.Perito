@@ -29,11 +29,6 @@ const DetailsButton = ({ item, inspectionQueue }) => {
         "Observaciones": item.observaciones || "N/A"
     };
 
-    // Debug
-    console.log("Queue entry IDs:", inspectionQueue.map(e => e.inspection_order_id));
-    console.log("Current item ID:", item.inspectionOrder?.id);
-
-
 
     return (
         <>
