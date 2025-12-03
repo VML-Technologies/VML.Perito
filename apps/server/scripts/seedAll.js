@@ -19,10 +19,10 @@ const seedAll = async () => {
         console.log('✅ Conexión a la base de datos establecida.');
 
         // 2. Ejecutar seed de RBAC (roles y permisos)
-        console.log('\n📋 Paso 1: Configurando RBAC...');
-        const { default: seedRBAC } = await import('./seedRBAC.js');
-        await seedRBAC();
-        console.log('✅ RBAC configurado correctamente.');
+        // console.log('\n📋 Paso 1: Configurando RBAC...');
+        // const { default: seedRBAC } = await import('./seedRBAC.js');
+        // await seedRBAC();
+        // console.log('✅ RBAC configurado correctamente.');
 
         // 3. Ejecutar seed de departamentos y ciudades
         // console.log('\n📍 Paso 2: Cargando departamentos y ciudades de Colombia...');
@@ -121,6 +121,13 @@ const seedAll = async () => {
         // const { default: addInspectionOrderStarted } = await import('./addInspectionOrderStarted.js');
         // await addInspectionOrderStarted();
         // console.log('✅ Evento inspection_order.started configurado correctamente.');
+
+        // // 15. Agregar listas predeterminadas
+        // console.log('\n📋 Paso 15: Configurando listas del sistema...');
+        // const { default: seedLists } = await import('./seedLists.js');
+        // await seedLists();
+        // console.log('✅ Listas configuradas correctamente.');
+
 
         // console.log('\n🎉 ¡Proceso de seed completado exitosamente!');
         // console.log('\n📋 Resumen de lo que se creó:');
