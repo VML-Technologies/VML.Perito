@@ -7,11 +7,12 @@ import Appointment from '../models/appointment.js';
 import Sede from '../models/sede.js';
 import City from '../models/city.js';
 import Accessory from '../models/accessory.js';
+import SinisterRecord from '../models/sinisterRecord.js';
 import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { Op, QueryTypes } from 'sequelize';
+import { json, Op, QueryTypes, where } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -22,6 +23,7 @@ import ImageCapture from '../models/imageCapture.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 import fs from 'fs';
+import crypto from 'crypto';
 import ImageProcessor from '../utils/imageProcessor.js';
 
 
@@ -143,6 +145,175 @@ class InspectionOrderController extends BaseController {
         this.getResponseValue = this.getResponseValue.bind(this);
         this.calculateChecklistScores = this.calculateChecklistScores.bind(this);
         this.calculateAsegurabilidad = this.calculateAsegurabilidad.bind(this);
+        this.getPdfReportFilePath = this.getPdfReportFilePath.bind(this);
+        this.getPdfForInlineView = this.getPdfForInlineView.bind(this);
+        this.fetchVehicleDataFromSegurosMundialAPI = this.fetchVehicleDataFromSegurosMundialAPI.bind(this);
+        this.fetchSiniestrosDataFromSegurosMundialAPI = this.fetchSiniestrosDataFromSegurosMundialAPI.bind(this);
+        this.saveSinisterRecords = this.saveSinisterRecords.bind(this);
+    }
+
+    async getPdfReportFilePath(req, res) {
+        try {
+            const { id } = req.params;
+            console.log('Getting PDF report for inspection order ID:', id);
+
+            const inspection = await InspectionOrder.findByPk(id, {
+                where: { deleted_at: null }
+            });
+
+            if (!inspection) {
+                return res.status(404).json({
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            const lastUpdatedAppointment = await Appointment.findOne({
+                where: { inspection_order_id: id },
+                order: [['updated_at', 'DESC']]
+            });
+
+            if (!lastUpdatedAppointment) {
+                return res.status(404).json({
+                    message: 'Última cita no encontrada'
+                });
+            }
+
+            const pdfFileName = `inspeccion_${inspection.placa}.pdf`;
+            const blobName = `pdfs/${lastUpdatedAppointment.session_id}/${inspection.id}/${pdfFileName}`;
+
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+
+            try {
+                // Generar URL con SAS token (válida por 60 minutos)
+                const downloadUrl = await azureBlobService.getDownloadUrl(blobName, 60);
+
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: lastUpdatedAppointment.session_id,
+                        inspectionOrderId: inspection.id,
+                        plate: inspection.placa,
+                        expiresIn: 60 // minutos
+                    }
+                });
+            } catch (error) {
+                console.error('Error generating PDF download URL:', error);
+                return res.status(500).json({
+                    message: 'Error al generar URL de descarga PDF',
+                    error: error.message
+                });
+            }
+
+            // For now, return the inspection data - implement PDF generation logic as needed
+            res.json({
+                message: 'PDF report endpoint',
+                blobName: blobName
+            });
+        } catch (error) {
+            console.error('Error getting PDF report:', error);
+            res.status(500).json({
+                message: 'Error al obtener reporte PDF',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Servir PDF para visualización inline (proxy)
+     * GET /api/inspection-orders/pdf/:id/view
+     */
+    async getPdfForInlineView(req, res) {
+        try {
+            const { id } = req.params;
+            console.log('Serving PDF for inline view, inspection order ID:', id);
+
+            const inspection = await InspectionOrder.findByPk(id, {
+                where: { deleted_at: null }
+            });
+
+            if (!inspection) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            const lastUpdatedAppointment = await Appointment.findOne({
+                where: { inspection_order_id: id },
+                order: [['updated_at', 'DESC']]
+            });
+
+            if (!lastUpdatedAppointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Última cita no encontrada'
+                });
+            }
+
+            const pdfFileName = `inspeccion_${inspection.placa}.pdf`;
+            const blobName = `pdfs/${lastUpdatedAppointment.session_id}/${inspection.id}/${pdfFileName}`;
+
+            const azureBlobService = new (await import('../utils/azureBlobService.js')).default();
+
+            try {
+                // Obtener el stream del archivo directamente desde Azure
+                const blockBlobClient = azureBlobService.containerClient.getBlockBlobClient(blobName);
+
+                // Verificar que existe
+                const exists = await blockBlobClient.exists();
+                if (!exists) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Archivo PDF no encontrado'
+                    });
+                }
+
+                // Obtener propiedades del blob
+                const properties = await blockBlobClient.getProperties();
+
+                // Configurar headers para visualización inline
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="${pdfFileName}"`);
+                res.setHeader('Content-Length', properties.contentLength);
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+
+                // Headers para permitir iframe
+                res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+                res.setHeader('Content-Security-Policy', "frame-ancestors 'self' http://localhost:5173 https://localhost:5173");
+
+                // CORS headers
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+                // Stream el archivo directamente al response
+                const downloadResponse = await blockBlobClient.download();
+                downloadResponse.readableStreamBody.pipe(res);
+
+                console.log(`✅ PDF servido para visualización inline: ${pdfFileName}`);
+
+            } catch (error) {
+                console.error('Error serving PDF for inline view:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al servir archivo PDF',
+                    error: error.message
+                });
+            }
+
+        } catch (error) {
+            console.error('Error in getPdfForInlineView:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
     }
 
     getFixedStatus(statusId, statusName, result, comentariosAnulacion, appointments) {
@@ -213,13 +384,17 @@ class InspectionOrderController extends BaseController {
             const {
                 page = 1,
                 limit = 10,
-                search = '',
+                plate = '',
+                client = '',
+                contact = '',
+                order_number = '',
                 status = '',
                 assigned_agent_id = '',
                 date_from = '',
                 date_to = '',
                 sortBy = 'created_at',
                 sortOrder = 'DESC',
+                search = '',
                 context = 'default' // 'comercial', 'agent', 'coordinator'
             } = req.query;
 
@@ -248,16 +423,27 @@ class InspectionOrderController extends BaseController {
             }
 
             // Búsqueda por texto
-            if (search) {
-                const searchFields = [
-                    { placa: { [Op.like]: `%${search}%` } },
-                    { nombre_cliente: { [Op.like]: `%${search}%` } },
-                    { num_doc: { [Op.like]: `%${search}%` } },
-                    { correo_cliente: { [Op.like]: `%${search}%` } },
-                    { numero: { [Op.like]: `%${search}%` } }
-                ];
+            if (plate) {
+                whereConditions.placa = { [Op.like]: `%${plate}%` };
+            }
 
-                whereConditions[Op.or] = searchFields;
+            if (client) {
+                whereConditions[Op.or] = [
+                    { nombre_cliente: { [Op.like]: `%${client}%` } },
+                    { correo_cliente: { [Op.like]: `%${client}%` } },
+                    { celular_cliente: { [Op.like]: `%${client}%` } },
+                ];
+            }
+            if (contact) {
+                whereConditions[Op.or] = [
+                    { nombre_contacto: { [Op.like]: `%${contact}%` } },
+                    { correo_contacto: { [Op.like]: `%${contact}%` } },
+                    { celular_contacto: { [Op.like]: `%${contact}%` } },
+                ];
+            }
+
+            if (order_number) {
+                whereConditions.numero = { [Op.like]: `%${order_number}%` };
             }
 
             // Filtro por estado
@@ -461,6 +647,239 @@ class InspectionOrderController extends BaseController {
         return this.getOrders(req, res);
     }
 
+
+    async authSegurosMundialAPI() {
+        let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL_AUTH}`;
+
+        let options = {
+            method: 'POST',
+            body: new URLSearchParams({
+                client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                grant_type: "client_credentials"
+            })
+        };
+
+        let response = await fetch(url, options);
+
+        if (response?.status !== 200 && response?.statusText !== "OK") {
+            throw new Error("Error al intentar obtener token de la API de Seguros Mundial.");
+        }
+
+        let result = await response.json();
+        let accessToken = result.access_token;
+        return accessToken;
+    }
+
+
+    async fetchSiniestrosDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
+        try {
+            const accessToken = await this.authSegurosMundialAPI();
+            const urlSiniestros = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/externals-apis/fasecolda/v1/cexper/historico-siniestros`;
+            let numeroTipoDocumento = {
+                "CC": "1",
+                "CE": "2",
+                "NIT": "3",
+                "TI": "4",
+                "PASAPORTE": "5"
+            }[tipoDoc];
+
+            const options = {
+                method: "POST",
+                body: JSON.stringify({
+                    "input": {
+                        "placa": placa,
+                        "tipoDocumento": numeroTipoDocumento,
+                        "numeroDocumento": numDoc
+                    }
+                }),
+                headers: {
+                    "client_id": process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    "client_secret": process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    "Authorization": `Bearer ${accessToken}`,
+                    "x-correlation-id": crypto.randomUUID(),
+                    "mun-app": "APP-VML",
+                    "Content-Type": "application/json",
+                    "mun-ext-user": "USER-VML",
+                    "mun-op": "Consulta cliente",
+                    "mun-timestamp": Math.floor(Date.now() / 1000)
+                }
+            };
+
+            const response = await fetch(urlSiniestros, options);
+            const jsonResponse = await response.json();
+
+            console.log('Respuesta API Siniestros:', JSON.stringify(jsonResponse, null, 2));
+
+            // Retornar datos procesados
+            if (jsonResponse?.output?.success && jsonResponse?.output?.data?.historicoSiniestros) {
+                return {
+                    success: true,
+                    correlationId: jsonResponse.output.correlationId,
+                    siniestros: jsonResponse.output.data.historicoSiniestros
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error al obtener histórico de siniestros:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Guardar registros de siniestros en la base de datos
+     * 
+     * @param {Object} siniestrosData - Datos de siniestros desde la API
+     * @param {number} inspectionOrderId - ID de la orden de inspección
+     * @returns {Promise<Array>}
+     * @author Fahibram Cárcamo
+     */
+    async saveSinisterRecords(siniestrosData, inspectionOrderId) {
+        try {
+            if (!siniestrosData || !siniestrosData.siniestros || siniestrosData.siniestros.length === 0) {
+                console.log('⚠️ No hay siniestros para guardar');
+                return [];
+            }
+
+            const { correlationId, siniestros } = siniestrosData;
+            const savedRecords = [];
+
+            for (const siniestro of siniestros) {
+                const sinisterRecord = await SinisterRecord.create({
+                    inspection_order_id: inspectionOrderId,
+                    correlation_id: correlationId,
+                    codigo_compania: siniestro.codigoCompania,
+                    nombre_compania: siniestro.nombreCompania,
+                    numero_siniestro: siniestro.numeroSiniestro,
+                    numero_poliza: siniestro.numeroPoliza,
+                    orden: siniestro.orden,
+                    placa: siniestro.placa,
+                    motor: siniestro.motor,
+                    chasis: siniestro.chasis,
+                    fecha_siniestro: siniestro.fechaSiniestro ? new Date(siniestro.fechaSiniestro) : null,
+                    codigo_guia: siniestro.codigoGuia,
+                    marca: siniestro.marca,
+                    clase: siniestro.clase,
+                    tipo: siniestro.tipo,
+                    modelo: siniestro.modelo,
+                    tipo_documento_asegurado: siniestro.tipoDocumentoAsegurado,
+                    numero_documento: siniestro.numeroDocumento,
+                    asegurado: siniestro.asegurado,
+                    valor_asegurado: siniestro.valorAsegurado,
+                    tipo_cruce: siniestro.tipoCruce,
+                    amparos: siniestro.amparos ? JSON.stringify(siniestro.amparos) : null
+                });
+
+                savedRecords.push(sinisterRecord);
+            }
+
+            console.log(`✅ Guardados ${savedRecords.length} registros de siniestros para orden ${inspectionOrderId}`);
+            return savedRecords;
+        } catch (error) {
+            console.error('Error al guardar registros de siniestros:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Consultar los datos del vehículo desde la API de Seguros Mundial.
+     * 
+     * @param {string} placa Placa del vehículo.
+     * @param {string} tipoDoc Tipo de documento (CC, CE, NIT, PASAPORTE, TI).
+     * @param {string} numDoc Número de documento.
+     * @returns {Promise<Object|null>}
+     * @author Fahibram Cárcamo
+     */
+    async fetchVehicleDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
+        try {
+            // Obtener token de autenticación
+            let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL_AUTH}`;
+
+            let options = {
+                method: 'POST',
+                body: new URLSearchParams({
+                    client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    grant_type: "client_credentials",
+                    scope: "api://sm-oauth-server/.default"
+                })
+            };
+
+            let response = await fetch(url, options);
+
+            if (response?.status !== 200 && response?.statusText !== "OK") {
+                throw new Error("Error al intentar obtener token de la API de Seguros Mundial.");
+            }
+
+            let result = await response.json();
+            let accessToken = result.access_token;
+
+            // Consultar historial de pólizas
+            url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/externals-apis/fasecolda/v1/cexper/historico-polizas`;
+
+            let numeroTipoDocumento = {
+                "CC": "1",
+                "CE": "2",
+                "NIT": "3",
+                "TI": "4",
+                "PASAPORTE": "5"
+            }[tipoDoc];
+
+            options = {
+                method: "POST",
+                body: JSON.stringify({
+                    "input": {
+                        "placa": placa,
+                        "tipoDocumento": numeroTipoDocumento,
+                        "numeroDocumento": numDoc
+                    }
+                }),
+                headers: {
+                    "client_id": process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    "client_secret": process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    "Authorization": `Bearer ${accessToken}`,
+                    "x-correlation-id": crypto.randomUUID(),
+                    "mun-app": "APP-VML",
+                    "Content-Type": "application/json",
+                    "mun-ext-user": "USER-VML",
+                    "mun-op": "Consulta cliente",
+                    "mun-timestamp": Math.floor(Date.now() / 1000)
+                }
+            };
+
+            response = await fetch(url, options);
+            const jsonResponse = await response.json();
+
+            let polizas = jsonResponse?.output?.data?.historicoPolizas;
+
+            if (Array.isArray(polizas) && polizas.length > 0) {
+                // Ordenar por fecha de vigencia (más reciente primero)
+                polizas = polizas.sort((polizaA, polizaB) =>
+                    new Date(polizaB.fechaVigencia) - new Date(polizaA.fechaVigencia)
+                );
+
+                let polizaMasReciente = polizas[0];
+
+                // Retornar datos de la póliza más reciente
+                return {
+                    marca: polizaMasReciente?.marca,
+                    linea: polizaMasReciente?.tipo,
+                    clase: polizaMasReciente?.clase,
+                    modelo: polizaMasReciente?.modelo,
+                    servicio: polizaMasReciente?.servicio,
+                    motor: polizaMasReciente?.motor,
+                    chasis: polizaMasReciente?.chasis,
+                    cod_fasecolda: polizaMasReciente?.codigoGuia
+                };
+            }
+
+            return null;
+        } catch (error) {
+            throw new Error("Error al intentar obtener datos de la API de Seguros Mundial.");
+        }
+    }
+
     // Obtener estadísticas
     async getStats(req, res) {
         try {
@@ -550,6 +969,22 @@ class InspectionOrderController extends BaseController {
     // Crear orden con validaciones
     async store(req, res) {
         try {
+            // Consultar datos del vehículo desde la API de Seguros Mundial
+            const vehicleData = await this.fetchVehicleDataFromSegurosMundialAPI(req.body.placa, req.body.tipo_doc, req.body.num_doc);
+            const siniestrosData = await this.fetchSiniestrosDataFromSegurosMundialAPI(req.body.placa, req.body.tipo_doc, req.body.num_doc);
+
+            // Si se obtuvieron datos del vehículo, actualizar req.body
+            if (vehicleData !== null) {
+                req.body.marca = vehicleData.marca;
+                req.body.linea = vehicleData.linea;
+                req.body.clase = vehicleData.clase;
+                req.body.modelo = vehicleData.modelo;
+                req.body.servicio = vehicleData.servicio;
+                req.body.motor = vehicleData.motor;
+                req.body.chasis = vehicleData.chasis;
+                req.body.cod_fasecolda = vehicleData.cod_fasecolda;
+            }
+
             // Generar número de orden automáticamente
             const orderNumber = await generateOrderNumber();
 
@@ -562,6 +997,11 @@ class InspectionOrderController extends BaseController {
             };
 
             const order = await this.model.create(orderData);
+
+            // Guardar registros de siniestros si existen
+            if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
+                await this.saveSinisterRecords(siniestrosData, order.id);
+            }
 
             // Cargar la orden completa con relaciones
             const fullOrder = await this.model.findByPk(order.id, {
