@@ -384,17 +384,13 @@ class InspectionOrderController extends BaseController {
             const {
                 page = 1,
                 limit = 10,
-                plate = '',
-                client = '',
-                contact = '',
-                order_number = '',
+                search = '',
                 status = '',
                 assigned_agent_id = '',
                 date_from = '',
                 date_to = '',
                 sortBy = 'created_at',
                 sortOrder = 'DESC',
-                search = '',
                 context = 'default' // 'comercial', 'agent', 'coordinator'
             } = req.query;
 
@@ -423,27 +419,16 @@ class InspectionOrderController extends BaseController {
             }
 
             // Búsqueda por texto
-            if (plate) {
-                whereConditions.placa = { [Op.like]: `%${plate}%` };
-            }
-
-            if (client) {
-                whereConditions[Op.or] = [
-                    { nombre_cliente: { [Op.like]: `%${client}%` } },
-                    { correo_cliente: { [Op.like]: `%${client}%` } },
-                    { celular_cliente: { [Op.like]: `%${client}%` } },
+            if (search) {
+                const searchFields = [
+                    { placa: { [Op.like]: `%${search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${search}%` } },
+                    { num_doc: { [Op.like]: `%${search}%` } },
+                    { correo_cliente: { [Op.like]: `%${search}%` } },
+                    { numero: { [Op.like]: `%${search}%` } }
                 ];
-            }
-            if (contact) {
-                whereConditions[Op.or] = [
-                    { nombre_contacto: { [Op.like]: `%${contact}%` } },
-                    { correo_contacto: { [Op.like]: `%${contact}%` } },
-                    { celular_contacto: { [Op.like]: `%${contact}%` } },
-                ];
-            }
 
-            if (order_number) {
-                whereConditions.numero = { [Op.like]: `%${order_number}%` };
+                whereConditions[Op.or] = searchFields;
             }
 
             // Filtro por estado
