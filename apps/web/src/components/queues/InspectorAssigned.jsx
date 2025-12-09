@@ -16,7 +16,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
     const sec = seconds % 60;
-    return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
   // Contador de tiempo
@@ -31,26 +31,24 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Notificaciones según tiempo
+  // Notificaciones (se mantienen)
   useEffect(() => {
+    // Mensaje de 3 minutos restantes
     if (secondsSinceAssignment === warningTime) {
-      setNotification('Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.');
+      setNotification(
+        'Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.'
+      );
       setNotificationColor('text-yellow-600');
-    } else if (secondsSinceAssignment >= totalTime) {
-      setNotification('Por inactividad de 10 minutos se cierra la inspección. Debe solicitarla nuevamente.');
+    }
+
+    // Mensaje de cierre a los 10 minutos (REEMPLAZA al anterior)
+    if (secondsSinceAssignment >= totalTime) {
+      setNotification(
+        'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar con el proceso, por favor seleccione nuevamente el enlace enviado anteriormente para retomar la conexión.'
+      );
       setNotificationColor('text-red-600');
-    } else {
-      setNotification('');
-      setNotificationColor('');
     }
   }, [secondsSinceAssignment]);
-
-  // Volver a Landing automáticamente al superar el tiempo total
-  useEffect(() => {
-    if (secondsSinceAssignment >= totalTime) {
-      onGoBack();
-    }
-  }, [secondsSinceAssignment, onGoBack]);
 
   const timeRemaining = Math.max(totalTime - secondsSinceAssignment, 0);
 
@@ -79,7 +77,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
                 ¡Se ha asignado un inspector a tu inspección!
               </h2>
 
-              <div className={`bg-gray-50 p-4 rounded-lg mb-4 border ${timerColor.replace('text','border')}`}>
+              <div className={`bg-gray-50 p-4 rounded-lg mb-4 border ${timerColor.replace('text', 'border')}`}>
                 <Clock className={`h-8 w-8 mx-auto mb-2 ${timerColor}`} />
                 <p className={`font-medium text-sm ${timerColor}`}>Tiempo restante</p>
                 <p className={`font-bold text-2xl ${timerColor}`}>{formatTime(timeRemaining)}</p>

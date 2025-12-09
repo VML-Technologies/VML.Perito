@@ -3,95 +3,94 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const DetailsButton = ({ item, inspectionQueue }) => {
+const DetailsButton = ({ item }) => {
     const [open, setOpen] = useState(false);
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
-    const getReinspectionText = (status) => {
-        if (status === "ineffective_with_retry") return "Si";
-        if (status === "ineffective_no_retry") return "No";
-        return "No";
-    };
+    // Citas reales desde el backend
+    const appointments = item?.inspectionOrder?.appointments || [];
 
-    const attempts = inspectionQueue.filter(
-        (entry) => Number(entry.inspectionOrder?.id) === Number(item.inspectionOrder?.id)
-    ).length;
+    // Fecha de ingreso si no hay citas
+    const fechaIngreso = item.tiempo_ingreso
+        ? new Date(item.tiempo_ingreso).toLocaleDateString("es-CO")
+        : "-";
 
-    const inspections = item.inspectionOrder?.inspections || [];
-
-    const detailData = {
-        "Fecha y Hora de Conexión": item.tiempo_ingreso
-            ? new Date(item.tiempo_ingreso).toLocaleString("es-CO", { timeZone: "America/Bogota" })
-            : "-",
-        "Número de intentos": attempts,
-        "Discriminado de inspecciones": inspections,
-        "Reinspección": getReinspectionText(item.status),
-        "Observaciones": item.observaciones || "N/A"
-    };
+    const horaIngreso = item.tiempo_ingreso
+        ? new Date(item.tiempo_ingreso).toLocaleTimeString("es-CO", {
+              hour: "2-digit",
+              minute: "2-digit",
+          })
+        : "-";
 
     return (
         <>
-            <Button size="sm" variant="outline" className="cursor-pointer" onClick={handleOpen}>
+            <Button size="sm" variant="outline" onClick={handleOpen}>
                 Ver Detalle
             </Button>
 
             {open && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4
-                     bg-black/20 backdrop-blur-sm transition-opacity duration-200"
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
                     <div
-                        className="w-full max-w-lg transform rounded-lg shadow-lg
-                       bg-white dark:bg-gray-800 transition-all duration-300
-                       scale-95 opacity-0 animate-show"
+                        className="w-full max-w-3xl rounded-lg shadow-lg bg-white dark:bg-gray-800 transform scale-95 opacity-0 animate-show"
                         style={{ animation: "showModal 0.2s forwards" }}
                     >
                         <Card className="bg-transparent shadow-none">
                             <CardHeader>
-                                <CardTitle>Detalle del Asegurado</CardTitle>
+                                <CardTitle>Detalle de Citas del Asegurado</CardTitle>
                             </CardHeader>
 
                             <CardContent className="space-y-4">
-                                <table className="w-full text-sm table-auto border-collapse">
-                                    <tbody>
-                                        {Object.entries(detailData).map(([key, value]) => (
-                                            <tr key={key} className="border-b last:border-b-0">
-                                                <td className="font-medium py-2 pr-4 align-top">{key}</td>
+                                <table className="w-full text-sm border-collapse table-auto">
+                                    <thead>
+                                        <tr className="border-b bg-gray-100 dark:bg-gray-700">
+                                            <th className="py-2 px-10 text-left w-32">Fecha</th>
+                                            <th className="py-2 px-8 text-left w-28">Hora</th>
+                                            <th className="py-2 px-9 text-left w-32">Estado</th>
+                                            <th className="py-2 px-30 text-left">Observaciones</th>
+                                        </tr>
+                                    </thead>
 
-                                                <td className="py-2">
-                                                    {key === "Reinspección" ? (
-                                                        <Badge variant="secondary" className="text-sm">
-                                                            {value}
-                                                        </Badge>
-                                                    ) : key === "Observaciones" ? (
-                                                        <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
-                                                            {value}
-                                                        </div>
-                                                    ) : key === "Discriminado de inspecciones" ? (
-                                                        Array.isArray(value) && value.length > 0 ? (
-                                                            <ul className="space-y-1">
-                                                                {value.map((ins, idx) => (
-                                                                    <li key={idx} className="flex gap-2 items-start">
-                                                                        <Badge variant="outline">
-                                                                            {ins.estado || "Sin estado"}
-                                                                        </Badge>
-                                                                        <span className="text-gray-700 dark:text-gray-200">
-                                                                            {ins.descripcion || JSON.stringify(ins)}
-                                                                        </span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        ) : (
-                                                            "No hay inspecciones"
-                                                        )
-                                                    ) : (
-                                                        value
-                                                    )}
+                                    <tbody>
+                                        {appointments.length > 0 ? (
+                                            appointments.map((cita, idx) => {
+                                                const fecha = cita.fecha
+                                                    ? new Date(cita.fecha).toLocaleDateString("es-CO")
+                                                    : "-";
+
+                                                const hora = cita.fecha
+                                                    ? new Date(cita.fecha).toLocaleTimeString("es-CO", {
+                                                          hour: "2-digit",
+                                                          minute: "2-digit",
+                                                      })
+                                                    : "-";
+
+                                                return (
+                                                    <tr key={idx} className="border-b">
+                                                        <td className="py-2 px-3">{fecha}</td>
+                                                        <td className="py-2 px-3">{hora}</td>
+                                                        <td className="py-2 px-3">
+                                                            <Badge variant="secondary">
+                                                                {cita.estado || "N/A"}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-2 px-3 whitespace-pre-wrap">
+                                                            {cita.observaciones || "N/A"}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr className="border-b">
+                                                <td className="py-2 px-3">{fechaIngreso}</td>
+                                                <td className="py-2 px-3">{horaIngreso}</td>
+                                                <td className="py-2 px-3">
+                                                    <Badge variant="outline">Ingresó a la cola</Badge>
                                                 </td>
+                                                <td className="py-2 px-3">N/A</td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
 
@@ -108,8 +107,14 @@ const DetailsButton = ({ item, inspectionQueue }) => {
 
             <style jsx>{`
                 @keyframes showModal {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
                 }
             `}</style>
         </>
