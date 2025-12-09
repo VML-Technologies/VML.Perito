@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Clock, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react';
 import logo_mundial from '@/assets/logo_mundial.svg';
+import { API_ROUTES } from '@/config/api';
 
-const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
+const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) => {
   const [secondsSinceAssignment, setSecondsSinceAssignment] = useState(0);
   const [notification, setNotification] = useState('');
   const [notificationColor, setNotificationColor] = useState('');
 
-  const totalTime = 600; // 10 minutos
-  const warningTime = 420; // 7 minutos
+  const totalTime = 30; // 30 segundos para pruebas (original: 600)
+  const warningTime = 20; // 20 segundos para pruebas (original: 420) 
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
@@ -31,7 +32,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Notificaciones (se mantienen)
+  // Notificaciones y actualización de estado
   useEffect(() => {
     // Mensaje de 3 minutos restantes
     if (secondsSinceAssignment === warningTime) {
@@ -41,14 +42,44 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack }) => {
       setNotificationColor('text-yellow-600');
     }
 
-    // Mensaje de cierre a los 10 minutos (REEMPLAZA al anterior)
+    // Mensaje de cierre a los 10 minutos y llamada al endpoint
     if (secondsSinceAssignment >= totalTime) {
       setNotification(
         'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar con el proceso, por favor seleccione nuevamente el enlace enviado anteriormente para retomar la conexión.'
       );
       setNotificationColor('text-red-600');
+      
+      // Llamar al endpoint para actualizar el estado
+      if (existingAppointment?.id) {
+        updateAppointmentStatus(existingAppointment.id);
+      }
     }
-  }, [secondsSinceAssignment]);
+  }, [secondsSinceAssignment, existingAppointment]);
+  
+  // Función para actualizar el estado del appointment
+  const updateAppointmentStatus = async (appointmentId) => {
+    try {
+      const response = await fetch(API_ROUTES.APPOINTMENTS.UPDATE_STATUS_AUTOMATED(appointmentId), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          observations: 'Inspección cerrada por inactividad de 10 minutos',
+          isUserOverride: false
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Estado del appointment actualizado:', data);
+      } else {
+        console.error('❌ Error actualizando estado del appointment:', response.statusText);
+      }
+    } catch (error) {
+      console.error('❌ Error en la llamada al endpoint:', error);
+    }
+  };
 
   const timeRemaining = Math.max(totalTime - secondsSinceAssignment, 0);
 

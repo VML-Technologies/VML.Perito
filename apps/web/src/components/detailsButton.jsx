@@ -10,19 +10,19 @@ const DetailsButton = ({ item }) => {
     const handleClose = () => setOpen(false);
 
     // Citas reales desde el backend
-    const appointments = item?.inspectionOrder?.appointments || [];
+    const appointments = item?.inspectionOrder?.appointments || item?.appointments || [];
 
-    // Fecha de ingreso si no hay citas
-    const fechaIngreso = item.tiempo_ingreso
-        ? new Date(item.tiempo_ingreso).toLocaleDateString("es-CO")
-        : "-";
-
-    const horaIngreso = item.tiempo_ingreso
-        ? new Date(item.tiempo_ingreso).toLocaleTimeString("es-CO", {
-              hour: "2-digit",
-              minute: "2-digit",
-          })
-        : "-";
+    // Mapeo de estados a español
+    const statusMap = {
+        pending: "Pendiente",
+        in_progress: "En Progreso",
+        completed: "Completada",
+        failed: "Fallida",
+        ineffective_with_retry: "No Efectiva - Reagendar",
+        ineffective_no_retry: "No Efectiva - No Reagendar",
+        call_finished: "Llamada Finalizada",
+        revision_supervisor: "Revisión Supervisor"
+    };
 
     return (
         <>
@@ -45,26 +45,23 @@ const DetailsButton = ({ item }) => {
                                 <table className="w-full text-sm border-collapse table-auto">
                                     <thead>
                                         <tr className="border-b bg-gray-100 dark:bg-gray-700">
-                                            <th className="py-2 px-10 text-left w-32">Fecha</th>
-                                            <th className="py-2 px-8 text-left w-28">Hora</th>
-                                            <th className="py-2 px-9 text-left w-32">Estado</th>
-                                            <th className="py-2 px-30 text-left">Observaciones</th>
+                                            <th className="py-2 px-3 text-left w-32">Fecha</th>
+                                            <th className="py-2 px-3 text-left w-28">Hora</th>
+                                            <th className="py-2 px-3 text-left w-32">Estado</th>
+                                            <th className="py-2 px-3 text-left">Observaciones</th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
                                         {appointments.length > 0 ? (
                                             appointments.map((cita, idx) => {
-                                                const fecha = cita.fecha
-                                                    ? new Date(cita.fecha).toLocaleDateString("es-CO")
+                                                const fecha = cita.scheduled_date
+                                                    ? new Date(cita.scheduled_date).toLocaleDateString("es-CO")
                                                     : "-";
 
-                                                const hora = cita.fecha
-                                                    ? new Date(cita.fecha).toLocaleTimeString("es-CO", {
-                                                          hour: "2-digit",
-                                                          minute: "2-digit",
-                                                      })
-                                                    : "-";
+                                                const hora = cita.scheduled_time || "-";
+
+                                                const estadoTraducido = statusMap[cita.status] || cita.status || "N/A";
 
                                                 return (
                                                     <tr key={idx} className="border-b">
@@ -72,7 +69,7 @@ const DetailsButton = ({ item }) => {
                                                         <td className="py-2 px-3">{hora}</td>
                                                         <td className="py-2 px-3">
                                                             <Badge variant="secondary">
-                                                                {cita.estado || "N/A"}
+                                                                {estadoTraducido}
                                                             </Badge>
                                                         </td>
                                                         <td className="py-2 px-3 whitespace-pre-wrap">
@@ -83,12 +80,9 @@ const DetailsButton = ({ item }) => {
                                             })
                                         ) : (
                                             <tr className="border-b">
-                                                <td className="py-2 px-3">{fechaIngreso}</td>
-                                                <td className="py-2 px-3">{horaIngreso}</td>
-                                                <td className="py-2 px-3">
-                                                    <Badge variant="outline">Ingresó a la cola</Badge>
+                                                <td className="py-2 px-3" colSpan="4" className="text-center py-4">
+                                                    No hay citas registradas
                                                 </td>
-                                                <td className="py-2 px-3">N/A</td>
                                             </tr>
                                         )}
                                     </tbody>

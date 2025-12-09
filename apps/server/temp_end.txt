@@ -1,0 +1,63 @@
+﻿ no encontrado en Azure Blob Storage, devolviendo enlace como null');
+                return res.json({
+                    success: true,
+                    data: {
+                        downloadUrl: null,
+                        fileName: pdfFileName,
+                        blobName,
+                        sessionId: sessionId,
+                        inspectionOrderId: orderId,
+                        expiresIn: null,
+                        fallback: true
+                    }
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+}
+
+export default InspectionOrderController; 
+
+    async getAppointmentsHistory(req, res) {
+        try {
+            const { orderId } = req.params;
+            
+            const appointments = await Appointment.findAll({
+                where: { 
+                    inspection_order_id: orderId,
+                    deleted_at: null
+                },
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['name', 'code']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['name', 'address']
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+            
+            res.json({
+                success: true,
+                data: appointments
+            });
+        } catch (error) {
+            console.error('Error obteniendo historial de appointments:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+

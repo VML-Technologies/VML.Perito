@@ -2826,4 +2826,4 @@ if status == 5 then check for latest @appointment an if it is with status != ine
     }
 }
 
-export default InspectionOrderController; 
+export default InspectionOrderController;

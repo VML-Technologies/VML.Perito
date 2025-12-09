@@ -776,6 +776,156 @@ class AppointmentController {
         }
     }
 
+    // ===== ENDPOINT PÚBLICO PARA ACTUALIZAR ESTADO A INEFFECTIVE_WITH_RETRY =====
+    
+    // Actualizar estado de appointment a ineffective_with_retry (público, sin autenticación)
+    async updateStatusToIneffectiveWithRetry(req, res) {
+        try {
+            const { id } = req.params;
+            const { observations, assigned_to, isUserOverride } = req.body;
+            
+            // Validar que el ID sea numérico
+            if (!id || isNaN(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID de appointment inválido'
+                });
+            }
+            
+            // Buscar el appointment
+            const appointment = await Appointment.findByPk(id, {
+                include: [
+                    {
+                        model: InspectionOrder,
+                        as: 'inspectionOrder'
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email']
+                    }
+                ]
+            });
+            
+            if (!appointment) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Appointment no encontrado'
+                });
+            }
+            
+            // Preparar datos de actualización
+            const updateData = {
+                status: 'ineffective_with_retry',
+                failed_at: new Date(),
+                updated_at: new Date()
+            };
+            
+            // Si se proporciona assigned_to, actualizar el inspector asignado
+            if (assigned_to) {
+                updateData.user_id = assigned_to;
+            }
+            
+            // Si hay observaciones, agregarlas
+            if (observations) {
+                updateData.observaciones = observations;
+            }
+            
+            // Actualizar el appointment
+            await appointment.update(updateData);
+            
+            // Si hay observaciones y hay orden de inspección, actualizar también la orden
+            if (observations && appointment.inspectionOrder) {
+                await appointment.inspectionOrder.update({
+                    observaciones: observations
+                });
+            }
+            
+            // Registrar el cambio de estado en el historial (inspection_states)
+            try {
+                const { InspectionState } = await import('../models/index.js');
+                await InspectionState.create({
+                    inspection_order_id: appointment.inspection_order_id,
+                    appointment_id: appointment.id,
+                    status: 'ineffective_with_retry',
+                    changed_by: assigned_to || null,
+                    notes: observations || 'Estado actualizado automáticamente por timeout',
+                    is_user_override: isUserOverride || false
+                });
+            } catch (stateError) {
+                console.error('Error registrando estado en historial:', stateError);
+            }
+            
+            // Emitir notificaciones por WebSocket
+            try {
+                // Notificar al inspector asignado
+                if (appointment.user_id) {
+                    socketManager.sendToUser(appointment.user_id, 'appointmentStatusChanged', {
+                        appointmentId: appointment.id,
+                        status: 'ineffective_with_retry',
+                        message: 'La inspección ha sido marcada como no efectiva por timeout'
+                    });
+                }
+                
+                // Notificar a la sesión correspondiente
+                if (appointment.session_id) {
+                    socketManager.sendToRoom(`session_${appointment.session_id}`, 'appointmentStatusChanged', {
+                        appointmentId: appointment.id,
+                        status: 'ineffective_with_retry',
+                        message: 'La inspección ha sido cerrada por inactividad'
+                    });
+                }
+            } catch (wsError) {
+                console.error('Error emitiendo notificaciones WebSocket:', wsError);
+            }
+            
+            // Notificar a InspectYa API
+            try {
+                if (appointment.session_id) {
+                    const inspectYaUrl = process.env.INSPECTYA_API_URL || 'https://qa-inspectya.vmltechnologies.com:8017';
+                    const response = await fetch(`${inspectYaUrl}/api/appointments/${appointment.id}/automated/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            observations: observations || 'Inspección cerrada por inactividad de 10 minutos',
+                            assigned_to: appointment.user_id,
+                            isUserOverride: isUserOverride || false
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('✅ InspectYa notificado exitosamente');
+                    } else {
+                        console.error('❌ Error notificando a InspectYa:', response.statusText);
+                    }
+                }
+            } catch (inspectYaError) {
+                console.error('❌ Error llamando a InspectYa API:', inspectYaError);
+            }
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Estado actualizado exitosamente',
+                data: {
+                    id: appointment.id,
+                    session_id: appointment.session_id,
+                    status: appointment.status,
+                    user_id: appointment.user_id
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error actualizando estado de appointment:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+    
     // ===== ENDPOINT PARA VALIDAR STATUS DE APPOINTMENT POR SESSION_ID =====
     
     // Validar status de appointment por session_id (para app externa)

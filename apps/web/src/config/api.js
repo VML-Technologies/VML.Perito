@@ -271,6 +271,9 @@ export const API_ROUTES = {
         ASSIGN_INSPECTOR: (id) => `${API_BASE_URL}/api/appointments/${id}/assign-inspector`,
         SEDE_COORDINATOR: `${API_BASE_URL}/api/appointments/sede-coordinator`,
         SEDE_INSPECTOR_ALIADO: `${API_BASE_URL}/api/appointments/sede-inspector-aliado`,
+        
+        // Actualización automatizada de estado
+        UPDATE_STATUS_AUTOMATED: (id) => `${API_BASE_URL}/api/appointments/${id}/automated/status`,
 
         // Modalidades y sedes
         MODALITIES: `${API_BASE_URL}/api/appointments/modalities`,

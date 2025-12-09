@@ -436,6 +436,9 @@ app.post('/api/appointments/:id/assign-inspector', requirePermission('appointmen
 
 app.post('/api/external/appointment/validate-status', apiRateLimit, authenticateApiToken, appointmentController.validateAppointmentStatus);
 
+// ===== ENDPOINT PÚBLICO PARA ACTUALIZAR ESTADO DE APPOINTMENT =====
+app.patch('/api/appointments/:id/automated/status', appointmentController.updateStatusToIneffectiveWithRetry);
+
 
 // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
 
