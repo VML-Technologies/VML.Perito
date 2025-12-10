@@ -63,7 +63,6 @@ import webSocketSystem from './websocket/index.js';
 import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
 import scheduledTasksService from './services/scheduledTasksService.js';
 import { read } from 'fs';
-import listController from './controllers/listController.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -355,19 +354,6 @@ app.get('/api/notifications/user', requireAuth, notificationController.getUserNo
 app.put('/api/notifications/mark-all-read', requireAuth, notificationController.markAllAsRead);
 app.get('/api/notifications/stats', requireAuth, notificationController.getStats);
 app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
-
-// ===== RUTAS DEL SISTEMA DE CONFIGURACIÓN DE LISTAS =====
-// LISTAS
-app.get('/api/lists', readLimiter, requirePermission('lists.read'), listController.index);
-app.post('/api/lists', requirePermission('lists.update'), listController.addList);
-app.put('/api/lists/:id', requirePermission('lists.update'), listController.updateList);
-app.delete('/api/lists/:id', requirePermission('lists.update'), listController.removeList);
-
-// ITEMS
-app.get('/api/lists/:id/items', readLimiter, requirePermission('lists.read'), listController.getItems);
-app.post('/api/lists/:id/items', requirePermission('lists.update'), listController.createItem);
-app.put('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.updateItem);
-app.delete('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.removeItem);
 
 // ===== RUTAS DEL SISTEMA DE NOTIFICACIONES =====
 
