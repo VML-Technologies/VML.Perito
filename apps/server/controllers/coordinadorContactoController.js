@@ -96,6 +96,7 @@ class CoordinadorContactoController {
         this.getOrdenesRecuperacion = this.getOrdenesRecuperacion.bind(this);
         this.getOrdenesNoRecuperadas = this.getOrdenesNoRecuperadas.bind(this);
         this.getOrdenActividad = this.getOrdenActividad.bind(this);
+        this.getOrderAppointments = this.getOrderAppointments.bind(this);
     }
 
     // Obtener órdenes con paginación, filtros y sorting
@@ -222,6 +223,41 @@ class CoordinadorContactoController {
                                 ]
                             }
                         ]
+                    },
+                    {
+                        model: Appointment,
+                        as: 'appointments',
+                        attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at'],
+                        where: {
+                            deleted_at: null
+                        },
+                        include: [
+                            {
+                                model: InspectionModality,
+                                as: 'inspectionModality',
+                                attributes: ['id', 'name', 'description']
+                            },
+                            {
+                                model: Sede,
+                                as: 'sede',
+                                attributes: ['id', 'name', 'address'],
+                                include: [
+                                    {
+                                        model: City,
+                                        as: 'city',
+                                        attributes: ['id', 'name']
+                                    }
+                                ]
+                            }
+                        ],
+                        order: [['updated_at', 'DESC']],
+                        required: false
+                    },
+                    {
+                        model: InspectionQueue,
+                        as: 'queueEntries',
+                        attributes: ['id', 'session_id', 'queue_position', 'status', 'created_at', 'updated_at'],
+                        required: false
                     }
                 ],
                 limit: parseInt(limit),
@@ -1178,6 +1214,62 @@ class CoordinadorContactoController {
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor al generar el reporte',
+                error: error.message
+            });
+        }
+    }
+
+    // Obtener todos los appointments de una orden específica
+    async getOrderAppointments(req, res) {
+        try {
+            const { id } = req.params;
+            console.log(`🔍 getOrderAppointments llamado para ID: ${id}`);
+
+            const appointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null
+                },
+                attributes: ['id', 'scheduled_date', 'scheduled_time', 'status', 'observaciones', 'notes', 'created_at', 'updated_at'],
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['name']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['name']
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+
+            const queueEntries = await InspectionQueue.findAll({
+                where: {
+                    inspection_order_id: id
+                },
+                attributes: ['id', 'session_id', 'queue_position', 'status', 'created_at', 'updated_at'],
+                order: [['created_at', 'DESC']]
+            });
+
+            console.log(`📋 Appointments encontrados: ${appointments.length}`);
+            console.log(`📋 Queue entries encontrados: ${queueEntries.length}`);
+            console.log(`📋 Appointments:`, appointments.map(a => ({ id: a.id, date: a.scheduled_date, time: a.scheduled_time, status: a.status })));
+
+            res.json({
+                success: true,
+                data: {
+                    appointments,
+                    queueEntries
+                }
+            });
+        } catch (error) {
+            console.error('❌ Error obteniendo appointments:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error obteniendo appointments',
                 error: error.message
             });
         }

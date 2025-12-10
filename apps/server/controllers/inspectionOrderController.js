@@ -13,6 +13,7 @@ import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { json, Op, QueryTypes, where } from 'sequelize';
+import { json, Op, QueryTypes, where } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -23,6 +24,7 @@ import ImageCapture from '../models/imageCapture.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 import fs from 'fs';
+import crypto from 'crypto';
 import crypto from 'crypto';
 import ImageProcessor from '../utils/imageProcessor.js';
 
@@ -533,7 +535,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -573,7 +575,23 @@ class InspectionOrderController extends BaseController {
             let transformedOrders = rows.map(order => {
                 // Ordenar appointments por updated_at descendente (más reciente primero)
                 const sortedAppointments = order.appointments
-                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).map(apt => {
+                        console.log(`🔍 Appointment ID ${apt.id}: observaciones = "${apt.observaciones}", notes = "${apt.notes}"`);
+                        return {
+                            id: apt.id,
+                            session_id: apt.session_id,
+                            scheduled_date: apt.scheduled_date,
+                            scheduled_time: apt.scheduled_time,
+                            status: apt.status,
+                            notes: apt.notes,
+                            observaciones: apt.observaciones,
+                            direccion_inspeccion: apt.direccion_inspeccion,
+                            created_at: apt.created_at,
+                            updated_at: apt.updated_at,
+                            inspectionModality: apt.inspectionModality,
+                            sede: apt.sede
+                        };
+                    })
                     : [];
 
                 return {
@@ -649,14 +667,15 @@ class InspectionOrderController extends BaseController {
 
 
     async authSegurosMundialAPI() {
-        let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/integracion/v1/token`;
+        let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL_AUTH}`;
 
         let options = {
             method: 'POST',
             body: new URLSearchParams({
                 client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
                 client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
-                grant_type: "client_credentials"
+                grant_type: "client_credentials",
+                scope: "api://sm-oauth-server/.default"
             })
         };
 
@@ -794,14 +813,15 @@ class InspectionOrderController extends BaseController {
     async fetchVehicleDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
         try {
             // Obtener token de autenticación
-            let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL}/integracion/v1/token`;
+            let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL_AUTH}`;
 
             let options = {
                 method: 'POST',
                 body: new URLSearchParams({
                     client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
                     client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
-                    grant_type: "client_credentials"
+                    grant_type: "client_credentials",
+                    scope: "api://sm-oauth-server/.default"
                 })
             };
 
@@ -964,6 +984,7 @@ class InspectionOrderController extends BaseController {
             });
         }
     }
+    
 
     // Crear orden con validaciones
     async store(req, res) {
@@ -996,13 +1017,10 @@ class InspectionOrderController extends BaseController {
             };
 
             const order = await this.model.create(orderData);
-            console.log("##################")
-            console.log(siniestrosData)
+
             // Guardar registros de siniestros si existen
             if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
-                console.log('Guardando registros de siniestros para la orden:', order.id);
                 await this.saveSinisterRecords(siniestrosData, order.id);
-                console.log('Registros de siniestros guardados exitosamente.');
             }
 
             // Cargar la orden completa con relaciones
@@ -3176,6 +3194,49 @@ if status == 5 then check for latest @appointment an if it is with status != ine
      * Obtener URL de descarga del PDF de inspección
      * GET /api/inspection-orders/:id/pdf-download-url
      */
+    async getAppointmentsHistory(req, res) {
+        try {
+            const { orderId } = req.params;
+            console.log('🔍 Buscando appointments para orderId:', orderId);
+            
+            const appointments = await Appointment.findAll({
+                where: { 
+                    inspection_order_id: orderId
+                },
+                paranoid: false,
+                attributes: ['id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'created_at', 'updated_at', 'deleted_at'],
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['name', 'code']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['name', 'address']
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+            
+            console.log('📊 Appointments encontrados:', appointments.length);
+            console.log('📊 Appointments data:', appointments);
+            
+            res.json({
+                success: true,
+                data: appointments
+            });
+        } catch (error) {
+            console.error('Error obteniendo historial de appointments:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
     async getPdfDownloadUrl(req, res) {
         try {
             const { orderId, appointmentId, sessionId } = req.params;
@@ -3268,4 +3329,4 @@ if status == 5 then check for latest @appointment an if it is with status != ine
     }
 }
 
-export default InspectionOrderController; 
+export default InspectionOrderController;

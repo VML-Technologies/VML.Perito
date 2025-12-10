@@ -63,6 +63,7 @@ import webSocketSystem from './websocket/index.js';
 import inspectionQueueMemoryService from './services/inspectionQueueMemoryService.js';
 import scheduledTasksService from './services/scheduledTasksService.js';
 import { read } from 'fs';
+import listController from './controllers/listController.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
@@ -284,6 +285,9 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
 
+// Ruta para obtener historial de appointments
+app.get('/api/inspection-orders/:orderId/appointments-history', readLimiter, inspectionOrderController.getAppointmentsHistory);
+
 // Ruta para obtener URL de descarga del PDF
 app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, inspectionOrderController.getPdfDownloadUrl);
 
@@ -345,6 +349,7 @@ app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_cont
 app.get('/api/coordinador-contacto/ordenes-recuperacion', requireAuth, coordinadorContactoController.getOrdenesRecuperacion);
 app.get('/api/coordinador-contacto/ordenes-no-recuperadas', requireAuth, coordinadorContactoController.getOrdenesNoRecuperadas);
 app.get('/api/coordinador-contacto/ordenes/:id/actividad', requireAuth, coordinadorContactoController.getOrdenActividad);
+app.get('/api/coordinador-contacto/ordenes/:id/appointments', requireAuth, coordinadorContactoController.getOrderAppointments);
 app.get('/api/coordinador-vml/reports/coordinator', requireAuth, coordinadorContactoController.getCoordinatorReport);
 
 // ===== RUTAS DE NOTIFICACIONES =====
@@ -354,6 +359,20 @@ app.get('/api/notifications/user', requireAuth, notificationController.getUserNo
 app.put('/api/notifications/mark-all-read', requireAuth, notificationController.markAllAsRead);
 app.get('/api/notifications/stats', requireAuth, notificationController.getStats);
 app.put('/api/notifications/:id', requireAuth, notificationController.markAsRead);
+
+// ===== RUTAS DEL SISTEMA DE CONFIGURACIÓN DE LISTAS =====
+// LISTAS
+app.get('/api/lists', readLimiter, requirePermission('lists.read'), listController.index);
+app.post('/api/lists', requirePermission('lists.update'), listController.addList);
+app.put('/api/lists/:id', requirePermission('lists.update'), listController.updateList);
+app.delete('/api/lists/:id', requirePermission('lists.update'), listController.removeList);
+
+// ITEMS
+app.get('/api/lists/:id/items', readLimiter, requirePermission('lists.read'), listController.getItems);
+app.get('/api/lists/by-name/:name/items', readLimiter, requirePermission('lists.read'), listController.getItemsByName);
+app.post('/api/lists/:id/items', requirePermission('lists.update'), listController.createItem);
+app.put('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.updateItem);
+app.delete('/api/lists/:id/items/:itemId', requirePermission('lists.update'), listController.removeItem);
 
 // ===== RUTAS DEL SISTEMA DE NOTIFICACIONES =====
 
@@ -436,8 +455,12 @@ app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermissio
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
 app.post('/api/appointments/:id/assign-inspector', requirePermission('appointments.update'), appointmentController.assignInspector);
+app.get('/api/appointments/order/:orderId', readLimiter, requireAuth, appointmentController.getAllAppointmentsByOrder);
 
 app.post('/api/external/appointment/validate-status', apiRateLimit, authenticateApiToken, appointmentController.validateAppointmentStatus);
+
+// ===== ENDPOINT PÚBLICO PARA ACTUALIZAR ESTADO DE APPOINTMENT =====
+app.patch('/api/appointments/:id/automated/status', appointmentController.updateStatusToIneffectiveWithRetry);
 
 
 // ===== RUTAS DE ADMINISTRACIÓN DE NOTIFICACIONES =====
@@ -846,4 +869,3 @@ process.on('SIGTERM', async () => {
 });
 
 startServer();
-

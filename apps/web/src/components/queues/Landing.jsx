@@ -1,20 +1,55 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Calendar, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
 import logo_mundial from '@/assets/logo_mundial.svg';
 
-const Landing = ({ 
-    inspectionOrder, 
-    existingAppointment, 
-    isWithinBusinessHours, 
-    startingInspection, 
-    onStartInspection, 
+const Landing = ({
+    inspectionOrder,
+    existingAppointment,
+    isWithinBusinessHours,
+    startingInspection,
+    onStartInspection,
     onGoToExistingInspection,
     isHolidayToday,
-    holidayName
+    holidayName,
+    inspectionStartedAt // <-- Nuevo prop
 }) => {
+    const { showToast } = useNotifications();
+
+    // ===== Efecto para notificaciones de inactividad =====
+    useEffect(() => {
+        if (!existingAppointment || !inspectionStartedAt) return;
+
+        let notified7Min = false;
+        let notified10Min = false;
+
+        const timer = setInterval(() => {
+            const elapsedSeconds = Math.floor((Date.now() - inspectionStartedAt) / 1000);
+
+            if (elapsedSeconds >= 420 && !notified7Min) { // 7 minutos
+                showToast(
+                    'Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.',
+                    'warning'
+                );
+                notified7Min = true;
+            }
+
+            if (elapsedSeconds >= 600 && !notified10Min) { // 10 minutos
+                showToast(
+                    'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar, seleccione nuevamente el enlace enviado anteriormente.',
+                    'error'
+                );
+                notified10Min = true;
+                clearInterval(timer);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [existingAppointment, inspectionStartedAt, showToast]);
+    // ================================================
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
             <div className="max-w-2xl mx-auto">
@@ -39,7 +74,7 @@ const Landing = ({
                                 ¡Hola {inspectionOrder.nombre_contacto}!
                             </h2>
                             <p className="text-gray-700">
-                                Estás a punto de iniciar la inspección de asegurabilidad de la placa: 
+                                Estás a punto de iniciar la inspección de asegurabilidad de la placa:
                                 <span className="font-bold text-blue-600 ml-1">
                                     {inspectionOrder.placa}
                                 </span>
@@ -59,7 +94,7 @@ const Landing = ({
                                         </h3>
                                     </div>
                                     <div className="mt-4">
-                                        <Button 
+                                        <Button
                                             onClick={onGoToExistingInspection}
                                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                                             size="lg"
@@ -118,6 +153,21 @@ const Landing = ({
                             </div>
                         )}
 
+                        {/* Horario de atención */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <Calendar className="h-5 w-5 mr-2" />
+                                Horario de Atención
+                            </h3>
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    <strong>Lunes a viernes:</strong> 8:00 AM - 5:00 PM<br />
+                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
+                                    <strong className="text-blue-800">Solo días hábiles</strong> (no festivos ni domingos)
+                                </p>
+                            </div>
+                        </div>
+
                         {/* Recomendaciones */}
                         <div>
                             <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
@@ -149,14 +199,13 @@ const Landing = ({
                         {/* Botón de inicio - mostrar si no hay agendamiento o si está en estado final */}
                         {(!existingAppointment || inspectionOrder.show_start_button === true) && (
                             <div className="text-center pt-4">
-                                <Button 
+                                <Button
                                     onClick={onStartInspection}
                                     disabled={startingInspection || !isWithinBusinessHours}
-                                    className={`w-full py-3 text-lg font-semibold ${
-                                        !isWithinBusinessHours 
-                                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    }`}
+                                    className={`w-full py-3 text-lg font-semibold ${!isWithinBusinessHours
+                                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        }`}
                                     size="lg"
                                 >
                                     {startingInspection ? (

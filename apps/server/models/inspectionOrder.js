@@ -157,6 +157,11 @@ const InspectionOrder = createModelWithSoftDeletes('InspectionOrder', {
         allowNull: true,
         comment: 'Código FASECOLDA del vehículo (opcional)'
     },
+    tipo_vehiculo: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: 'Tipo de vehículo seleccionado de la lista configurable'
+    },
     inspection_link: {
         type: DataTypes.STRING(500),
         allowNull: true,

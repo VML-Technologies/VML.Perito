@@ -75,6 +75,9 @@ import Accessory from './accessory.js';
 // Nuevos modelos para histórico de siniestros
 import SinisterRecord from './sinisterRecord.js';
 
+// List configuration (listas parametrizables)
+import ListName from './listName.js';
+
 // Nuevos modelos compartidos
 import PeritajeOrder from './peritajeOrder.js';
 import PeritajeAgendamiento from './peritajeAgendamiento.js';
@@ -111,6 +114,20 @@ InspectionOrder.hasMany(SinisterRecord, {
 SinisterRecord.belongsTo(InspectionOrder, {
     foreignKey: 'inspection_order_id',
     as: 'inspectionOrder',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// ListName (listas parametrizables) - relación self-referencial
+ListName.hasMany(ListName, {
+    foreignKey: 'parent_id',
+    as: 'items',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ListName.belongsTo(ListName, {
+    foreignKey: 'parent_id',
+    as: 'parent',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });

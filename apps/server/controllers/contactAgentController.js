@@ -506,11 +506,11 @@ class ContactAgentController {
                 });
             }
 
-            // Verificar que la orden existe y está asignada al agente
+            // Verificar que la orden existe
+            // Permitir gestión de órdenes no asignadas (para autogestiones sin actividad)
             const order = await InspectionOrder.findOne({
                 where: {
-                    id: inspection_order_id,
-                    assigned_agent_id: req.user.id
+                    id: inspection_order_id
                 },
                 include: [
                     {
@@ -524,8 +524,16 @@ class ContactAgentController {
             if (!order) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Orden no encontrada o no asignada a este agente'
+                    message: 'Orden no encontrada'
                 });
+            }
+
+            // Si la orden no está asignada, asignarla al agente actual
+            if (!order.assigned_agent_id) {
+                await order.update({
+                    assigned_agent_id: req.user.id
+                });
+                console.log(`✅ Orden ${order.numero} asignada automáticamente al agente ${req.user.name}`);
             }
 
             // Mapear los datos del frontend al formato del modelo
