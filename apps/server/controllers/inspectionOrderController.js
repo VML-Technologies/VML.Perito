@@ -13,7 +13,6 @@ import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
 import { json, Op, QueryTypes, where } from 'sequelize';
-import { json, Op, QueryTypes, where } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -24,7 +23,6 @@ import ImageCapture from '../models/imageCapture.js';
 import InspectionQueue from '../models/inspectionQueue.js';
 import sequelize from '../config/database.js';
 import fs from 'fs';
-import crypto from 'crypto';
 import crypto from 'crypto';
 import ImageProcessor from '../utils/imageProcessor.js';
 
