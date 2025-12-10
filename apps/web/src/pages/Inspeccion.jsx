@@ -26,7 +26,7 @@ const Inspeccion = () => {
     const [businessHoursTimer, setBusinessHoursTimer] = useState(null);
     const [isHolidayToday, setIsHolidayToday] = useState(false);
     const [holidayName, setHolidayName] = useState('');
-
+    
     // Estados para el sistema de colas
     const [currentView, setCurrentView] = useState('landing'); // 'landing', 'wait', 'inspectorAssigned'
     const [queueStatus, setQueueStatus] = useState(null);
@@ -369,7 +369,7 @@ const Inspeccion = () => {
 
         try {
             setStartingInspection(true);
-
+            
             // Agregar a la cola de inspecciones
             const queueResponse = await fetch(API_ROUTES.INSPECTION_QUEUE.ADD_TO_QUEUE_PUBLIC, {
                 method: 'POST',
@@ -517,6 +517,7 @@ const Inspeccion = () => {
                         onGoToExistingInspection={handleGoToExistingInspection}
                         isHolidayToday={isHolidayToday}
                         holidayName={holidayName}
+                        inspectionStartedAt={inspectionStartedAt}
                     />
                 );
         }

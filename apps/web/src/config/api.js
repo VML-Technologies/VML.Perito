@@ -326,6 +326,20 @@ export const API_ROUTES = {
         SCHEDULE: `${API_BASE_URL}/api/peritajes/schedule`,
         ASSIGN_AGENT: `${API_BASE_URL}/api/peritajes/assign-agent`,
     },
+    // ===== RUTAS - LIST CONFIG =====
+    LIST_CONFIG: {
+        LIST: API_BASE_URL + '/api/lists',
+        CREATE: API_BASE_URL + '/api/lists',
+        GET: (id) => API_BASE_URL + `/api/lists/${id}`,
+        UPDATE: (id) => API_BASE_URL + `/api/lists/${id}`,
+        DELETE: (id) => API_BASE_URL + `/api/lists/${id}`,
+
+        ITEMS: (listId) => API_BASE_URL + `/api/lists/${listId}/items`,
+        ITEMS_BY_NAME: (name) => API_BASE_URL + `/api/lists/by-name/${name}/items`,
+        ITEM: (listId, itemId) =>
+            API_BASE_URL + `/api/lists/${listId}/items/${itemId}`,
+    },
+
 };
 
 export const API_CONFIG = {

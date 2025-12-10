@@ -463,6 +463,74 @@ const seedRBAC = async () => {
                 endpoint: '/api/templates/:id',
                 method: 'DELETE'
             },
+            // ===== PERMISOS DE LISTAS =====
+            {
+                name: 'lists.read',
+                description: 'Ver todas las listas',
+                resource: 'lists',
+                action: 'read',
+                endpoint: '/api/lists',
+                method: 'GET'
+            },
+            {
+                name: 'lists.create',
+                description: 'Crear una nueva lista',
+                resource: 'lists',
+                action: 'create',
+                endpoint: '/api/lists',
+                method: 'POST'
+            },
+            {
+                name: 'lists.update',
+                description: 'Actualizar una lista existente',
+                resource: 'lists',
+                action: 'update',
+                endpoint: '/api/lists/:id',
+                method: 'PUT'
+            },
+            {
+                name: 'lists.delete',
+                description: 'Eliminar una lista existente',
+                resource: 'lists',
+                action: 'delete',
+                endpoint: '/api/lists/:id',
+                method: 'DELETE'
+            },
+            // ===== PERMISOS DE ITEMS DE LISTAS =====
+            {
+                name: 'list_items.read',
+                description: 'Ver los items de una lista',
+                resource: 'list_items',
+                action: 'read',
+                endpoint: '/api/lists/:listId/items',
+                method: 'GET'
+            },
+            {
+                name: 'list_items.create',
+                description: 'Crear un nuevo item dentro de una lista',
+                resource: 'list_items',
+                action: 'create',
+                endpoint: '/api/lists/:listId/items',
+                method: 'POST'
+            },
+            {
+                name: 'list_items.update',
+                description: 'Actualizar un item específico dentro de una lista',
+                resource: 'list_items',
+                action: 'update',
+                endpoint: '/api/lists/:listId/items/:itemId',
+                method: 'PUT'
+            },
+            {
+                name: 'list_items.delete',
+                description: 'Eliminar un item específico dentro de una lista',
+                resource: 'list_items',
+                action: 'delete',
+                endpoint: '/api/lists/:listId/items/:itemId',
+                method: 'DELETE'
+            },
+
+
             // ===== PERMISOS DE CANALES DE NOTIFICACIÓN =====
             {
                 name: 'channels.read',
@@ -739,7 +807,7 @@ const seedRBAC = async () => {
         console.log('🔗 Asignando permisos a roles...');
 
         // Super Admin: Todos los permisos
-        const superAdminRole = createdRoles.find(r => r.name == 'super_admin');
+        const superAdminRole = createdRoles.find(r => r.name === 'super_admin');
         if (superAdminRole) {
             for (const permission of createdPermissions) {
                 await RolePermission.findOrCreate({
@@ -753,11 +821,13 @@ const seedRBAC = async () => {
         }
 
         // Admin: Todos excepto administración de roles/permisos
-        const adminRole = createdRoles.find(r => r.name == 'admin');
+        const adminRole = createdRoles.find(r => r.name === 'admin');
         if (adminRole) {
             const adminPermissions = createdPermissions.filter(p =>
-                !p.name.includes('roles.') && !p.name.includes('permissions.')
+                !p.name.startsWith('roles.') &&
+                !p.name.startsWith('permissions.')
             );
+
             for (const permission of adminPermissions) {
                 await RolePermission.findOrCreate({
                     where: {
@@ -766,7 +836,8 @@ const seedRBAC = async () => {
                     }
                 });
             }
-            console.log(`✅ Permisos de administración asignados a ${adminRole.name}`);
+
+            console.log(`✅ Permisos administrativos asignados a ${adminRole.name}`);
         }
 
         // Manager: Permisos de lectura y escritura básicos
@@ -813,7 +884,8 @@ const seedRBAC = async () => {
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
                 p.name.startsWith('inspections.create') ||
-                p.name == 'users.read' // Necesario para acceder al perfil
+                p.name == 'users.read' || // Necesario para acceder al perfil
+                p.name == 'lists.read' // Permiso para ver listas e ítems
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({
@@ -827,13 +899,14 @@ const seedRBAC = async () => {
         }
 
         const comercialRole4 = createdRoles.find(r => r.name == 'comercial_mundial_4');
-        if (comercialRole) {
+        if (comercialRole4) {
             const comercialPermissions = createdPermissions.filter(p =>
                 p.name.startsWith('inspection_orders.') ||
                 p.name.startsWith('departments.read') ||
                 p.name.startsWith('cities.read') ||
                 p.name.startsWith('sedes.read') ||
-                p.name == 'users.read' // Necesario para acceder al perfil
+                p.name == 'users.read' || // Necesario para acceder al perfil
+                p.name == 'lists.read' // Permiso para ver listas e ítems
             );
             for (const permission of comercialPermissions) {
                 await RolePermission.findOrCreate({
