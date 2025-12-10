@@ -103,12 +103,12 @@ const DetailsButton = ({ item }) => {
                                 <table className="w-full text-sm border-collapse table-auto">
                                     <thead>
                                         <tr className="border-b bg-gray-100 dark:bg-gray-700">
-                                            <th className="py-2 px-3 text-left w-36">Tipo</th>
-                                            <th className="py-2 px-3 text-left w-32">Fecha</th>
-                                            <th className="py-2 px-3 text-left w-28">Hora</th>
-                                            <th className="py-2 px-3 text-left w-20">Activo</th>
-                                            <th className="py-2 px-3 text-left">Notes</th>
-                                            <th className="py-2 px-3 text-left">Observaciones</th>
+                                            <th className="py-2 px-3 text-center w-36">Tipo</th>
+                                            <th className="py-2 px-3 text-center w-32">Fecha</th>
+                                            <th className="py-2 px-3 text-center w-28">Hora</th>
+                                            <th className="py-2 px-3 text-center w-20">Activo</th>
+                                            <th className="py-2 px-3 text-center">Notas</th>
+                                            <th className="py-2 px-3 text-center">Observaciones</th>
                                         </tr>
                                     </thead>
 
@@ -131,22 +131,22 @@ const DetailsButton = ({ item }) => {
 
                                                 return (
                                                     <tr key={idx} className={`border-b ${inspection.deleted_at ? 'bg-red-50 opacity-60' : ''}`}>
-                                                        <td className="py-2 px-3">
+                                                        <td className="py-2 px-3 text-center">
                                                             <Badge variant={inspection.type === 'queue' ? 'default' : 'outline'}>
                                                                 {tipoTraducido}
                                                             </Badge>
                                                         </td>
-                                                        <td className="py-2 px-3">{fecha}</td>
-                                                        <td className="py-2 px-3">{hora}</td>
-                                                        <td className="py-2 px-3">
+                                                        <td className="py-2 px-3 text-center">{fecha}</td>
+                                                        <td className="py-2 px-3 text-center">{hora}</td>
+                                                        <td className="py-2 px-3 text-center">
                                                             <Badge variant={inspection.deleted_at ? 'destructive' : 'success'}>
                                                                 {inspection.deleted_at ? 'Eliminado' : 'Activo'}
                                                             </Badge>
                                                         </td>
-                                                        <td className="py-2 px-3 whitespace-pre-wrap">
+                                                        <td className="py-2 px-3 text-center whitespace-pre-wrap">
                                                             {inspection.notes || "N/A"}
                                                         </td>
-                                                        <td className="py-2 px-3 whitespace-pre-wrap">
+                                                        <td className="py-2 px-3 text-center whitespace-pre-wrap">
                                                             {inspection.observaciones || "N/A"}
                                                         </td>
                                                     </tr>
