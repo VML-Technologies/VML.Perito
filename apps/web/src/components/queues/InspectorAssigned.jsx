@@ -11,8 +11,8 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
   const [notification, setNotification] = useState('');
   const [notificationColor, setNotificationColor] = useState('');
 
-  const totalTime = 30; // 30 segundos para pruebas (original: 600)
-  const warningTime = 20; // 20 segundos para pruebas (original: 420) 
+  const totalTime = 600; // 30 segundos para pruebas (original: 600)
+  const warningTime = 420; // 20 segundos para pruebas (original: 420) 
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
