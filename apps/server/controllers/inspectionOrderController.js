@@ -347,7 +347,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -387,7 +387,23 @@ class InspectionOrderController extends BaseController {
             let transformedOrders = rows.map(order => {
                 // Ordenar appointments por updated_at descendente (más reciente primero)
                 const sortedAppointments = order.appointments
-                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).map(apt => {
+                        console.log(`🔍 Appointment ID ${apt.id}: observaciones = "${apt.observaciones}", notes = "${apt.notes}"`);
+                        return {
+                            id: apt.id,
+                            session_id: apt.session_id,
+                            scheduled_date: apt.scheduled_date,
+                            scheduled_time: apt.scheduled_time,
+                            status: apt.status,
+                            notes: apt.notes,
+                            observaciones: apt.observaciones,
+                            direccion_inspeccion: apt.direccion_inspeccion,
+                            created_at: apt.created_at,
+                            updated_at: apt.updated_at,
+                            inspectionModality: apt.inspectionModality,
+                            sede: apt.sede
+                        };
+                    })
                     : [];
 
                 return {
@@ -546,6 +562,7 @@ class InspectionOrderController extends BaseController {
             });
         }
     }
+    
 
     // Crear orden con validaciones
     async store(req, res) {
@@ -2734,6 +2751,49 @@ if status == 5 then check for latest @appointment an if it is with status != ine
      * Obtener URL de descarga del PDF de inspección
      * GET /api/inspection-orders/:id/pdf-download-url
      */
+    async getAppointmentsHistory(req, res) {
+        try {
+            const { orderId } = req.params;
+            console.log('🔍 Buscando appointments para orderId:', orderId);
+            
+            const appointments = await Appointment.findAll({
+                where: { 
+                    inspection_order_id: orderId
+                },
+                paranoid: false,
+                attributes: ['id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'created_at', 'updated_at', 'deleted_at'],
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['name', 'code']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['name', 'address']
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+            
+            console.log('📊 Appointments encontrados:', appointments.length);
+            console.log('📊 Appointments data:', appointments);
+            
+            res.json({
+                success: true,
+                data: appointments
+            });
+        } catch (error) {
+            console.error('Error obteniendo historial de appointments:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
     async getPdfDownloadUrl(req, res) {
         try {
             const { orderId, appointmentId, sessionId } = req.params;

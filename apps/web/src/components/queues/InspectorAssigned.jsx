@@ -90,6 +90,8 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
     timerColor = 'text-red-600';
   }
 
+  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-2xl w-full">

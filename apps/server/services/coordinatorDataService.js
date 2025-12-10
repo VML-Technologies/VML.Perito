@@ -153,7 +153,7 @@ class CoordinatorDataService {
         }).filter(el => {
             // const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
 
-            const statusToRemove = ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
+            const statusToRemove = ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent']
             return !statusToRemove.includes(el.estado)
         })
     }
@@ -166,9 +166,7 @@ class CoordinatorDataService {
             where: {
                 deleted_at: null,               
                 status: {
-                    // [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
-
-                    [Op.not]: ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'assigned', 'sent']
+                    [Op.not]: ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent']
                 },
                 call_log_id: null
             },

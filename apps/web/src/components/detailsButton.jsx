@@ -1,17 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { API_ROUTES } from "@/config/api";
 
 const DetailsButton = ({ item }) => {
     const [open, setOpen] = useState(false);
+    const [appointments, setAppointments] = useState([]);
+    const [queueEntries, setQueueEntries] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const handleOpen = () => setOpen(true);
+    const handleOpen = async () => {
+        setOpen(true);
+        setLoading(true);
+        
+        try {
+            const orderId = item.inspectionOrder?.id || item.id;
+            const response = await fetch(`${API_ROUTES.INSPECTION_ORDERS.GET(orderId)}/appointments-history`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const responseText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('❌ Error parseando JSON:', parseError);
+                throw new Error('Respuesta no es JSON válido');
+            }
+            
+            if (data.success) {
+                setAppointments(data.data || []);
+                setQueueEntries([]); // Por ahora solo appointments
+            } else {
+                console.error('❌ Error en respuesta:', data.message);
+            }
+        } catch (error) {
+            console.error('❌ Error cargando appointments:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     const handleClose = () => setOpen(false);
 
-    // Citas reales desde el backend
-    const appointments = item?.inspectionOrder?.appointments || item?.appointments || [];
-
+    // Mapear appointments
+    const allInspections = appointments.map(apt => ({
+        type: 'appointment',
+        date: apt.scheduled_date,
+        time: apt.scheduled_time,
+        status: apt.status,
+        notes: apt.notes,
+        observaciones: apt.observaciones,
+        created_at: apt.created_at,
+        updated_at: apt.updated_at,
+        deleted_at: apt.deleted_at
+    })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
     // Mapeo de estados a español
     const statusMap = {
         pending: "Pendiente",
@@ -21,7 +68,18 @@ const DetailsButton = ({ item }) => {
         ineffective_with_retry: "No Efectiva - Reagendar",
         ineffective_no_retry: "No Efectiva - No Reagendar",
         call_finished: "Llamada Finalizada",
-        revision_supervisor: "Revisión Supervisor"
+        revision_supervisor: "Revisión Supervisor",
+        assigned: "Asignada",
+        cancelled: "Cancelada",
+        en_cola: "En Cola",
+        en_proceso: "En Proceso",
+        completada: "Completada",
+        cancelada: "Cancelada"
+    };
+
+    const typeMap = {
+        appointment: "Cita Agendada",
+        queue: "Inspección Virtual"
     };
 
     return (
@@ -38,50 +96,66 @@ const DetailsButton = ({ item }) => {
                     >
                         <Card className="bg-transparent shadow-none">
                             <CardHeader>
-                                <CardTitle>Detalle de Citas del Asegurado</CardTitle>
+                                <CardTitle>Historial de Inspecciones</CardTitle>
                             </CardHeader>
 
                             <CardContent className="space-y-4">
                                 <table className="w-full text-sm border-collapse table-auto">
                                     <thead>
                                         <tr className="border-b bg-gray-100 dark:bg-gray-700">
+                                            <th className="py-2 px-3 text-left w-36">Tipo</th>
                                             <th className="py-2 px-3 text-left w-32">Fecha</th>
                                             <th className="py-2 px-3 text-left w-28">Hora</th>
-                                            <th className="py-2 px-3 text-left w-32">Estado</th>
+                                            <th className="py-2 px-3 text-left w-20">Activo</th>
+                                            <th className="py-2 px-3 text-left">Notes</th>
                                             <th className="py-2 px-3 text-left">Observaciones</th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
-                                        {appointments.length > 0 ? (
-                                            appointments.map((cita, idx) => {
-                                                const fecha = cita.scheduled_date
-                                                    ? new Date(cita.scheduled_date).toLocaleDateString("es-CO")
+                                        {loading ? (
+                                            <tr className="border-b">
+                                                <td colSpan="6" className="text-center py-4">
+                                                    Cargando...
+                                                </td>
+                                            </tr>
+                                        ) : allInspections.length > 0 ? (
+                                            allInspections.map((inspection, idx) => {
+                                                const fecha = inspection.date
+                                                    ? new Date(inspection.date).toLocaleDateString("es-CO")
                                                     : "-";
 
-                                                const hora = cita.scheduled_time || "-";
-
-                                                const estadoTraducido = statusMap[cita.status] || cita.status || "N/A";
+                                                const hora = inspection.time || "-";
+                                                const estadoTraducido = statusMap[inspection.status] || inspection.status || "N/A";
+                                                const tipoTraducido = typeMap[inspection.type] || inspection.type;
 
                                                 return (
-                                                    <tr key={idx} className="border-b">
+                                                    <tr key={idx} className={`border-b ${inspection.deleted_at ? 'bg-red-50 opacity-60' : ''}`}>
+                                                        <td className="py-2 px-3">
+                                                            <Badge variant={inspection.type === 'queue' ? 'default' : 'outline'}>
+                                                                {tipoTraducido}
+                                                            </Badge>
+                                                        </td>
                                                         <td className="py-2 px-3">{fecha}</td>
                                                         <td className="py-2 px-3">{hora}</td>
                                                         <td className="py-2 px-3">
-                                                            <Badge variant="secondary">
-                                                                {estadoTraducido}
+                                                            <Badge variant={inspection.deleted_at ? 'destructive' : 'success'}>
+                                                                {inspection.deleted_at ? 'Eliminado' : 'Activo'}
                                                             </Badge>
                                                         </td>
                                                         <td className="py-2 px-3 whitespace-pre-wrap">
-                                                            {cita.observaciones || "N/A"}
+                                                            {inspection.notes || "N/A"}
+                                                        </td>
+                                                        <td className="py-2 px-3 whitespace-pre-wrap">
+                                                            {inspection.observaciones || "N/A"}
                                                         </td>
                                                     </tr>
                                                 );
                                             })
                                         ) : (
                                             <tr className="border-b">
-                                                <td className="py-2 px-3" colSpan="4" className="text-center py-4">
-                                                    No hay citas registradas
+                                                <td colSpan="6" className="text-center py-4">
+                                                    No hay inspecciones registradas
                                                 </td>
                                             </tr>
                                         )}

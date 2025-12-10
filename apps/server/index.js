@@ -281,6 +281,9 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
 
+// Ruta para obtener historial de appointments
+app.get('/api/inspection-orders/:orderId/appointments-history', readLimiter, inspectionOrderController.getAppointmentsHistory);
+
 // Ruta para obtener URL de descarga del PDF
 app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, inspectionOrderController.getPdfDownloadUrl);
 
@@ -342,6 +345,7 @@ app.post('/api/coordinador-contacto/assign', requirePermission('coordinador_cont
 app.get('/api/coordinador-contacto/ordenes-recuperacion', requireAuth, coordinadorContactoController.getOrdenesRecuperacion);
 app.get('/api/coordinador-contacto/ordenes-no-recuperadas', requireAuth, coordinadorContactoController.getOrdenesNoRecuperadas);
 app.get('/api/coordinador-contacto/ordenes/:id/actividad', requireAuth, coordinadorContactoController.getOrdenActividad);
+app.get('/api/coordinador-contacto/ordenes/:id/appointments', requireAuth, coordinadorContactoController.getOrderAppointments);
 app.get('/api/coordinador-vml/reports/coordinator', requireAuth, coordinadorContactoController.getCoordinatorReport);
 
 // ===== RUTAS DE NOTIFICACIONES =====
@@ -433,6 +437,7 @@ app.get('/api/appointments/sede-inspector-aliado', readLimiter, requirePermissio
 app.get('/api/appointments/:id', readLimiter, requirePermission('appointments.read'), appointmentController.getAppointment);
 app.put('/api/appointments/:id', requirePermission('appointments.update'), appointmentController.updateAppointment);
 app.post('/api/appointments/:id/assign-inspector', requirePermission('appointments.update'), appointmentController.assignInspector);
+app.get('/api/appointments/order/:orderId', readLimiter, requireAuth, appointmentController.getAllAppointmentsByOrder);
 
 app.post('/api/external/appointment/validate-status', apiRateLimit, authenticateApiToken, appointmentController.validateAppointmentStatus);
 
