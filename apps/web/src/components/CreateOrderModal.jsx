@@ -455,8 +455,29 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
             newErrors.correo_contacto = 'El formato del email no es válido';
         }
 
-        if (formData.placa && formData.placa.length > 6) {
-            newErrors.placa = 'La placa no puede tener más de 6 caracteres';
+        if (formData.placa) {
+            const tipoVehiculo = formData.tipo_vehiculo?.toLowerCase();
+            let placaValida = false;
+            let mensajeError = '';
+            
+            if (tipoVehiculo?.includes('moto')) {
+                // Motos: 3 letras + 2 números + 1 letra opcional
+                placaValida = /^[A-Z]{3}[0-9]{2}[A-Z]?$/.test(formData.placa);
+                mensajeError = 'Moto: Debe tener 3 letras, 2 números y opcionalmente 1 letra (ej: ABC12 o ABC12D)';
+            } else if (tipoVehiculo?.includes('automovil') || tipoVehiculo?.includes('camioneta')) {
+                // Automóvil y Camioneta: 3 letras + 3 números
+                placaValida = /^[A-Z]{3}[0-9]{3}$/.test(formData.placa);
+                const tipo = tipoVehiculo?.includes('automovil') ? 'Automóvil' : 'Camioneta';
+                mensajeError = `${tipo}: Debe tener 3 letras seguidas de 3 números (ej: ABC123)`;
+            } else {
+                // Sin tipo seleccionado, validación general
+                placaValida = false;
+                mensajeError = 'Selecciona el tipo de vehículo para validar el formato de placa correctamente';
+            }
+            
+            if (!placaValida) {
+                newErrors.placa = mensajeError;
+            }
         }
 
         if (formData.modelo && formData.modelo.length > 4) {
@@ -472,8 +493,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
         }
 
         if (formData.celular_cliente) {
-            if (formData.celular_cliente.length > 10) {
-                newErrors.celular_cliente = 'El celular no puede tener más de 10 dígitos';
+            if (formData.celular_cliente.length !== 10) {
+                newErrors.celular_cliente = 'El celular debe tener exactamente 10 dígitos';
             } else if (!/^\d+$/.test(formData.celular_cliente)) {
                 newErrors.celular_cliente = 'El celular debe ser numérico';
             }

@@ -351,7 +351,7 @@ const ListManager = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Etiqueta</Label>
+              <Label>Descripción</Label>
               <Input maxLength={200} value={listForm.label} onChange={(e) => setListForm(prev => ({ ...prev, label: e.target.value }))} />
             </div>
 
@@ -372,12 +372,12 @@ const ListManager = () => {
 
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSaveItem(); }}>
             <div className="space-y-2">
-              <Label>Valor</Label>
+              <Label>Ítem</Label>
               <Input maxLength={200} value={itemForm.value} onChange={(e) => setItemForm(prev => ({ ...prev, value: e.target.value }))} required />
             </div>
 
             <div className="space-y-2">
-              <Label>Etiqueta</Label>
+              <Label>Descripción</Label>
               <Input maxLength={200} value={itemForm.label} onChange={(e) => setItemForm(prev => ({ ...prev, label: e.target.value }))} />
             </div>
 
