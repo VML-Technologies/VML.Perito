@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Calendar, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNotifications } from '@/hooks/use-notifications';
 import logo_mundial from '@/assets/logo_mundial.svg';
 
 const Landing = ({
@@ -106,22 +107,7 @@ const Landing = ({
                                 </div>
                                 <Separator />
                             </>
-                        )}
-
-                        {/* Horario de atención */}
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                                <Calendar className="h-5 w-5 mr-2" />
-                                Horario de Atención
-                            </h3>
-                            <div className="bg-blue-50 p-4 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                    <strong>Lunes a viernes:</strong> 8:00 AM - 4:00 PM<br />
-                                    <strong>Sábados:</strong> 8:00 AM - 12:00 PM<br />
-                                    <strong className="text-blue-800">Solo días hábiles</strong> (no festivos ni domingos)
-                                </p>
-                            </div>
-                        </div>                        
+                        )}                     
 
                         {/* Mensaje de festivo */}
                         {isHolidayToday && (

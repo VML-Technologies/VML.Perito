@@ -517,7 +517,7 @@ const Inspeccion = () => {
                         onGoToExistingInspection={handleGoToExistingInspection}
                         isHolidayToday={isHolidayToday}
                         holidayName={holidayName}
-                        inspectionStartedAt={inspectionStartedAt}
+                        // inspectionStartedAt={inspectionStartedAt}
                     />
                 );
         }
