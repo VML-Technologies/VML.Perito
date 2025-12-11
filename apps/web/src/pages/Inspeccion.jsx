@@ -247,7 +247,7 @@ const Inspeccion = () => {
 
         // Solo actualizar si el estado cambió para evitar renders innecesarios
         if (previousState !== isWithinHours) {
-            setIsWithinBusinessHours(isWithinHours);
+            setIsWithinBusinessHours(true)//isWithinHours);
 
             // Mostrar notificación cuando cambie el estado
             if (holidayCheck.isHoliday) {
