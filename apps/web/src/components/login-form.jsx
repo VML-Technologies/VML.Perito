@@ -53,8 +53,7 @@ export function LoginForm({
             src={logo}
             alt="Logo"
             className="w-[140px] h-[140px] mb-2"
-          />
-          <AppName className="mb-2 px-2" />
+          /> 
           <CardTitle className="text-lg font-bold mb-1 text-center">
             Ingreso de Usuario
           </CardTitle>
