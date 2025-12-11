@@ -106,7 +106,7 @@ const DetailsButton = ({ item }) => {
                                             <th className="py-2 px-3 text-center w-36">Tipo</th>
                                             <th className="py-2 px-3 text-center w-32">Fecha</th>
                                             <th className="py-2 px-3 text-center w-28">Hora</th>
-                                            <th className="py-2 px-3 text-center w-20">Activo</th>
+                                            {/* <th className="py-2 px-3 text-center w-20">Activo</th> */}
                                             <th className="py-2 px-3 text-center">Notas</th>
                                             <th className="py-2 px-3 text-center">Observaciones</th>
                                         </tr>
@@ -138,11 +138,11 @@ const DetailsButton = ({ item }) => {
                                                         </td>
                                                         <td className="py-2 px-3 text-center">{fecha}</td>
                                                         <td className="py-2 px-3 text-center">{hora}</td>
-                                                        <td className="py-2 px-3 text-center">
+                                                        {/* <td className="py-2 px-3 text-center">
                                                             <Badge variant={inspection.deleted_at ? 'destructive' : 'success'}>
                                                                 {inspection.deleted_at ? 'Eliminado' : 'Activo'}
                                                             </Badge>
-                                                        </td>
+                                                        </td> */}
                                                         <td className="py-2 px-3 text-center whitespace-pre-wrap">
                                                             {inspection.notes || "N/A"}
                                                         </td>
