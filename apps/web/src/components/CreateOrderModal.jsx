@@ -471,6 +471,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 placaValida = /^[A-Z]{3}[0-9]{3}$/.test(formData.placa);
                 const tipo = tipoVehiculo?.includes('automovil') ? 'Automóvil' : 'Camioneta';
                 mensajeError = `${tipo}: Debe tener 3 letras seguidas de 3 números (ej: ABC123)`;
+            } else if (tipoVehiculo?.includes('trailer')) {
+                placaValida = /^[A-Z]{1}[0-9]{5}$/.test(formData.placa);
+                mensajeError = `Trailer debe tener 1 letra seguida de 5 números (ej: A12345)`;
+            } else if (tipoVehiculo?.trim().length !== 0) {
+                placaValida = /^[A-Z]{3}[0-9]{3}$/.test(formData.placa);
+                mensajeError = `Debe tener 3 letras seguidas de 3 números (ej: AAA123)`;
             } else {
                 // Sin tipo seleccionado, validación general
                 placaValida = false;
