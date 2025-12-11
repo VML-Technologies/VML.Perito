@@ -47,7 +47,7 @@ class InspectionQueueController extends BaseController {
             // Lunes a viernes: 8:00 AM - 5:00 PM (17:00)
             if (dayOfWeek >= 1 && dayOfWeek <= 5) {
                 const startTime = 8 * 60;  // 8:00 AM = 480 minutos
-                const endTime = 17 * 60;    // 5:00 PM = 1020 minutos
+                const endTime = 23 * 60;    // 5:00 PM = 1020 minutos
 
                 if (currentTime < startTime) {
                     return {
