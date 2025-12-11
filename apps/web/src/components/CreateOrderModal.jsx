@@ -636,6 +636,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 let errorData;
                 try {
                     errorData = await response.json();
+                    console.error('📤 Error del servidor:', errorData);
                 } catch {
                     errorData = { message: `Error del servidor: ${response.status} ${response.statusText}` };
                 }

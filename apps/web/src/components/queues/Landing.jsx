@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Calendar, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
+import { useNotifications } from '@/hooks/use-notifications';
 import logo_mundial from '@/assets/logo_mundial.svg';
 
 const Landing = ({

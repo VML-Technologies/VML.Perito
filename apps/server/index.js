@@ -283,9 +283,6 @@ app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.rese
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
 
-// Ruta para obtener historial de appointments
-app.get('/api/inspection-orders/:orderId/appointments-history', readLimiter, inspectionOrderController.getAppointmentsHistory);
-
 // Ruta para obtener URL de descarga del PDF
 app.get('/api/inspection-orders/:orderId/:appointmentId/:sessionId/pdf-download-url', readLimiter, inspectionOrderController.getPdfDownloadUrl);
 
