@@ -48,17 +48,17 @@ export function LoginForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader className="flex flex-col items-center -mt-4">
+        <CardHeader className="flex flex-col items-center -mt-4 px-6">
           <img
             src={logo}
             alt="Logo"
-            className="w-[150px] h-[150px] mb-[-8px]"
+            className="w-[140px] h-[140px] mb-2"
           />
-          <AppName className="mb-0" />
-          <CardTitle className="text-xl font-bold mb-0">
+          <AppName className="mb-2 px-2" />
+          <CardTitle className="text-lg font-bold mb-1 text-center">
             Ingreso de Usuario
           </CardTitle>
-          <CardDescription className="text-sm text-center">
+          <CardDescription className="text-sm text-center px-2">
             Ingresa tu correo electrónico para iniciar sesión
           </CardDescription>
         </CardHeader>
