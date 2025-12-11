@@ -159,7 +159,7 @@ export default function AgenteContacto() {
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        <span className="inline">Peritajes - Momento 3</span>
+                        <span className="inline">Peritajes - Momento 3 y 4</span>
                     </TabsTrigger>
                 </TabsList>
 

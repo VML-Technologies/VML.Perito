@@ -346,7 +346,7 @@ const PeritajeMomento3 = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="h-6 w-6" />
-                        Peritajes - Momento 3
+                        Peritajes - Momento 3 y 4
                     </CardTitle>
                     <CardDescription>
                         {isCoordinador
@@ -455,6 +455,12 @@ const PeritajeMomento3 = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-2">
+                                                        <Badge
+                                                            variant={peritaje.momento === 3 ? "secondary" : "default"}
+                                                            className={`${peritaje.momento === 3 ? "bg-blue-500/10 text-blue-700 border-blue-200" : "bg-purple-500/10 text-purple-700 border-purple-200"}`}
+                                                        >
+                                                            {peritaje.momento}
+                                                        </Badge>
                                                         <Badge
                                                             variant={isAssigned ? "default" : "secondary"}
                                                             className={`${isAssigned ? "bg-green-500/10 text-green-700 border-green-200" : "bg-orange-500/10 text-orange-700 border-orange-200"}`}

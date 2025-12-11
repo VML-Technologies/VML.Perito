@@ -183,7 +183,7 @@ export default function CoordinadorContacto() {
                     </TabsTrigger>
                     <TabsTrigger value="peritajes" className="flex items-center gap-2">
                         <BarChart3 className="h-4 w-4" />
-                        <span className="inline">Peritaje - Momento 3</span>
+                        <span className="inline">Peritajes - Momento 3 y 4</span>
                     </TabsTrigger>
                 </TabsList>
 
