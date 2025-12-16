@@ -946,7 +946,7 @@ class AppointmentController {
             // Notificar a InspectYa API
             try {
                 if (appointment.session_id) {
-                    const inspectYaUrl = process.env.INSPECTYA_API_URL || 'https://qa-inspectya.vmltechnologies.com:8017';
+                    const inspectYaUrl = process.env.INSPECTYA_API_URL || 'https://dev-inspectya.vmltechnologies.com';
                     const response = await fetch(`${inspectYaUrl}/api/appointments/${appointment.id}/automated/status`, {
                         method: 'PATCH',
                         headers: {

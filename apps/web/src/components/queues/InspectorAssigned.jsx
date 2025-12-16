@@ -10,6 +10,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
   const [secondsSinceAssignment, setSecondsSinceAssignment] = useState(0);
   const [notification, setNotification] = useState('');
   const [notificationColor, setNotificationColor] = useState('');
+  const [statusUpdated, setStatusUpdated] = useState(false);
 
   const totalTime = 120; // 30 segundos para pruebas (original: 600)
   const warningTime = 60; // 20 segundos para pruebas (original: 420) 
@@ -43,18 +44,19 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
     }
 
     // Mensaje de cierre a los 10 minutos y llamada al endpoint
-    if (secondsSinceAssignment >= totalTime) {
+    if (secondsSinceAssignment >= totalTime && !statusUpdated) {
       setNotification(
         'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar con el proceso, por favor seleccione nuevamente el enlace enviado anteriormente para retomar la conexión.'
       );
       setNotificationColor('text-red-600');
       
-      // Llamar al endpoint para actualizar el estado
+      // Llamar al endpoint para actualizar el estado (solo una vez)
       if (existingAppointment?.id) {
+        setStatusUpdated(true);
         updateAppointmentStatus(existingAppointment.id);
       }
     }
-  }, [secondsSinceAssignment, existingAppointment]);
+  }, [secondsSinceAssignment, existingAppointment, statusUpdated]);
   
   // Función para actualizar el estado del appointment
   const updateAppointmentStatus = async (appointmentId) => {
@@ -65,7 +67,6 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          observations: 'Inspección cerrada por inactividad de 10 minutos',
           isUserOverride: false
         })
       });

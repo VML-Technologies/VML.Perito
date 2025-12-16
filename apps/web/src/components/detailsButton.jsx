@@ -9,6 +9,7 @@ const DetailsButton = ({ item }) => {
     const [appointments, setAppointments] = useState([]);
     const [queueEntries, setQueueEntries] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [expandedObs, setExpandedObs] = useState({});
 
     const handleOpen = async () => {
         setOpen(true);
@@ -106,7 +107,7 @@ const DetailsButton = ({ item }) => {
                                             <th className="py-2 px-3 text-center w-36">Tipo</th>
                                             <th className="py-2 px-3 text-center w-32">Fecha</th>
                                             <th className="py-2 px-3 text-center w-28">Hora</th>
-                                            {/* <th className="py-2 px-3 text-center w-20">Activo</th> */}
+                                            <th className="py-2 px-3 text-center w-20">Activo</th>
                                             <th className="py-2 px-3 text-center">Notas</th>
                                             <th className="py-2 px-3 text-center">Observaciones</th>
                                         </tr>
@@ -121,16 +122,18 @@ const DetailsButton = ({ item }) => {
                                             </tr>
                                         ) : allInspections.length > 0 ? (
                                             allInspections.map((inspection, idx) => {
-                                                const fecha = inspection.date
-                                                    ? new Date(inspection.date).toLocaleDateString("es-CO")
+                                                const fecha = inspection.updated_at
+                                                    ? new Date(inspection.updated_at).toLocaleDateString('es-CO')
                                                     : "-";
 
-                                                const hora = inspection.time || "-";
+                                                const hora = inspection.time 
+                                                    ? inspection.time.substring(0, 5)
+                                                    : "-";
                                                 const estadoTraducido = statusMap[inspection.status] || inspection.status || "N/A";
                                                 const tipoTraducido = typeMap[inspection.type] || inspection.type;
 
                                                 return (
-                                                    <tr key={idx} className={`border-b ${inspection.deleted_at ? 'bg-red-50 opacity-60' : ''}`}>
+                                                    <tr key={`${inspection.created_at}-${idx}`} className={`border-b ${inspection.deleted_at ? 'bg-red-50 opacity-60' : ''}`}>
                                                         <td className="py-2 px-3 text-center">
                                                             <Badge variant={inspection.type === 'queue' ? 'default' : 'outline'}>
                                                                 {tipoTraducido}
@@ -138,16 +141,39 @@ const DetailsButton = ({ item }) => {
                                                         </td>
                                                         <td className="py-2 px-3 text-center">{fecha}</td>
                                                         <td className="py-2 px-3 text-center">{hora}</td>
-                                                        {/* <td className="py-2 px-3 text-center">
+                                                        <td className="py-2 px-3 text-center">
                                                             <Badge variant={inspection.deleted_at ? 'destructive' : 'success'}>
                                                                 {inspection.deleted_at ? 'Eliminado' : 'Activo'}
                                                             </Badge>
-                                                        </td> */}
+                                                        </td>
                                                         <td className="py-2 px-3 text-center whitespace-pre-wrap">
                                                             {inspection.notes || "N/A"}
                                                         </td>
-                                                        <td className="py-2 px-3 text-center whitespace-pre-wrap">
-                                                            {inspection.observaciones || "N/A"}
+                                                        <td className="py-2 px-3 text-left text-sm max-w-md">
+                                                            {(() => {
+                                                                const obs = inspection.observaciones || "N/A";
+                                                                const isLong = obs.length > 100;
+                                                                const isExpanded = expandedObs[`${inspection.created_at}-${idx}`];
+                                                                const displayText = isLong && !isExpanded ? obs.substring(0, 100) + "..." : obs;
+                                                                
+                                                                return (
+                                                                    <div className="break-words leading-relaxed">
+                                                                        <span className="whitespace-pre-line">{displayText}</span>
+                                                                        {isLong && (
+                                                                            <span 
+                                                                                onClick={() => setExpandedObs(prev => ({
+                                                                                    ...prev,
+                                                                                    [`${inspection.created_at}-${idx}`]: !prev[`${inspection.created_at}-${idx}`]
+                                                                                }))}
+                                                                                className="ml-1 text-blue-500 cursor-pointer hover:text-blue-700 text-xs font-medium"
+                                                                            >
+                                                                                [{isExpanded ? "menos" : "más"}]
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()
+                                                        }
                                                         </td>
                                                     </tr>
                                                 );
