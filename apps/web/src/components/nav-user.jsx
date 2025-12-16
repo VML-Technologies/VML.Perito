@@ -78,7 +78,7 @@ export function NavUser() {
 
       {/* User info and status - Hidden on mobile */}
       <div className="hidden sm:block min-w-0 flex-1">
-        <div className="w-32 lg:w-48">
+        <div className="min-w-0 max-w-full">
           <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
           <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
         </div>

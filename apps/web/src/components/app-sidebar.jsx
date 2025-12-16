@@ -71,7 +71,7 @@ export function AppSidebar({
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/dashboard">
                 <ShieldAlert className="!size-5" />
-                <span className="text-base font-semibold">{appName}</span>
+                <span className="text-sm font-semibold leading-tight">{appName}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

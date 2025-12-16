@@ -393,13 +393,16 @@ const CoordinadorVML = () => {
             return;
         }
 
+
         if (new Date(reportStartDate) > new Date(reportEndDate)) {
             showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
             return;
         }
 
+
         try {
             setDownloadingReport(true);
+
 
             const response = await fetch(`${API_ROUTES.COORDINADOR_CONTACTO.REPORTS.COORDINATOR}?start_date=${reportStartDate}&end_date=${reportEndDate}`, {
                 method: 'GET',
@@ -408,18 +411,22 @@ const CoordinadorVML = () => {
                 }
             });
 
+
             if (response.ok) {
                 // Obtener el blob del archivo
                 const blob = await response.blob();
+
 
                 // Crear URL temporal para descarga
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
 
+
                 // Obtener nombre del archivo del header Content-Disposition
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = `reporte-coordinador-vml-${reportStartDate}-${reportEndDate}.xlsx`;
+
 
                 if (contentDisposition) {
                     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
@@ -428,11 +435,13 @@ const CoordinadorVML = () => {
                     }
                 }
 
+
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
+
 
                 showToast('Reporte descargado exitosamente', 'success');
                 setShowReportModal(false);
@@ -568,10 +577,24 @@ const CoordinadorVML = () => {
                                                             </span>
                                                         </div>
                                                     </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            {item.estado === 'en_cola' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
+                                                                >
+                                                                    <Play className="h-4 w-4 mr-1" />
+                                                                    Iniciar
+                                                                </Button>
+                                                            )}
+                                                            {/* Botón de detalle */}
+                                                            <DetailsButton item={item} />
+                                                        </div>
+                                                    </TableCell>
 
-                                                    {/* Acciones */}
-                                                    <TableCell className="text-center">
-                                                        <div className="flex justify-center gap-2">
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
                                                             {item.estado === 'en_cola' && (
                                                                 <Button
                                                                     size="sm"
