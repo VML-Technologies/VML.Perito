@@ -11,9 +11,10 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
   const [notification, setNotification] = useState('');
   const [notificationColor, setNotificationColor] = useState('');
   const [statusUpdated, setStatusUpdated] = useState(false);
+  const [reloadCountdown, setReloadCountdown] = useState(null);
 
-  const totalTime = 120; // 30 segundos para pruebas (original: 600)
-  const warningTime = 60; // 20 segundos para pruebas (original: 420) 
+  const totalTime = 6; // 30 segundos para pruebas (original: 600)
+  const warningTime = 4; // 20 segundos para pruebas (original: 420) 
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
@@ -55,8 +56,27 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
         setStatusUpdated(true);
         updateAppointmentStatus(existingAppointment.id);
       }
+      
+      // Iniciar countdown de 5 segundos para recargar
+      setReloadCountdown(5);
     }
   }, [secondsSinceAssignment, existingAppointment, statusUpdated]);
+  
+  // Countdown para recargar la página
+  useEffect(() => {
+    if (reloadCountdown === null) return;
+    
+    if (reloadCountdown === 0) {
+      window.location.reload();
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setReloadCountdown(reloadCountdown - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [reloadCountdown]);
   
   // Función para actualizar el estado del appointment
   const updateAppointmentStatus = async (appointmentId) => {
@@ -119,6 +139,11 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
                 {notification && (
                   <p className={`${notificationColor} text-sm mt-2`}>
                     {notification}
+                    {reloadCountdown !== null && (
+                      <span className="block mt-2 font-semibold">
+                        Recargando en {reloadCountdown} segundos...
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
