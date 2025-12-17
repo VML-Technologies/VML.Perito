@@ -1320,20 +1320,21 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
 
 
-                    <div className="flex gap-4 pt-4 border-t">
+                    <div className="flex justify-end gap-3 pt-4 border-t">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1 text-[#235692] rounded-xl shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
-                        >
+                            size="sm"
+                            className="text-[#235692] rounded-xl shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200">
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             disabled={loading || plateExists}
-                            className={`flex-1 cursor-pointer rounded-xl ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            size="sm"
+                            className={`cursor-pointer rounded-xl ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">
