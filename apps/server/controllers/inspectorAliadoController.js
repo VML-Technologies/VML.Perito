@@ -109,6 +109,32 @@ class InspectorAliadoController extends BaseController {
                 ]
             });
 
+            // --- Notificación SMS al cliente ---
+            try {
+                const phone = inspectionOrder.celular_contacto?.replace(/\s+/g, '').trim();
+                if (phone) {
+                    const smsMessage = `Hola ${inspectionOrder.nombre_contacto}, tu inspección para el vehículo ${inspectionOrder.placa} ha sido agendada para el ${scheduled_date} a las ${scheduled_time}. Gracias por confiar en nosotros.`;
+                    
+                    const smsService = await import('../services/channels/smsService.js');
+                    await smsService.default.send({
+                        recipient_phone: phone,
+                        content: smsMessage,
+                        priority: 'normal',
+                        metadata: {
+                            placa: inspectionOrder.placa,
+                            nombre_contacto: inspectionOrder.nombre_contacto,
+                            appointment_id: appointment.id
+                        }
+                    });
+                    console.log(`✅ SMS enviado a ${phone}`);
+                } else {
+                    console.warn('⚠️ No hay teléfono válido para enviar SMS al cliente');
+                }
+            } catch (smsError) {
+                console.error('❌ Error enviando SMS al cliente:', smsError);
+            }
+            // --- Fin notificación SMS ---
+
             // Emitir evento WebSocket para actualizar CoordinadorVML
             try {
                 console.log('📡 Emitiendo evento WebSocket de nuevo agendamiento en sede...');

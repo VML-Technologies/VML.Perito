@@ -917,10 +917,12 @@ class AppointmentController {
             // Actualizar el appointment
             await appointment.update(updateData);
 
-            // Si hay observaciones y hay orden de inspección, actualizar también la orden
-            if (observations && appointment.inspectionOrder) {
+            // Actualizar el estado de la orden de inspección a "En Proceso" (status 4)
+            // para que aparezca correctamente en el tablero como "Reagendar"
+            if (appointment.inspectionOrder) {
                 await appointment.inspectionOrder.update({
-                    observaciones: observations
+                    status: 4, // Estado "En Proceso" para órdenes con reinspección
+                    observaciones: observations || appointment.inspectionOrder.observaciones
                 });
             }
 
