@@ -471,8 +471,8 @@ class CoordinatorDataService {
                 throw new Error('Modalidad Virtual (code: VIRTUAL) no encontrada en el sistema');
             }
 
-            // Usar sede por defecto si no se especifica (asumiendo sede CDA por defecto)
-            const defaultSedeId = sedeId || 3; // Sede CDA por defecto
+            // Usar sede por defecto para inspecciones virtuales (filtrado en frontend)
+            const defaultSedeId = sedeId || 3;
             const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             appointment = await Appointment.create({
                 inspection_order_id: orderId,

@@ -13,8 +13,8 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
   const [statusUpdated, setStatusUpdated] = useState(false);
   const [reloadCountdown, setReloadCountdown] = useState(null);
 
-  const totalTime = 6; // 30 segundos para pruebas (original: 600)
-  const warningTime = 4; // 20 segundos para pruebas (original: 420) 
+  const totalTime = 600; // 30 segundos para pruebas (original: 600)
+  const warningTime = 420; // 20 segundos para pruebas (original: 420) 
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
