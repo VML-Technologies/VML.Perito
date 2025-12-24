@@ -7,14 +7,10 @@ import logo_mundial from '@/assets/logo_mundial.svg';
 import { API_ROUTES } from '@/config/api';
 
 const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) => {
-  const [secondsSinceAssignment, setSecondsSinceAssignment] = useState(0);
-  const [notification, setNotification] = useState('');
-  const [notificationColor, setNotificationColor] = useState('');
-  const [statusUpdated, setStatusUpdated] = useState(false);
-  const [reloadCountdown, setReloadCountdown] = useState(null);
-
-  const totalTime = 600; // 30 segundos para pruebas (original: 600)
-  const warningTime = 420; // 20 segundos para pruebas (original: 420) 
+  const [timer, setTimer] = useState({ elapsed: 0, notification: '', color: '', expired: false, countdown: null });
+  
+  const TOTAL_TIME = 600;
+  const WARNING_TIME = 420;
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
@@ -22,61 +18,57 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Contador de tiempo
+  // Unified timer effect
   useEffect(() => {
     const startTime = Date.now();
-
+    
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      setSecondsSinceAssignment(elapsed);
+      
+      setTimer(prev => {
+        if (elapsed === WARNING_TIME && !prev.notification) {
+          return {
+            ...prev,
+            elapsed,
+            notification: 'Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.',
+            color: 'text-yellow-600'
+          };
+        }
+        
+        if (elapsed >= TOTAL_TIME && !prev.expired) {
+          if (existingAppointment?.id) updateAppointmentStatus(existingAppointment.id);
+          return {
+            ...prev,
+            elapsed,
+            notification: 'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar con el proceso, por favor seleccione nuevamente el enlace enviado anteriormente para retomar la conexión.',
+            color: 'text-red-600',
+            expired: true,
+            countdown: 5
+          };
+        }
+        
+        return { ...prev, elapsed };
+      });
     }, 500);
 
     return () => clearInterval(interval);
-  }, []);
-
-  // Notificaciones y actualización de estado
-  useEffect(() => {
-    // Mensaje de 3 minutos restantes
-    if (secondsSinceAssignment === warningTime) {
-      setNotification(
-        'Recuerde que en 3 minutos se dará cierre a la inspección por falta de respuesta.'
-      );
-      setNotificationColor('text-yellow-600');
-    }
-
-    // Mensaje de cierre a los 10 minutos y llamada al endpoint
-    if (secondsSinceAssignment >= totalTime && !statusUpdated) {
-      setNotification(
-        'Por inactividad de 10 minutos se cierra la inspección. Si desea continuar con el proceso, por favor seleccione nuevamente el enlace enviado anteriormente para retomar la conexión.'
-      );
-      setNotificationColor('text-red-600');
-      
-      // Llamar al endpoint para actualizar el estado (solo una vez)
-      if (existingAppointment?.id) {
-        setStatusUpdated(true);
-        updateAppointmentStatus(existingAppointment.id);
-      }
-      
-      // Iniciar countdown de 5 segundos para recargar
-      setReloadCountdown(5);
-    }
-  }, [secondsSinceAssignment, existingAppointment, statusUpdated]);
+  }, [existingAppointment?.id]);
   
-  // Countdown para recargar la página
+  // Reload countdown
   useEffect(() => {
-    if (reloadCountdown === null) return;
+    if (timer.countdown === null) return;
     
-    if (reloadCountdown === 0) {
+    if (timer.countdown === 0) {
       window.location.reload();
       return;
     }
     
-    const timer = setTimeout(() => {
-      setReloadCountdown(reloadCountdown - 1);
+    const timeout = setTimeout(() => {
+      setTimer(prev => ({ ...prev, countdown: prev.countdown - 1 }));
     }, 1000);
     
-    return () => clearTimeout(timer);
-  }, [reloadCountdown]);
+    return () => clearTimeout(timeout);
+  }, [timer.countdown]);
   
   // Función para actualizar el estado del appointment
   const updateAppointmentStatus = async (appointmentId) => {
@@ -102,14 +94,9 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
     }
   };
 
-  const timeRemaining = Math.max(totalTime - secondsSinceAssignment, 0);
-
-  let timerColor = 'text-green-700';
-  if (secondsSinceAssignment >= warningTime && secondsSinceAssignment < totalTime) {
-    timerColor = 'text-yellow-600';
-  } else if (secondsSinceAssignment >= totalTime) {
-    timerColor = 'text-red-600';
-  }
+  const timeRemaining = Math.max(TOTAL_TIME - timer.elapsed, 0);
+  const timerColor = timer.elapsed >= TOTAL_TIME ? 'text-red-600' : 
+                    timer.elapsed >= WARNING_TIME ? 'text-yellow-600' : 'text-green-700';
 
   
 
@@ -136,19 +123,19 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
                 <p className={`font-medium text-sm ${timerColor}`}>Tiempo restante</p>
                 <p className={`font-bold text-2xl ${timerColor}`}>{formatTime(timeRemaining)}</p>
 
-                {notification && (
-                  <p className={`${notificationColor} text-sm mt-2`}>
-                    {notification}
-                    {reloadCountdown !== null && (
+                {timer.notification && (
+                  <p className={`${timer.color} text-sm mt-2`}>
+                    {timer.notification}
+                    {timer.countdown !== null && (
                       <span className="block mt-2 font-semibold">
-                        Recargando en {reloadCountdown} segundos...
+                        Recargando en {timer.countdown} segundos...
                       </span>
                     )}
                   </p>
                 )}
               </div>
 
-              {secondsSinceAssignment < totalTime && (
+              {timer.elapsed < TOTAL_TIME && (
                 <Button
                   onClick={onGoToInspection}
                   className="w-full bg-green-600 hover:bg-green-700 text-white mb-2"
