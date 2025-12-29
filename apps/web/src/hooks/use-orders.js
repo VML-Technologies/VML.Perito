@@ -23,6 +23,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
         assigned_agent_id: '',
         date_from: '',
         date_to: '',
+        general_search: '',
         sortBy: 'created_at',
         sortOrder: 'DESC'
     });
@@ -155,6 +156,7 @@ export const useOrders = (apiEndpoint, options = {}) => {
             assigned_agent_id: '',
             date_from: '',
             date_to: '',
+            general_search: '',
             sortBy: 'created_at',
             sortOrder: 'DESC'
         });

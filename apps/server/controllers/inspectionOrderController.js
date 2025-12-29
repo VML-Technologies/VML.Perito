@@ -392,6 +392,7 @@ class InspectionOrderController extends BaseController {
                 assigned_agent_id = '',
                 date_from = '',
                 date_to = '',
+                general_search = '',
                 sortBy = 'created_at',
                 sortOrder = 'DESC',
                 search = '',
@@ -422,7 +423,21 @@ class InspectionOrderController extends BaseController {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
-            // Búsqueda por texto
+            // Búsqueda general
+            if (general_search) {
+                whereConditions[Op.or] = [
+                    { placa: { [Op.like]: `%${general_search}%` } },
+                    { numero: { [Op.like]: `%${general_search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${general_search}%` } },
+                    { correo_cliente: { [Op.like]: `%${general_search}%` } },
+                    { celular_cliente: { [Op.like]: `%${general_search}%` } },
+                    { nombre_contacto: { [Op.like]: `%${general_search}%` } },
+                    { correo_contacto: { [Op.like]: `%${general_search}%` } },
+                    { celular_contacto: { [Op.like]: `%${general_search}%` } }
+                ];
+            }
+
+            // Búsqueda por texto específico
             if (plate) {
                 whereConditions.placa = { [Op.like]: `%${plate}%` };
             }

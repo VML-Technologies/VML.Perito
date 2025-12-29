@@ -1,5 +1,4 @@
 import {
-  MoreVertical,
   LogOut,
   Lock,
   User,
@@ -59,39 +58,31 @@ export function NavUser() {
   if (!user) return null
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 bg-[#EAF4FF] px-3 py-2 rounded-lg">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 h-auto p-1 sm:p-2">
+          {/* Avatar - Always visible */}
+          <Avatar className="h-8 w-8 rounded-lg cursor-pointer">
+            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarFallback className="rounded-lg">
+              {
+                user.roles && user.roles.find(role => role.name == 'agente_contacto') ?
+                  <HeadsetIcon className="size-4" /> : <>
+                    {getUserInitials(user.name)}
+                  </>
+              }
+            </AvatarFallback>
+          </Avatar>
 
-      {/* Avatar - Always visible */}
-      <div className="flex-shrink-0">
-        <Avatar className="h-8 w-8 rounded-lg">
-          <AvatarImage src={user.avatar} alt={user.name} />
-          <AvatarFallback className="rounded-lg">
-            {
-              user.roles && user.roles.find(role => role.name == 'agente_contacto') ?
-                <HeadsetIcon className="size-4" /> : <>
-                  {getUserInitials(user.name)}
-                </>
-            }
-          </AvatarFallback>
-        </Avatar>
-      </div>
-
-      {/* User info and status - Hidden on mobile */}
-      <div className="hidden sm:block min-w-0 flex-1">
-        <div className="min-w-0 max-w-full">
-          <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
-          <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
-        </div>
-      </div>
-
-      {/* Menu trigger - Always visible */}
-      <div className="flex-shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          {/* User info - Hidden on mobile (md breakpoint) */}
+          <div className="hidden md:block min-w-0 flex-1 bg-[#EAF4FF] px-3 py-2 rounded-lg">
+            <div className="min-w-0 max-w-full text-left">
+              <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
+              <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
+            </div>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side="bottom"
@@ -134,8 +125,6 @@ export function NavUser() {
               Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
+    </DropdownMenu>
   );
 }

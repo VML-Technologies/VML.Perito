@@ -39,7 +39,7 @@ export const WebSocketStatus = () => {
     const getStatusTextMobile = () => {
         switch (connectionStatus) {
             case 'connected':
-                return 'OK';
+                return 'Sistema funcional';
             case 'connecting':
                 return 'Conectando...';
             case 'reconnecting':
