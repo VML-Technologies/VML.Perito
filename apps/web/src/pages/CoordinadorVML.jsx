@@ -169,19 +169,25 @@ const CoordinadorVML = () => {
                 setStats(coordinatorData.stats);
             }
 
-            // Actualizar agendamientos en sede
+            // Actualizar agendamientos en sede - FILTRAR SOLO SEDE
             if (coordinatorData.sedeAppointments) {
                 console.log('🏢 Actualizando appointments en sede desde WebSocket:', coordinatorData.sedeAppointments);
-                setSedeAppointments(coordinatorData.sedeAppointments);
+                // Filtrar solo appointments que tengan sede_id y modalidad SEDE
+                const filteredSedeAppointments = coordinatorData.sedeAppointments.filter(appointment => 
+                    appointment.sede && appointment.sede.id && 
+                    appointment.inspectionModality && 
+                    appointment.inspectionModality.name !== 'Virtual'
+                );
+                setSedeAppointments(filteredSedeAppointments);
                 setLoadingSedeAppointments(false); // ✅ Quitar loading cuando llegan datos de sede
                 console.log('✅ Loading de sede desactivado');
 
                 // Recalcular estadísticas
                 const stats = {
-                    pending: coordinatorData.sedeAppointments.filter(a => a.status === 'pending').length,
-                    active: coordinatorData.sedeAppointments.filter(a => a.status === 'assigned').length,
-                    completed: coordinatorData.sedeAppointments.filter(a => a.status === 'completed').length,
-                    total: coordinatorData.sedeAppointments.length
+                    pending: filteredSedeAppointments.filter(a => a.status === 'pending').length,
+                    active: filteredSedeAppointments.filter(a => a.status === 'assigned').length,
+                    completed: filteredSedeAppointments.filter(a => a.status === 'completed').length,
+                    total: filteredSedeAppointments.length
                 };
                 setSedeStats(stats);
             }
@@ -524,7 +530,7 @@ const CoordinadorVML = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {queueData.map((item) => {
+                                        {queueData.filter(item => item.estado !== 'assigned' && item.estado !== 'en_proceso').map((item) => {
                                             const timeInfo = formatTimeAgo(item.tiempo_ingreso);
                                             const isOverdue = timeInfo.isOverdue;
 

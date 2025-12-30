@@ -893,7 +893,8 @@ class InspectionOrderController extends BaseController {
 
             return null;
         } catch (error) {
-            throw new Error("Error al intentar obtener datos de la API de Seguros Mundial.");
+            console.warn('⚠️ Error en API Seguros Mundial:', error.message);
+            return null;
         }
     }
 
@@ -1018,7 +1019,11 @@ class InspectionOrderController extends BaseController {
 
             // Guardar registros de siniestros si existen
             if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
-                await this.saveSinisterRecords(siniestrosData, order.id);
+                try {
+                    await this.saveSinisterRecords(siniestrosData, order.id);
+                } catch (siniestrosError) {
+                    console.warn('⚠️ Error guardando siniestros (continuando):', siniestrosError.message);
+                }
             }
 
             // Cargar la orden completa con relaciones
@@ -1039,6 +1044,7 @@ class InspectionOrderController extends BaseController {
 
             // Disparar evento de orden de inspección creada
             try {
+                console.log('🎯 Disparando evento inspection_order.created para orden:', fullOrder.numero);
                 await automatedEventTriggers.triggerInspectionOrderEvents('created', {
                     id: fullOrder.id,
                     numero: fullOrder.numero,
@@ -1056,10 +1062,13 @@ class InspectionOrderController extends BaseController {
                     clave_intermediario: fullOrder.clave_intermediario
                 }, {
                     created_by: req.user?.id,
-                    ip_address: req.ip
+                    ip_address: req.ip,
+                    is_client: true, // Marcar para que se envíen notificaciones al cliente
+                    is_commercial_creator: req.user?.id ? true : false
                 });
+                console.log('✅ Evento inspection_order.created disparado exitosamente');
             } catch (eventError) {
-                console.error('Error disparando evento inspection_order.created:', eventError);
+                console.error('❌ Error disparando evento inspection_order.created:', eventError);
             }
 
             res.status(201).json(fullOrder);

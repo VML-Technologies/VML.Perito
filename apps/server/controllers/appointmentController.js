@@ -848,6 +848,9 @@ class AppointmentController {
             const { id } = req.params;
             const { observations, assigned_to, isUserOverride } = req.body;
 
+            console.log(`🔄 updateStatusToIneffectiveWithRetry llamado para appointment ${id}`);
+            console.log(`📝 Observaciones recibidas:`, observations);
+
             // Validar que el ID sea numérico
             if (!id || isNaN(id)) {
                 return res.status(400).json({
@@ -878,6 +881,23 @@ class AppointmentController {
                 });
             }
 
+            console.log(`📊 Observaciones actuales en DB:`, appointment.observaciones);
+
+            // Si ya está en estado ineffective_with_retry, no actualizar de nuevo
+            if (appointment.status === 'ineffective_with_retry') {
+                console.log(`⚠️ Appointment ${id} ya está en estado ineffective_with_retry, ignorando actualización`);
+                return res.status(200).json({
+                    success: true,
+                    message: 'Appointment ya estaba actualizado',
+                    data: {
+                        id: appointment.id,
+                        session_id: appointment.session_id,
+                        status: appointment.status,
+                        user_id: appointment.user_id
+                    }
+                });
+            }
+
             // Preparar datos de actualización
             const updateData = {
                 status: 'ineffective_with_retry',
@@ -890,18 +910,19 @@ class AppointmentController {
                 updateData.user_id = assigned_to;
             }
 
-            // Si hay observaciones, agregarlas
-            if (observations) {
-                updateData.observaciones = observations;
-            }
+            // Siempre reemplazar observaciones completamente
+            const defaultObservation = 'Inspección cerrada por inactividad de 10 minutos';
+            updateData.observaciones = observations || defaultObservation;
 
             // Actualizar el appointment
             await appointment.update(updateData);
 
-            // Si hay observaciones y hay orden de inspección, actualizar también la orden
-            if (observations && appointment.inspectionOrder) {
+            // Actualizar el estado de la orden de inspección a "En Proceso" (status 4)
+            // para que aparezca correctamente en el tablero como "Reagendar"
+            if (appointment.inspectionOrder) {
                 await appointment.inspectionOrder.update({
-                    observaciones: observations
+                    status: 4, // Estado "En Proceso" para órdenes con reinspección
+                    observaciones: observations || appointment.inspectionOrder.observaciones
                 });
             }
 
@@ -946,7 +967,7 @@ class AppointmentController {
             // Notificar a InspectYa API
             try {
                 if (appointment.session_id) {
-                    const inspectYaUrl = process.env.INSPECTYA_API_URL || 'https://qa-inspectya.vmltechnologies.com:8017';
+                    const inspectYaUrl = process.env.INSPECTYA_API_URL || 'https://dev-inspectya.vmltechnologies.com';
                     const response = await fetch(`${inspectYaUrl}/api/appointments/${appointment.id}/automated/status`, {
                         method: 'PATCH',
                         headers: {
