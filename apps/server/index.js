@@ -40,6 +40,7 @@ import inspectionModalityController from './controllers/inspectionModalityContro
 import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 import scheduledTasksController from './controllers/scheduledTasksController.js';
 import peritajesController from './controllers/peritajesController.js';
+import { getVigentesMovilidadAsistencia } from './controllers/vigentesMovilidadAsistenciaController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
 
@@ -183,6 +184,7 @@ app.get('/api/auth/verify-reset-token/:token', authLimiter, verifyResetToken);
 app.post('/api/auth/reset-password', authLimiter, resetPassword);
 
 // ===== RUTAS DE CONSULTA DE PLACAS (SIN AUTENTICACIÓN) =====
+app.get('/api/vigentes-movilidad-asistencia', apiRateLimit, authenticateApiToken, getVigentesMovilidadAsistencia);
 
 // Consulta de placa sin autenticación
 app.get('/api/check-plate/:placa', readLimiter, plateQueryController.checkPlate);
