@@ -5,7 +5,7 @@ Este endpoint permite consultar los registros de la tabla `Vigentes_Movilidad_As
 ## Endpoint
 
 ```
-GET /api/vigentes-movilidad-asistencia?placa=XXX
+GET https://movilidadmundial.vmltechnologies.com/api/vigentes-movilidad-asistencia?placa=XXX
 ```
 
 ### Parámetros de consulta
@@ -18,13 +18,13 @@ Requiere header `Authorization: Bearer <token>`.
 
 ### cURL
 ```bash
-curl -X GET "http://localhost:3000/api/vigentes-movilidad-asistencia?placa=NHR124" \
+curl -X GET "https://movilidadmundial.vmltechnologies.com/api/vigentes-movilidad-asistencia?placa=NHR124" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### JavaScript (fetch)
 ```js
-fetch('http://localhost:3000/api/vigentes-movilidad-asistencia?placa=NHR124', {
+fetch('https://movilidadmundial.vmltechnologies.com/api/vigentes-movilidad-asistencia?placa=NHR124', {
   headers: {
     'Authorization': 'Bearer <token>'
   }
@@ -37,7 +37,7 @@ fetch('http://localhost:3000/api/vigentes-movilidad-asistencia?placa=NHR124', {
 ```js
 import axios from 'axios';
 
-axios.get('http://localhost:3000/api/vigentes-movilidad-asistencia', {
+axios.get('https://movilidadmundial.vmltechnologies.com/api/vigentes-movilidad-asistencia', {
   params: { placa: 'NHR124' },
   headers: {
     Authorization: 'Bearer <token>'
@@ -49,7 +49,7 @@ axios.get('http://localhost:3000/api/vigentes-movilidad-asistencia', {
 ### PHP (cURL)
 ```php
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'http://localhost:3000/api/vigentes-movilidad-asistencia?placa=NHR124');
+curl_setopt($ch, CURLOPT_URL, 'https://movilidadmundial.vmltechnologies.com/api/vigentes-movilidad-asistencia?placa=NHR124');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Authorization: Bearer <token>'
