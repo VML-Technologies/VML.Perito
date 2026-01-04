@@ -70,7 +70,7 @@ const OrdersTable = ({
 
     return (
         <Card className="rounded-lg shadow-md">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onViewDetails && orders.length > 0 && onViewDetails(orders[0])}>
                 <CardTitle className="text-2xl font-ubuntu font-bold text-gray-800">{getTableTitle()}</CardTitle>
                 <CardDescription className="text-gray-600 font-ubuntu">{getTableDescription()}</CardDescription>
             </CardHeader>
@@ -329,15 +329,15 @@ const OrdersTable = ({
                                 </div>
                             ) : (
                                 orders.map((order) => (
-                                    <Card key={order.id} className="bg-white rounded-lg shadow-sm border">
+                                    <Card key={order.id} className="bg-white rounded-lg shadow-sm border cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onViewDetails && onViewDetails(order)}>
                                         {/* Header */}
                                         <div className="px-3 py-1">
-                                            <div className="flex justify-between items-start gap-3">
+                                            <div className="flex items-start gap-3">
                                                 <div className="flex-1 min-w-0">
                                                     <span className="font-bold text-lg font-ubuntu">#{order.numero}</span>
                                                     <div className="text-sm text-gray-500 font-ubuntu whitespace-nowrap">{formatDate(order.created_at)}</div>
                                                 </div>
-                                                <div className="flex items-center gap-4 flex-shrink-0">
+                                                <div className="flex-1 flex justify-center">
                                                     <Badge
                                                         variant={order.badgeColor}
                                                         className="
@@ -355,7 +355,9 @@ const OrdersTable = ({
                                                                 : order.fixedStatus)
                                                             : 'Sin estado'}
                                                     </Badge>
-                                                    <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                                </div>
+                                                <div className="flex items-center flex-shrink-0">
+                                                    <ChevronRight className="h-4 w-4 text-gray-400" />
                                                 </div>
                                             </div>
                                         </div>
@@ -378,7 +380,7 @@ const OrdersTable = ({
 
                                             {/* Cliente */}
                                             <div>
-                                                <div className="text-xs text-gray-500 capitalize tracking-wide mb-1 font-ubuntu">Cliente</div>
+                                                <div className="text-xs text-gray-500 capitalize tracking-wide font-ubuntu">Cliente</div>
                                                 <div className="font-400 font-ubuntu">{order.nombre_cliente}</div>
                                                 
                                                 <div className="flex items-center gap-2 mt-1">

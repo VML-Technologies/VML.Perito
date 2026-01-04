@@ -10,8 +10,12 @@ export const securityConfig = {
         'http://localhost:5173',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'http://localhost:5173',
-        'http://localhost:3000'
+        // Acceso desde red local (PC)
+        'http://192.168.2.6:5173',
+        'http://192.168.2.6:3000',
+        // Acceso desde dispositivos móviles en la red local
+        'http://192.168.2.6:5173',
+        'http://192.168.2.6:3000'
     ],
 
     // Configuración de Helmet

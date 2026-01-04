@@ -207,17 +207,17 @@ export default function Profile() {
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="container mx-auto p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-full overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                 <div>
-                    <h1 className="text-3xl font-bold">Mi Perfil</h1>
-                    <p className="text-muted-foreground">Gestiona tu información personal</p>
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Mi Perfil</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Gestiona tu información personal</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                     <Button onClick={() => {
                         navigate('/dashboard');
-                    }}>
+                    }} className="w-full sm:w-auto">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Regresar
                     </Button>
@@ -333,7 +333,7 @@ export default function Profile() {
                                 </div>
                                 <div>
                                     <Label>Roles Asignados</Label>
-                                    <div className="mt-1 flex gap-1">
+                                    <div className="mt-1 flex flex-wrap gap-1">
                                         {user?.roles?.map(role => (
                                             <Badge key={role.id} variant="outline">
                                                 {role.name}

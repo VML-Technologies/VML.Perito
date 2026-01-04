@@ -85,6 +85,7 @@ export default function ComercialMundial() {
     };
 
     const handleViewDetails = (order) => {
+        console.log('Order data being passed to panel:', order);
         setSelectedOrder(order);
         setIsPanelOpen(true);
     };

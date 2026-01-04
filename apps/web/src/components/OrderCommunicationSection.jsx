@@ -65,17 +65,20 @@ const OrderCommunicationSection = ({ orderId, orderData, user }) => {
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="comments" className="flex items-center gap-2">
                                 <MessageCircle className="h-4 w-4" />
-                                Comentarios
+                                <span className="hidden sm:inline">Comentarios</span>
+                                <span className="sm:hidden">Coment.</span>
                                 <Badge variant="secondary" className="ml-1">
                                     {comments.length}
                                 </Badge>
                             </TabsTrigger>
-                            <TabsTrigger value="contact" className="flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                Datos de Contacto
+                            <TabsTrigger value="contact" className="flex items-center gap-2 overflow-hidden">
+                                <User className="h-4 w-4 flex-shrink-0" />
+                                <span className="hidden sm:inline truncate">Datos de Contacto</span>
+                                <span className="sm:hidden truncate">Contacto</span>
                                 {contactHistory.length > 0 && (
-                                    <Badge variant="outline" className="ml-1">
-                                        {contactHistory.length} cambios
+                                    <Badge variant="outline" className="ml-1 flex-shrink-0">
+                                        <span className="hidden sm:inline">{contactHistory.length} cambios</span>
+                                        <span className="sm:hidden">{contactHistory.length}</span>
                                     </Badge>
                                 )}
                             </TabsTrigger>
@@ -117,8 +120,8 @@ const OrderCommunicationSection = ({ orderId, orderData, user }) => {
                                                 <ul className="text-sm text-blue-800 space-y-1">
                                                     <li>• Todos los cambios se registran automáticamente</li>
                                                     <li>• Los comentarios son inmutables una vez creados</li>
-                                                    <li>• Historial completo disponible para auditoría</li>
-                                                    <li>• Trazabilidad de autor y fecha en cada cambio</li>
+                                                    <li className="hidden sm:list-item">• Historial completo disponible para auditoría</li>
+                                                    <li className="hidden sm:list-item">• Trazabilidad de autor y fecha en cada cambio</li>
                                                 </ul>
                                             </div>
                                         </div>
