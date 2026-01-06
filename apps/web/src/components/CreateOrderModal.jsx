@@ -697,10 +697,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     </div>
                     <SheetDescription className="text-sm text-center sm:text-left">
                         {loading ? (
-                            <div className="flex items-center justify-center sm:justify-start gap-2 text-blue-600">
+                            <span className="flex items-center justify-center sm:justify-start gap-2 text-blue-600">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                                 <span>Procesando orden de inspección...</span>
-                            </div>
+                            </span>
                         ) : (
                             'Completa todos los datos requeridos para crear una nueva orden de inspección'
                         )}
@@ -752,7 +752,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         )}
                                     </SelectContent>
                                 </Select>
-                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Producto
                                 </label>
                                 {errors.producto && (
@@ -799,7 +799,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         )}
                                     </SelectContent>
                                 </Select>
-                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Tipo de Vehículo
                                 </label>
                                 {errors.tipo_vehiculo && (
@@ -817,7 +817,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         maxLength={6}
                                         value={formData.placa}
                                         onChange={(e) => handleInputChange('placa', e.target.value.toUpperCase())}
-                                        className={`${errors.placa ? 'border-red-500' : ''} ${plateExists ? 'border-orange-500' : ''} ${checkingPlate ? 'pr-10' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                        className={`${errors.placa ? 'border-red-500' : ''} ${plateExists ? 'border-orange-500' : ''} ${checkingPlate ? 'pr-10' : ''}`}
                                         disabled={checkingPlate}
                                     />
                                     {checkingPlate && (
@@ -826,7 +826,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         </div>
                                     )}
                                 </div>
-                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Placa
                                 </label>
                                 {errors.placa && (
@@ -852,7 +852,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.metodo_inspeccion_recomendado}
                                     onValueChange={(value) => handleInputChange('metodo_inspeccion_recomendado', value)}
                                 >
-                                    <SelectTrigger className={`w-full ${errors.metodo_inspeccion_recomendado ? 'border-red-500' : ''}`}>
+                                    <SelectTrigger className={`w-full placeholder:text-lg sm:placeholder:text-xl ${errors.metodo_inspeccion_recomendado ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Seleccionar método" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -860,7 +860,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         <SelectItem value="Presencial">Presencial</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Método de Inspección
                                 </label>
                                 {errors.metodo_inspeccion_recomendado && (
@@ -922,7 +922,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.clase}
                                     onValueChange={(value) => handleInputChange('clase', value)}
                                 >
-                                    <SelectTrigger className={errors.clase ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.clase ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Selecciona clase" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -953,7 +953,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     maxLength={4}
                                     value={formData.modelo}
                                     onChange={(e) => handleInputChange('modelo', e.target.value)}
-                                    className={errors.modelo ? 'border-red-500' : ''}
+                                    className={`${errors.modelo ? 'border-red-500' : ''}`}
                                 />
                                 {errors.modelo && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -970,7 +970,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Blanco, Rojo, etc."
                                     value={formData.color}
                                     onChange={(e) => handleInputChange('color', e.target.value)}
-                                    className={errors.color ? 'border-red-500' : ''}
+                                    className={`${errors.color ? 'border-red-500' : ''}`}
                                 />
                                 {errors.color && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -988,7 +988,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     maxLength={10}
                                     value={formData.cilindraje}
                                     onChange={(e) => handleInputChange('cilindraje', e.target.value)}
-                                    className={errors.cilindraje ? 'border-red-500' : ''}
+                                    className={`${errors.cilindraje ? 'border-red-500' : ''}`}
                                 />
                                 {errors.cilindraje && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1004,7 +1004,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.servicio}
                                     onValueChange={(value) => handleInputChange('servicio', value)}
                                 >
-                                    <SelectTrigger className={errors.servicio ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.servicio ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de servicio" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1028,7 +1028,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.combustible}
                                     onValueChange={(value) => handleInputChange('combustible', value)}
                                 >
-                                    <SelectTrigger className={errors.combustible ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.combustible ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de combustible" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1054,7 +1054,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número del motor"
                                     value={formData.motor}
                                     onChange={(e) => handleInputChange('motor', e.target.value)}
-                                    className={errors.motor ? 'border-red-500' : ''}
+                                    className={`${errors.motor ? 'border-red-500' : ''}`}
                                 />
                                 {errors.motor && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1071,7 +1071,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número del chasis"
                                     value={formData.chasis}
                                     onChange={(e) => handleInputChange('chasis', e.target.value)}
-                                    className={errors.chasis ? 'border-red-500' : ''}
+                                    className={`${errors.chasis ? 'border-red-500' : ''}`}
                                 />
                                 {errors.chasis && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1088,7 +1088,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número VIN"
                                     value={formData.vin}
                                     onChange={(e) => handleInputChange('vin', e.target.value)}
-                                    className={errors.vin ? 'border-red-500' : ''}
+                                    className={`${errors.vin ? 'border-red-500' : ''}`}
                                 />
                                 {errors.vin && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1105,7 +1105,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Tipo de carrocería"
                                     value={formData.carroceria}
                                     onChange={(e) => handleInputChange('carroceria', e.target.value)}
-                                    className={errors.carroceria ? 'border-red-500' : ''}
+                                    className={`${errors.carroceria ? 'border-red-500' : ''}`}
                                 />
                                 {errors.carroceria && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1133,7 +1133,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.tipo_doc}
                                     onValueChange={(value) => handleInputChange('tipo_doc', value)}
                                 >
-                                    <SelectTrigger className={errors.tipo_doc ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.tipo_doc ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de documento" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1144,7 +1144,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         <SelectItem value="TI">Tarjeta de Identidad</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Tipo de Documento
                                 </label>
                                 {errors.tipo_doc && (
@@ -1162,9 +1162,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     maxLength={15}
                                     value={formData.num_doc}
                                     onChange={(e) => handleInputChange('num_doc', e.target.value)}
-                                    className={`${errors.num_doc ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                    className={`${errors.num_doc ? 'border-red-500' : ''}`}
                                 />
-                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Número de Documento
                                 </label>
                                 {errors.num_doc && (
@@ -1181,9 +1181,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Nombre completo del cliente"
                                     value={formData.nombre_cliente}
                                     onChange={(e) => handleInputChange('nombre_cliente', e.target.value)}
-                                    className={`${errors.nombre_cliente ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                    className={`${errors.nombre_cliente ? 'border-red-500' : ''}`}
                                 />
-                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Nombre Completo
                                 </label>
                                 {errors.nombre_cliente && (
@@ -1206,9 +1206,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         const value = e.target.value.replace(/\D/g, '');
                                         handleInputChange('celular_cliente', value);
                                     }}
-                                    className={`${errors.celular_cliente ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                    className={`${errors.celular_cliente ? 'border-red-500' : ''}`}
                                 />
-                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Celular Cliente
                                 </label>
                                 {errors.celular_cliente && (
@@ -1226,9 +1226,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="cliente@ejemplo.com"
                                     value={formData.correo_cliente}
                                     onChange={(e) => handleInputChange('correo_cliente', e.target.value)}
-                                    className={`${errors.correo_cliente ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                    className={`${errors.correo_cliente ? 'border-red-500' : ''}`}
                                 />
-                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm sm:text-base text-gray-600">
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
                                     <span style={{ color: '#C80000' }}>*</span> Email Cliente
                                 </label>
                                 {errors.correo_cliente && (
@@ -1275,9 +1275,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                             placeholder="Nombre del contacto"
                                             value={formData.nombre_contacto}
                                             onChange={(e) => handleInputChange('nombre_contacto', e.target.value)}
-                                            className={`${errors.nombre_contacto ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                            className={`${errors.nombre_contacto ? 'border-red-500' : ''}`}
                                         />
-                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm sm:text-base text-gray-600">
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
                                             <span style={{ color: '#C80000' }}>*</span> Nombre Contacto
                                         </label>
                                         {errors.nombre_contacto && (
@@ -1300,9 +1300,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                                 const value = e.target.value.replace(/\D/g, '');
                                                 handleInputChange('celular_contacto', value);
                                             }}
-                                            className={`${errors.celular_contacto ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                            className={`${errors.celular_contacto ? 'border-red-500' : ''}`}
                                         />
-                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm sm:text-base text-gray-600">
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
                                             <span style={{ color: '#C80000' }}>*</span> Celular Contacto
                                         </label>
                                         {errors.celular_contacto && (
@@ -1320,9 +1320,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                             placeholder="contacto@ejemplo.com"
                                             value={formData.correo_contacto}
                                             onChange={(e) => handleInputChange('correo_contacto', e.target.value)}
-                                            className={`${errors.correo_contacto ? 'border-red-500' : ''} placeholder:text-xs sm:placeholder:text-sm`}
+                                            className={`${errors.correo_contacto ? 'border-red-500' : ''}`}
                                         />
-                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm sm:text-base text-gray-600">
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
                                             <span style={{ color: '#C80000' }}>*</span> Email Contacto
                                         </label>
                                         {errors.correo_contacto && (
@@ -1338,7 +1338,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             {sameAsClient && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                     <div className="flex items-center gap-2 text-blue-700">
-                                        <CheckCircle className="h-12 w-12" />
+                                        <CheckCircle className="h-4 w-4 sm:h-4 sm:w-4" />
                                         <span className="text-sm font-medium">
                                             Los datos del contacto se sincronizarán automáticamente con los datos del cliente
                                         </span>

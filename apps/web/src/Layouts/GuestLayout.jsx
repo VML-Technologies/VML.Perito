@@ -62,17 +62,7 @@ function GuestLayout() {
                     {/* Sun below banner (mobile) */}
                     <div className="block md:hidden absolute top-16 right-0 w-20 h-20 z-10 overflow-hidden">
                         <div
-                            className="
-      absolute
-      top-0
-      right-0
-      w-40
-      h-40
-      bg-[#EEB71B]
-      rounded-full
-      translate-x-1/2
-      -translate-y-1/2
-    "
+                            className="absolute top-0right-0w-40h-40bg-[#EEB71B]rounded-fulltranslate-x-1/2-translate-y-1/2"
                         />
                     </div>
 

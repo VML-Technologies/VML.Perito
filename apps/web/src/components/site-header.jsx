@@ -13,7 +13,7 @@ export function SiteHeader() {
     avatar: "/avatars/shadcn.jpg",
   }
   return (
-    <header className="border-b h-16 flex items-center gap-2 w-full">
+    <header className="h-16 flex items-center gap-2 w-full">
       <div className="flex w-full items-center gap-2 px-4 py-2 sm:px-6 lg:gap-3 rounded-xl bg-[#EAF4FF] shadow-sm border border-[#D3E3F5]">
         
         {/* Desktop Layout */}

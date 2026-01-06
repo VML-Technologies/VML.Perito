@@ -350,7 +350,7 @@ const OrderDetailsPanel = ({
                         
                         <div className="mt-4">
                             <h3 className="font-medium mb-2" style={{color: '#1E4A7E', fontWeight: '400'}}>Observaciones</h3>
-                            <div className="bg-gray-50 rounded-md p-3 max-h-32 overflow-y-auto">
+                            <div className="rounded-md p-3 max-h-32 overflow-y-auto">
                                 {inspection?.inspectionData?.observaciones ? (
                                     <div className="text-sm space-y-2">
                                         {formatObservations(inspection.inspectionData.observaciones)}

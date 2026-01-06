@@ -3,6 +3,7 @@ import {
   Lock,
   User,
   HeadsetIcon,
+  MoreVertical,
 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -59,9 +60,9 @@ export function NavUser() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      {/* Mobile trigger - entire button clickable */}
+      <DropdownMenuTrigger asChild className="md:hidden">
         <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 h-auto p-1 sm:p-2">
-          {/* Avatar - Always visible */}
           <Avatar className="h-8 w-8 rounded-lg cursor-pointer">
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback className="rounded-lg">
@@ -73,16 +74,36 @@ export function NavUser() {
               }
             </AvatarFallback>
           </Avatar>
-
-          {/* User info - Hidden on mobile (md breakpoint) */}
-          <div className="hidden md:block min-w-0 flex-1 bg-[#EAF4FF] px-3 py-2 rounded-lg">
-            <div className="min-w-0 max-w-full text-left">
-              <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
-              <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
-            </div>
-          </div>
         </Button>
       </DropdownMenuTrigger>
+
+      {/* Desktop layout - only 3 dots clickable */}
+      <div className="hidden md:flex items-center gap-1 sm:gap-2">
+        <Avatar className="h-8 w-8 rounded-lg">
+          <AvatarImage src={user.avatar} alt={user.name} />
+          <AvatarFallback className="rounded-lg">
+            {
+              user.roles && user.roles.find(role => role.name == 'agente_contacto') ?
+                <HeadsetIcon className="size-4" /> : <>
+                  {getUserInitials(user.name)}
+                </>
+            }
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="min-w-0 flex-1 bg-[#EAF4FF] px-3 py-2 rounded-lg">
+          <div className="min-w-0 max-w-full text-left">
+            <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
+            <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
+          </div>
+        </div>
+
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-auto p-1 cursor-pointer">
+            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+      </div>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side="bottom"
