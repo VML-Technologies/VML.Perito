@@ -93,7 +93,8 @@ const loadUsersFromCSV = async (csvPath, roleName = 'comercial_mundial_4') => {
 
         // 3. Hash de contraseña (se usará la del CSV o por defecto)
         const defaultPassword = 'ComercialMundial#132';
-
+        const hashedDefaultPassword = await bcrypt.hash(defaultPassword, 10);
+        console.log('🔐 Contraseña por defecto hasheada:', hashedDefaultPassword);
         let createdCount = 0;
         let skippedCount = 0;
         let errorCount = 0;
@@ -133,7 +134,7 @@ const loadUsersFromCSV = async (csvPath, roleName = 'comercial_mundial_4') => {
 
                 // Usar contraseña del CSV o por defecto
                 const passwordToUse = userData.password || defaultPassword;
-                const hashedPassword = await bcrypt.hash(passwordToUse, 10);
+                const hashedPassword = hashedDefaultPassword
 
                 // Verificar duplicados por email
                 const existingUserByEmail = await User.findOne({
