@@ -52,7 +52,12 @@ const seedRealSedes = async () => {
             include: [{ model: Department, as: 'department', where: { name: 'Valle del Cauca' } }]
         });
 
-        if (!bogota || !cali) {
+        const pasto = await City.findOne({
+            where: { name: 'Pasto' },
+            include: [{ model: Department, as: 'department', where: { name: 'Nariño' } }]
+        });
+
+        if (!bogota || !cali || !pasto) {
             console.log('❌ No se encontraron las ciudades necesarias');
             return;
         }
@@ -214,6 +219,28 @@ const seedRealSedes = async () => {
                 sede_type_id: soporteType.id,
                 vehicleTypes: [],
                 schedules: []
+            },
+            {
+                name: 'Cali Comercial',
+                address: 'Calle 1#1-1',
+                phone: '602-XXX-XXXX',
+                email: 'calicomercial@previcar.com',
+                city_id: cali.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
+            },
+            {
+                name: 'Pasto Comercial',
+                address: 'Calle 1#1-1',
+                phone: '602-XXX-XXXX',
+                email: 'pastocomercial@previcar.com',
+                city_id: pasto.id,
+                company_id: previcar.id,
+                sede_type_id: comercialType.id,
+                vehicleTypes: [],
+                schedules: []
             }
         ];
 
@@ -334,6 +361,7 @@ const seedRealSedes = async () => {
         console.log('   - CDAs: CDA 197, CDA Distrital, CDA PREVITAX (Bogotá)');
         console.log('   - CDAs: CDA Cali Norte, CDA Cali Sur (Cali)');
         console.log('   - Administrativas: Sede Comercial, Sede Soporte (Bogotá)');
+        console.log('   - Comerciales: Cali Comercial, Pasto Comercial');
 
     } catch (error) {
         console.error('❌ Error seeding sedes reales:', error);

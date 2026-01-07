@@ -18,6 +18,27 @@ const seedAll = async () => {
         await sequelize.authenticate();
         console.log('✅ Conexión a la base de datos establecida.');
 
+        // NUEVO: Cargar usuarios desde CSV
+        console.log('\n👥 Cargando usuarios desde CSV...');
+        try {
+            const { default: bulkCreateUsersFromCSV } = await import('./bulkCreateUsersFromCSV.js');
+            
+            // Verificar si existe el archivo CSV
+            const fs = await import('fs');
+            const csvPath = path.join(__dirname, '../usuarios.csv');
+            
+            if (fs.default.existsSync(csvPath)) {
+                console.log('📄 Archivo usuarios.csv encontrado');
+                await bulkCreateUsersFromCSV();
+                console.log('✅ Usuarios cargados desde CSV correctamente.');
+            } else {
+                console.log('⚠️ Archivo usuarios.csv no encontrado, saltando carga de usuarios...');
+                console.log(`💡 Para cargar usuarios, coloca el archivo en: ${csvPath}`);
+            }
+        } catch (error) {
+            console.error('❌ Error cargando usuarios desde CSV:', error.message);
+        }
+
         // 2. Ejecutar seed de RBAC (roles y permisos)
         // console.log('\n📋 Paso 1: Configurando RBAC...');
         // const { default: seedRBAC } = await import('./seedRBAC.js');
