@@ -128,11 +128,11 @@ export function LoginForm({
       <div className="block md:hidden">
         <div className="space-y-6">
           {/* Cloud Image above title */}
-          <div className="relative mb-4">
+          <div className="relative mb-8 z-10 mt-2">
             <img
               src={cloudImage}
               alt="Cloud"
-              className="w-16 h-auto ml-16 transform translate-y-[-50px]"
+              className="w-20 h-auto ml-16"
             />
           </div>
 
