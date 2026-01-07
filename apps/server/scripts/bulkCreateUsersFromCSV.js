@@ -110,6 +110,13 @@ const loadUsersFromCSV = async (csvPath, roleName = 'comercial_mundial_4') => {
                     phone: '3000000000' // Por defecto
                 };
 
+                // Generar identificación si está vacía
+                if (!userData.identification && userData.email) {
+                    const emailPrefix = userData.email.split('@')[0];
+                    userData.identification = (userData.identification + emailPrefix).slice(0, 45);
+                    console.log(`🔄 Identificación generada: ${userData.identification} para ${userData.name}`);
+                }
+
                 // Saltar filas completamente vacías
                 if (!userData.identification && !userData.name && !userData.email) {
                     continue;
@@ -128,15 +135,28 @@ const loadUsersFromCSV = async (csvPath, roleName = 'comercial_mundial_4') => {
                 const passwordToUse = userData.password || defaultPassword;
                 const hashedPassword = await bcrypt.hash(passwordToUse, 10);
 
-                // Verificar duplicados
-                const existingUser = await User.findOne({
+                // Verificar duplicados por email
+                const existingUserByEmail = await User.findOne({
                     where: { email: userData.email }
                 });
 
-                if (existingUser) {
+                if (existingUserByEmail) {
                     console.log(`⚠️ Usuario ya existe: ${userData.email}`);
                     skippedCount++;
                     continue;
+                }
+
+                // Verificar duplicados por identificación y generar nueva si está duplicada
+                let finalIdentification = userData.identification;
+                const existingUserById = await User.findOne({
+                    where: { identification: finalIdentification }
+                });
+
+                if (existingUserById) {
+                    // Generar nueva identificación usando la fórmula
+                    const emailPrefix = userData.email.split('@')[0];
+                    finalIdentification = (userData.identification + emailPrefix).slice(0, 45);
+                    console.log(`🔄 ID duplicado, generando nuevo: ${finalIdentification} para ${userData.name}`);
                 }
 
                 // Obtener sede
@@ -150,7 +170,7 @@ const loadUsersFromCSV = async (csvPath, roleName = 'comercial_mundial_4') => {
                 // Crear usuario
                 const user = await User.create({
                     sede_id: sedeId,
-                    identification: userData.identification,
+                    identification: finalIdentification,
                     name: userData.name,
                     email: userData.email,
                     phone: userData.phone,
