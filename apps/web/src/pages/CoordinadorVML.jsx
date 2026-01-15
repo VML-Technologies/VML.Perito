@@ -18,6 +18,7 @@ import { Loader2, Clock, User, Car, Phone, Calendar, AlertCircle, CheckCircle, P
 import { useNotifications } from '@/hooks/use-notifications';
 import { useCoordinatorWebSocket } from '@/hooks/use-inspection-queue-websocket';
 import { API_ROUTES } from '@/config/api';
+import DetailsButton from '@/components/detailsButton';
 
 const CoordinadorVML = () => {
     const { showToast } = useNotifications();
@@ -168,19 +169,25 @@ const CoordinadorVML = () => {
                 setStats(coordinatorData.stats);
             }
 
-            // Actualizar agendamientos en sede
+            // Actualizar agendamientos en sede - FILTRAR SOLO SEDE
             if (coordinatorData.sedeAppointments) {
                 console.log('🏢 Actualizando appointments en sede desde WebSocket:', coordinatorData.sedeAppointments);
-                setSedeAppointments(coordinatorData.sedeAppointments);
+                // Filtrar solo appointments que tengan sede_id y modalidad SEDE
+                const filteredSedeAppointments = coordinatorData.sedeAppointments.filter(appointment => 
+                    appointment.sede && appointment.sede.id && 
+                    appointment.inspectionModality && 
+                    appointment.inspectionModality.name !== 'Virtual'
+                );
+                setSedeAppointments(filteredSedeAppointments);
                 setLoadingSedeAppointments(false); // ✅ Quitar loading cuando llegan datos de sede
                 console.log('✅ Loading de sede desactivado');
 
                 // Recalcular estadísticas
                 const stats = {
-                    pending: coordinatorData.sedeAppointments.filter(a => a.status === 'pending').length,
-                    active: coordinatorData.sedeAppointments.filter(a => a.status === 'assigned').length,
-                    completed: coordinatorData.sedeAppointments.filter(a => a.status === 'completed').length,
-                    total: coordinatorData.sedeAppointments.length
+                    pending: filteredSedeAppointments.filter(a => a.status === 'pending').length,
+                    active: filteredSedeAppointments.filter(a => a.status === 'assigned').length,
+                    completed: filteredSedeAppointments.filter(a => a.status === 'completed').length,
+                    total: filteredSedeAppointments.length
                 };
                 setSedeStats(stats);
             }
@@ -250,7 +257,6 @@ const CoordinadorVML = () => {
             showToast('Sin conexión WebSocket. No se puede actualizar el estado', 'error');
         }
     };
-
     // Función para asignar inspector a una cita en sede via WebSocket
     const assignInspectorToSedeAppointment = (appointmentId, inspectorId) => {
         if (isConnected && socket) {
@@ -392,48 +398,57 @@ const CoordinadorVML = () => {
             showToast('Por favor selecciona las fechas de inicio y fin', 'error');
             return;
         }
-        
+
+
         if (new Date(reportStartDate) > new Date(reportEndDate)) {
             showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'error');
             return;
         }
-        
+
+
         try {
             setDownloadingReport(true);
-            
+
+
             const response = await fetch(`${API_ROUTES.COORDINADOR_CONTACTO.REPORTS.COORDINATOR}?start_date=${reportStartDate}&end_date=${reportEndDate}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 }
             });
-            
+
+
             if (response.ok) {
                 // Obtener el blob del archivo
                 const blob = await response.blob();
-                
+
+
                 // Crear URL temporal para descarga
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                
+
+
                 // Obtener nombre del archivo del header Content-Disposition
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = `reporte-coordinador-vml-${reportStartDate}-${reportEndDate}.xlsx`;
-                
+
+
                 if (contentDisposition) {
                     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
                     if (filenameMatch) {
                         filename = filenameMatch[1];
                     }
                 }
-                
+
+
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-                
+
+
                 showToast('Reporte descargado exitosamente', 'success');
                 setShowReportModal(false);
                 setReportStartDate('');
@@ -449,7 +464,6 @@ const CoordinadorVML = () => {
             setDownloadingReport(false);
         }
     };
-
     const CardComponent = ({ name, value, icon: Icon, valueColor }) => {
         return (
             <Card className="w-full">
@@ -475,8 +489,8 @@ const CoordinadorVML = () => {
                     <p className="text-gray-600">Gestión de cola de inspecciones</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="flex items-center gap-2"
                         onClick={() => setShowReportModal(true)}
                     >
@@ -509,21 +523,25 @@ const CoordinadorVML = () => {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Placa y Orden</TableHead>
-                                            <TableHead>Cliente</TableHead>
-                                            <TableHead>Tiempo</TableHead>
-                                            <TableHead>Acciones</TableHead>
+                                            <TableHead className="text-left">Placa y Orden</TableHead>
+                                            <TableHead className="text-left pl-12">Cliente</TableHead>
+                                            <TableHead className="text-center">Tiempo</TableHead>
+                                            <TableHead className="text-center">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {queueData.map((item) => {
+                                        {queueData.filter(item => item.estado !== 'assigned' && item.estado !== 'en_proceso').map((item) => {
                                             const timeInfo = formatTimeAgo(item.tiempo_ingreso);
                                             const isOverdue = timeInfo.isOverdue;
 
                                             return (
-                                                <TableRow key={item.id} className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}>
-                                                    <TableCell>
-                                                        <div className="flex flex-col gap-2">
+                                                <TableRow
+                                                    key={item.id}
+                                                    className={`${isOverdue ? 'bg-red-200 shadow-red-500 hover:bg-red-300 hover:shadow-red-500' : ''}`}
+                                                >
+                                                    {/* Placa y Orden */}
+                                                    <TableCell className="text-left">
+                                                        <div className="flex flex-col gap-1">
                                                             <div className="flex items-center gap-2">
                                                                 <Car className="h-4 w-4 text-gray-500" />
                                                                 <span className="font-medium">Placa: {item.placa}</span>
@@ -531,7 +549,9 @@ const CoordinadorVML = () => {
                                                             <span className="font-mono text-sm">Orden: {item.numero_orden}</span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell>
+
+                                                    {/* Cliente */}
+                                                    <TableCell className="text-left">
                                                         <div className="flex items-center gap-2">
                                                             <User className="h-4 w-4 text-gray-500" />
                                                             <div>
@@ -545,21 +565,20 @@ const CoordinadorVML = () => {
                                                             </div>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex gap-1">
+
+                                                    {/* Tiempo */}
+                                                    <TableCell className="text-center">
+                                                        <div className="flex items-center justify-center gap-1">
                                                             <div className="flex items-center justify-center">
-                                                                {
-                                                                    isOverdue ? <>
-                                                                        <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
-                                                                    </> : <>
-                                                                        <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
-                                                                    </>
-                                                                }
+                                                                {isOverdue ? (
+                                                                    <span className="border border-red-600 bg-red-600 rounded-full w-4 h-4 animate-pulse"></span>
+                                                                ) : (
+                                                                    <span className="border border-green-600 bg-green-600 rounded-full w-4 h-4"></span>
+                                                                )}
                                                             </div>
-                                                            <span className={`text-sm font-mono px-2 py-1 rounded ${isOverdue
-                                                                ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black'
-                                                                : 'text-gray-500'
-                                                                }`}>
+                                                            <span
+                                                                className={`text-sm font-mono px-2 py-1 rounded ${isOverdue ? 'bg-red-200 text-black hover:bg-red-300 hover:text-black' : 'text-gray-500'}`}
+                                                            >
                                                                 {timeInfo.text}
                                                             </span>
                                                         </div>
@@ -575,8 +594,27 @@ const CoordinadorVML = () => {
                                                                     Iniciar
                                                                 </Button>
                                                             )}
+                                                            {/* Botón de detalle */}
+                                                            <DetailsButton item={item} />
                                                         </div>
                                                     </TableCell>
+
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            {item.estado === 'en_cola' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Play className="h-4 w-4 mr-1" />
+                                                                    Iniciar
+                                                                </Button>
+                                                            )}
+                                                            <DetailsButton item={item} inspectionQueue={queueData} />
+                                                        </div>
+                                                    </TableCell>
+
                                                 </TableRow>
                                             );
                                         })}

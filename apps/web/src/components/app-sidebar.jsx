@@ -59,7 +59,7 @@ export function AppSidebar({
   const appName = import.meta.env.VITE_APP_NAME
 
   // Filtrar rutas disponibles según los roles del usuario
-  const availableRoutes = routesMap ? Object.values(routesMap).filter(route => 
+  const availableRoutes = routesMap ? Object.values(routesMap).filter(route =>
     route.roles.some(role => roles.includes(role))
   ) : [];
 
@@ -71,7 +71,7 @@ export function AppSidebar({
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/dashboard">
                 <ShieldAlert className="!size-5" />
-                <span className="text-base font-semibold">{appName}</span>
+                <span className="text-sm font-semibold leading-tight">{appName}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -88,7 +88,7 @@ export function AppSidebar({
               <SidebarMenu>
                 {availableRoutes.map((route, index) => {
                   const Icon = route.icon;
-                  
+
                   // Función para manejar el clic en el sidebar
                   const handleSidebarClick = (e) => {
                     if (route.type === 'redirect') {
@@ -100,11 +100,11 @@ export function AppSidebar({
                     }
                     // Si es type: 'navigate', no hacemos nada, el Link se encarga
                   };
-                  
+
                   return (
                     <SidebarMenuItem key={index}>
                       <SidebarMenuButton asChild tooltip={route.name}>
-                        <Link 
+                        <Link
                           to={route.route}
                           onClick={handleSidebarClick}
                         >
@@ -158,6 +158,14 @@ export function AppSidebar({
                           <Link to="/notification-admin">
                             <BarChart3 />
                             <span>Administración de Notificaciones</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Configuración de Listas">
+                          <Link to="/list-config">
+                            <List />
+                            <span>Configuración de Listas</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>

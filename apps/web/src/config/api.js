@@ -60,6 +60,8 @@ export const API_ROUTES = {
         CREATE: `${API_BASE_URL}/api/inspection-orders`,
         UPDATE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
         DELETE: (id) => `${API_BASE_URL}/api/inspection-orders/${id}`,
+        PDF: (id) => `${API_BASE_URL}/api/inspection-orders/pdf/${id}`,
+        PDF_VIEW: (id) => `${API_BASE_URL}/api/inspection-orders/pdf/${id}/view`,
 
         // ===== VALIDACIÓN DE PLACA =====
         CHECK_PLATE: (plate) => `${API_BASE_URL}/api/inspection-orders/check-plate/${plate}`,
@@ -271,6 +273,9 @@ export const API_ROUTES = {
         ASSIGN_INSPECTOR: (id) => `${API_BASE_URL}/api/appointments/${id}/assign-inspector`,
         SEDE_COORDINATOR: `${API_BASE_URL}/api/appointments/sede-coordinator`,
         SEDE_INSPECTOR_ALIADO: `${API_BASE_URL}/api/appointments/sede-inspector-aliado`,
+        
+        // Actualización automatizada de estado
+        UPDATE_STATUS_AUTOMATED: (id) => `${API_BASE_URL}/api/appointments/${id}/automated/status`,
 
         // Modalidades y sedes
         MODALITIES: `${API_BASE_URL}/api/appointments/modalities`,
@@ -323,6 +328,20 @@ export const API_ROUTES = {
         SCHEDULE: `${API_BASE_URL}/api/peritajes/schedule`,
         ASSIGN_AGENT: `${API_BASE_URL}/api/peritajes/assign-agent`,
     },
+    // ===== RUTAS - LIST CONFIG =====
+    LIST_CONFIG: {
+        LIST: API_BASE_URL + '/api/lists',
+        CREATE: API_BASE_URL + '/api/lists',
+        GET: (id) => API_BASE_URL + `/api/lists/${id}`,
+        UPDATE: (id) => API_BASE_URL + `/api/lists/${id}`,
+        DELETE: (id) => API_BASE_URL + `/api/lists/${id}`,
+
+        ITEMS: (listId) => API_BASE_URL + `/api/lists/${listId}/items`,
+        ITEMS_BY_NAME: (name) => API_BASE_URL + `/api/lists/by-name/${name}/items`,
+        ITEM: (listId, itemId) =>
+            API_BASE_URL + `/api/lists/${listId}/items/${itemId}`,
+    },
+
 };
 
 export const API_CONFIG = {

@@ -6,7 +6,6 @@ import { FileText, ChevronUp, ChevronDown, CheckCircle, XCircle, UserCheck, User
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 
-
 const OrdersTable = ({
     orders = [],
     pagination = {},
@@ -30,24 +29,11 @@ const OrdersTable = ({
 }) => {
     const { user } = useAuth();
 
-    /**
-     * Returns the display text for the order status, prioritizing inspection result if available.
-     * @param {string} status - The general order status.
-     * @param {string} inspectionResult - The inspection result status.
-     * @returns {string} The display text for the status.
-     */
     const getStatusDisplay = (status, inspectionResult) => {
-        if (!inspectionResult) {
-            return status || 'Sin estado';
-        }
+        if (!inspectionResult) return status || 'Sin estado';
         return inspectionResult;
     };
 
-    /**
-     * Formats a date string into a localized short date and time string.
-     * @param {string} dateString - The date string to format.
-     * @returns {string} The formatted date string or 'N/A' if invalid.
-     */
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('es-ES', {
@@ -59,92 +45,55 @@ const OrdersTable = ({
         });
     };
 
-    /**
-     * Returns the sort icon (up or down arrow) based on the current sort field and order.
-     * @param {string} field - The field to check for sorting.
-     * @returns {JSX.Element|null} The ChevronUp or ChevronDown icon, or null if not sorted by this field.
-     */
     const getSortIcon = (field) => {
         if (sortBy !== field) return null;
         return sortOrder == 'ASC' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
     };
 
-    /**
-     * Handles the sorting of the table by a given field.
-     * @param {string} field - The field to sort by.
-     */
     const handleSort = (field) => {
-        if (onSort) {
-            onSort(field);
-        }
+        if (onSort) onSort(field);
     };
 
-    // Determine table configuration based on tableType
     const isContactTable = tableType == 'contact';
 
-    // Get appropriate title and description based on table type
-    const getTableTitle = () => {
-        return isContactTable ? 'Órdenes Pendientes de Contacto' : 'Órdenes de Inspección';
-    };
+    const getTableTitle = () => isContactTable ? 'Órdenes Pendientes de Contacto' : 'Órdenes de Inspección';
+    const getTableDescription = () => isContactTable ? `${orders.length} órdenes encontradas` : `${pagination.total || orders.length} órdenes encontradas`;
 
-    const getTableDescription = () => {
-        return isContactTable
-            ? `${orders.length} órdenes encontradas`
-            : `${pagination.total || orders.length} órdenes encontradas`;
-    };
-
-    /**
-     * Obtiene el conteo de intentos de llamada para una orden.
-     * @param {Object} order - La orden de inspección
-     * @returns {number} El número de intentos de llamada
-     */
     const getCallLogsCount = (order) => {
-        // Método 1: Si callLogsCount está disponible, usarlo
         if (order.callLogsCount !== undefined && order.callLogsCount !== null) {
             const count = parseInt(order.callLogsCount);
-            if (!isNaN(count)) {
-                return count;
-            }
+            if (!isNaN(count)) return count;
         }
-
-        // Método 2: Si callLogs es un array, usar su longitud
-        if (Array.isArray(order.callLogs)) {
-            return order.callLogs.length;
-        }
-
-        // Valor por defecto
+        if (Array.isArray(order.callLogs)) return order.callLogs.length;
         return 0;
     };
 
     return (
         <Card className="rounded-lg shadow-md">
             <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-800">{getTableTitle()}</CardTitle>
-                <CardDescription className="text-gray-600">
-                    {getTableDescription()}
-                </CardDescription>
+                <CardTitle className="text-2xl font-ubuntu font-bold text-gray-800">{getTableTitle()}</CardTitle>
+                <CardDescription className="text-gray-600 font-ubuntu">{getTableDescription()}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                            <p className="mt-4 text-muted-foreground">Cargando órdenes...</p>
+                            <p className="mt-4 font-ubuntu text-muted-foreground">Cargando órdenes...</p>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {/* Table view for medium and larger screens */}
                         <div className="overflow-x-auto block">
                             <table className="w-full border-collapse">
-                                <thead>
+                                <thead className="bg-blue-100">
                                     <tr className="border-b">
                                         <th className="text-left p-2">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('numero')}
-                                                className="font-semibold"
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
                                             >
                                                 Número {getSortIcon('numero')}
                                             </Button>
@@ -154,9 +103,9 @@ const OrdersTable = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('created_at')}
-                                                className="font-semibold"
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
                                             >
-                                                Fecha de creacion {getSortIcon('created_at')}
+                                                Fecha de creación {getSortIcon('created_at')}
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">
@@ -164,40 +113,48 @@ const OrdersTable = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('nombre_cliente')}
-                                                className="font-semibold"
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
                                             >
                                                 Cliente {getSortIcon('nombre_cliente')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2">Contacto</th>
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Contacto
+                                        </th>
                                         <th className="text-left p-2">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('placa')}
-                                                className="font-semibold"
+                                                className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
                                             >
                                                 Placa {getSortIcon('placa')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2">Intentos</th>
-                                        <th className="text-left p-2">Estado</th>
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Intentos
+                                        </th>
+                                        <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                            Estado
+                                        </th>
                                         {showAgentColumn && (
-                                            <th className="text-left p-2">Agente Asignado</th>
+                                            <th className="text-left p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle">
+                                                Agente Asignado
+                                            </th>
                                         )}
                                         {showActions && (
-                                            <th className="text-left p-2">Acciones</th>
+                                            <th className="text-center p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle w-[10rem]">
+                                                Acciones
+                                            </th>
+
                                         )}
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     {orders.length == 0 ? (
                                         <tr>
-                                            <td colSpan={
-                                                isContactTable
-                                                    ? (showActions ? 10 : 9)
-                                                    : (showAgentColumn && showActions ? 11 : showAgentColumn || showActions ? 10 : 9)
-                                            } className="text-center p-8">
+                                            <td colSpan={isContactTable ? (showActions ? 10 : 9) : (showAgentColumn && showActions ? 11 : showAgentColumn || showActions ? 10 : 9)} className="text-center p-8">
                                                 <div className="text-muted-foreground">
                                                     {isContactTable ? (
                                                         <Phone className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -212,80 +169,57 @@ const OrdersTable = ({
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id} className="border-b hover:bg-muted/50">
-                                                <td className="p-2 font-mono font-medium">
+                                                <td className="p-2 font-medium">
                                                     <div className='flex flex-col gap-0'>
-                                                        <span className='font-mono font-medium ms-2'>
-                                                            {order.numero}
-                                                        </span>
+                                                        <span className='font-bold ms-2'>{order.numero}</span>
                                                         <Badge variant='outline' className='text-xs'>
-                                                            {
-                                                                order.numero.toString().includes('9991') ? (
-                                                                    <>
-                                                                        Orden Manual
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        Integracion
-                                                                    </>
-                                                                )
-                                                            }
+                                                            {order.numero.toString().includes('9991') ? 'Orden Manual' : 'Integración'}
                                                         </Badge>
                                                     </div>
-
                                                 </td>
-                                                <td className="p-2 text-sm">
-                                                    <div>
-                                                        {formatDate(order.created_at)}
-                                                    </div>
-                                                    <div className='text-xs font-mono text-muted-foreground'>
-                                                        Modalidad sugerida: {order.metodo_inspeccion_recomendado}
+                                                <td className="p-2 font-bold text-sm">
+                                                    <div>{formatDate(order.created_at)}</div>
+                                                    <div className='text-xs text-[#3075C7] font-semibold'>Modalidad sugerida: {order.metodo_inspeccion_recomendado}</div>
+                                                </td>
+                                                <td className="p-2">
+                                                    <div className="space-y-1">
+                                                        <div className="font-bold">{order.nombre_cliente}</div>
+                                                        <div className="text-sm text-[#3075C7]">{order.correo_cliente}</div>
+                                                        <div className="text-sm text-[#3075C7] font-bold">{order.celular_cliente}</div>
                                                     </div>
                                                 </td>
                                                 <td className="p-2">
                                                     <div className="space-y-1">
-                                                        <div className="font-medium">{order.nombre_cliente}</div>
-                                                        <div className="text-sm text-muted-foreground">{order.correo_cliente}</div>
-                                                        <div className="text-sm font-mono">{order.celular_cliente}</div>
+                                                        <div className="font-bold">{order.nombre_contacto}</div>
+                                                        <div className="text-sm text-[#3075C7]">{order.correo_contacto}</div>
+                                                        <div className="text-sm text-[#3075C7] font-bold">{order.celular_contacto}</div>
                                                     </div>
                                                 </td>
-                                                <td className="p-2">
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium">{order.nombre_contacto}</div>
-                                                        <div className="text-sm text-muted-foreground">{order.correo_contacto}</div>
-                                                        <div className="text-sm font-mono">{order.celular_contacto}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="p-2 font-mono font-medium">
+                                                <td className="p-2 font-medium">
                                                     <div className="flex flex-col">
-                                                        <span>{order.placa}</span>
-                                                        <span className='text-xs text-muted-foreground'>{order.marca} - {order.modelo}</span>
-                                                        <span className='text-xs font-mono'>{order.producto.split("_").join(" ")}</span>
+                                                        <span className='font-bold'>{order.placa}</span>
+                                                        <span className="text-xs text-[#3075C7] first-letter:uppercase">
+                                                            {order.marca} - {order.modelo}
+                                                        </span>
+                                                        <span className="text-xs capitalize">
+                                                            {order.producto
+                                                                .toLowerCase()
+                                                                .split("_")
+                                                                .join(" ")}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="p-2">
                                                     <div className="flex items-center gap-2">
                                                         <Phone className="h-4 w-4 text-muted-foreground" />
-                                                        <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) == 0
-                                                            ? 'bg-gray-100 text-gray-600'
-                                                            : getCallLogsCount(order) <= 2
-                                                                ? 'bg-blue-100 text-blue-700'
-                                                                : getCallLogsCount(order) <= 4
-                                                                    ? 'bg-yellow-100 text-yellow-700'
-                                                                    : 'bg-red-100 text-red-700'
-                                                            }`}>
+                                                        <span className={`font-medium text-sm px-2 py-1 rounded-full ${getCallLogsCount(order) == 0 ? 'bg-gray-100 text-gray-600' : getCallLogsCount(order) <= 2 ? 'bg-blue-100 text-blue-700' : getCallLogsCount(order) <= 4 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                                                             {getCallLogsCount(order)}
                                                         </span>
                                                     </div>
                                                 </td>
                                                 <td className="p-2">
                                                     <Badge variant={order.badgeColor}>
-                                                        {order.fixedStatus
-                                                            ? (order.fixedStatus == 'Agendado'
-                                                                ? 'Activo'
-                                                                : (order.fixedStatus.toLowerCase() == 'inspeccion en curso'
-                                                                    ? 'Activo'
-                                                                    : order.fixedStatus))
-                                                            : 'Sin estado'}
+                                                        {order.fixedStatus ? (['Agendado', 'inspeccion en curso'].includes(order.fixedStatus.toLowerCase()) ? 'Activo' : order.fixedStatus) : 'Sin estado'}
                                                     </Badge>
                                                 </td>
                                                 {showAgentColumn && (
@@ -293,9 +227,7 @@ const OrdersTable = ({
                                                         {order.AssignedAgent ? (
                                                             <div className="flex items-center gap-2">
                                                                 <UserCheck className="h-4 w-4 text-green-600" />
-                                                                <span className="text-sm">
-                                                                    {order.AssignedAgent.name}
-                                                                </span>
+                                                                <span className="text-sm">{order.AssignedAgent.name}</span>
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-2">
@@ -309,81 +241,67 @@ const OrdersTable = ({
                                                     <td className="p-2">
                                                         <div className="flex items-center flex-col gap-2">
                                                             {isContactTable ? (
-                                                                // Contact table actions
                                                                 onContactOrder && (
-                                                                    <>
-                                                                        {
-                                                                            order.fixedStatus == 'Creada' ? (
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() => onContactOrder(order)}
-                                                                                >
-                                                                                    <PhoneCall className="h-4 w-4 mr-2" />
-                                                                                    Contactar
-                                                                                </Button>
-                                                                            ) : <>
-                                                                                <button className='text-sm text-muted-foreground border border-muted-foreground rounded-md px-2 py-1'>
-                                                                                    Ya Agendado
-                                                                                </button>
-                                                                            </>
-                                                                        }
-                                                                    </>
+                                                                    order.fixedStatus == 'Creada' ? (
+                                                                        <Button size="sm" variant="outline" onClick={() => onContactOrder(order)}>
+                                                                            <PhoneCall className="h-4 w-4 mr-2" /> Contactar
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <button className='text-sm text-muted-foreground border border-muted-foreground rounded-md px-2 py-1'>Ya Agendado</button>
+                                                                    )
                                                                 )
                                                             ) : (
-                                                                <>
+                                                                <div className="flex flex-col gap-2">
                                                                     {onViewDetails && (
                                                                         <Button
                                                                             size="sm"
-                                                                            variant="outline"
+                                                                            variant="ghost"
                                                                             onClick={() => onViewDetails(order)}
+                                                                            className="flex items-center gap-1 cursor-pointer text-[#3075C7] border-b-2 border-transparent hover:border-[#3075C7] hover:text-[#1056A1] rounded-none transition-colors duration-200"
                                                                         >
-                                                                            <Eye className="h-4 w-4 mr-1" />
                                                                             Ver Resumen
+                                                                            <Eye className="h-4 w-4 text-[#3075C7] group-hover:text-[#1056A1]" />
                                                                         </Button>
                                                                     )}
-                                                                    {
-                                                                        (order.InspectionOrderStatus.id && order.session_id && order.fixedStatus != 'No finalizada por novedad del cliente') ? <>
-                                                                            <Button
-                                                                                size="sm"
-                                                                                variant="outline"
-                                                                                onClick={() => {
-                                                                                    window.open(`/inspection-report/${order.id}`, '_blank');
-                                                                                }}
-                                                                            >
-                                                                                <FileText className="h-4 w-4 mr-1" />
-                                                                                Ver Inspección
-                                                                            </Button>
-                                                                        </> : <></>
-                                                                    }
-                                                                    {onAssignAgent && agents.length > 0 && (
-                                                                        <Select
-                                                                            value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
-                                                                            onValueChange={(value) => {
-                                                                                onAgentChange(value); // Update local state for the select
-                                                                                onAssignAgent(order.id, value); // Trigger assignment action
-                                                                            }}
-                                                                            disabled={assigningOrder == order.id}
-                                                                        >
-                                                                            <SelectTrigger className="w-[120px] text-xs h-9"> {/* Adjusted width and height */}
-                                                                                <SelectValue placeholder={order.AssignedAgent ? "Reasignar" : "Asignar"} />
-                                                                            </SelectTrigger>
-                                                                            <SelectContent>
-                                                                                <SelectItem value="reassign">{order.AssignedAgent ? "Reasignar" : "Asignar"}</SelectItem>
-                                                                                <SelectItem value="unassign">Quitar asignación</SelectItem>
-                                                                                {agents.filter(agent => agent.id && agent.name).map((agent) => (
-                                                                                    <SelectItem key={agent.id} value={agent.id.toString()}>
-                                                                                        {agent.name}
-                                                                                    </SelectItem>
-                                                                                ))}
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                    )}
 
-                                                                    {assigningOrder == order.id && (
-                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                                                    {(order.InspectionOrderStatus.id && order.session_id && order.fixedStatus != 'No finalizada por novedad del cliente') && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            onClick={() => window.open(`/inspection-report/${order.id}`, '_blank')}
+                                                                            className="flex items-center cursor-pointer gap-1 text-[#3075C7] border-b-2 border-transparent hover:border-[#3075C7] hover:text-[#1056A1] rounded-none transition-colors duration-200"
+                                                                        >
+                                                                            Ver Inspección
+                                                                            <FileText className="h-4 w-4 mr-1" />
+                                                                        </Button>
                                                                     )}
-                                                                </>
+                                                                </div>
+
+                                                            )}
+                                                            {onAssignAgent && agents.length > 0 && (
+                                                                <Select
+                                                                    value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
+                                                                    onValueChange={(value) => {
+                                                                        onAgentChange(value);
+                                                                        onAssignAgent(order.id, value);
+                                                                    }}
+                                                                    disabled={assigningOrder == order.id}
+                                                                >
+                                                                    <SelectTrigger className="w-[120px] text-xs h-9">
+                                                                        <SelectValue placeholder={order.AssignedAgent ? "Reasignar" : "Asignar"} />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="reassign">{order.AssignedAgent ? "Reasignar" : "Asignar"}</SelectItem>
+                                                                        <SelectItem value="unassign">Quitar asignación</SelectItem>
+                                                                        {agents.filter(agent => agent.id && agent.name).map(agent => (
+                                                                            <SelectItem key={agent.id} value={agent.id.toString()}>{agent.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            )}
+
+                                                            {assigningOrder == order.id && (
+                                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                                                             )}
                                                         </div>
                                                     </td>
@@ -395,29 +313,14 @@ const OrdersTable = ({
                             </table>
                         </div>
 
-                        {/* Pagination remains visible for both views */}
                         {pagination.pages > 1 && (
                             <div className="flex items-center justify-between mt-4">
                                 <div className="text-sm text-muted-foreground">
                                     Página {pagination.page} de {pagination.pages} ({pagination.total} total)
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => onPageChange(pagination.page - 1)}
-                                        disabled={!pagination.hasPrev}
-                                    >
-                                        Anterior
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => onPageChange(pagination.page + 1)}
-                                        disabled={!pagination.hasNext}
-                                    >
-                                        Siguiente
-                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page - 1)} disabled={!pagination.hasPrev} className="rounded-xl cursor-pointer text-[#235692] border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] disabled:text-[#235692] disabled:bg-[#FFFFFF] disabled:cursor-not-allowed">Anterior</Button>
+                                    <Button variant="outline" size="sm" onClick={() => onPageChange(pagination.page + 1)} disabled={!pagination.hasNext} className="rounded-xl cursor-pointer text-[#235692] border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] disabled:text-[#235692] disabled:bg-[#FFFFFF] disabled:cursor-not-allowed">Siguiente</Button>
                                 </div>
                             </div>
                         )}

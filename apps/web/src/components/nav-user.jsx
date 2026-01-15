@@ -59,7 +59,8 @@ export function NavUser() {
   if (!user) return null
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <div className="flex items-center gap-1 sm:gap-2 bg-[#EAF4FF] px-3 py-2 rounded-lg">
+
       {/* Avatar - Always visible */}
       <div className="flex-shrink-0">
         <Avatar className="h-8 w-8 rounded-lg">
@@ -77,18 +78,9 @@ export function NavUser() {
 
       {/* User info and status - Hidden on mobile */}
       <div className="hidden sm:block min-w-0 flex-1">
-        <div className="w-32 lg:w-48">
+        <div className="min-w-0 max-w-full">
           <div className="truncate font-medium text-sm">{user.name || 'Usuario'}</div>
-          <Select className="w-full">
-            <SelectTrigger className="w-full h-7 text-xs">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent className="w-full">
-              <SelectItem value="almuerzo">Almuerzo</SelectItem>
-              <SelectItem value="en_linea">En línea</SelectItem>
-              <SelectItem value="en_descanso">En descanso</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="text-muted-foreground truncate text-xs">{user.email || 'Sin email'}</div>
         </div>
       </div>
 

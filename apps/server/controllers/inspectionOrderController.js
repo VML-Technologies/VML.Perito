@@ -384,13 +384,17 @@ class InspectionOrderController extends BaseController {
             const {
                 page = 1,
                 limit = 10,
-                search = '',
+                plate = '',
+                client = '',
+                contact = '',
+                order_number = '',
                 status = '',
                 assigned_agent_id = '',
                 date_from = '',
                 date_to = '',
                 sortBy = 'created_at',
                 sortOrder = 'DESC',
+                search = '',
                 context = 'default' // 'comercial', 'agent', 'coordinator'
             } = req.query;
 
@@ -419,16 +423,27 @@ class InspectionOrderController extends BaseController {
             }
 
             // Búsqueda por texto
-            if (search) {
-                const searchFields = [
-                    { placa: { [Op.like]: `%${search}%` } },
-                    { nombre_cliente: { [Op.like]: `%${search}%` } },
-                    { num_doc: { [Op.like]: `%${search}%` } },
-                    { correo_cliente: { [Op.like]: `%${search}%` } },
-                    { numero: { [Op.like]: `%${search}%` } }
-                ];
+            if (plate) {
+                whereConditions.placa = { [Op.like]: `%${plate}%` };
+            }
 
-                whereConditions[Op.or] = searchFields;
+            if (client) {
+                whereConditions[Op.or] = [
+                    { nombre_cliente: { [Op.like]: `%${client}%` } },
+                    { correo_cliente: { [Op.like]: `%${client}%` } },
+                    { celular_cliente: { [Op.like]: `%${client}%` } },
+                ];
+            }
+            if (contact) {
+                whereConditions[Op.or] = [
+                    { nombre_contacto: { [Op.like]: `%${contact}%` } },
+                    { correo_contacto: { [Op.like]: `%${contact}%` } },
+                    { celular_contacto: { [Op.like]: `%${contact}%` } },
+                ];
+            }
+
+            if (order_number) {
+                whereConditions.numero = { [Op.like]: `%${order_number}%` };
             }
 
             // Filtro por estado
@@ -518,7 +533,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'direccion_inspeccion', 'observaciones', 'created_at', 'updated_at'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -558,7 +573,23 @@ class InspectionOrderController extends BaseController {
             let transformedOrders = rows.map(order => {
                 // Ordenar appointments por updated_at descendente (más reciente primero)
                 const sortedAppointments = order.appointments
-                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+                    ? order.appointments.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).map(apt => {
+                        console.log(`🔍 Appointment ID ${apt.id}: observaciones = "${apt.observaciones}", notes = "${apt.notes}"`);
+                        return {
+                            id: apt.id,
+                            session_id: apt.session_id,
+                            scheduled_date: apt.scheduled_date,
+                            scheduled_time: apt.scheduled_time,
+                            status: apt.status,
+                            notes: apt.notes,
+                            observaciones: apt.observaciones,
+                            direccion_inspeccion: apt.direccion_inspeccion,
+                            created_at: apt.created_at,
+                            updated_at: apt.updated_at,
+                            inspectionModality: apt.inspectionModality,
+                            sede: apt.sede
+                        };
+                    })
                     : [];
 
                 return {
@@ -862,7 +893,8 @@ class InspectionOrderController extends BaseController {
 
             return null;
         } catch (error) {
-            throw new Error("Error al intentar obtener datos de la API de Seguros Mundial.");
+            console.warn('⚠️ Error en API Seguros Mundial:', error.message);
+            return null;
         }
     }
 
@@ -951,6 +983,7 @@ class InspectionOrderController extends BaseController {
             });
         }
     }
+    
 
     // Crear orden con validaciones
     async store(req, res) {
@@ -986,7 +1019,11 @@ class InspectionOrderController extends BaseController {
 
             // Guardar registros de siniestros si existen
             if (siniestrosData && siniestrosData.siniestros && siniestrosData.siniestros.length > 0) {
-                await this.saveSinisterRecords(siniestrosData, order.id);
+                try {
+                    await this.saveSinisterRecords(siniestrosData, order.id);
+                } catch (siniestrosError) {
+                    console.warn('⚠️ Error guardando siniestros (continuando):', siniestrosError.message);
+                }
             }
 
             // Cargar la orden completa con relaciones
@@ -1007,6 +1044,7 @@ class InspectionOrderController extends BaseController {
 
             // Disparar evento de orden de inspección creada
             try {
+                console.log('🎯 Disparando evento inspection_order.created para orden:', fullOrder.numero);
                 await automatedEventTriggers.triggerInspectionOrderEvents('created', {
                     id: fullOrder.id,
                     numero: fullOrder.numero,
@@ -1024,10 +1062,13 @@ class InspectionOrderController extends BaseController {
                     clave_intermediario: fullOrder.clave_intermediario
                 }, {
                     created_by: req.user?.id,
-                    ip_address: req.ip
+                    ip_address: req.ip,
+                    is_client: true, // Marcar para que se envíen notificaciones al cliente
+                    is_commercial_creator: req.user?.id ? true : false
                 });
+                console.log('✅ Evento inspection_order.created disparado exitosamente');
             } catch (eventError) {
-                console.error('Error disparando evento inspection_order.created:', eventError);
+                console.error('❌ Error disparando evento inspection_order.created:', eventError);
             }
 
             res.status(201).json(fullOrder);
@@ -3160,6 +3201,49 @@ if status == 5 then check for latest @appointment an if it is with status != ine
      * Obtener URL de descarga del PDF de inspección
      * GET /api/inspection-orders/:id/pdf-download-url
      */
+    async getAppointmentsHistory(req, res) {
+        try {
+            const { orderId } = req.params;
+            console.log('🔍 Buscando appointments para orderId:', orderId);
+            
+            const appointments = await Appointment.findAll({
+                where: { 
+                    inspection_order_id: orderId
+                },
+                paranoid: false,
+                attributes: ['id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'created_at', 'updated_at', 'deleted_at'],
+                include: [
+                    {
+                        model: InspectionModality,
+                        as: 'inspectionModality',
+                        attributes: ['name', 'code']
+                    },
+                    {
+                        model: Sede,
+                        as: 'sede',
+                        attributes: ['name', 'address']
+                    }
+                ],
+                order: [['created_at', 'DESC']]
+            });
+            
+            console.log('📊 Appointments encontrados:', appointments.length);
+            console.log('📊 Appointments data:', appointments);
+            
+            res.json({
+                success: true,
+                data: appointments
+            });
+        } catch (error) {
+            console.error('Error obteniendo historial de appointments:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
     async getPdfDownloadUrl(req, res) {
         try {
             const { orderId, appointmentId, sessionId } = req.params;
@@ -3252,4 +3336,4 @@ if status == 5 then check for latest @appointment an if it is with status != ine
     }
 }
 
-export default InspectionOrderController; 
+export default InspectionOrderController;

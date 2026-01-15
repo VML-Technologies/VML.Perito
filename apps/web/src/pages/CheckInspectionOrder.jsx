@@ -281,7 +281,7 @@ const CheckInspectionOrder = () => {
                 {/* Footer */}
                 <div className="mt-12 text-center text-sm text-gray-500">
                     <p>
-                        Esta consulta es proporcionada por Movilidad Mundial para verificar el estado de las órdenes de inspección.
+                        Esta consulta es proporcionada por la Plataforma de inspecciones de asegurabilidad movilidad para verificar el estado de las órdenes de inspección.
                     </p>
                     <p className="mt-2">
                         Para más información, contacte a nuestro equipo de soporte.
