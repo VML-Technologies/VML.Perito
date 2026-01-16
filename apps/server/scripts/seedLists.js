@@ -48,8 +48,11 @@ const seedLists = async () => {
         name: 'tipo de vehiculo',
         label: 'Tipo de Vehículo',
         items: [
-          { value: 'Camioneta', label: 'Camioneta' },
-          { value: 'Moto', label: 'Moto' },
+          { value: 'camioneta', label: 'Camioneta' },
+          { value: 'automovil', label: 'Automovil' },
+          { value: 'moto', label: 'Moto' },
+          { value: 'trailer', label: 'Trailer' },
+          { value: 'pesado', label: 'Pesado' },
         ],
       },
       {
