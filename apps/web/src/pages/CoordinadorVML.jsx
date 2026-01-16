@@ -584,7 +584,7 @@ const CoordinadorVML = () => {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="flex gap-2">
+                                                        <div className="flex gap-2 justify-center">
                                                             {item.estado === 'en_cola' && (
                                                                 <Button
                                                                     size="sm"
@@ -596,22 +596,6 @@ const CoordinadorVML = () => {
                                                             )}
                                                             {/* Botón de detalle */}
                                                             <DetailsButton item={item} />
-                                                        </div>
-                                                    </TableCell>
-
-                                                    <TableCell>
-                                                        <div className="flex gap-2">
-                                                            {item.estado === 'en_cola' && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
-                                                                    className="cursor-pointer"
-                                                                >
-                                                                    <Play className="h-4 w-4 mr-1" />
-                                                                    Iniciar
-                                                                </Button>
-                                                            )}
-                                                            <DetailsButton item={item} inspectionQueue={queueData} />
                                                         </div>
                                                     </TableCell>
 

@@ -109,8 +109,8 @@ export default function ComercialMundial() {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-ubuntu font-bold">Dashboard Comercial</h1>
-                    <p className="text-muted-foreground font-ubuntu">
+                    <h1 className="text-3xl font-bold">Dashboard Comercial</h1>
+                    <p className="text-muted-foreground">
                         Gestiona órdenes de inspección y revisa estadísticas de rendimiento
                     </p>
                 </div>

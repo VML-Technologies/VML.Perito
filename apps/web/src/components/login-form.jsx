@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import logo from "@/assets/logo.svg"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -15,7 +14,6 @@ import { Label } from "@/components/ui/label"
 import { AppName } from "@/components/ui/app-name"
 import { useAuth } from "@/contexts/auth-context"
 import { useNotificationContext } from "@/contexts/notification-context"
-import { LoginBackground } from "./loginBackground"
 
 export function LoginForm({
   className,
@@ -48,25 +46,22 @@ export function LoginForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader className="flex flex-col items-center -mt-4 px-6">
-          <img
-            src={logo}
-            alt="Logo"
-            className="w-[140px] h-[140px] mb-2"
-          /> 
-          <CardTitle className="text-lg font-bold mb-1 text-center">
-            Ingreso de Usuario
+        <CardHeader>
+          <CardTitle>
+            <div className="flex justify-center w-full mb-5">
+              <AppName />
+            </div>
+            Iniciar sesión
           </CardTitle>
-          <CardDescription className="text-sm text-center px-2">
+          <CardDescription>
             Ingresa tu correo electrónico para iniciar sesión
           </CardDescription>
         </CardHeader>
-
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
-                <Label htmlFor="email" className="font-bold">Correo electrónico</Label>
+                <Label htmlFor="email">Correo electrónico</Label>
                 <Input
                   id="email"
                   type="email"
@@ -78,7 +73,13 @@ export function LoginForm({
               </div>
               <div className="grid gap-3">
                 <div className="flex items-center">
-                  <Label htmlFor="password" className="font-bold">Contraseña</Label>
+                  <Label htmlFor="password">Contraseña</Label>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-blue-600 hover:text-blue-800">
+                    ¿Olvidaste tu contraseña?
+                  </button>
                 </div>
                 <Input
                   id="password"
@@ -88,19 +89,8 @@ export function LoginForm({
                   required
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="ml-auto inline-block text-sm underline-offset-4 hover:underline cursor-pointer text-[#002EFF] hover:text-blue-700"
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
               <div className="flex flex-col gap-3">
-                <Button
-                  type="submit"
-                  className="w-full bg-[#235692] hover:bg-[#003370] text-white cursor-pointer rounded-xl"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Iniciando sesión..." : "Iniciar sesión"}
                 </Button>
               </div>

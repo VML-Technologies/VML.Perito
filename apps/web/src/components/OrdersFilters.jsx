@@ -132,14 +132,16 @@ const OrdersFilters = ({
 
                             {/* Botón Limpiar */}
                             <div className="flex self-end">
-                                <Button
-                                    onClick={handleClearFilters}
-                                    variant="secondary"
-                                    size="sm"
-                                    className="text-xs  px-4 py-2 text-[#235692] rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
-                                >
-                                    Limpiar Filtros
-                                </Button>
+                                    <Button
+                                        onClick={handleClearFilters}
+                                        variant="secondary"
+                                        size="sm"
+                                        className="text-xs px-4 py-2 rounded-md shadow-sm hover:bg-gray-100 transition-colors duration-200"
+                                    >
+                                        {
+                                            role === "comercial" ? "Limpiar" : "Limpiar Filtros"
+                                        }
+                                    </Button>
 
                             </div>
                         </div>
@@ -148,20 +150,18 @@ const OrdersFilters = ({
             </div>
 
             {/* Botón Nueva Orden */}
-            {hasPermission('inspections.create') && (
-                <div className="flex justify-center">
-                    <Button
-                        onClick={() => showCreateModal(true)}
-                        className="flex items-center gap-2 px-2 border cursor-pointer bg-[#3075C7] hover:bg-[#003370] py-8 rounded-full"
-                    >
-                        <div className="flex items-center gap-2 px-4">
-                            <PlusCircle className="h-4 w-4" />
-                            <span className="text-lg font-medium">Nueva orden</span>
-                        </div>
-                    </Button>
-                </div>
-
-            )}
+                    {
+                        hasPermission('inspections.create') && (
+                            <Button onClick={() => showCreateModal(true)} className="flex items-center gap-2 px-2 border py-8 rounded-md">
+                                <div className="flex items-center gap-2 px-4">
+                                    <PlusCircle className="h-8 w-8" />
+                                    <span className="text-lg font-medium">
+                                        Nueva Orden
+                                    </span>
+                                </div>
+                            </Button>
+                        )
+                    }
         </div>
     );
 };
