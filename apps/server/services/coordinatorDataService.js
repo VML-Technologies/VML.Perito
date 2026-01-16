@@ -166,7 +166,7 @@ class CoordinatorDataService {
             where: {
                 deleted_at: null,               
                 status: {
-                    [Op.not]: ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent']
+                    [Op.not]: ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent', 'ineffective_with_retry']
                 },
                 call_log_id: null
             },
