@@ -1242,7 +1242,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     </Card>
                     {/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
                     {/* Información del Contacto */}
-                    <Card className={!sameAsClient ? 'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20' : ''}>
+                     <Card
+                        className={
+                            !sameAsClient
+                                ? 'border border-[#F5A623]/40 bg-[#FFF9F2] rounded-xl p-5 shadow-md shadow-[#F5A623]/20 transition-all duration-300'
+                                : ''
+                        }
+                    >
                         <CardHeader>
                             <CardTitle className="inline-flex items-center gap-2 bg-[#FFE7C2] text-[#8A4B00] px-3 py-2 rounded-md text-sm font-medium">
                                 <TriangleAlert className="h-12 w-12 sm:h-4 sm:w-4" />
