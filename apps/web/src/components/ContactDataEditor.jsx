@@ -273,91 +273,101 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <User className="h-5 w-5" />
                         Datos de Contacto
                     </div>
-                    <div className="flex items-center gap-2">
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleResendSMS}
-                                        disabled={isResendingSMS || !formData.celular_contacto || smsCountdown > 0}
-                                        className="flex items-center gap-1"
-                                    >
-                                        {isResendingSMS ? (
-                                            <>
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                                                Enviando...
-                                            </>
-                                        ) : smsCountdown > 0 ? (
-                                            <>
-                                                <MessageSquare className="h-4 w-4" />
-                                                Reenviar SMS ({smsCountdown}s)
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MessageSquare className="h-4 w-4" />
-                                                Reenviar SMS
-                                            </>
-                                        )}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Aplica solo para inspecciones virtuales</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <div className="flex flex-wrap gap-2">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleResendSMS}
+                                            disabled={isResendingSMS || !formData.celular_contacto || smsCountdown > 0}
+                                            className="flex items-center gap-1 text-xs sm:text-sm"
+                                        >
+                                            {isResendingSMS ? (
+                                                <>
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                                    <span className="hidden sm:inline">Enviando...</span>
+                                                </>
+                                            ) : smsCountdown > 0 ? (
+                                                <>
+                                                    <MessageSquare className="h-4 w-4" />
+                                                    <span className="hidden sm:inline">Reenviar SMS ({smsCountdown}s)</span>
+                                                    <span className="sm:hidden">Reenv. SMS ({smsCountdown}s)</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <MessageSquare className="h-4 w-4" />
+                                                    <span className="hidden sm:inline">Reenviar SMS</span>
+                                                    <span className="sm:hidden">Reenv. SMS</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Aplica solo para inspecciones virtuales</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleResendEmail}
+                                            disabled={isResendingEmail || !formData.correo_contacto || emailCountdown > 0}
+                                            className="flex items-center gap-1 text-xs sm:text-sm"
+                                        >
+                                            {isResendingEmail ? (
+                                                <>
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                                    <span className="hidden sm:inline">Enviando...</span>
+                                                </>
+                                            ) : emailCountdown > 0 ? (
+                                                <>
+                                                    <MailIcon className="h-4 w-4" />
+                                                    <span className="hidden sm:inline">Reenviar Email ({emailCountdown}s)</span>
+                                                    <span className="sm:hidden">Reenv. Email ({emailCountdown}s)</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <MailIcon className="h-4 w-4" />
+                                                    <span className="hidden sm:inline">Reenviar Email</span>
+                                                    <span className="sm:hidden">Reenv. Email</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Reenvía el link de inspección por email</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={toggleHistory}
+                                className="flex items-center gap-1 text-xs sm:text-sm"
+                            >
+                                <History className="h-4 w-4" />
+                                <span className="hidden sm:inline">Historial</span>
+                                <span className="sm:hidden">Hist.</span>
+                            </Button>
+                        </div>
                         
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleResendEmail}
-                                        disabled={isResendingEmail || !formData.correo_contacto || emailCountdown > 0}
-                                        className="flex items-center gap-1"
-                                    >
-                                        {isResendingEmail ? (
-                                            <>
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                                                Enviando...
-                                            </>
-                                        ) : emailCountdown > 0 ? (
-                                            <>
-                                                <MailIcon className="h-4 w-4" />
-                                                Reenviar Email ({emailCountdown}s)
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MailIcon className="h-4 w-4" />
-                                                Reenviar Email
-                                            </>
-                                        )}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Reenvía el link de inspección por email</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={toggleHistory}
-                            className="flex items-center gap-1"
-                        >
-                            <History className="h-4 w-4" />
-                            Historial
-                        </Button>
                         {hasChanges && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                Cambios pendientes
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                                <span className="hidden sm:inline">Cambios pendientes</span>
+                                <span className="sm:hidden">Pendiente</span>
                             </Badge>
                         )}
                     </div>
@@ -511,12 +521,12 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                     </div>
 
                     {/* Botones */}
-                    <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t gap-4">
+                        <div className="text-sm text-gray-500 order-2 sm:order-1">
                             Los cambios se registrarán en el historial automáticamente
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 order-1 sm:order-2">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -525,6 +535,7 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                                     setError('');
                                 }}
                                 disabled={isSubmitting || !hasChanges}
+                                className="w-full sm:w-auto"
                             >
                                 Cancelar
                             </Button>
@@ -532,7 +543,7 @@ const ContactDataEditor = ({ orderId, initialData, onDataUpdated }) => {
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !hasChanges}
-                                className="flex items-center gap-2"
+                                className="flex items-center justify-center gap-2 w-full sm:w-auto"
                             >
                                 {isSubmitting ? (
                                     <>

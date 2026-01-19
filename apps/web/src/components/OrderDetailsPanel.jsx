@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserCheck, UserX, FileTextIcon, Loader2 } from 'lucide-react';
+import { UserCheck, UserX, FileTextIcon, Loader2, ArrowLeft } from 'lucide-react';
 import CallHistory from './CallHistory';
 import AppointmentsHistory from './AppointmentsHistory';
 import OrderCommunicationSection from './OrderCommunicationSection';
@@ -21,6 +21,7 @@ const OrderDetailsPanel = ({
 
     const [inspection, setInspection] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('calls');
 
     useEffect(() => {
         const fetchInspectionData = async () => {
@@ -104,204 +105,312 @@ const OrderDetailsPanel = ({
 
     const content = (
         <>
-            <SheetHeader>
-                <SheetTitle>Detalles de Orden #{order.numero}</SheetTitle>
-                <SheetDescription>
-                    Información completa y historial de la orden de inspección
-                </SheetDescription>
-            </SheetHeader>
+            {/* Desktop View - unchanged */}
+            <div className="hidden sm:block">
+                <SheetHeader>
+                    <SheetTitle>Detalles de Orden #{order.numero}</SheetTitle>
+                    <SheetDescription>
+                        Información completa y historial de la orden de inspección
+                    </SheetDescription>
+                </SheetHeader>
 
-            <div className="mt-2 space-y-4">
-                {/* Información General */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Información General</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-2 text-sm">
-                        {orderInfo.map((info, index) => (
-                            <div key={index}>
-                                <span className="font-medium">{info.label}:</span>
-                                {typeof info.value == 'string' ? (
-                                    <p className={info.className || ''}>{info.value}</p>
-                                ) : (
-                                    info.value
-                                )}
-                            </div>
-                        ))}
-                        {
-                            inspection && (
-                                loading ? (
-                                    <div className="flex justify-center items-center h-full">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    </div>
-                                ) : (
-                                    <div className='col-span-2 flex flex-col gap-2 w-full'>
-                                        <div className='flex justify-between gap-2 w-full'>
-                                            <div className="flex items-center gap-2">
-                                                <span className='font-bold'>
-                                                    Código Fasecolda:
-                                                </span>
-                                                <span className='font-mono'>
-                                                    {inspection?.inspectionData?.inspectionOrder?.cod_fasecolda || 'N/A'}
-                                                </span>
-                                            </div>
+                <div className="mt-2 space-y-4">
+                    {/* Información General */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Información General</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-2 text-sm">
+                            {orderInfo.map((info, index) => (
+                                <div key={index}>
+                                    <span className="font-medium">{info.label}:</span>
+                                    {typeof info.value == 'string' ? (
+                                        <p className={info.className || ''}>{info.value}</p>
+                                    ) : (
+                                        info.value
+                                    )}
+                                </div>
+                            ))}
+                            {
+                                inspection && (
+                                    loading ? (
+                                        <div className="flex justify-center items-center h-full">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
                                         </div>
-                                        <div className='flex justify-between gap-2 w-full'>
-                                            <div className="w-full border border-gray-200 rounded-md p-4">
-                                                <h2 className="font-bold text-gray-700 mb-2 flex items-center w-full">
-                                                    OBSERVACIONES
-                                                </h2>
-                                                <div className="space-y-6">
-                                                    <div className='flex flex-col gap-2'>
-                                                        {formatObservations(inspection?.inspectionData.observaciones)}
-                                                    </div>
-                                                    {
-                                                        order.InspectionOrderStatus?.id == 5 && order.comentariosAnulacion == null && order.fixedStatus != 'Pendiente de reinspección' ? (
-                                                            <>
-                                                                <div>
-                                                                    <pre className='px-4'>
-                                                                        {inspection?.inspectionData?.notes}
-                                                                    </pre>
-                                                                </div>
-                                                                {/* Comentarios de partes individuales */}
-                                                                {(() => {
-                                                                    const partComments = {}
-
-                                                                    inspection?.responsesData?.forEach(r => {
-                                                                        // Usar part_id en lugar de part_id
-                                                                        if (r.part_id && r.value) {
-                                                                            partComments[r.part_id] = r.value;
-                                                                        }
-
-                                                                        // Procesar comentarios de partes
-                                                                        if (r.comment && r.part_id) {
-                                                                            partComments[r.part_id] = r.comment;
-                                                                        }
-                                                                    });
-
-
-                                                                    const commentsList = [];
-                                                                    Object.entries(partComments).forEach(([part_id, comment]) => {
-                                                                        const part = inspection?.partsData?.find(p => p.id === parseInt(part_id));
-                                                                        if (part && comment) {
-                                                                            commentsList.push({
-                                                                                partName: part.parte,
-                                                                                categoryName: part.category?.categoria,
-                                                                                comment: comment
-                                                                            });
-                                                                        }
-                                                                    });
-
-                                                                    if (commentsList.length > 0) {
-                                                                        return (
-                                                                            <div>
-                                                                                <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                                                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                                                                                    Comentarios por Parte
-                                                                                </h3>
-                                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                                                    {commentsList.map((item, index) => (
-                                                                                        <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                                                                                            <div className="font-semibold text-blue-800 mb-2">
-                                                                                                {item.partName}
-                                                                                            </div>
-                                                                                            <div className="text-sm text-blue-600 mb-1">
-                                                                                                Categoría: {item.categoryName}
-                                                                                            </div>
-                                                                                            <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
-                                                                                                {item.comment}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    } else {
-                                                                        <div className="text-center py-12">
-                                                                            <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
-                                                                                <FileTextIcon size={48} className="text-gray-400 mx-auto mb-4" />
-                                                                                <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
-                                                                                <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
-                                                                            </div>
-                                                                        </div>
-                                                                    }
-                                                                })()}
-                                                            </>
-                                                        ) : (
-                                                            <>
-
-                                                            </>
-                                                        )
-                                                    }
-                                                    {order.comentariosAnulacion && (
-                                                        <div className="text-xs text-gray-500 font-mono border border-gray-200 rounded-md p-2 bg-gray-100">
-                                                            {order.comentariosAnulacion}
-                                                        </div>
-                                                    )}
+                                    ) : (
+                                        <div className='col-span-2 flex flex-col gap-2 w-full'>
+                                            <div className='flex justify-between gap-2 w-full'>
+                                                <div className="flex items-center gap-2">
+                                                    <span className='font-bold'>
+                                                        Código Fasecolda:
+                                                    </span>
+                                                    <span className='font-mono'>
+                                                        {inspection?.inspectionData?.inspectionOrder?.cod_fasecolda || 'N/A'}
+                                                    </span>
                                                 </div>
                                             </div>
+                                            <div className='flex justify-between gap-2 w-full'>
+                                                <div className="w-full border border-gray-200 rounded-md p-4">
+                                                    <h2 className="font-bold text-gray-700 mb-2 flex items-center w-full">
+                                                        OBSERVACIONES
+                                                    </h2>
+                                                    <div className="space-y-6">
+                                                        <div className='flex flex-col gap-2'>
+                                                            {formatObservations(inspection?.inspectionData.observaciones)}
+                                                        </div>
+                                                        {
+                                                            order.InspectionOrderStatus?.id == 5 && order.comentariosAnulacion == null && order.fixedStatus != 'Pendiente de reinspección' ? (
+                                                                <>
+                                                                    <div>
+                                                                        <pre className='px-4'>
+                                                                            {inspection?.inspectionData?.notes}
+                                                                        </pre>
+                                                                    </div>
+                                                                    {/* Comentarios de partes individuales */}
+                                                                    {(() => {
+                                                                        const partComments = {}
 
+                                                                        inspection?.responsesData?.forEach(r => {
+                                                                            // Usar part_id en lugar de part_id
+                                                                            if (r.part_id && r.value) {
+                                                                                partComments[r.part_id] = r.value;
+                                                                            }
+
+                                                                            // Procesar comentarios de partes
+                                                                            if (r.comment && r.part_id) {
+                                                                                partComments[r.part_id] = r.comment;
+                                                                            }
+                                                                        });
+
+
+                                                                        const commentsList = [];
+                                                                        Object.entries(partComments).forEach(([part_id, comment]) => {
+                                                                            const part = inspection?.partsData?.find(p => p.id === parseInt(part_id));
+                                                                            if (part && comment) {
+                                                                                commentsList.push({
+                                                                                    partName: part.parte,
+                                                                                    categoryName: part.category?.categoria,
+                                                                                    comment: comment
+                                                                                });
+                                                                            }
+                                                                        });
+
+                                                                        if (commentsList.length > 0) {
+                                                                            return (
+                                                                                <div>
+                                                                                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                                                                                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                                                                        Comentarios por Parte
+                                                                                    </h3>
+                                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                                                        {commentsList.map((item, index) => (
+                                                                                            <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                                                                                                <div className="font-semibold text-blue-800 mb-2">
+                                                                                                    {item.partName}
+                                                                                                </div>
+                                                                                                <div className="text-sm text-blue-600 mb-1">
+                                                                                                    Categoría: {item.categoryName}
+                                                                                                </div>
+                                                                                                <div className="text-gray-700 bg-white rounded-lg p-3 border border-blue-200">
+                                                                                                    {item.comment}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        } else {
+                                                                            <div className="text-center py-12">
+                                                                                <div className="bg-gray-100 rounded-xl p-8 max-w-md mx-auto">
+                                                                                    <FileTextIcon size={48} className="text-gray-400 mx-auto mb-4" />
+                                                                                    <div className="text-gray-500 font-medium">Sin observaciones registradas</div>
+                                                                                    <div className="text-sm text-gray-400 mt-2">No se han registrado comentarios adicionales</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        }
+                                                                    })()}
+                                                                </>
+                                                            ) : (
+                                                                <>
+
+                                                                </>
+                                                            )
+                                                        }
+                                                        {order.comentariosAnulacion && (
+                                                            <div className="text-xs text-gray-500 font-mono border border-gray-200 rounded-md p-2 bg-gray-100 break-words overflow-wrap-anywhere">
+                                                                {order.comentariosAnulacion}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                            </div>
                                         </div>
-                                    </div>
+                                    )
                                 )
-                            )
-                        }
-                    </CardContent>
-                </Card>
-                {showTabs ? (
-                    <Tabs defaultValue="calls" className="space-y-4">
-                        <TabsList className="grid w-full grid-cols-3">
-                            {showCallHistory && <TabsTrigger value="calls">Historial de Llamadas</TabsTrigger>}
-                            {showAppointments && <TabsTrigger value="appointments">Agendamientos</TabsTrigger>}
-                            <TabsTrigger value="communications">Comunicaciones</TabsTrigger>
-                        </TabsList>
+                            }
+                        </CardContent>
+                    </Card>
+                    {showTabs ? (
+                        <Tabs defaultValue="calls" className="space-y-4">
+                            <TabsList className="grid w-full grid-cols-3">
+                                {showCallHistory && <TabsTrigger value="calls">Historial de Llamadas</TabsTrigger>}
+                                {showAppointments && <TabsTrigger value="appointments">Agendamientos</TabsTrigger>}
+                                <TabsTrigger value="communications">Comunicaciones</TabsTrigger>
+                            </TabsList>
 
-                        {showCallHistory && (
-                            <TabsContent value="calls">
+                            {showCallHistory && (
+                                <TabsContent value="calls">
+                                    <CallHistory
+                                        callLogs={order.callLogs}
+                                        userRole={user?.roles?.[0]?.name}
+                                    />
+                                </TabsContent>
+                            )}
+
+                            {showAppointments && (
+                                <TabsContent value="appointments">
+                                    <AppointmentsHistory appointments={order.appointments} />
+                                </TabsContent>
+                            )}
+
+                            <TabsContent value="communications">
+                                <OrderCommunicationSection
+                                    orderId={order.id}
+                                    orderData={order}
+                                    user={user}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    ) : (
+                        <div className="space-y-4">
+                            {showCallHistory && (
                                 <CallHistory
                                     callLogs={order.callLogs}
                                     userRole={user?.roles?.[0]?.name}
                                 />
-                            </TabsContent>
-                        )}
-
-                        {showAppointments && (
-                            <TabsContent value="appointments">
-                                <AppointmentsHistory appointments={order.appointments} />
-                            </TabsContent>
-                        )}
-
-                        <TabsContent value="communications">
+                            )}
+                            {showAppointments && <AppointmentsHistory appointments={order.appointments} />}
                             <OrderCommunicationSection
                                 orderId={order.id}
                                 orderData={order}
                                 user={user}
                             />
-                        </TabsContent>
-                    </Tabs>
-                ) : (
-                    <div className="space-y-4">
-                        {showCallHistory && (
-                            <CallHistory
-                                callLogs={order.callLogs}
-                                userRole={user?.roles?.[0]?.name}
-                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="block sm:hidden space-y-4">
+                <div 
+                    onClick={() => onOpenChange(false)}
+                    className="absolute top-4 left-4 z-10 p-2 cursor-pointer"
+                >
+                    <ArrowLeft className="h-6 w-6 text-gray-600" />
+                </div>
+                
+                <div className="text-center mt-16">
+                    <h1 className="text-2xl font-bold text-[#235692] font-ubuntu">Detalles de la Orden</h1>
+                    <p className="text-base text-gray-600">Información completa y historial de la orden de inspección</p>
+                </div>
+                
+                <h2 className="text-lg font-semibold" style={{color: '#1E4A7E'}}>INFORMACIÓN GENERAL</h2>
+                
+                <Card className="overflow-hidden">
+                    <CardHeader className="w-full -mt-6 mb-2 px-3 py-3" style={{backgroundColor: '#DEEAF8'}}>
+                        <CardTitle className="text-lg font-ubuntu">No. Orden: <span className="font-bold">#{order.numero}</span></CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div>
+                            <div style={{color: '#6A7282'}} className="text-sm">Cliente</div>
+                            <div>{order.nombre_cliente}</div>
+                        </div>
+                        <div>
+                            <div style={{color: '#6A7282'}} className="text-sm">Contacto</div>
+                            <div>{order.nombre_contacto}</div>
+                        </div>
+                        <div>
+                            <div style={{color: '#6A7282'}} className="text-sm">Email Contacto</div>
+                            <div>{order.correo_contacto}</div>
+                        </div>
+                        <div>
+                            <div style={{color: '#6A7282'}} className="text-sm">Teléfono Contacto</div>
+                            <div>{order.celular_contacto}</div>
+                        </div>
+                        <div>
+                            <div style={{color: '#6A7282'}} className="text-sm">Placa</div>
+                            <div>{order.placa}</div>
+                        </div>
+                        {inspection && (
+                            <div>
+                                <div className=" font-bold text-sm">Código Fasecolda: {inspection?.inspectionData?.inspectionOrder?.cod_fasecolda || 'N/A'}</div>
+                            </div>
                         )}
-                        {showAppointments && <AppointmentsHistory appointments={order.appointments} />}
-                        <OrderCommunicationSection
-                            orderId={order.id}
-                            orderData={order}
-                            user={user}
-                        />
-                    </div>
-                )}
+                        
+                        <div className="mt-4">
+                            <h3 className="font-medium mb-2" style={{color: '#1E4A7E', fontWeight: '400'}}>Observaciones</h3>
+                            <div className="rounded-md p-3 max-h-32 overflow-y-auto">
+                                {inspection?.inspectionData?.observaciones ? (
+                                    <div className="text-sm space-y-2">
+                                        {formatObservations(inspection.inspectionData.observaciones)}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500">Sin observaciones</p>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="flex space-x-2">
+                    {showCallHistory && (
+                        <button
+                            onClick={() => setActiveTab('calls')}
+                            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                                activeTab === 'calls' ? 'bg-[#235692] text-white' : 'bg-gray-100 text-gray-700'
+                            }`}
+                        >
+                            Llamadas
+                        </button>
+                    )}
+                    {showAppointments && (
+                        <button
+                            onClick={() => setActiveTab('appointments')}
+                            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                                activeTab === 'appointments' ? 'bg-[#235692] text-white' : 'bg-gray-100 text-gray-700'
+                            }`}
+                        >
+                            Agendamiento
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setActiveTab('communications')}
+                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                            activeTab === 'communications' ? 'bg-[#235692] text-white' : 'bg-gray-100 text-gray-700'
+                        }`}
+                    >
+                        Comunicaciones
+                    </button>
+                </div>
+
+                <div>
+                    {activeTab === 'calls' && showCallHistory && (
+                        <CallHistory callLogs={order.callLogs} userRole={user?.roles?.[0]?.name} />
+                    )}
+                    {activeTab === 'appointments' && showAppointments && (
+                        <AppointmentsHistory appointments={order.appointments} />
+                    )}
+                    {activeTab === 'communications' && (
+                        <OrderCommunicationSection orderId={order.id} orderData={order} user={user} />
+                    )}
+                </div>
             </div>
         </>
     );
-
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-4xl overflow-y-auto px-4">
+            <SheetContent className="w-full sm:max-w-4xl overflow-y-auto px-4 [&>button]:hidden sm:[&>button]:block">
                 {content}
             </SheetContent>
         </Sheet>

@@ -51,7 +51,7 @@ export function NotificationMenu() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto mr-2">
                 <div className="flex items-center justify-between p-2">
                     <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
                     {unreadCount > 0 && (

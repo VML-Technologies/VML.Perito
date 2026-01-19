@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronUp, ChevronDown, CheckCircle, XCircle, UserCheck, UserX, Eye, Phone, PhoneCall } from 'lucide-react';
+import { FileText, ChevronUp, ChevronDown, CheckCircle, XCircle, UserCheck, UserX, Eye, Phone, PhoneCall, ChevronRight, Mail } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -70,7 +70,7 @@ const OrdersTable = ({
 
     return (
         <Card className="rounded-lg shadow-md">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onViewDetails && orders.length > 0 && onViewDetails(orders[0])}>
                 <CardTitle className="text-2xl font-ubuntu font-bold text-gray-800">{getTableTitle()}</CardTitle>
                 <CardDescription className="text-gray-600 font-ubuntu">{getTableDescription()}</CardDescription>
             </CardHeader>
@@ -84,11 +84,12 @@ const OrdersTable = ({
                     </div>
                 ) : (
                     <>
-                        <div className="overflow-x-auto block">
-                            <table className="w-full border-collapse">
+                        {/* Desktop Table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full min-w-[800px] border-collapse">
                                 <thead className="bg-blue-100">
                                     <tr className="border-b">
-                                        <th className="text-left p-2">
+                                        <th className="text-left p-2 min-w-[100px]">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -98,14 +99,14 @@ const OrdersTable = ({
                                                 Número {getSortIcon('numero')}
                                             </Button>
                                         </th>
-                                        <th className="text-left p-2">
+                                        <th className="text-left p-2 min-w-[140px]">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleSort('created_at')}
                                                 className="font-semibold hover:bg-[#EAF4FF] font-ubuntu text-black text-sm h-8"
                                             >
-                                                Fecha de creación {getSortIcon('created_at')}
+                                                Fecha {getSortIcon('created_at')}
                                             </Button>
                                         </th>
                                         <th className="text-left p-2">
@@ -143,10 +144,9 @@ const OrdersTable = ({
                                             </th>
                                         )}
                                         {showActions && (
-                                            <th className="text-center p-2 font-semibold font-ubuntu text-black text-sm h-8 align-middle w-[10rem]">
+                                            <th className="text-center p-2 min-w-[120px] font-semibold font-ubuntu text-black text-sm h-8 align-middle">
                                                 Acciones
                                             </th>
-
                                         )}
                                     </tr>
                                 </thead>
@@ -311,6 +311,128 @@ const OrdersTable = ({
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="block sm:hidden space-y-4">
+                            {orders.length === 0 ? (
+                                <div className="text-center p-8">
+                                    <div className="text-muted-foreground">
+                                        {isContactTable ? (
+                                            <Phone className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                        ) : (
+                                            <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                        )}
+                                        <p>{emptyMessage}</p>
+                                        <p className="text-sm">{emptyDescription}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                orders.map((order) => (
+                                    <Card key={order.id} className="bg-white rounded-lg shadow-sm border cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => onViewDetails && onViewDetails(order)}>
+                                        {/* Header */}
+                                        <div className="px-3 py-1">
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="font-bold text-lg font-ubuntu">#{order.numero}</span>
+                                                    <div className="text-sm text-gray-500 font-ubuntu whitespace-nowrap">{formatDate(order.created_at)}</div>
+                                                </div>
+                                                <div className="flex-1 flex justify-center">
+                                                    <Badge
+                                                        variant={order.badgeColor}
+                                                        className="
+                                                            text-xs
+                                                            max-w-[120px]
+                                                            text-center
+                                                            whitespace-normal
+                                                            break-words
+                                                            leading-tight
+                                                        "
+                                                    >
+                                                        {order.fixedStatus
+                                                            ? (['Agendado', 'inspeccion en curso'].includes(order.fixedStatus.toLowerCase())
+                                                                ? 'Activa'
+                                                                : order.fixedStatus)
+                                                            : 'Sin estado'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center flex-shrink-0">
+                                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="border-t border-gray-200"></div>
+
+                                        {/* Body */}
+                                        <div className="px-3 py-1 space-y-1">
+                                            {/* Vehículo */}
+                                            <div className="flex justify-between items-start gap-2">
+                                                <div className="flex-1">
+                                                    <div className="text-xs text-gray-500 capitalize tracking-wide font-ubuntu">Placa</div>
+                                                    <div className="font-bold text-base font-ubuntu">{order.placa}</div>
+                                                </div>
+                                                <div className="text-sm text-gray-500 capitalize font-ubuntu flex-shrink-0">
+                                                    {order.producto.toLowerCase().split("_").join(" ")}
+                                                </div>
+                                            </div>
+
+                                            {/* Cliente */}
+                                            <div>
+                                                <div className="text-xs text-gray-500 capitalize tracking-wide font-ubuntu">Cliente</div>
+                                                <div className="font-400 font-ubuntu">{order.nombre_cliente}</div>
+                                                
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Mail className="h-4 w-4 text-gray-400" />
+                                                    <span className="text-sm font-ubuntu" style={{color: '#4A5565'}}>{order.correo_cliente}</span>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Phone className="h-4 w-4 text-gray-400" />
+                                                    <span className="text-sm font-ubuntu" style={{color: '#4A5565'}}>{order.celular_cliente}</span>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Phone className="h-4 w-4 text-gray-400" />
+                                                    <span className="text-sm font-ubuntu" style={{color: '#4A5565'}}>Intentos: {getCallLogsCount(order)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="border-t border-gray-200 px-3 py-1 flex justify-around">
+                                            {onViewDetails && (
+                                                <button
+                                                    onClick={() => onViewDetails(order)}
+                                                    className="flex items-center gap-1 text-[#3075C7] hover:text-[#1056A1] font-ubuntu cursor-pointer"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    <span>Ver Resumen</span>
+                                                </button>
+                                            )}
+                                            
+                                            {(order.InspectionOrderStatus.id && order.session_id && order.fixedStatus !== 'No finalizada por novedad del cliente') ? (
+                                                <button
+                                                    onClick={() => window.open(`/inspection-report/${order.id}`, '_blank')}
+                                                    className="flex items-center gap-1 text-[#3075C7] hover:text-[#1056A1] font-ubuntu cursor-pointer"
+                                                >
+                                                    <FileText className="h-4 w-4" />
+                                                    <span>Ver Inspección</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    disabled
+                                                    className="flex items-center gap-1 text-gray-400 cursor-not-allowed font-ubuntu"
+                                                >
+                                                    <FileText className="h-4 w-4" />
+                                                    <span>Ver Inspección</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </Card>
+                                ))
+                            )}
                         </div>
 
                         {pagination.pages > 1 && (

@@ -85,6 +85,7 @@ export default function ComercialMundial() {
     };
 
     const handleViewDetails = (order) => {
+        console.log('Order data being passed to panel:', order);
         setSelectedOrder(order);
         setIsPanelOpen(true);
     };
@@ -105,62 +106,68 @@ export default function ComercialMundial() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-ubuntu font-bold">Dashboard Comercial</h1>
-                    <p className="text-muted-foreground font-ubuntu">
-                        Gestiona órdenes de inspección y revisa estadísticas de rendimiento
-                    </p>
+        <div className="w-full max-w-full overflow-hidden px-2 sm:px-4 lg:px-6">
+            <div className="space-y-4 sm:space-y-6 max-w-full">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
+                    <div className="text-center sm:text-left">
+                        <h1 className="text-xl sm:text-2xl text-[#235692] lg:text-3xl font-ubuntu font-bold">Dashboard Comercial</h1>
+                        <p className="text-sm sm:text-base text-muted-foreground font-ubuntu">
+                            Gestiona órdenes de inspección y revisa estadísticas de rendimiento
+                        </p>
+                    </div>
                 </div>
+
+                {/* Main Content */}
+                {/* Filtros y Búsqueda */}
+                <div className="w-full max-w-full overflow-hidden">
+                    <OrdersFilters
+                        filters={filters}
+                        onFilterChange={handleFilterChange}
+                        onClearFilters={handleClearFiltersWrapper}
+                        gridCols="md:grid-cols-5"
+                        showAgentFilter={false}
+                        role="comercial"
+                        stats={stats}
+                        showCreateModal={setShowCreateModal}
+                    />
+                </div>
+
+                {/* Orders Table */}
+                <div className="w-full max-w-full overflow-hidden">
+                    <OrdersTable
+                        orders={orders}
+                        pagination={pagination}
+                        onPageChange={handlePageChange}
+                        onSort={handleSort}
+                        sortBy={filters.sortBy}
+                        sortOrder={filters.sortOrder}
+                        onViewDetails={handleViewDetails}
+                        showAgentColumn={false}
+                        showActions={true}
+                        emptyMessage="No se encontraron órdenes"
+                        emptyDescription="Crea una nueva orden para comenzar"
+                    />
+                </div>
+
+                {/* Create Order Modal */}
+                <CreateOrderModal
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    onOrderCreated={handleOrderCreated}
+                />
+
+                {/* Order Details Panel */}
+                <OrderDetailsPanel
+                    isOpen={isPanelOpen}
+                    onOpenChange={setIsPanelOpen}
+                    order={selectedOrder}
+                    showCallHistory={true}
+                    showAppointments={true}
+                    showTabs={true}
+                    user={user}
+                />
             </div>
-
-            {/* Main Content */}
-            {/* Filtros y Búsqueda */}
-            <OrdersFilters
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFiltersWrapper}
-                gridCols="md:grid-cols-5"
-                showAgentFilter={false}
-                role="comercial"
-                stats={stats}
-                showCreateModal={setShowCreateModal}
-            />
-
-            {/* Orders Table */}
-            <OrdersTable
-                orders={orders}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                onSort={handleSort}
-                sortBy={filters.sortBy}
-                sortOrder={filters.sortOrder}
-                onViewDetails={handleViewDetails}
-                showAgentColumn={false}
-                showActions={true}
-                emptyMessage="No se encontraron órdenes"
-                emptyDescription="Crea una nueva orden para comenzar"
-            />
-
-            {/* Create Order Modal */}
-            <CreateOrderModal
-                isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                onOrderCreated={handleOrderCreated}
-            />
-
-            {/* Order Details Panel */}
-            <OrderDetailsPanel
-                isOpen={isPanelOpen}
-                onOpenChange={setIsPanelOpen}
-                order={selectedOrder}
-                showCallHistory={true}
-                showAppointments={true}
-                showTabs={true}
-                user={user}
-            />
         </div>
     );
 } 
