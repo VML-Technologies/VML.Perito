@@ -471,6 +471,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 placaValida = /^[A-Z]{3}[0-9]{3}$/.test(formData.placa);
                 const tipo = tipoVehiculo?.includes('automovil') ? 'Automóvil' : 'Camioneta';
                 mensajeError = `${tipo}: Debe tener 3 letras seguidas de 3 números (ej: ABC123)`;
+            } else if (tipoVehiculo?.includes('trailer')) {
+                placaValida = /^[A-Z]{1}[0-9]{5}$/.test(formData.placa);
+                mensajeError = `Trailer debe tener 1 letra seguida de 5 números (ej: A12345)`;
+            } else if (tipoVehiculo?.trim().length !== 0) {
+                placaValida = /^[A-Z]{3}[0-9]{3}$/.test(formData.placa);
+                mensajeError = `Debe tener 3 letras seguidas de 3 números (ej: AAA123)`;
             } else {
                 // Sin tipo seleccionado, validación general
                 placaValida = false;
@@ -1236,13 +1242,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     </Card>
                     {/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
                     {/* Información del Contacto */}
-                    <Card
-                        className={
-                            !sameAsClient
-                                ? 'border border-[#F5A623]/40 bg-[#FFF9F2] rounded-xl p-5 shadow-md shadow-[#F5A623]/20 transition-all duration-300'
-                                : ''
-                        }
-                    >
+                    <Card className={!sameAsClient ? 'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20' : ''}>
                         <CardHeader>
                             <CardTitle className="inline-flex items-center gap-2 bg-[#FFE7C2] text-[#8A4B00] px-3 py-2 rounded-md text-sm font-medium">
                                 <TriangleAlert className="h-12 w-12 sm:h-4 sm:w-4" />

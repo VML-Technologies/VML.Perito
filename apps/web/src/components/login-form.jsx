@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label"
 import { AppName } from "@/components/ui/app-name"
 import { useAuth } from "@/contexts/auth-context"
 import { useNotificationContext } from "@/contexts/notification-context"
-import { LoginBackground } from "./loginBackground"
 
 export function LoginForm({
   className,

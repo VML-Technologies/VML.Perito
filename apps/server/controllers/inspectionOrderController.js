@@ -419,7 +419,7 @@ class InspectionOrderController extends BaseController {
             }
 
             // Contexto específico para Comercial Mundial
-            if ((user.roles.some(role => role.name == 'comercial_mundial_4')) || (user.roles.some(role => role.name == 'comercial_mundial' && !req.user.email.includes('segurosmundial.com.co')) && req.user.intermediary_key)) {
+            if ((user.roles.some(role => role.name == 'comercial_mundial' && !req.user.email.includes('segurosmundial.com.co')) && req.user.intermediary_key)) {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
@@ -823,7 +823,7 @@ class InspectionOrderController extends BaseController {
      * @returns {Promise<Object|null>}
      * @author Fahibram Cárcamo
      */
-    async fetchVehicleDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
+     async fetchVehicleDataFromSegurosMundialAPI(placa, tipoDoc, numDoc) {
         try {
             // Obtener token de autenticación
             let url = `${process.env.SEGUROS_MUNDIAL_API_BASE_URL_AUTH}`;
@@ -861,16 +861,16 @@ class InspectionOrderController extends BaseController {
             options = {
                 method: "POST",
                 body: JSON.stringify({
-                    "input": {
-                        "placa": placa,
-                        "tipoDocumento": numeroTipoDocumento,
-                        "numeroDocumento": numDoc
+                    input: {
+                        placa,
+                        tipoDocumento: numeroTipoDocumento,
+                        numeroDocumento: numDoc
                     }
                 }),
                 headers: {
-                    "client_id": process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
-                    "client_secret": process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
-                    "Authorization": `Bearer ${accessToken}`,
+                    client_id: process.env.SEGUROS_MUNDIAL_API_CLIENT_ID,
+                    client_secret: process.env.SEGUROS_MUNDIAL_API_CLIENT_SECRET,
+                    Authorization: `Bearer ${accessToken}`,
                     "x-correlation-id": crypto.randomUUID(),
                     "mun-app": "APP-VML",
                     "Content-Type": "application/json",
@@ -885,15 +885,19 @@ class InspectionOrderController extends BaseController {
 
             let polizas = jsonResponse?.output?.data?.historicoPolizas;
 
-            if (Array.isArray(polizas) && polizas.length > 0) {
+            if (Array.isArray(polizas)) {
+                // ✅ FILTRO POR PLACA
+                polizas = polizas.filter(p => p?.placa === placa);
+            }
+
+            if (polizas.length > 0) {
                 // Ordenar por fecha de vigencia (más reciente primero)
-                polizas = polizas.sort((polizaA, polizaB) =>
-                    new Date(polizaB.fechaVigencia) - new Date(polizaA.fechaVigencia)
+                polizas.sort(
+                    (a, b) => new Date(b.fechaVigencia) - new Date(a.fechaVigencia)
                 );
 
-                let polizaMasReciente = polizas[0];
+                const polizaMasReciente = polizas[0];
 
-                // Retornar datos de la póliza más reciente
                 return {
                     marca: polizaMasReciente?.marca,
                     linea: polizaMasReciente?.tipo,
