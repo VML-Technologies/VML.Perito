@@ -8,6 +8,7 @@ import { API_ROUTES } from '@/config/api';
 
 const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) => {
   const [timer, setTimer] = useState({ elapsed: 0, notification: '', color: '', expired: false, countdown: null });
+  const [isActive, setIsActive] = useState(true);
   
   const TOTAL_TIME = 600;
   const WARNING_TIME = 420;
@@ -20,6 +21,8 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
 
   // Unified timer effect
   useEffect(() => {
+    if (!isActive) return;
+    
     const startTime = Date.now();
     
     const interval = setInterval(() => {
@@ -52,7 +55,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
     }, 500);
 
     return () => clearInterval(interval);
-  }, [existingAppointment?.id]);
+  }, [existingAppointment?.id, isActive]);
   
   // Reload countdown
   useEffect(() => {
@@ -91,6 +94,15 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
       }
     } catch (error) {
       console.error('❌ Error en la llamada al endpoint:', error);
+    }
+  };
+
+  const handleGoToInspection = () => {
+    setIsActive(false);
+    if (existingAppointment && existingAppointment.session_id) {
+      const base = (import.meta.env.VITE_INSPECTYA_URL || '').replace(/\/$/, '') || window.location.origin;
+      const inspectionUrl = `${base}/inspection/${existingAppointment.session_id}`;
+      window.location.href = inspectionUrl;
     }
   };
 
@@ -137,7 +149,7 @@ const InspectorAssigned = ({ onGoToInspection, onGoBack, existingAppointment }) 
 
               {timer.elapsed < TOTAL_TIME && (
                 <Button
-                  onClick={onGoToInspection}
+                  onClick={handleGoToInspection}
                   className="w-full bg-green-600 hover:bg-green-700 text-white mb-2"
                   size="lg"
                 >
