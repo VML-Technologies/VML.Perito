@@ -44,6 +44,14 @@ const seedInspectionData = async () => {
             {
                 name: 'Finalizado',
                 description: 'Inspección completada'
+            },
+            {
+                name: 'Aprobado',
+                description: 'Vehículo aprobado - Asegurable'
+            },
+            {
+                name: 'No Aprobado',
+                description: 'Vehículo no aprobado - No asegurable'
             }
         ];
 

@@ -22,11 +22,12 @@ import CheckInspectionOrder from "@/pages/CheckInspectionOrder"
 import InspectionReport from "@/pages/InspectionReport"
 import Inspeccion from "@/pages/Inspeccion"
 import InspectorAliado from "@/pages/InspectorAliado"
+import SuperUsuarioMundial from "@/pages/SuperUsuarioMundial"
 import GuestLayout from "@/Layouts/GuestLayout"
 import { getDefaultRouteForUser } from "@/lib/role-utils"
 import { useMatomo } from "@/hooks/use-matomo"
 import { analytics, getPageName } from "@/utils/analytics"
-import { Shield, Users, UserCheck, Phone, Building } from 'lucide-react'
+import { Shield, Users, UserCheck, Phone, Building, ShieldCheck } from 'lucide-react'
 import ListManager from "./components/listConfig"
 
 
@@ -86,6 +87,17 @@ const routesMap = {
     buttonClass: 'text-blue-600 hover:text-blue-700',
     type: 'navigate',
     roles: ['inspector_aliado', 'inspector_aliado_2']
+  },
+  '/super-usuario-mundial': {
+    name: 'Super Usuario Mundial',
+    description: 'Busca órdenes de inspección y cambia su estado',
+    route: '/super-usuario-mundial',
+    icon: ShieldCheck,
+    gradientClass: 'bg-gradient-to-r from-amber-500 to-amber-600',
+    textClass: 'text-amber-100',
+    buttonClass: 'text-amber-600 hover:text-amber-700',
+    type: 'navigate',
+    roles: ['super_usuario_mundial']
   },
   '/inspector': {
     name: 'Inspector',
@@ -367,6 +379,18 @@ function AppContent() {
             <RoleBasedRoute requiredRoles={['inspector_aliado', 'inspector_aliado_2', 'super_admin']}>
               <AuthenticatedLayout routesMap={memoizedRoutesMap}>
                 <InspectorAliado />
+              </AuthenticatedLayout>
+            </RoleBasedRoute>
+          }
+        />
+
+        {/* Ruta de Super Usuario Mundial */}
+        <Route
+          path="/super-usuario-mundial"
+          element={
+            <RoleBasedRoute requiredRoles={['super_usuario_mundial', 'super_admin']}>
+              <AuthenticatedLayout routesMap={memoizedRoutesMap}>
+                <SuperUsuarioMundial />
               </AuthenticatedLayout>
             </RoleBasedRoute>
           }

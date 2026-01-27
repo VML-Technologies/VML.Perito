@@ -785,6 +785,10 @@ const seedRBAC = async () => {
             {
                 name: 'coordinador_aliado',
                 description: 'Coordinador Aliado - Supervisa y coordina inspectores aliados'
+            },
+            {
+                name: 'super_usuario_mundial',
+                description: 'Super Usuario Mundial - Puede buscar órdenes de inspección y cambiar su estado'
             }
         ];
 
@@ -1154,6 +1158,25 @@ const seedRBAC = async () => {
                 });
             }
             console.log(`✅ Permisos de Coordinador Aliado asignados a ${coordinadorAliadoRole.name}`);
+        }
+
+        // Super Usuario Mundial: Permisos para buscar órdenes y cambiar estado
+        const superUsuarioMundialRole = createdRoles.find(r => r.name == 'super_usuario_mundial');
+        if (superUsuarioMundialRole) {
+            const superUsuarioMundialPermissions = createdPermissions.filter(p =>
+                p.name.startsWith('inspection_orders.read') ||
+                p.name.startsWith('inspection_orders.change_status') ||
+                p.name == 'users.read'
+            );
+            for (const permission of superUsuarioMundialPermissions) {
+                await RolePermission.findOrCreate({
+                    where: {
+                        role_id: superUsuarioMundialRole.id,
+                        permission_id: permission.id
+                    }
+                });
+            }
+            console.log(`✅ Permisos de Super Usuario Mundial asignados a ${superUsuarioMundialRole.name}`);
         }
 
         // Help Desk: Permisos para ayuda técnica
