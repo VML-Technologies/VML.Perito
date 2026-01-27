@@ -114,8 +114,17 @@ const Inspeccion = () => {
             setQueueStatus(queueData);
 
             // Si se asigna un inspector, cambiar a vista de inspector asignado
+            // PERO solo si NO es una reinspección (ineffective_with_retry)
             if (queueData.inspector && (queueData.estado === 'en_proceso' || queueData.status === 'en_proceso')) {
                 console.log('🔔 Inspector asignado detectado, actualizando estado:', queueData);
+
+                // Verificar si el appointment es una reinspección
+                const isReinspection = queueData.appointment?.status === 'ineffective_with_retry';
+                
+                if (isReinspection) {
+                    console.log('⚠️ Appointment es reinspección, NO cambiar a vista inspectorAssigned');
+                    return;
+                }
 
                 // Actualizar existingAppointment con los datos del appointment si existen
                 if (queueData.appointment) {
@@ -280,12 +289,25 @@ const Inspeccion = () => {
             setInspectionOrder(data.data);
 
             // Verificar si ya existe un agendamiento para esta orden
-            if (data.data.appointment && !data.data.show_start_button) {
+            // EXCLUIR appointments con status 'ineffective_with_retry' para permitir reinspección
+            const hasValidAppointment = data.data.appointment && 
+                !data.data.show_start_button && 
+                data.data.appointment.status !== 'ineffective_with_retry';
+            
+            const isReinspection = data.data.appointment && 
+                data.data.appointment.status === 'ineffective_with_retry';
+            
+            if (hasValidAppointment) {
                 setExistingAppointment(data.data.appointment);
                 setCurrentView('inspectorAssigned');
             } else {
-                // Verificar si ya está en cola
-                await checkQueueStatus();
+                // Si es reinspección, SIEMPRE intentar agregar a la cola (el backend manejará si ya existe)
+                if (isReinspection) {
+                    await handleStartInspection();
+                } else {
+                    // Solo para NO reinspecciones, verificar si ya está en cola
+                    await checkQueueStatus();
+                }
             }
         } catch (error) {
             console.error('Error fetching inspection order:', error);
@@ -314,14 +336,18 @@ const Inspeccion = () => {
             console.log('📦 Datos de la orden recibidos:', data.data);
             setInspectionOrder(data.data);
 
-            // Si ahora tiene un appointment con session_id, actualizar y cambiar vista
-            if (data.data.appointment && data.data.appointment.session_id) {
-                console.log('✅ Appointment con session_id encontrado, actualizando estado:', data.data.appointment);
+            // Si ahora tiene un appointment con session_id (y NO es ineffective_with_retry), actualizar y cambiar vista
+            const hasValidAppointment = data.data.appointment && 
+                data.data.appointment.session_id && 
+                data.data.appointment.status !== 'ineffective_with_retry';
+            
+            if (hasValidAppointment) {
+                console.log('✅ Appointment válido con session_id encontrado, actualizando estado:', data.data.appointment);
                 setExistingAppointment(data.data.appointment);
                 setCurrentView('inspectorAssigned');
                 showToast('¡Inspector asignado! Ya puedes ingresar a la inspección.', 'success');
             } else {
-                console.warn('⚠️ No se encontró appointment con session_id en la orden');
+                console.warn('⚠️ No se encontró appointment válido con session_id en la orden (o es reinspección)');
             }
         } catch (error) {
             console.error('Error en fetch silencioso:', error);
@@ -347,11 +373,14 @@ const Inspeccion = () => {
                     const actualQueueData = data.data.data || data.data;
                     setQueueStatus(actualQueueData);
                     setCurrentView('wait');
+                    return true; // Está en cola
                 }
             }
+            return false; // No está en cola
         } catch (error) {
             console.error('Error checking queue status:', error);
             // Mantener vista de landing si no hay cola
+            return false;
         }
     };
 
@@ -483,6 +512,9 @@ const Inspeccion = () => {
 
     // Renderizar componente según la vista actual
     const renderCurrentView = () => {
+        // Detectar si es reinspección
+        const isReinspection = inspectionOrder?.appointment?.status === 'ineffective_with_retry';
+        
         switch (currentView) {
             case 'wait':
                 return (

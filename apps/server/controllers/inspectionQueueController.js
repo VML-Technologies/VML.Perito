@@ -231,8 +231,6 @@ class InspectionQueueController extends BaseController {
 
     // Agregar entrada a la cola (versión pública sin autenticación)
     async addToQueuePublic(req, res) {
-        console.log("############################# DEBUG #############################");
-        console.log('🚀 addToQueuePublic');
         try {
             const { inspection_order_id, hash_acceso } = req.body;
 
@@ -340,7 +338,6 @@ class InspectionQueueController extends BaseController {
             }
             // --- Fin notificación ---
 
-            // ✅ CORRECIÓN: Consulta directa a DB en lugar de servicio en memoria
             // Verificar si ya existe una entrada en la cola para esta orden
             const existingEntry = await InspectionQueue.findOne({
                 where: {
@@ -350,7 +347,6 @@ class InspectionQueueController extends BaseController {
                     deleted_at: null
                 }
             });
-            console.log('🚀 existingEntry:', existingEntry);
 
             // Verificar si ya existe un appointment activo
             const appointments = await Appointment.findAll({
@@ -362,10 +358,26 @@ class InspectionQueueController extends BaseController {
                     }
                 }
             });
-            console.log('🚀 appointments:', appointments);
-            console.log('🚀 appointments encontrados:', appointments.length);
-            console.log('🚀 existingEntry && appointments.length == 0:', existingEntry && appointments.length == 0);
-            if (existingEntry && appointments.length == 0) {
+            
+            // Verificar si hay appointments con ineffective_with_retry (reinspecciones)
+            const reinspectionAppointments = await Appointment.findAll({
+                where: {
+                    inspection_order_id,
+                    deleted_at: null,
+                    status: 'ineffective_with_retry'
+                }
+            });
+            
+            // Si hay reinspección, desactivar entrada antigua y permitir crear nueva
+            if (existingEntry && reinspectionAppointments.length > 0) {
+                await existingEntry.update({
+                    estado: 'completada',
+                    is_active: false,
+                    tiempo_fin: new Date(),
+                    observaciones: 'Desactivada automáticamente por reinspección'
+                });
+                // No retornar aquí, continuar para crear nueva entrada
+            } else if (existingEntry && appointments.length == 0) {
                 // Calcular tiempo transcurrido desde el ingreso
                 const tiempoTranscurrido = Date.now() - new Date(existingEntry.tiempo_ingreso).getTime();
                 const tiempoMinutos = Math.floor(tiempoTranscurrido / (1000 * 60));
@@ -399,7 +411,7 @@ class InspectionQueueController extends BaseController {
             if (appointments.length > 0) {
                 return this.error(res, 'Ya existe un agendamiento activo para esta orden', null, 400);
             }
-
+            
             // Crear nueva entrada en la cola
             const queueEntry = await InspectionQueue.create({
                 inspection_order_id,

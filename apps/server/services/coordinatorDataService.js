@@ -48,9 +48,16 @@ class CoordinatorDataService {
      */
     async getVirtualInspections(filters = {}) {
         const whereClause = {
-            is_active: true,
-            estado: filters.estado || 'en_cola'
+            is_active: true
         };
+
+        // Solo filtrar por estado si se especifica explícitamente
+        if (filters.estado) {
+            whereClause.estado = filters.estado;
+        } else {
+            // Por defecto, incluir 'en_cola' y 'pending' (para reinspecciones)
+            whereClause.estado = { [Op.in]: ['en_cola', 'pending'] };
+        }
 
         // Agregar filtros de paginación si se requieren
         const limit = 100000; // Límite alto para coordinador
@@ -67,10 +74,8 @@ class CoordinatorDataService {
                         'celular_contacto', 'correo_contacto', 'created_at', 'status'
                     ],
                     where: {
-                        deleted_at: null,
-                        status: {
-                            [Op.not]: [5]
-                        }
+                        deleted_at: null
+                        // ✅ No excluir status 5 para permitir reinspecciones
                     },
                     required: true,
                     include: [
@@ -109,7 +114,7 @@ class CoordinatorDataService {
         });
 
         // Formatear datos para el frontend (igual estructura que getSedeAppointments)
-        return inspections.rows.map(item => {
+        const formattedData = inspections.rows.map(item => {
             // Si existe appointment, usar su estado, sino usar el estado de la inspección virtual
             let hasAppointment = item.inspectionOrder.appointments && item.inspectionOrder.appointments.length > 0;
             const appointment = hasAppointment ? item.inspectionOrder.appointments[0] : null;
@@ -118,19 +123,25 @@ class CoordinatorDataService {
             const appointmentCreatedAt = appointment?.created_at || null;
             const queueCreatedAt = item.created_at;
 
-            if (appointmentCreatedAt < queueCreatedAt) {
+            // Excluir appointments con status 'ineffective_with_retry' - deben permitir reinspección
+            if (appointment?.status === 'ineffective_with_retry') {
+                filteredAppointments = [];
+                hasAppointment = false;
+            } else if (appointmentCreatedAt < queueCreatedAt) {
                 filteredAppointments = []
                 hasAppointment = false;
             } else {
                 filteredAppointments = item.inspectionOrder.appointments;
             }
 
+            const finalEstado = hasAppointment ? appointment.status : item.estado;
+
             return {
                 id: item.id,
                 placa: item.placa,
                 numero_orden: item.numero_orden,
                 nombre_cliente: item.nombre_cliente,
-                estado: hasAppointment ? appointment.status : item.estado, // Priorizar estado del appointment
+                estado: finalEstado, // Priorizar estado del appointment
                 inspector: item.inspector,
                 tiempo_ingreso: item.tiempo_ingreso,
                 tiempo_inicio: item.tiempo_inicio,
@@ -150,12 +161,26 @@ class CoordinatorDataService {
                 queue_created_at: item.created_at,
                 appointment_created_at: appointment?.created_at || null
             };
-        }).filter(el => {
-            // const statusToRemove = ['completed', 'failed', 'ineffective_with_retry', 'ineffective_no_retry', 'call_finished', 'revision_supervisor']
+        });
 
-            const statusToRemove = ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent']
-            return !statusToRemove.includes(el.estado)
-        })
+        const filtered = formattedData.filter(el => {
+            // Excluir órdenes completadas (status 5) EXCEPTO si son reinspecciones
+            if (el.statusInspectionOrder === 5) {
+                const hasReinspectionAppointment = el.inspectionOrder?.appointments?.some(
+                    apt => apt.status === 'ineffective_with_retry'
+                );
+                
+                if (!hasReinspectionAppointment) {
+                    return false;
+                }
+            }
+            
+            // Excluir estados de appointment no válidos
+            const statusToRemove = ['completed', 'failed', 'ineffective_no_retry', 'call_finished', 'revision_supervisor', 'sent'];
+            return !statusToRemove.includes(el.estado);
+        });
+        
+        return filtered;
     }
 
     /**
