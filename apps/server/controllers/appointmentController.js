@@ -926,6 +926,31 @@ class AppointmentController {
                 });
             }
 
+            // ✅ CORRECIÓN: Marcar entrada en cola como completada para permitir reinspección
+            try {
+                const { InspectionQueue } = await import('../models/index.js');
+                const queueEntry = await InspectionQueue.findOne({
+                    where: {
+                        inspection_order_id: appointment.inspection_order_id,
+                        estado: { [Op.in]: ['en_cola', 'en_proceso'] },
+                        is_active: true,
+                        deleted_at: null
+                    }
+                });
+                
+                if (queueEntry) {
+                    await queueEntry.update({
+                        estado: 'completada',
+                        is_active: false,
+                        tiempo_fin: new Date(),
+                        observaciones: 'Marcada como reinspección - cliente puede volver a ingresar'
+                    });
+                    console.log(`✅ Entrada en cola ${queueEntry.id} marcada como completada e inactiva para permitir reinspección`);
+                }
+            } catch (queueError) {
+                console.error('Error actualizando entrada en cola:', queueError);
+            }
+
             // Registrar el cambio de estado en el historial (inspection_states)
             try {
                 const { InspectionState } = await import('../models/index.js');

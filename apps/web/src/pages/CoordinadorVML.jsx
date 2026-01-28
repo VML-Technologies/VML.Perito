@@ -157,11 +157,9 @@ const CoordinadorVML = () => {
 
             // Actualizar datos de la cola
             if (coordinatorData.queueData) {
-                console.log('📊 Actualizando datos de cola:', coordinatorData.queueData);
                 setQueueData(coordinatorData.queueData.data);
                 setPagination(coordinatorData.queueData.pagination);
-                setLoading(false); // ✅ Quitar loading cuando llegan datos de cola
-                console.log('✅ Loading de cola desactivado');
+                setLoading(false);
             }
 
             // Actualizar estadísticas
@@ -329,7 +327,9 @@ const CoordinadorVML = () => {
             en_cola: { variant: 'secondary', icon: Clock, text: 'En Cola' },
             en_proceso: { variant: 'default', icon: Play, text: 'En Proceso' },
             completada: { variant: 'success', icon: CheckCircle, text: 'Completada' },
-            cancelada: { variant: 'destructive', icon: AlertCircle, text: 'Cancelada' }
+            cancelada: { variant: 'destructive', icon: AlertCircle, text: 'Cancelada' },
+            pending: { variant: 'secondary', icon: Clock, text: 'Pendiente' },
+            assigned: { variant: 'default', icon: Play, text: 'Asignado' }
         };
 
         const config = statusConfig[status] || statusConfig.en_cola;
@@ -530,7 +530,11 @@ const CoordinadorVML = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {queueData.filter(item => item.estado !== 'assigned' && item.estado !== 'en_proceso').map((item) => {
+                                        {queueData.filter(item => {
+                                            return item.estado === 'en_cola' || 
+                                                   item.estado === 'pending' || 
+                                                   item.estado === 'ineffective_with_retry';
+                                        }).map((item) => {
                                             const timeInfo = formatTimeAgo(item.tiempo_ingreso);
                                             const isOverdue = timeInfo.isOverdue;
 
@@ -585,7 +589,7 @@ const CoordinadorVML = () => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex gap-2 justify-center">
-                                                            {item.estado === 'en_cola' && (
+                                                            {(item.estado === 'en_cola' || item.estado === 'ineffective_with_retry' || item.estado === 'pending') && (
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
