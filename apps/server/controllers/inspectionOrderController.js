@@ -1,6 +1,9 @@
 import { BaseController } from './baseController.js';
 import InspectionOrder from '../models/inspectionOrder.js';
 import InspectionOrderStatus from '../models/inspectionOrderStatus.js';
+import InspectionOrdersStatusInternal from '../models/inspectionOrdersStatusInternal.js';
+import AppointmentStatus from '../models/appointmentStatus.js';
+import InspectionState from '../models/inspectionState.js';
 import CallLog from '../models/callLog.js';
 import CallStatus from '../models/callStatus.js';
 import Appointment from '../models/appointment.js';
@@ -12,7 +15,7 @@ import Department from '../models/department.js';
 import User from '../models/user.js';
 import Role from '../models/role.js';
 import { registerPermission } from '../middleware/permissionRegistry.js';
-import { json, Op, QueryTypes, where } from 'sequelize';
+import { json, Op, QueryTypes, where, fn, col } from 'sequelize';
 import automatedEventTriggers from '../services/automatedEventTriggers.js';
 import InspectionPart from '../models/inspectionPart.js';
 import InspectionCategory from '../models/inspectionCategory.js';
@@ -89,6 +92,15 @@ registerPermission({
     endpoint: '/api/inspection-orders/:id',
     method: 'PUT',
     description: 'Actualizar órdenes de inspección',
+});
+
+registerPermission({
+    name: 'inspection_orders.change_status',
+    resource: 'inspection_orders',
+    action: 'change_status',
+    endpoint: '/api/inspection-orders/:id/change-status',
+    method: 'PUT',
+    description: 'Cambiar estado de órdenes de inspección',
 });
 
 registerPermission({
@@ -3334,6 +3346,160 @@ if status == 5 then check for latest @appointment an if it is with status != ine
             return res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Cambiar estado de una orden de inspección
+     * PUT /api/inspection-orders/:id/change-status
+     */
+    async changeStatus(req, res) {
+        try {
+            const { id } = req.params;
+            const { status, inspectionResult } = req.body;
+            const user = req.user;
+
+            // Validar que la orden exista
+            const inspectionOrder = await InspectionOrder.findByPk(id, {
+                include: [
+                    {
+                        association: 'appointments',
+                        separate: true,
+                        order: [['created_at', 'DESC']],
+                        limit: 1
+                    }
+                ]
+            });
+            
+            if (!inspectionOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Orden de inspección no encontrada'
+                });
+            }
+
+            // Validar que sea "Aprobado" o "No Aprobado"
+            if (!['Aprobado', 'No Aprobado'].includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El estado debe ser "Aprobado" o "No Aprobado"'
+                });
+            }
+
+            // Usar el inspection_result enviado tal cual
+            const finalInspectionResult = inspectionResult;
+
+            // Texto para inspection_result_details
+            const inspectionResultDetails = `Estado modificado a ${status} por Super Usuario Mundial`;
+
+            // Actualizar el estado de la orden (solo los campos de resultado, sin cambiar el status FK)
+            await inspectionOrder.update({
+                inspection_result: finalInspectionResult,
+                inspection_result_details: inspectionResultDetails
+            });
+
+            // Obtener el último appointment
+            const lastAppointment = inspectionOrder.appointments && inspectionOrder.appointments.length > 0 
+                ? inspectionOrder.appointments[0]
+                : null;
+
+            if (!lastAppointment) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La orden no tiene agendamientos, no se puede registrar el historial de estado'
+                });
+            }
+
+            // Crear registro en inspection_states (requiere varios FK obligatorios)
+            try {
+                // status de la orden
+                const orderStatusId = inspectionOrder.status;
+
+                // status interno de la orden (buscar por nombre; si no existe, tomar el primero disponible)
+                let internalStatusId = null;
+                if (inspectionOrder.status_internal) {
+                    const internal = await InspectionOrdersStatusInternal.findOne({
+                        where: sequelize.where(
+                            sequelize.fn('LOWER', sequelize.col('name')),
+                            Op.eq,
+                            inspectionOrder.status_internal.toLowerCase()
+                        )
+                    });
+                    internalStatusId = internal?.id || null;
+                }
+                if (!internalStatusId) {
+                    const fallbackInternal = await InspectionOrdersStatusInternal.findOne({ order: [['id', 'ASC']] });
+                    internalStatusId = fallbackInternal?.id || 1;
+                }
+
+                // status del appointment (mapear por nombre; si no coincide, tomar el primero)
+                let appointmentStatusId = null;
+                if (lastAppointment.status) {
+                    const apptStatus = await AppointmentStatus.findOne({
+                        where: sequelize.where(
+                            sequelize.fn('LOWER', sequelize.col('name')),
+                            Op.eq,
+                            lastAppointment.status.toLowerCase()
+                        )
+                    });
+                    appointmentStatusId = apptStatus?.id || null;
+                }
+                if (!appointmentStatusId) {
+                    const fallbackAppt = await AppointmentStatus.findOne({ order: [['id', 'ASC']] });
+                    appointmentStatusId = fallbackAppt?.id || 1;
+                }
+
+                // rol del usuario (FK numérico); si no se encuentra, tomar el primero
+                let userRoleId = user?.roles?.[0]?.id || null;
+                if (!userRoleId) {
+                    const fallbackRole = await Role.findOne({ order: [['id', 'ASC']] });
+                    userRoleId = fallbackRole?.id || 1;
+                }
+
+                await InspectionState.create({
+                    inspection_order_id: inspectionOrder.id,
+                    appointment_id: lastAppointment.id,
+                    inspection_order_status: orderStatusId,
+                    inspection_order_status_internal: internalStatusId,
+                    appointment_status: appointmentStatusId,
+                    user_id: user?.id || null,
+                    user_role: userRoleId,
+                    user_decision_state: status,
+                    user_decision_reason: inspectionResultDetails,
+                    state_change_type: 'user_decision',
+                    webhook_status: false,
+                    metadata: {
+                        inspection_result: finalInspectionResult,
+                        inspection_result_details: inspectionResultDetails,
+                        source: 'super_usuario_mundial'
+                    }
+                });
+            } catch (stateError) {
+                console.error('Error creando inspection_state:', stateError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error registrando historial de estado',
+                    error: stateError.message
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: `Estado cambiado a "${status}" exitosamente`,
+                data: {
+                    id: inspectionOrder.id,
+                    status: status,
+                    inspectionResult: finalInspectionResult,
+                    inspectionResultDetails: inspectionResultDetails
+                }
+            });
+        } catch (error) {
+            console.error('Error changing status:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al cambiar el estado',
                 error: error.message
             });
         }

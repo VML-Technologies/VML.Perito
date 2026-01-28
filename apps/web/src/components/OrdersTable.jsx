@@ -26,7 +26,8 @@ const OrdersTable = ({
     tableType = 'default', // 'default' | 'contact'
     emptyMessage = "No se encontraron órdenes",
     emptyDescription = "Ajusta los filtros para ver más resultados",
-    loading = false
+    loading = false,
+    customActions = null
 }) => {
     const { user } = useAuth();
 
@@ -356,6 +357,7 @@ const OrdersTable = ({
                                                                             </Button>
                                                                         </> : <></>
                                                                     }
+                                                                    {customActions && customActions(order)}
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select
                                                                             value={assigningOrder == order.id ? selectedAgent : (order.AssignedAgent?.id?.toString() || '')}
