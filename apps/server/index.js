@@ -40,6 +40,7 @@ import inspectionModalityController from './controllers/inspectionModalityContro
 import inspectorAliadoController from './controllers/inspectorAliadoController.js';
 import scheduledTasksController from './controllers/scheduledTasksController.js';
 import peritajesController from './controllers/peritajesController.js';
+import InspectionOrderStatusController from './controllers/inspectionOrderStatusController.js';
 import { getVigentesMovilidadAsistencia } from './controllers/vigentesMovilidadAsistenciaController.js';
 
 // Los servicios se importarán e inicializarán después de crear las tablas
@@ -68,6 +69,9 @@ import listController from './controllers/listController.js';
 
 // Crear instancia del controlador de órdenes de inspección
 const inspectionOrderController = new InspectionOrderController();
+
+// Crear instancia del controlador de estados de órdenes de inspección
+const inspectionOrderStatusController = new InspectionOrderStatusController();
 
 // Crear instancia del controlador de Inspector Aliado
 const inspectorAliadoControllerInstance = new inspectorAliadoController();
@@ -255,6 +259,7 @@ app.post('/api/sedes/:id/restore', requirePermission('sedes.update'), sedeContro
 
 // Endpoint unificado para órdenes de inspección
 app.get('/api/inspection-orders/full/:id', readLimiter, inspectionOrderController.getFullInspectionOrder);
+app.get('/api/inspection-order-statuses', readLimiter, requirePermission('inspection_order_statuses.read'), inspectionOrderStatusController.getAll);
 app.get('/api/inspection-orders', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getOrders);
 app.get('/api/inspection-orders/stats', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.getStats);
 app.get('/api/inspection-orders/search', readLimiter, requirePermission('inspection_orders.read'), inspectionOrderController.search);
@@ -283,6 +288,9 @@ app.put('/api/inspection-orders/:id/contact-data', requirePermission('inspection
 
 // Ruta para reenviar SMS de inspección
 app.post('/api/inspection-orders/:id/resend-sms', inspectionOrderController.resendInspectionSMS);
+
+// Ruta para cambiar estado de inspección
+app.put('/api/inspection-orders/:id/change-status', requirePermission('inspection_orders.change_status'), inspectionOrderController.changeStatus);
 
 // Ruta para reenviar SMS de inspección
 // app.post('/api/inspection-orders/:id/resend-sms', requirePermission('inspection_orders.update'), inspectionOrderController.resendInspectionSMS);
