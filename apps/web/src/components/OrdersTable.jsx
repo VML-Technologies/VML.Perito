@@ -348,7 +348,7 @@ const OrdersTable = ({
                                                                         const validAppointment = order.appointments
                                                                             ?.filter(apt => !apt.deleted_at && apt.status === 'completed' && apt.generated_pdf)
                                                                             ?.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))?.[0];
-                                                                        console.log('Validando orden', order.numero, { orderIsValid, validAppointment });
+                                                                        console.log('Validando orden', order.numero, { orderIsValid, validAppointment, appointments: order.appointments?.map(apt => ({ id: apt.id, status: apt.status, generated_pdf: apt.generated_pdf, deleted_at: apt.deleted_at })) });
                                                                         return (orderIsValid && validAppointment) ? (
                                                                             <Button
                                                                                 size="sm"

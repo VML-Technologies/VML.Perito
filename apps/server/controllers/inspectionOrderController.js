@@ -570,7 +570,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id', 'generated_pdf'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -623,6 +623,7 @@ class InspectionOrderController extends BaseController {
                             direccion_inspeccion: apt.direccion_inspeccion,
                             created_at: apt.created_at,
                             updated_at: apt.updated_at,
+                            generated_pdf: apt.generated_pdf,
                             inspectionModality: apt.inspectionModality,
                             sede: apt.sede
                         };
