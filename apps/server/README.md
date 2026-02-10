@@ -80,10 +80,10 @@ npm run seed:all
 ### 5. Ejecutar el servidor
 
 ```bash
-# Desarrollo
+# Desarrollo --- no se tiene configurado el entorno dev para la iniciacion en desarrollo
 npm run dev
 
-# Producción
+# Producción -- este funciona de forma particular
 npm start
 ```
 

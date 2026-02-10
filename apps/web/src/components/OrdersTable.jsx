@@ -343,8 +343,13 @@ const OrdersTable = ({
                                                                             Ver Resumen
                                                                         </Button>
                                                                     )}
-                                                                    {
-                                                                        (order.InspectionOrderStatus.id && order.session_id && order.fixedStatus != 'No finalizada por novedad del cliente') ? <>
+                                                                    {(() => {
+                                                                        const orderIsValid = order.InspectionOrderStatus?.id && order.session_id && order.fixedStatus != 'No finalizada por novedad del cliente';
+                                                                        const validAppointment = order.appointments
+                                                                            ?.filter(apt => !apt.deleted_at && apt.status === 'completed' && apt.generated_pdf)
+                                                                            ?.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))?.[0];
+                                                                        console.log('Validando orden', order.numero, { orderIsValid, validAppointment });
+                                                                        return (orderIsValid && validAppointment) ? (
                                                                             <Button
                                                                                 size="sm"
                                                                                 variant="outline"
@@ -355,8 +360,8 @@ const OrdersTable = ({
                                                                                 <FileText className="h-4 w-4 mr-1" />
                                                                                 Ver Inspección
                                                                             </Button>
-                                                                        </> : <></>
-                                                                    }
+                                                                        ) : null;
+                                                                    })()}
                                                                     {customActions && customActions(order)}
                                                                     {onAssignAgent && agents.length > 0 && (
                                                                         <Select

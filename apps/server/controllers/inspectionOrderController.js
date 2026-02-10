@@ -180,13 +180,18 @@ class InspectionOrderController extends BaseController {
             }
 
             const lastUpdatedAppointment = await Appointment.findOne({
-                where: { inspection_order_id: id },
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null,
+                    status: 'completed',
+                    generated_pdf: { [Op.ne]: null }
+                },
                 order: [['updated_at', 'DESC']]
             });
 
             if (!lastUpdatedAppointment) {
                 return res.status(404).json({
-                    message: 'Última cita no encontrada'
+                    message: 'No se encontró una cita completada con PDF generado'
                 });
             }
 
@@ -254,14 +259,19 @@ class InspectionOrderController extends BaseController {
             }
 
             const lastUpdatedAppointment = await Appointment.findOne({
-                where: { inspection_order_id: id },
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null,
+                    status: 'completed',
+                    generated_pdf: { [Op.ne]: null }
+                },
                 order: [['updated_at', 'DESC']]
             });
 
             if (!lastUpdatedAppointment) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Última cita no encontrada'
+                    message: 'No se encontró una cita completada con PDF generado'
                 });
             }
 

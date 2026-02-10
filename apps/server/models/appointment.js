@@ -54,10 +54,10 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         get: createTimeFieldGetter('scheduled_time')
     },
     status: {
-        type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed', 'revision_supervisor'),
+        type: DataTypes.ENUM('pending', 'assigned', 'sent', 'delivered', 'read', 'completed', 'failed', 'revision_supervisor', 'pendiente_calificacion', 'ineffective_no_retry', 'ineffective_with_retry', 'retry', 'call_finished'),
         allowNull: false,
         defaultValue: 'pending',
-        comment: 'Estado de la cita (pending, assigned, sent, delivered, read, completed, failed, revision_supervisor)'
+        comment: 'Estado de la cita'
     },
     notes: {
         type: DataTypes.TEXT,
@@ -69,7 +69,7 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         comment: 'Dirección para inspección a domicilio'
     },
     observaciones: {
-        type: DataTypes.STRING(1000),
+        type: DataTypes.TEXT,
         allowNull: true,
         comment: 'Observaciones del agendamiento'
     },
@@ -114,6 +114,63 @@ const Appointment = createModelWithSoftDeletes('Appointment', {
         type: DataTypes.DATE,
         allowNull: true,
         comment: 'Fecha y hora cuando falló la inspección'
+    },
+    call_finished_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora cuando finalizó la llamada'
+    },
+    retry_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: 'Número de reintentos realizados para esta cita'
+    },
+    previous_session_ids: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Historial de session_ids anteriores (JSON array)'
+    },
+    is_retry: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Indica si esta cita es un reintento'
+    },
+    retry_reason: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Razón del reintento'
+    },
+    retried_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'Fecha y hora del último reintento'
+    },
+    inspection_result: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Resultado de la inspección'
+    },
+    inspector_comment: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Comentario del inspector'
+    },
+    supervisor_comment: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Comentario del supervisor'
+    },
+    generated_pdf: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'PDF generado de la inspección'
+    },
+    result_by: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Usuario que registró el resultado'
     }
 }, {
     tableName: 'appointments',
