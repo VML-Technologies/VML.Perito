@@ -26,7 +26,8 @@ import {
     CreditCard,
     Hash,
     TestTube,
-    TriangleAlert
+    TriangleAlert,
+    ArrowLeft
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api';
 import { useNotificationContext } from '@/contexts/notification-context';
@@ -661,14 +662,24 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
     return (
         <Sheet open={isOpen} onOpenChange={loading ? undefined : onClose}>
             <SheetContent
-                className="w-full sm:max-w-6xl overflow-y-auto px-4"
+                className="w-full sm:max-w-6xl overflow-y-auto px-4 [&>button]:hidden sm:[&>button]:flex"
                 onEscapeKeyDown={loading ? (e) => e.preventDefault() : undefined}
             >
                 <SheetHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Car className="h-5 w-5" />
-                            <SheetTitle>Nueva Orden de Inspección</SheetTitle>
+                    <div className="sm:flex sm:items-center sm:justify-between">
+                        <div className="sm:flex sm:items-center sm:gap-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={onClose}
+                                disabled={loading}
+                                className="sm:hidden p-2 h-10 w-10 mb-2"
+                            >
+                                <ArrowLeft className="h-8 w-8" />
+                            </Button>
+                            <Car className="h-5 w-5 hidden sm:block" />
+                            <SheetTitle className="text-center sm:text-left text-[20px] font-semibold" style={{ color: '#235692' }}>Nueva Orden de Inspección</SheetTitle>
                         </div>
                         {isSuperAdmin && (
                             <Button
@@ -677,19 +688,19 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                 size="sm"
                                 onClick={fillTestData}
                                 disabled={loading}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 mt-2 sm:mt-0"
                             >
                                 <TestTube className="h-4 w-4" />
                                 Datos de Prueba
                             </Button>
                         )}
                     </div>
-                    <SheetDescription>
+                    <SheetDescription className="text-sm text-center sm:text-left">
                         {loading ? (
-                            <div className="flex items-center gap-2 text-blue-600">
+                            <span className="flex items-center justify-center sm:justify-start gap-2 text-blue-600">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                                 <span>Procesando orden de inspección...</span>
-                            </div>
+                            </span>
                         ) : (
                             'Completa todos los datos requeridos para crear una nueva orden de inspección'
                         )}
@@ -697,9 +708,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                 </SheetHeader>
                 <form onSubmit={handleSubmit} className={`mt-0 space-y-4 ${loading ? 'pointer-events-none opacity-50' : ''}`}>
                     {/* Información General de la Orden */}
-                    <Card>
+                    <Card className="border-0 sm:border">
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
+                            <CardTitle className="text-base flex items-center gap-2 font-normal uppercase" style={{ color: '#1E4A7E' }}>
                                 <Hash className="h-4 w-4" />
                                 Información General
                             </CardTitle>
@@ -707,8 +718,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* 🆕 Campo Producto ahora como Select dinámico */}
-                            <div>
-                                <Label htmlFor="producto">Producto *</Label>
+                            <div className="relative">
                                 <Select
                                     value={formData.producto}
                                     onValueChange={(value) => handleInputChange('producto', value)}
@@ -742,16 +752,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         )}
                                     </SelectContent>
                                 </Select>
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Producto
+                                </label>
                                 {errors.producto && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.producto}
                                     </p>
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="tipo_vehiculo">Tipo de Vehículo</Label>
+                            <div className="relative">
                                 <Select
                                     value={formData.tipo_vehiculo}
                                     onValueChange={(value) => handleInputChange('tipo_vehiculo', value)}
@@ -787,15 +799,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         )}
                                     </SelectContent>
                                 </Select>
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Tipo de Vehículo
+                                </label>
                                 {errors.tipo_vehiculo && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.tipo_vehiculo}
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <Label htmlFor="placa">Placa *</Label>
+                            <div className="relative">
                                 <div className="relative">
                                     <Input
                                         id="placa"
@@ -812,9 +826,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         </div>
                                     )}
                                 </div>
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Placa
+                                </label>
                                 {errors.placa && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.placa}
                                     </p>
                                 )}
@@ -830,13 +847,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     </div>
                                 )}
                             </div>
-                            <div>
-                                <Label htmlFor="metodo_inspeccion_recomendado">Método de Inspección *</Label>
+                            <div className="relative">
                                 <Select
                                     value={formData.metodo_inspeccion_recomendado}
                                     onValueChange={(value) => handleInputChange('metodo_inspeccion_recomendado', value)}
                                 >
-                                    <SelectTrigger className={`w-full ${errors.metodo_inspeccion_recomendado ? 'border-red-500' : ''}`}>
+                                    <SelectTrigger className={`w-full placeholder:text-lg sm:placeholder:text-xl ${errors.metodo_inspeccion_recomendado ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Seleccionar método" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -844,9 +860,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         <SelectItem value="Presencial">Presencial</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <label className="absolute -top-2 left-3 bg-white px-1 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Método de Inspección
+                                </label>
                                 {errors.metodo_inspeccion_recomendado && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.metodo_inspeccion_recomendado}
                                     </p>
                                 )}
@@ -903,7 +922,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.clase}
                                     onValueChange={(value) => handleInputChange('clase', value)}
                                 >
-                                    <SelectTrigger className={errors.clase ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.clase ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Selecciona clase" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -934,7 +953,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     maxLength={4}
                                     value={formData.modelo}
                                     onChange={(e) => handleInputChange('modelo', e.target.value)}
-                                    className={errors.modelo ? 'border-red-500' : ''}
+                                    className={`${errors.modelo ? 'border-red-500' : ''}`}
                                 />
                                 {errors.modelo && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -951,7 +970,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Blanco, Rojo, etc."
                                     value={formData.color}
                                     onChange={(e) => handleInputChange('color', e.target.value)}
-                                    className={errors.color ? 'border-red-500' : ''}
+                                    className={`${errors.color ? 'border-red-500' : ''}`}
                                 />
                                 {errors.color && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -969,7 +988,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     maxLength={10}
                                     value={formData.cilindraje}
                                     onChange={(e) => handleInputChange('cilindraje', e.target.value)}
-                                    className={errors.cilindraje ? 'border-red-500' : ''}
+                                    className={`${errors.cilindraje ? 'border-red-500' : ''}`}
                                 />
                                 {errors.cilindraje && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -985,7 +1004,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.servicio}
                                     onValueChange={(value) => handleInputChange('servicio', value)}
                                 >
-                                    <SelectTrigger className={errors.servicio ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.servicio ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de servicio" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1009,7 +1028,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     value={formData.combustible}
                                     onValueChange={(value) => handleInputChange('combustible', value)}
                                 >
-                                    <SelectTrigger className={errors.combustible ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.combustible ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de combustible" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1035,7 +1054,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número del motor"
                                     value={formData.motor}
                                     onChange={(e) => handleInputChange('motor', e.target.value)}
-                                    className={errors.motor ? 'border-red-500' : ''}
+                                    className={`${errors.motor ? 'border-red-500' : ''}`}
                                 />
                                 {errors.motor && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1052,7 +1071,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número del chasis"
                                     value={formData.chasis}
                                     onChange={(e) => handleInputChange('chasis', e.target.value)}
-                                    className={errors.chasis ? 'border-red-500' : ''}
+                                    className={`${errors.chasis ? 'border-red-500' : ''}`}
                                 />
                                 {errors.chasis && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1069,7 +1088,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Número VIN"
                                     value={formData.vin}
                                     onChange={(e) => handleInputChange('vin', e.target.value)}
-                                    className={errors.vin ? 'border-red-500' : ''}
+                                    className={`${errors.vin ? 'border-red-500' : ''}`}
                                 />
                                 {errors.vin && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1086,7 +1105,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                     placeholder="Tipo de carrocería"
                                     value={formData.carroceria}
                                     onChange={(e) => handleInputChange('carroceria', e.target.value)}
-                                    className={errors.carroceria ? 'border-red-500' : ''}
+                                    className={`${errors.carroceria ? 'border-red-500' : ''}`}
                                 />
                                 {errors.carroceria && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -1103,19 +1122,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     {/* Información del Cliente */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
+                            <CardTitle className="text-base flex items-center gap-2 font-normal uppercase" style={{ color: '#1E4A7E' }}>
                                 <User className="h-4 w-4" />
                                 Datos del Cliente
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label htmlFor="tipo_doc">Tipo de Documento *</Label>
+                            <div className="relative">
                                 <Select
                                     value={formData.tipo_doc}
                                     onValueChange={(value) => handleInputChange('tipo_doc', value)}
                                 >
-                                    <SelectTrigger className={errors.tipo_doc ? 'border-red-500' : ''}>
+                                    <SelectTrigger className={`${errors.tipo_doc ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Tipo de documento" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1126,51 +1144,57 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         <SelectItem value="TI">Tarjeta de Identidad</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Tipo de Documento
+                                </label>
                                 {errors.tipo_doc && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.tipo_doc}
                                     </p>
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="num_doc">Número de Documento *</Label>
+                            <div className="relative">
                                 <Input
                                     id="num_doc"
                                     placeholder="Número de documento"
                                     maxLength={15}
                                     value={formData.num_doc}
                                     onChange={(e) => handleInputChange('num_doc', e.target.value)}
-                                    className={errors.num_doc ? 'border-red-500' : ''}
+                                    className={`${errors.num_doc ? 'border-red-500' : ''}`}
                                 />
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Número de Documento
+                                </label>
                                 {errors.num_doc && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.num_doc}
                                     </p>
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="nombre_cliente">Nombre Completo *</Label>
+                            <div className="relative">
                                 <Input
                                     id="nombre_cliente"
                                     placeholder="Nombre completo del cliente"
                                     value={formData.nombre_cliente}
                                     onChange={(e) => handleInputChange('nombre_cliente', e.target.value)}
-                                    className={errors.nombre_cliente ? 'border-red-500' : ''}
+                                    className={`${errors.nombre_cliente ? 'border-red-500' : ''}`}
                                 />
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Nombre Completo
+                                </label>
                                 {errors.nombre_cliente && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.nombre_cliente}
                                     </p>
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="celular_cliente">Celular Cliente *</Label>
+                            <div className="relative">
                                 <Input
                                     id="celular_cliente"
                                     type="tel"
@@ -1182,29 +1206,34 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                         const value = e.target.value.replace(/\D/g, '');
                                         handleInputChange('celular_cliente', value);
                                     }}
-                                    className={errors.celular_cliente ? 'border-red-500' : ''}
+                                    className={`${errors.celular_cliente ? 'border-red-500' : ''}`}
                                 />
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Celular Cliente
+                                </label>
                                 {errors.celular_cliente && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.celular_cliente}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="md:col-span-2">
-                                <Label htmlFor="correo_cliente">Email Cliente *</Label>
+                            <div className="md:col-span-2 relative">
                                 <Input
                                     id="correo_cliente"
                                     type="email"
                                     placeholder="cliente@ejemplo.com"
                                     value={formData.correo_cliente}
                                     onChange={(e) => handleInputChange('correo_cliente', e.target.value)}
-                                    className={errors.correo_cliente ? 'border-red-500' : ''}
+                                    className={`${errors.correo_cliente ? 'border-red-500' : ''}`}
                                 />
+                                <label className="absolute -top-2 left-3 bg-white px-0.5 text-sm text-gray-600">
+                                    <span style={{ color: '#C80000' }}>*</span> Email Cliente
+                                </label>
                                 {errors.correo_cliente && (
                                     <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
+                                        <AlertCircle className="h-4 w-4" />
                                         {errors.correo_cliente}
                                     </p>
                                 )}
@@ -1213,10 +1242,16 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                     </Card>
                     {/* formData.nombre_contacto && formData.celular_contacto && !sameAsClient */}
                     {/* Información del Contacto */}
-                    <Card className={!sameAsClient ? 'border border-red-500 rounded-lg shadow-md p-4 shadow-red-500 bg-red-50/20' : ''}>
+                     <Card
+                        className={
+                            !sameAsClient
+                                ? 'border border-[#F5A623]/40 bg-[#FFF9F2] rounded-xl p-5 shadow-md shadow-[#F5A623]/20 transition-all duration-300'
+                                : ''
+                        }
+                    >
                         <CardHeader>
-                            <CardTitle className="inline-flex items-center gap-2 bg-[#FFD9AA] text-[#935100] px-3 py-2 rounded-md text-sm">
-                                <AlertCircle className="h-4 w-4" />
+                            <CardTitle className="inline-flex items-center gap-2 bg-[#FFE7C2] text-[#8A4B00] px-3 py-2 rounded-md text-sm font-medium">
+                                <TriangleAlert className="h-12 w-12 sm:h-4 sm:w-4" />
                                 Recuerde que, si el vehículo no está en su poder, debe dejar los datos de contacto de quien lo tiene
                             </CardTitle>
                         </CardHeader>
@@ -1233,26 +1268,27 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             </div>
 
                             {!sameAsClient && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <Label htmlFor="nombre_contacto">Nombre Contacto *</Label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="relative">
                                         <Input
                                             id="nombre_contacto"
                                             placeholder="Nombre del contacto"
                                             value={formData.nombre_contacto}
                                             onChange={(e) => handleInputChange('nombre_contacto', e.target.value)}
-                                            className={errors.nombre_contacto ? 'border-red-500' : ''}
+                                            className={`${errors.nombre_contacto ? 'border-red-500' : ''}`}
                                         />
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
+                                            <span style={{ color: '#C80000' }}>*</span> Nombre Contacto
+                                        </label>
                                         {errors.nombre_contacto && (
                                             <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                                <AlertCircle className="h-3 w-3" />
+                                                <AlertCircle className="h-4 w-4" />
                                                 {errors.nombre_contacto}
                                             </p>
                                         )}
                                     </div>
 
-                                    <div>
-                                        <Label htmlFor="celular_contacto">Celular Contacto *</Label>
+                                    <div className="relative">
                                         <Input
                                             id="celular_contacto"
                                             type="tel"
@@ -1264,29 +1300,34 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                                                 const value = e.target.value.replace(/\D/g, '');
                                                 handleInputChange('celular_contacto', value);
                                             }}
-                                            className={errors.celular_contacto ? 'border-red-500' : ''}
+                                            className={`${errors.celular_contacto ? 'border-red-500' : ''}`}
                                         />
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
+                                            <span style={{ color: '#C80000' }}>*</span> Celular Contacto
+                                        </label>
                                         {errors.celular_contacto && (
                                             <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                                <AlertCircle className="h-3 w-3" />
+                                                <AlertCircle className="h-4 w-4" />
                                                 {errors.celular_contacto}
                                             </p>
                                         )}
                                     </div>
 
-                                    <div>
-                                        <Label htmlFor="correo_contacto">Email Contacto *</Label>
+                                    <div className="relative">
                                         <Input
                                             id="correo_contacto"
                                             type="email"
                                             placeholder="contacto@ejemplo.com"
                                             value={formData.correo_contacto}
                                             onChange={(e) => handleInputChange('correo_contacto', e.target.value)}
-                                            className={errors.correo_contacto ? 'border-red-500' : ''}
+                                            className={`${errors.correo_contacto ? 'border-red-500' : ''}`}
                                         />
+                                        <label className="absolute -top-2 left-3 bg-[#FFF9F2] px-0.5 text-sm text-gray-600">
+                                            <span style={{ color: '#C80000' }}>*</span> Email Contacto
+                                        </label>
                                         {errors.correo_contacto && (
                                             <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                                                <AlertCircle className="h-3 w-3" />
+                                                <AlertCircle className="h-4 w-4" />
                                                 {errors.correo_contacto}
                                             </p>
                                         )}
@@ -1297,7 +1338,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
                             {sameAsClient && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                     <div className="flex items-center gap-2 text-blue-700">
-                                        <CheckCircle className="h-4 w-4" />
+                                        <CheckCircle className="h-4 w-4 sm:h-4 sm:w-4" />
                                         <span className="text-sm font-medium">
                                             Los datos del contacto se sincronizarán automáticamente con los datos del cliente
                                         </span>
@@ -1314,20 +1355,20 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }) {
 
 
 
-                    <div className="flex gap-4 pt-4 border-t">
+                    <div className="flex gap-4 pt-4 border-t pb-16 sm:pb-0">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1 text-[#235692] rounded-xl shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
+                            className="flex-1 text-[#235692] rounded-full shadow-sm cursor-pointer bg-[#FFFFFF] border border-[#3075C7] hover:bg-[#EAF4FF] hover:text-[#235692] transition-colors duration-200"
                         >
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             disabled={loading || plateExists}
-                            className={`flex-1 cursor-pointer rounded-xl ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            className={`flex-1 cursor-pointer rounded-full ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <div className="flex items-center gap-2">

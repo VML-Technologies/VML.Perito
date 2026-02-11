@@ -180,13 +180,18 @@ class InspectionOrderController extends BaseController {
             }
 
             const lastUpdatedAppointment = await Appointment.findOne({
-                where: { inspection_order_id: id },
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null,
+                    status: 'completed',
+                    generated_pdf: { [Op.ne]: null }
+                },
                 order: [['updated_at', 'DESC']]
             });
 
             if (!lastUpdatedAppointment) {
                 return res.status(404).json({
-                    message: 'Última cita no encontrada'
+                    message: 'No se encontró una cita completada con PDF generado'
                 });
             }
 
@@ -254,14 +259,19 @@ class InspectionOrderController extends BaseController {
             }
 
             const lastUpdatedAppointment = await Appointment.findOne({
-                where: { inspection_order_id: id },
+                where: {
+                    inspection_order_id: id,
+                    deleted_at: null,
+                    status: 'completed',
+                    generated_pdf: { [Op.ne]: null }
+                },
                 order: [['updated_at', 'DESC']]
             });
 
             if (!lastUpdatedAppointment) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Última cita no encontrada'
+                    message: 'No se encontró una cita completada con PDF generado'
                 });
             }
 
@@ -404,6 +414,7 @@ class InspectionOrderController extends BaseController {
                 assigned_agent_id = '',
                 date_from = '',
                 date_to = '',
+                general_search = '',
                 sortBy = 'created_at',
                 sortOrder = 'DESC',
                 search = '',
@@ -434,7 +445,21 @@ class InspectionOrderController extends BaseController {
                 whereConditions.clave_intermediario = req.user.intermediary_key;
             }
 
-            // Búsqueda por texto
+            // Búsqueda general
+            if (general_search) {
+                whereConditions[Op.or] = [
+                    { placa: { [Op.like]: `%${general_search}%` } },
+                    { numero: { [Op.like]: `%${general_search}%` } },
+                    { nombre_cliente: { [Op.like]: `%${general_search}%` } },
+                    { correo_cliente: { [Op.like]: `%${general_search}%` } },
+                    { celular_cliente: { [Op.like]: `%${general_search}%` } },
+                    { nombre_contacto: { [Op.like]: `%${general_search}%` } },
+                    { correo_contacto: { [Op.like]: `%${general_search}%` } },
+                    { celular_contacto: { [Op.like]: `%${general_search}%` } }
+                ];
+            }
+
+            // Búsqueda por texto específico
             if (plate) {
                 whereConditions.placa = { [Op.like]: `%${plate}%` };
             }
@@ -545,7 +570,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id', 'generated_pdf'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -598,6 +623,7 @@ class InspectionOrderController extends BaseController {
                             direccion_inspeccion: apt.direccion_inspeccion,
                             created_at: apt.created_at,
                             updated_at: apt.updated_at,
+                            generated_pdf: apt.generated_pdf,
                             inspectionModality: apt.inspectionModality,
                             sede: apt.sede
                         };

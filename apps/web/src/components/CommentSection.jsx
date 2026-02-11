@@ -21,7 +21,7 @@ const CommentSection = ({ orderId }) => {
             {/* Header con estadísticas */}
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
                 <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
                                 <MessageCircle className="h-6 w-6 text-blue-600" />
@@ -36,14 +36,10 @@ const CommentSection = ({ orderId }) => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="bg-white border-blue-300 text-blue-700">
-                                {comments.length} comentarios
-                            </Badge>
-                            
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                             <Button
                                 onClick={() => setShowEditor(!showEditor)}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 w-full sm:w-auto"
                                 size="sm"
                             >
                                 {showEditor ? (
@@ -58,6 +54,10 @@ const CommentSection = ({ orderId }) => {
                                     </>
                                 )}
                             </Button>
+                            
+                            <Badge variant="outline" className="bg-white border-blue-300 text-blue-700 self-start sm:self-auto">
+                                {comments.length} comentarios
+                            </Badge>
                         </div>
                     </div>
                 </CardContent>

@@ -883,6 +883,24 @@ class AppointmentController {
 
             console.log(`📊 Observaciones actuales en DB:`, appointment.observaciones);
 
+            // No permitir cambio de estado en appointments completados o con PDF generado
+            if (appointment.status === 'completed' || appointment.generated_pdf) {
+                console.log(`⛔ Appointment ${id} ya está completado o tiene PDF generado, no se permite cambio de estado`);
+                return res.status(409).json({
+                    success: false,
+                    message: 'No se puede modificar un appointment que ya fue completado o tiene PDF generado'
+                });
+            }
+
+            // No permitir si la orden de inspección ya está en estado 5 (completada)
+            if (appointment.inspectionOrder?.status === 5) {
+                console.log(`⛔ La orden de inspección ${appointment.inspection_order_id} ya está completada (status 5), no se permite cambio de estado`);
+                return res.status(409).json({
+                    success: false,
+                    message: 'No se puede modificar un appointment cuya orden de inspección ya fue completada'
+                });
+            }
+
             // Si ya está en estado ineffective_with_retry, no actualizar de nuevo
             if (appointment.status === 'ineffective_with_retry') {
                 console.log(`⚠️ Appointment ${id} ya está en estado ineffective_with_retry, ignorando actualización`);

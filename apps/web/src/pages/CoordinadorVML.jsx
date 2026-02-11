@@ -549,6 +549,11 @@ const CoordinadorVML = () => {
                                                             <div className="flex items-center gap-2">
                                                                 <Car className="h-4 w-4 text-gray-500" />
                                                                 <span className="font-medium">Placa: {item.placa}</span>
+                                                                {item.statusInspectionOrder === 5 && (
+                                                                    <Badge variant="outline" className="text-xs border-orange-500 text-orange-600 bg-orange-50">
+                                                                        Reinspección
+                                                                    </Badge>
+                                                                )}
                                                             </div>
                                                             <span className="font-mono text-sm">Orden: {item.numero_orden}</span>
                                                         </div>
@@ -589,7 +594,7 @@ const CoordinadorVML = () => {
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex gap-2 justify-center">
-                                                            {(item.estado === 'en_cola' || item.estado === 'ineffective_with_retry' || item.estado === 'pending') && (
+                                                            {(item.estado === 'en_cola' || item.estado === 'ineffective_with_retry' || item.estado === 'pending') && item.statusInspectionOrder !== 5 && (
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() => handleOpenStartInspectionModal(item.inspectionOrder?.id)}
