@@ -344,8 +344,44 @@ class InspectionOrderController extends BaseController {
             "APROBADO": "success",
             "INSPECCION EN CURSO": "secondary",
             "NO ASEGURABLE PARCIAL": "default",
+            "NO ASEGURABLE (REINSPECCIÓN)": "default",
             "RECHAZADO": "destructive"
         }
+
+        // Prioridad 1: Basarse en el appointment más reciente (por updated_at)
+        if (appointments && appointments.length > 0) {
+            const latestApt = [...appointments].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+
+            // Si el más reciente es completed con inspection_result, mostrar ese resultado
+            if (latestApt.status === 'completed' && latestApt.inspection_result) {
+                const cleanResult = latestApt.inspection_result.split("-")[0].trim();
+                return {
+                    fixedStatus: cleanResult == 'NO ASEGURABLE PARCIAL' ? 'Reinspeccion' : cleanResult,
+                    badgeColor: statusBadgeColorMap[cleanResult] || 'secondary',
+                    comentariosAnulacion: comentariosAnulacion
+                }
+            }
+
+            // Si el más reciente tiene estado de retry/fallo, mostrar eso
+            const retryStates = ["ineffective_with_retry", "failed"];
+            const noRetryStates = ["ineffective_no_retry"];
+            if (retryStates.includes(latestApt.status)) {
+                return {
+                    fixedStatus: 'No finalizada por novedad del cliente',
+                    badgeColor: 'default',
+                    comentariosAnulacion: null
+                }
+            }
+            if (noRetryStates.includes(latestApt.status)) {
+                return {
+                    fixedStatus: 'No reagendar',
+                    badgeColor: 'default',
+                    comentariosAnulacion: null
+                }
+            }
+        }
+
+        // Prioridad 2: Usar inspection_result de la orden
         if (result) {
             const cleanResult = result.split("-")[0].trim()
             return {
@@ -355,27 +391,12 @@ class InspectionOrderController extends BaseController {
             }
         }
 
-        if (statusId == 4) {
-            let retryStates = ["ineffective_with_retry", "failed"]
-            let noRetryStates = ["ineffective_no_retry"]
-            if (retryStates.includes(appointments[0].status)) {
-                return {
-                    fixedStatus: 'No finalizada por novedad del cliente',
-                    badgeColor: 'default',
-                    comentariosAnulacion: null
-                }
-            } else if (noRetryStates.includes(appointments[0].status)) {
-                return {
-                    fixedStatus: 'No reagendar',
-                    badgeColor: 'default',
-                    comentariosAnulacion: null
-                }
-            } else {
-                return {
-                    fixedStatus: 'Activa',
-                    badgeColor: 'Activa',
-                    comentariosAnulacion: null
-                }
+        // Prioridad 3: Lógica por statusId para órdenes sin appointment relevante
+        if (statusId == 4 && appointments && appointments.length > 0) {
+            return {
+                fixedStatus: 'Activa',
+                badgeColor: 'Activa',
+                comentariosAnulacion: null
             }
         }
 
@@ -385,7 +406,6 @@ class InspectionOrderController extends BaseController {
             comentariosAnulacion: null
         };
     }
-
 
     getFinalFixedStatus(statusId, appointments) {
         let retryStates = ["ineffective_with_retry", "failed"]
@@ -570,7 +590,7 @@ class InspectionOrderController extends BaseController {
                 }, {
                     model: Appointment,
                     as: 'appointments',
-                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id', 'generated_pdf'],
+                    attributes: ['id', 'session_id', 'scheduled_date', 'scheduled_time', 'status', 'notes', 'observaciones', 'direccion_inspeccion', 'created_at', 'updated_at', 'call_log_id', 'generated_pdf', 'inspection_result'],
                     where: {
                         deleted_at: null // Solo appointments activos
                     },
@@ -624,6 +644,7 @@ class InspectionOrderController extends BaseController {
                             created_at: apt.created_at,
                             updated_at: apt.updated_at,
                             generated_pdf: apt.generated_pdf,
+                            inspection_result: apt.inspection_result,
                             inspectionModality: apt.inspectionModality,
                             sede: apt.sede
                         };
