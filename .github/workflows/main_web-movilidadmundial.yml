@@ -23,17 +23,35 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, build, and test
+      - name: Install dependencies frontend
+        working-directory: apps/web
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm install --legacy-peer-deps
 
-      - name: Upload artifact for deployment job
+      - name: Create .env file
+        working-directory: apps/web
+        run: |
+          echo "VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}" > .env
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          echo "VITE_INSPECTYA_URL=${{ secrets.VITE_INSPECTYA_URL }}" >> .env
+          echo "VITE_INSPECTYA_URL_CLIENT=${{ secrets.VITE_INSPECTYA_URL_CLIENT }}" >> .env
+          echo "VITE_ANALYTICS_URL=${{ secrets.VITE_ANALYTICS_URL }}" >> .env
+
+      - name: Build frontend
+        working-directory: apps/web
+        run: |
+          npm run build
+
+      - name: Upload project files and web dist
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: |
+            apps/server/
+            apps/web/dist/
+            azure-startup.sh
+            package.json
+            package-lock.json
 
   deploy:
     runs-on: ubuntu-latest
