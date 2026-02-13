@@ -164,7 +164,7 @@ class CoordinatorDataService {
         });
 
         const filtered = formattedData.filter(el => {
-            // Excluir órdenes completadas (status 5) EXCEPTO si son reinspecciones
+            // Excluir órdenes completadas (status 5) EXCEPTO si son reintentos
             if (el.statusInspectionOrder === 5) {
                 const hasReinspectionAppointment = el.inspectionOrder?.appointments?.some(
                     apt => apt.status === 'ineffective_with_retry'

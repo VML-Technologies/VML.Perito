@@ -429,9 +429,6 @@ class NotificationService {
                     }
                 }
             }
-
-
-
             return recipients;
 
         } catch (error) {

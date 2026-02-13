@@ -159,7 +159,6 @@ const seedAdvancedListeners = async () => {
                 target_roles: ['coordinador_contacto'],
                 trigger_conditions: {} // Sin condiciones - se envía a todos los coordinadores
             },
-
             // ===== CONFIGURACIONES PARA CLIENTES =====
             // Email para cliente (cuando se agende una cita)
             {
@@ -168,22 +167,22 @@ const seedAdvancedListeners = async () => {
                 channel_name: 'email',
                 template_title: 'Cita de Inspección Confirmada - {{inspection_order.numero}}',
                 template_content: `
-Hola {{inspection_order.nombre_cliente}},
+                                    Hola {{inspection_order.nombre_cliente}},
 
-Tu cita de inspección ha sido confirmada exitosamente.
+                                    Tu cita de inspección ha sido confirmada exitosamente.
 
-Detalles de la cita:
-- Número de orden: {{inspection_order.numero}}
-- Vehículo: {{inspection_order.marca}} {{inspection_order.linea}} {{inspection_order.modelo}}
-- Placa: {{inspection_order.placa}}
-- Fecha: {{appointment.scheduled_date}}
-- Hora: {{appointment.scheduled_time}}
-- Sede: {{sede.name}}
+                                    Detalles de la cita:
+                                    - Número de orden: {{inspection_order.numero}}
+                                    - Vehículo: {{inspection_order.marca}} {{inspection_order.linea}} {{inspection_order.modelo}}
+                                    - Placa: {{inspection_order.placa}}
+                                    - Fecha: {{appointment.scheduled_date}}
+                                    - Hora: {{appointment.scheduled_time}}
+                                    - Sede: {{sede.name}}
 
-Por favor llega 10 minutos antes de tu cita.
+                                    Por favor llega 10 minutos antes de tu cita.
 
-Saludos,
-Equipo Movilidad Mundial
+                                    Saludos,
+                                    Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: true,
                 for_users: false,
@@ -209,22 +208,22 @@ Equipo Movilidad Mundial
                 channel_name: 'email',
                 template_title: 'Recordatorio de Cita - {{inspection_order.numero}}',
                 template_content: `
-Hola {{inspection_order.nombre_cliente}},
+                                    Hola {{inspection_order.nombre_cliente}},
 
-Te recordamos que mañana tienes tu cita de inspección.
+                                    Te recordamos que mañana tienes tu cita de inspección.
 
-Detalles:
-- Número de orden: {{inspection_order.numero}}
-- Vehículo: {{inspection_order.marca}} {{inspection_order.linea}} {{inspection_order.modelo}}
-- Placa: {{inspection_order.placa}}
-- Fecha: {{appointment.scheduled_date}}
-- Hora: {{appointment.scheduled_time}}
-- Sede: {{sede.name}}
+                                    Detalles:
+                                    - Número de orden: {{inspection_order.numero}}
+                                    - Vehículo: {{inspection_order.marca}} {{inspection_order.linea}} {{inspection_order.modelo}}
+                                    - Placa: {{inspection_order.placa}}
+                                    - Fecha: {{appointment.scheduled_date}}
+                                    - Hora: {{appointment.scheduled_time}}
+                                    - Sede: {{sede.name}}
 
-Por favor llega 10 minutos antes.
+                                    Por favor llega 10 minutos antes.
 
-Saludos,
-Equipo Movilidad Mundial
+                                    Saludos,
+                                    Equipo Movilidad Mundial
                 `.trim(),
                 for_clients: true,
                 for_users: false,
